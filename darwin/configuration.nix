@@ -111,8 +111,11 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
 
   homebrew = {
     enable = true;
-    autoUpdate = true;
-    cleanup = "zap";
+    onActivation = {
+      autoUpdate = true;
+      upgrade = true;
+      cleanup = "zap";
+    };
     taps = [
       "homebrew/core"
       "homebrew/cask"

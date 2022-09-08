@@ -30,6 +30,11 @@
             home-manager.extraSpecialArgs = { inherit user fullName gitEmail; };
             home-manager.users.${user} = import ./darwin/home.nix;
 	  }
+	  {
+            nixpkgs.overlays = with inputs; [
+              nur.overlay
+            ];
+	  }
         ];
       };
     };
