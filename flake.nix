@@ -21,7 +21,7 @@
     {
       darwinConfigurations.macbook = darwin.lib.darwinSystem {
         inherit system;
-	specialArgs = { inherit user host fullName gitEmail };
+	specialArgs = { inherit user host fullName gitEmail; };
         modules = [
 	  ./darwin/configuration.nix
 	  home-manager.darwinModules.home-manager {
@@ -29,9 +29,9 @@
             home-manager.useUserPackages = true;
             home-manager.extraSpecialArgs = { inherit user fullName gitEmail; };
             home-manager.users.${user} = import ./darwin/home.nix;
-	  };
+	  }
         ];
       };
-    }
+    };
 }
 
