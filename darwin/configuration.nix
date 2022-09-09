@@ -121,7 +121,6 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
       "homebrew/cask"
       "homebrew/cask-versions"
       "homebrew/cask-drivers"
-      "koekeishiya/formulae"
     ];
     casks = [
       "firefox"
@@ -178,8 +177,8 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
       package = pkgs.skhd;
       skhdConfig = ''
         # Applications Shortcuts
-        lalt - return : /Applications/Alacritty.App/Contents/MacOS/alacritty
-	lalt + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
+        cmd - return : /Applications/Alacritty.App/Contents/MacOS/alacritty
+	cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
         # Toggle Window
         lalt - t : yabai -m window --toggle float && yabai -m window --grid 4:4:1:1:2:2
         lalt - f : yabai -m window --toggle zoom-fullscreen
@@ -199,12 +198,6 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
         lalt + cmd - l : yabai -m window --resize left:50:0 && yabai -m window --resize right:50:0
         lalt + cmd - k : yabai -m window --resize up:-50:0 && yabai -m window --resize down:-50:0
         lalt + cmd - j : yabai -m window --resize up:-50:0 && yabai -m window --resize down:-50:0
-        # Focus Space
-        lalt - 1 : yabai -m space --focus 1
-        lalt - 2 : yabai -m space --focus 2
-        lalt - 3 : yabai -m space --focus 3
-        lalt - 4 : yabai -m space --focus 4
-        lalt - 5 : yabai -m space --focus 5
         # Send to Space
         shift + lalt - 1 : yabai -m window --space 1
         shift + lalt - 2 : yabai -m window --space 2

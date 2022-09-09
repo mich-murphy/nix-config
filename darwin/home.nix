@@ -87,10 +87,13 @@
       settings = {
         live_config_reload = true;
         dynamic_title = true;
-        window.padding = {
-          x = 15;
-          y = 28;
-        };
+        window = {
+	  decorations = "none";
+	  padding = {
+            x = 15;
+            y = 5;
+          };
+	};
         font = {
           size = 13.0; 
           # offset.y = 2;
@@ -308,6 +311,51 @@
       package = pkgs.neovim-unwrapped;
       viAlias = true;
       vimAlias = true;
+      plugins = with pkgs.vimPlugins; [ 
+        vim-nix
+        plenary-nvim
+        {
+          plugin = impatient-nvim;
+          config = "lua require('impatient')";
+        }
+        {
+          plugin = lualine-nvim;
+          config = "lua require('lualine').setup()";
+        }
+        {
+          plugin = telescope-nvim;
+          config = "lua require('telescope').setup()";
+        }
+        {
+          plugin = nvim-lspconfig;
+          config = ''
+            lua << EOF
+            require('lspconfig').sumneko_lua.setup{}
+            require('lspconfig').rnix.setup{}
+            EOF
+          '';
+        }
+        {
+          plugin = nvim-treesitter;
+          config = ''
+            lua << EOF
+            require('nvim-treesitter.configs').setup {
+              highlight = {
+                enable = true,
+                additional_vim_regex_highlighting = false,
+              },
+            }
+            EOF
+          '';
+        }
+      ];
+      extraConfig = ''
+        luafile ~/.config/nvim/init.lua
+      '';
     };
+  };
+
+  xdg.configFile = {
+    "nvim/init.lua".source = ../modules/nvim/init.lua;
   };
 }
