@@ -126,6 +126,7 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
       "firefox"
       "alacritty"
       "spaceid"
+      "1password"
     ];
   };
 
