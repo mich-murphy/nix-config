@@ -35,6 +35,11 @@
       enable = true;
       userName = "${gitUser}";
       userEmail = "${gitEmail}";
+      extraConfig = {
+        init = { defaultBranch = "main"; };
+        pull = { rebase = true; };
+      };
+      diff-so-fancy.enable = true;
     };
     zsh = {
       enable = true;
