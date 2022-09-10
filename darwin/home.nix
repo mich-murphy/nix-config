@@ -91,7 +91,7 @@
 	  decorations = "none";
 	  padding = {
             x = 15;
-            y = 5;
+            y = 10;
           };
 	};
         font = {
@@ -314,22 +314,104 @@
       plugins = with pkgs.vimPlugins; [ 
         vim-fugitive
         vim-rhubarb
-        gitsigns-nvim
+        {
+          plugin = gitsigns-nvim;
+          config = ''
+            lua << EOF
+            require('gitsigns').setup {
+              signs = {
+                add = { text = '+' },
+                change = { text = '~' },
+                delete = { text = '_' },
+                topdelete = { text = '‾' },
+                changedelete = { text = '~' },
+              },
+            }
+            EOF
+          '';
+        }
         plenary-nvim
-        nvim-comment
-        nvim-treesitter
+        {
+          plugin = nvim-comment;
+          config = "lua require('Comment').setup()";
+        }
+        {
+          plugin = nvim-treesitter;
+          config = ''
+            lua << EOF
+            require('nvim-treesitter.configs').setup {
+              highlight = {
+                enable = true,
+                additional_vim_regex_highlighting = false,
+              },
+            }
+            EOF
+          '';
+        }
         nvim-treesitter-textobjects
-        nvim-lspconfig
+        {
+          plugin = nvim-lspconfig;
+          config = ''
+            lua << EOF
+            require('lspconfig').rust_analyzer.setup{}
+            require('lspconfig').sumneko_lua.setup{}
+            require('lspconfig').rnix.setup{}
+            EOF
+          '';
+        }
         nvim-cmp
         cmp-nvim-lsp
         luasnip
         cmp_luasnip
         onedark-nvim
-        lualine-nvim
-        indent-blankline-nvim
+        {
+          plugin = lualine-nvim;
+          config = ''
+            lua << EOF
+            require('lualine').setup {
+              options = {
+                icons_enabled = false,
+                theme = 'onedark',
+                component_separators = '|',
+                section_separators = ' ',
+              },
+            }
+            EOF
+          '';
+        }
+        {
+          plugin = indent-blankline-nvim;
+          config = ''
+            lua << EOF
+            require('indent_blankline').setup {
+              char = '┊',
+              show_trailing_blankline_indent = false,
+            }
+            EOF
+          '';
+        }
         vim-sleuth
-        telescope-nvim
-        telescope-fzf-native-nvim
+        {
+          plugin = telescope-nvim;
+          config = ''
+            lua << EOF
+            require('telescope').setup {
+              defaults = {
+                mappings = {
+                  i = {
+                    ['<C-u>'] = false,
+                    ['<C-d>'] = false,
+                  },
+                },
+              },
+            }
+            EOF
+          '';
+        }
+        {
+          plugin = telescope-fzf-native-nvim;
+          config = "lua pcall(require('telescope').load_extension, 'fzf')";
+        }
         impatient-nvim
       ];
       extraConfig = ''
@@ -337,13 +419,15 @@
       '';
       extraPackages = with pkgs; [
         rnix-lsp
+        nixfmt
         rust-analyzer
         sumneko-lua-language-server
+        stylua
       ];
     };
   };
 
   xdg.configFile = {
-    "nvim/settings.lua".source = ../modules/nvim/settings.lua;
+    "nvim/settings.lua".source = ../modules/nvim/init.lua;
   };
 }
