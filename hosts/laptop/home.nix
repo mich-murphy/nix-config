@@ -97,7 +97,7 @@
         live_config_reload = true;
         dynamic_title = true;
         window = {
-	  decorations = "none";
+	  decorations = "buttonless";
 	  padding = {
             x = 15;
             y = 15;
