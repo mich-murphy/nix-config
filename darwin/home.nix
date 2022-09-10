@@ -83,7 +83,7 @@
     alacritty = {
       enable = true;
       # fake package - managed by homebrew instead
-      package = pkgs.runCommand "firefox-0.0.0" {} "mkdir $out";
+      package = pkgs.runCommand "alacritty-0.0.0" {} "mkdir $out";
       settings = {
         live_config_reload = true;
         dynamic_title = true;
@@ -96,7 +96,6 @@
 	};
         font = {
           size = 13.0; 
-          # offset.y = 2;
           normal = {
             family = "JetBrainsMono Nerd Font";
             style = "Regular";
@@ -112,28 +111,29 @@
         };
         draw_bold_text_with_bright_colors = true;
         colors = {
-          cursor.cursor = "#f7f1ff";
-          primary.background = "#363537";
-          primary.foreground = "#f7f1ff";
-          normal = {
-            black = "#363537";
-            red = "#fc618d";
-            green = "#7db88f";
-            yellow = "#fce566";
-            blue = "#fd9353";
-            magenta = "#948ae3";
-            cyan = "#5ad4e6";
-            white = "#f7f1ff";
+          primary = {
+            background = "0x1e2127";
+            foreground = "0xabb2bf";
           };
+          normal = {
+            black = "0x1e2127";
+            red = "0xe06c75";
+            green = "0x98c379";
+            yellow = "0xd19a66";
+            blue = "0x61afef";
+            magenta = "0xc678dd";
+            cyan = "0x56b6c2";
+            white = "0xabb2bf";
+          }; 
           bright = {
-            black = "#69676c";
-            red = "#fc618d";
-            green = "#7db88f";
-            yellow = "#fce566";
-            blue = "#fd9353";
-            magenta = "#948ae3";
-            cyan = "#5ad4e6";
-            white = "#f7f1ff";
+            black = "0x5c6370";
+            red = "0xe06c75";
+            green = "0x98c379";
+            yellow = "0xd19a66";
+            blue = "0x61afef";
+            magenta = "0xc678dd";
+            cyan = "0x56b6c2";
+            white = "0xffffff";
           };
 	};
       };
@@ -312,50 +312,38 @@
       viAlias = true;
       vimAlias = true;
       plugins = with pkgs.vimPlugins; [ 
-        vim-nix
+        vim-fugitive
+        vim-rhubarb
+        gitsigns-nvim
         plenary-nvim
-        {
-          plugin = impatient-nvim;
-          config = "lua require('impatient')";
-        }
-        {
-          plugin = lualine-nvim;
-          config = "lua require('lualine').setup()";
-        }
-        {
-          plugin = telescope-nvim;
-          config = "lua require('telescope').setup()";
-        }
-        {
-          plugin = nvim-lspconfig;
-          config = ''
-            lua << EOF
-            require('lspconfig').sumneko_lua.setup{}
-            require('lspconfig').rnix.setup{}
-            EOF
-          '';
-        }
-        {
-          plugin = nvim-treesitter;
-          config = ''
-            lua << EOF
-            require('nvim-treesitter.configs').setup {
-              highlight = {
-                enable = true,
-                additional_vim_regex_highlighting = false,
-              },
-            }
-            EOF
-          '';
-        }
+        nvim-comment
+        nvim-treesitter
+        nvim-treesitter-textobjects
+        nvim-lspconfig
+        nvim-cmp
+        cmp-nvim-lsp
+        luasnip
+        cmp_luasnip
+        onedark-nvim
+        lualine-nvim
+        indent-blankline-nvim
+        vim-sleuth
+        telescope-nvim
+        telescope-fzf-native-nvim
+        impatient-nvim
       ];
       extraConfig = ''
-        luafile ~/.config/nvim/init.lua
+        luafile ~/.config/nvim/settings.lua
       '';
+      extraPackages = with pkgs; [
+        rnix-lsp
+        rust-analyzer
+        sumneko-lua-language-server
+      ];
     };
   };
 
   xdg.configFile = {
-    "nvim/init.lua".source = ../modules/nvim/init.lua;
+    "nvim/settings.lua".source = ../modules/nvim/settings.lua;
   };
 }
