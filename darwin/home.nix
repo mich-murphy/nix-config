@@ -313,6 +313,7 @@
       vimAlias = true;
       plugins = with pkgs.vimPlugins; [ 
         vim-fugitive
+        vim-nix
         vim-rhubarb
         {
           plugin = gitsigns-nvim;
@@ -363,7 +364,10 @@
         cmp-nvim-lsp
         luasnip
         cmp_luasnip
-        onedark-nvim
+        {
+          plugin = onedark-nvim;
+          config = "colorscheme onedark";
+        }
         {
           plugin = lualine-nvim;
           config = ''
