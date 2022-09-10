@@ -10,4 +10,6 @@
 - [Calum MacRae's Dotfiles](https://github.com/cmacrae/config)
     - Useful reference for Firefox config
 - [notusknot Dotfiles](https://github.com/notusknot/dotfiles-nix)
-    - Useful reference for neovim config
+    - Useful reference for Neovim config
+- [sliminality Dotfiles](https://github.com/sliminality/nix-config)
+    - Useful reference for Yabai, Firefox and Neovim configs
