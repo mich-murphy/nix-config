@@ -125,6 +125,7 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
     casks = [
       "firefox"
       "alacritty"
+      "spaceid"
     ];
   };
 

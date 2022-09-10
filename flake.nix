@@ -15,20 +15,20 @@
       user = "mm";
       host = "macbook";
       system = "aarch64-darwin";
-      fullName = "Michael Murphy";
+      gitUser = "mich-murphy";
       gitEmail = "mich+git@elmurphy.com";
     in
     {
       darwinConfigurations.macbook = darwin.lib.darwinSystem {
         inherit system;
-	specialArgs = { inherit user host fullName gitEmail; };
+	specialArgs = { inherit user host gitUser gitEmail; };
         modules = [
-	  ./darwin/configuration.nix
+	  ./hosts/laptop/darwin-configuration.nix
 	  home-manager.darwinModules.home-manager {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit user fullName gitEmail; };
-            home-manager.users.${user} = import ./darwin/home.nix;
+            home-manager.extraSpecialArgs = { inherit user gitUser gitEmail; };
+            home-manager.users.${user} = import ./hosts/laptop/home.nix;
 	  }
 	  {
             nixpkgs.overlays = with inputs; [

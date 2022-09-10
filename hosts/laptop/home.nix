@@ -1,4 +1,4 @@
-{ config, pkgs, user, fullName, gitEmail, ... }:
+{ config, pkgs, user, gitUser, gitEmail, ... }:
 
 {
   home = {
@@ -33,7 +33,7 @@
     };
     git = {
       enable = true;
-      userName = "${fullName}";
+      userName = "${gitUser}";
       userEmail = "${gitEmail}";
     };
     zsh = {
@@ -91,7 +91,7 @@
 	  decorations = "none";
 	  padding = {
             x = 15;
-            y = 10;
+            y = 15;
           };
 	};
         font = {
@@ -112,29 +112,29 @@
         draw_bold_text_with_bright_colors = true;
         colors = {
           primary = {
-            background = "0x1e2127";
-            foreground = "0xabb2bf";
+            background = "0x2b2d3a";
+            foreground = "0xc5cdd9";
           };
           normal = {
-            black = "0x1e2127";
-            red = "0xe06c75";
-            green = "0x98c379";
-            yellow = "0xd19a66";
-            blue = "0x61afef";
-            magenta = "0xc678dd";
-            cyan = "0x56b6c2";
-            white = "0xabb2bf";
+            black = "0x363a4e";
+            red = "0xec7279";
+            green = "0xa0c980";
+            yellow = "0xdeb974";
+            blue = "0x6cb6eb";
+            magenta = "0xd38aea";
+            cyan = "0x5dbbc1";
+            white = "0xc5cdd9";
           }; 
           bright = {
-            black = "0x5c6370";
-            red = "0xe06c75";
-            green = "0x98c379";
-            yellow = "0xd19a66";
-            blue = "0x61afef";
-            magenta = "0xc678dd";
-            cyan = "0x56b6c2";
-            white = "0xffffff";
-          };
+            black = "0x363a4e";
+            red = "0xec7279";
+            green = "0xa0c980";
+            yellow = "0xdeb974";
+            blue = "0x6cb6eb";
+            magenta = "0xd38aea";
+            cyan = "0x5dbbc1";
+            white = "0xc5cdd9";
+          }; 
 	};
       };
     };
@@ -365,8 +365,11 @@
         luasnip
         cmp_luasnip
         {
-          plugin = onedark-nvim;
-          config = "colorscheme onedark";
+          plugin = edge;
+          config = ''
+            let g:edge_style = 'neon'
+            colorscheme edge
+          '';
         }
         {
           plugin = lualine-nvim;
@@ -375,7 +378,7 @@
             require('lualine').setup {
               options = {
                 icons_enabled = false,
-                theme = 'onedark',
+                theme = 'edge',
                 component_separators = '|',
                 section_separators = ' ',
               },
@@ -432,6 +435,6 @@
   };
 
   xdg.configFile = {
-    "nvim/settings.lua".source = ../modules/nvim/init.lua;
+    "nvim/settings.lua".source = ../../modules/nvim/init.lua;
   };
 }
