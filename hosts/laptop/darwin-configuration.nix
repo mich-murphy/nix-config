@@ -141,7 +141,7 @@ let yabai = pkgs.yabai.overrideAttrs (old: rec {
 	use_keyring = true;
 	backend = "portaudio";
 	volume_controller = "softvol";
-	device_name = "${host}";
+	device_name = "macbook";
 	bitrate = 320;
 	device_type = "computer";
       };

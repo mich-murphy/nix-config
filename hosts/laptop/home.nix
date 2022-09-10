@@ -46,6 +46,10 @@
       initExtra = ''
         eval "$(starship init zsh)"
       '';
+      dirHashes = {
+        nx = "$HOME/nix-config";
+        dl = "$HOME/Downloads";
+      };
       shellAliases = {
         ls = "lsd -lah";
       };
@@ -144,113 +148,128 @@
       package = pkgs.runCommand "firefox-0.0.0" {} "mkdir $out";
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         ublock-origin
+        onepassword-password-manager
         vimium
         decentraleyes
-        # 1password
         privacy-badger
         darkreader
+        sponsorblock
       ];
       profiles."${user}" = {
         isDefault = true;
         settings = {
-          "app.normandy.api_url" = "";
-          "app.normandy.enabled" = false;
-          "app.shield.optoutstudies.enabled" = false;
-          "app.update.auto" = false;
-          "beacon.enabled" = false;
-          "breakpad.reportURL" = "";
-          "browser.aboutConfig.showWarning" = false;
-          "browser.cache.offline.enable" = false;
-          "browser.crashReports.unsubmittedCheck.autoSubmit" = false;
-          "browser.crashReports.unsubmittedCheck.autoSubmit2" = false;
-          "browser.crashReports.unsubmittedCheck.enabled" = false;
-          "browser.disableResetPrompt" = true;
-          "browser.newtab.preload" = false;
-          "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
-          "browser.newtabpage.enhanced" = false;
-          "browser.newtabpage.introShown" = true;
-          "browser.safebrowsing.appRepURL" = "";
-          "browser.safebrowsing.blockedURIs.enabled" = false;
-          "browser.safebrowsing.downloads.enabled" = false;
-          "browser.safebrowsing.downloads.remote.enabled" = false;
-          "browser.safebrowsing.downloads.remote.url" = "";
-          "browser.safebrowsing.enabled" = false;
-          "browser.safebrowsing.malware.enabled" = false;
-          "browser.safebrowsing.phishing.enabled" = false;
-          "browser.search.suggest.enabled" = false;
-          "browser.selfsupport.url" = "";
           "browser.send_pings" = false;
-          "browser.sessionstore.privacy_level" = 2;
-          "browser.shell.checkDefaultBrowser" = false;
-          "browser.startup.homepage_override.mstone" = "ignore";
-          "browser.tabs.crashReporting.sendReport" = false;
-          "browser.urlbar.groupLabels.enabled" = false;
-          "browser.urlbar.quicksuggest.enabled" = false;
           "browser.urlbar.speculativeConnect.enabled" = false;
-          "browser.urlbar.trimURLs" = false;
-          "datareporting.healthreport.service.enabled" = false;
-          "datareporting.healthreport.uploadEnabled" = false;
-          "datareporting.policy.dataSubmissionEnabled" = false;
-          "device.sensors.ambientLight.enabled" = false;
-          "device.sensors.enabled" = false;
-          "device.sensors.motion.enabled" = false;
-          "device.sensors.orientation.enabled" = false;
-          "device.sensors.proximity.enabled" = false;
-          "dom.battery.enabled" = false;
-          "dom.event.clipboardevents.enabled" = false;
-          "dom.security.https_only_mode" = true;
-          "dom.security.https_only_mode_ever_enabled" = true;
-          "dom.webaudio.enabled" = false;
-          "experiments.activeExperiment" = false;
-          "experiments.enabled" = false;
-          "experiments.manifest.uri" = "";
-          "experiments.supported" = false;
-          "extensions.getAddons.cache.enabled" = false;
-          "extensions.getAddons.showPane" = false;
-          "extensions.pocket.enabled" = false;
-          "media.autoplay.default" = 1;
-          "media.autoplay.enabled" = false;
+          "dom.event.clipboardevents.enabled" = true;
           "media.navigator.enabled" = false;
-          "media.peerconnection.enabled" = false;
-          "media.video_stats.enabled" = false;
-          "network.allow-experiments" = false;
-          "network.captive-portal-service.enabled" = false;
           "network.cookie.cookieBehavior" = 1;
-          "network.dns.disablePrefetch" = true;
-          "network.dns.disablePrefetchFromHTTPS" = true;
-          "network.http.referer.spoofSource" = true;
-          "network.http.speculative-parallel-limit" = 0;
-          "network.predictor.enable-prefetch" = false;
-          "network.predictor.enabled" = false;
-          "network.prefetch-next" = false;
-          "privacy.query_stripping" = true;
-          "privacy.trackingprotection.cryptomining.enabled" = true;
-          "privacy.trackingprotection.enabled" = true;
-          "privacy.trackingprotection.fingerprinting.enabled" = true;
-          "privacy.trackingprotection.pbmode.enabled" = true;
-          "privacy.usercontext.about_newtab_segregation.enabled" = true;
-          "security.ssl.disable_session_identifiers" = true;
-          "services.sync.prefs.sync.browser.newtabpage.activity-stream.showSponsoredTopSite" = false;
-          "signon.autofillForms" = false;
-          "toolkit.telemetry.archive.enabled" = false;
-          "toolkit.telemetry.bhrPing.enabled" = false;
-          "toolkit.telemetry.cachedClientID" = "";
+          "network.http.referer.XOriginPolicy" = 2;
+          "network.http.referer.XOriginTrimmingPolicy" = 2;
+          "beacon.enabled" = false;
+          "browser.safebrowsing.downloads.remote.enabled" = false;
+          "network.IDN_show_punycode" = true;
+          "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
+          "app.shield.optoutstudies.enabled" = false;
+          "dom.security.https_only_mode_ever_enabled" = true;
+          "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+          "browser.toolbars.bookmarks.visibility" = "never";
+          "geo.enabled" = false;
+          
+          # Disable telemetry
+          "browser.newtabpage.activity-stream.feeds.telemetry" = false;
+          "browser.ping-centre.telemetry" = false;
+          "browser.tabs.crashReporting.sendReport" = false;
+          "devtools.onboarding.telemetry.logged" = false;
           "toolkit.telemetry.enabled" = false;
-          "toolkit.telemetry.firstShutdownPing.enabled" = false;
-          "toolkit.telemetry.hybridContent.enabled" = false;
-          "toolkit.telemetry.newProfilePing.enabled" = false;
-          "toolkit.telemetry.prompted" = 2;
-          "toolkit.telemetry.rejected" = true;
-          "toolkit.telemetry.reportingpolicy.firstRun" = false;
-          "toolkit.telemetry.server" = "";
-          "toolkit.telemetry.shutdownPingSender.enabled" = false;
           "toolkit.telemetry.unified" = false;
-          "toolkit.telemetry.unifiedIsOptIn" = false;
-          "toolkit.telemetry.updatePing.enabled" = false;
-          "webgl.disabled" = true;
-          "webgl.renderer-string-override" = " ";
-          "webgl.vendor-string-override" = " ";
+          "toolkit.telemetry.server" = "";
+          
+          # Disable Pocket
+          "browser.newtabpage.activity-stream.feeds.discoverystreamfeed" = false;
+          "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+          "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
+          "browser.newtabpage.activity-stream.showSponsored" = false;
+          "extensions.pocket.enabled" = false;
+          
+          # Disable prefetching
+          "network.dns.disablePrefetch" = true;
+          "network.prefetch-next" = false;
+          
+          # Disable JS in PDFs
+          "pdfjs.enableScripting" = false;
+          
+          # Harden SSL 
+          "security.ssl.require_safe_negotiation" = true;
+          
+          # Extra
+          "identity.fxaccounts.enabled" = false;
+          "browser.search.suggest.enabled" = false;
+          "browser.urlbar.shortcuts.bookmarks" = false;
+          "browser.urlbar.shortcuts.history" = false;
+          "browser.urlbar.shortcuts.tabs" = false;
+          "browser.urlbar.suggest.bookmark" = false;
+          "browser.urlbar.suggest.engines" = false;
+          "browser.urlbar.suggest.history" = false;
+          "browser.urlbar.suggest.openpage" = false;
+          "browser.urlbar.suggest.topsites" = false;
+          "browser.uidensity" = 1;
+          "media.autoplay.enabled" = false;
+          "toolkit.zoomManager.zoomValues" = ".8,.90,.95,1,1.1,1.2";
+          
+          "privacy.firstparty.isolate" = true;
+          "network.http.sendRefererHeader" = 0;
         };
+        userChrome = ''
+          * { 
+              box-shadow: none !important;
+              border: 0px solid !important;
+          }
+          #tabbrowser-tabs {
+              --user-tab-rounding: 8px;
+          }
+          .tab-background {
+              border-radius: var(--user-tab-rounding) var(--user-tab-rounding) 0px 0px !important; /* Connected */
+              margin-block: 1px 0 !important; /* Connected */
+          }
+          #scrollbutton-up, #scrollbutton-down { /* 6/10/2021 */
+              border-top-width: 1px !important;
+              border-bottom-width: 0 !important;
+          }
+          .tab-background:is([selected], [multiselected]):-moz-lwtheme {
+              --lwt-tabs-border-color: rgba(0, 0, 0, 0.5) !important;
+              border-bottom-color: transparent !important;
+          }
+          [brighttext='true'] .tab-background:is([selected], [multiselected]):-moz-lwtheme {
+              --lwt-tabs-border-color: rgba(255, 255, 255, 0.5) !important;
+              border-bottom-color: transparent !important;
+          }
+          /* Container color bar visibility */
+          .tabbrowser-tab[usercontextid] > .tab-stack > .tab-background > .tab-context-line {
+              margin: 0px max(calc(var(--user-tab-rounding) - 3px), 0px) !important;
+          }
+          #TabsToolbar, #tabbrowser-tabs {
+              --tab-min-height: 29px !important;
+          }
+          #main-window[sizemode='true'] #toolbar-menubar[autohide='true'] + #TabsToolbar, 
+          #main-window[sizemode='true'] #toolbar-menubar[autohide='true'] + #TabsToolbar #tabbrowser-tabs {
+              --tab-min-height: 30px !important;
+          }
+          #scrollbutton-up,
+          #scrollbutton-down {
+              border-top-width: 0 !important;
+              border-bottom-width: 0 !important;
+          }
+          #TabsToolbar, #TabsToolbar > hbox, #TabsToolbar-customization-target, #tabbrowser-arrowscrollbox  {
+              max-height: calc(var(--tab-min-height) + 1px) !important;
+          }
+          #TabsToolbar-customization-target toolbarbutton > .toolbarbutton-icon, 
+          #TabsToolbar-customization-target .toolbarbutton-text, 
+          #TabsToolbar-customization-target .toolbarbutton-badge-stack,
+          #scrollbutton-up,#scrollbutton-down {
+              padding-top: 7px !important;
+              padding-bottom: 6px !important;
+          }
+        '';
       };
     };
     zathura = {
@@ -271,39 +290,39 @@
 	map r reload
 	map J zoom out
 	set selection-clipboard clipboard
-	set notification-error-bg       "#222222" # bg0
-	set notification-error-fg       "#fc618d" # red
-	set notification-warning-bg     "#222222" # bg0
-	set notification-warning-fg     "#fce566" # yellow
-	set notification-bg             "#222222" # bg0
-	set notification-fg             "#7bd88f" # green
-	set completion-bg               "#2d2c2d" # bg2
-	set completion-fg               "#f7f1ff" # fg0
-	set completion-group-bg         "#403e41" # bg1
-	set completion-group-fg         "#69676c" # gray
-	set completion-highlight-bg     "#5ad4e6" # blue
-	set completion-highlight-fg     "#2d2c2d" # bg2
-	# Define the color in index mode
-	set index-bg                    "#2d2c2d" # bg2
-	set index-fg                    "#f7f1ff" # fg0
-	set index-active-bg             "#5ad4e6" # blue
-	set index-active-fg             "#2d2c2d" # bg2
-	set inputbar-bg                 "#2d2c2d" # bg2
-	set inputbar-fg                 "#f7f1ff" # fg0
-	set statusbar-bg                "#2d2c2d" # bg2
-	set statusbar-fg                "#f7f1ff" # fg0
-	set highlight-color             "#fce566" # yellow
-	set highlight-active-color      "#fd9353" # orange
-	set default-bg                  "#222222" # bg0
-	set default-fg                  "#f7f1ff" # fg1
-	set render-loading              true
-	set render-loading-bg           "#222222" # bg0
-	set render-loading-fg           "#f7f1ff" # fg0
-	# Recolor book content's color
-	set recolor-lightcolor          "#222222" # bg0
-	set recolor-darkcolor           "#f7f1ff" # fg0
-	set recolor                     "true"
-	set recolor-keephue             true      # keep original color
+        set notification-error-bg       "#2b2d3a" # bg0
+        set notification-error-fg       "#ec7279" # red
+        set notification-warning-bg     "#2b2d3a" # bg0
+        set notification-warning-fg     "#deb974" # yellow
+        set notification-bg             "#2b2d3a" # bg0
+        set notification-fg             "#a0c980" # green
+        set completion-bg               "#363a4e" # bg2
+        set completion-fg               "#c5cdd9" # fg0
+        set completion-group-bg         "#333648" # bg1
+        set completion-group-fg         "#7e8294" # gray
+        set completion-highlight-bg     "#6cb6eb" # blue
+        set completion-highlight-fg     "#363a4e" # bg2
+        # Define the color in index mode
+        set index-bg                    "#363a4e" # bg2
+        set index-fg                    "#c5cdd9" # fg0
+        set index-active-bg             "#6cb6eb" # blue
+        set index-active-fg             "#363a4e" # bg2
+        set inputbar-bg                 "#363a4e" # bg2
+        set inputbar-fg                 "#c5cdd9" # fg0
+        set statusbar-bg                "#363a4e" # bg2
+        set statusbar-fg                "#c5cdd9" # fg0
+        set highlight-color             "#deb974" # yellow
+        set highlight-active-color      "#4e432f" # orange
+        set default-bg                  "#2b2d3a" # bg0
+        set default-fg                  "#c5cdd9" # fg1
+        set render-loading              true
+        set render-loading-bg           "#2b2d3a" # bg0
+        set render-loading-fg           "#c5cdd9" # fg0
+        # Recolor book content's color
+        set recolor-lightcolor          "#2b2d3a" # bg0
+        set recolor-darkcolor           "#c5cdd9" # fg0
+        set recolor                     "true"
+        set recolor-keephue             true      # keep original color
       '';
     };
     neovim = {
