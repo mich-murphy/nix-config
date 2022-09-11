@@ -350,10 +350,6 @@
         }
         plenary-nvim
         {
-          plugin = nvim-comment;
-          config = "lua require('Comment').setup()";
-        }
-        {
           plugin = nvim-treesitter;
           config = ''
             lua << EOF
