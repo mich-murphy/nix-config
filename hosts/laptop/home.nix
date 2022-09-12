@@ -266,59 +266,6 @@
         '';
       };
     };
-    zathura = {
-      enable = true;
-      package = pkgs.zathura;
-      extraConfig = ''
-	set recolor
-	set guioptions ""
-	set recolor-lightcolor \#1f2227
-	set default-bg \#1f2227
-	set adjust-open "best-fit"
-	set scroll-page-aware "true"
-	set sandbox none
-	set statusbar-h-padding 0
-	set statusbar-v-padding 0
-	map K zoom in
-	map R rotate
-	map r reload
-	map J zoom out
-	set selection-clipboard clipboard
-        set notification-error-bg       "#2b2d3a" # bg0
-        set notification-error-fg       "#ec7279" # red
-        set notification-warning-bg     "#2b2d3a" # bg0
-        set notification-warning-fg     "#deb974" # yellow
-        set notification-bg             "#2b2d3a" # bg0
-        set notification-fg             "#a0c980" # green
-        set completion-bg               "#363a4e" # bg2
-        set completion-fg               "#c5cdd9" # fg0
-        set completion-group-bg         "#333648" # bg1
-        set completion-group-fg         "#7e8294" # gray
-        set completion-highlight-bg     "#6cb6eb" # blue
-        set completion-highlight-fg     "#363a4e" # bg2
-        # Define the color in index mode
-        set index-bg                    "#363a4e" # bg2
-        set index-fg                    "#c5cdd9" # fg0
-        set index-active-bg             "#6cb6eb" # blue
-        set index-active-fg             "#363a4e" # bg2
-        set inputbar-bg                 "#363a4e" # bg2
-        set inputbar-fg                 "#c5cdd9" # fg0
-        set statusbar-bg                "#363a4e" # bg2
-        set statusbar-fg                "#c5cdd9" # fg0
-        set highlight-color             "#deb974" # yellow
-        set highlight-active-color      "#4e432f" # orange
-        set default-bg                  "#2b2d3a" # bg0
-        set default-fg                  "#c5cdd9" # fg1
-        set render-loading              true
-        set render-loading-bg           "#2b2d3a" # bg0
-        set render-loading-fg           "#c5cdd9" # fg0
-        # Recolor book content's color
-        set recolor-lightcolor          "#2b2d3a" # bg0
-        set recolor-darkcolor           "#c5cdd9" # fg0
-        set recolor                     "true"
-        set recolor-keephue             true      # keep original color
-      '';
-    };
     neovim = {
       enable = true;
       package = pkgs.neovim-unwrapped;

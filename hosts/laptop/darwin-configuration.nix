@@ -130,6 +130,7 @@ in
       "spaceid"
       "1password"
       "setapp"
+      "alfred"
     ];
     brews = [
       {
@@ -172,6 +173,7 @@ in
           yabai -m rule --add app='^System Preferences$' manage=off layer=above
           yabai -m rule --add app='^Activity Monitor$' manage=off layer=above
 	  yabai -m rule --add app='Setapp' manage=off layer=above
+	  yabai -m rule --add app='Alfred' manage=off layer=above
 	  yabai -m rule --add app='1Password' manage=off layer=above
 	  yabai -m rule --add app='Bartender' manage=off layer=above
 	  yabai -m rule --add app='CleanMyMac' manage=off layer=above
