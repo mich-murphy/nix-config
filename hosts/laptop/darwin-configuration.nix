@@ -131,26 +131,15 @@ in
       "1password"
       "setapp"
     ];
+    brews = [
+      "spotifyd"
+    ];
   };
 
   programs.zsh.enable = true;
 
   services = {
     nix-daemon.enable = true;
-    spotifyd = {
-      enable = true;
-      package = pkgs.spotifyd;
-      # manually create config file in ~/.config/spotifyd/spotifyd.conf
-      # settings = {
-	# username = "manycc";
-	# use_keyring = true;
-	# backend = "portaudio";
-	# volume_controller = "softvol";
-	# device_name = "macbook";
-	# bitrate = 320;
-	# device_type = "computer";
-      # };
-    };
     yabai = {
       enable = true; 
       enableScriptingAddition = true;
