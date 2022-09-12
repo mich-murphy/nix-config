@@ -131,6 +131,7 @@ in
       "1password"
       "setapp"
       "alfred"
+      "little-snitch"
     ];
     brews = [
       {
