@@ -132,7 +132,10 @@ in
       "setapp"
     ];
     brews = [
-      "spotifyd"
+      {
+	name = "spotifyd";
+	start_service = true;
+      }
     ];
   };
 

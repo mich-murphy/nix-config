@@ -53,7 +53,6 @@
       '';
       shellAliases = {
         ls = "lsd -lah";
-        spt = "spotifyd &; spt";
       };
     };
     fzf = {
@@ -446,6 +445,5 @@
 
   xdg.configFile = {
     "nvim/settings.lua".source = ../../modules/nvim/init.lua;
-    "spotifyd/spotifyd.conf".source = ../../modules/spotifyd/spotifyd.conf;
   };
 }
