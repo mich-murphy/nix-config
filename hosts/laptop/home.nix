@@ -51,12 +51,9 @@
       initExtra = ''
         eval "$(starship init zsh)"
       '';
-      dirHashes = {
-        nx = "$HOME/nix-config";
-        dl = "$HOME/Downloads";
-      };
       shellAliases = {
         ls = "lsd -lah";
+        spt = "spotifyd &; spt";
       };
     };
     fzf = {

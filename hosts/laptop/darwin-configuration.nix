@@ -140,15 +140,16 @@ in
     spotifyd = {
       enable = true;
       package = pkgs.spotifyd;
-      settings = {
-        username = "manycc";
-	use_keyring = true;
-	backend = "portaudio";
-	volume_controller = "softvol";
-	device_name = "macbook";
-	bitrate = 320;
-	device_type = "computer";
-      };
+      # manually create config file in ~/.config/spotifyd/spotifyd.conf
+      # settings = {
+	# username = "manycc";
+	# use_keyring = true;
+	# backend = "portaudio";
+	# volume_controller = "softvol";
+	# device_name = "macbook";
+	# bitrate = 320;
+	# device_type = "computer";
+      # };
     };
     yabai = {
       enable = true; 
