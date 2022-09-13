@@ -117,28 +117,28 @@
         draw_bold_text_with_bright_colors = true;
         colors = {
           primary = {
-            background = "0x2b2d3a";
-            foreground = "0xc5cdd9";
+            background = "0x1a1b26";
+            foreground = "0xc0caf5";
           };
           normal = {
-            black = "0x363a4e";
-            red = "0xec7279";
-            green = "0xa0c980";
-            yellow = "0xdeb974";
-            blue = "0x6cb6eb";
-            magenta = "0xd38aea";
-            cyan = "0x5dbbc1";
-            white = "0xc5cdd9";
+            black = "0x15161e";
+            red = "0xf7768e";
+            green = "0x9ece6a";
+            yellow = "0xe0af68";
+            blue = "0x7aa2f7";
+            magenta = "0xbb9af7";
+            cyan = "0x7dcfff";
+            white = "0xa9b1d6";
           }; 
           bright = {
-            black = "0x363a4e";
-            red = "0xec7279";
-            green = "0xa0c980";
-            yellow = "0xdeb974";
-            blue = "0x6cb6eb";
-            magenta = "0xd38aea";
-            cyan = "0x5dbbc1";
-            white = "0xc5cdd9";
+            black = "0x414868";
+            red = "0xf7768e";
+            green = "0x9ece6a";
+            yellow = "0xe0af68";
+            blue = "0x7aa2f7";
+            magenta = "0xbb9af7";
+            cyan = "0x7dcfff";
+            white = "0xc0caf5";
           }; 
 	};
       };
@@ -271,10 +271,11 @@
       package = pkgs.neovim-unwrapped;
       viAlias = true;
       vimAlias = true;
+      withPython3 = true;
       plugins = with pkgs.vimPlugins; [ 
+        vim-surround
         vim-fugitive
         vim-nix
-        vim-rhubarb
         {
           plugin = gitsigns-nvim;
           config = ''
@@ -293,7 +294,24 @@
         }
         plenary-nvim
         {
-          plugin = nvim-treesitter;
+          # install treesitter and listed grammars
+          plugin = (
+            nvim-treesitter.withPlugins (plugins: [
+              plugins.tree-sitter-python
+              plugins.tree-sitter-lua
+              plugins.tree-sitter-nix
+              plugins.tree-sitter-yaml
+              plugins.tree-sitter-toml
+              plugins.tree-sitter-bash
+              plugins.tree-sitter-vim
+              plugins.tree-sitter-markdown
+              plugins.tree-sitter-json
+              plugins.tree-sitter-html
+              plugins.tree-sitter-fish
+              plugins.tree-sitter-dockerfile
+              plugins.tree-sitter-css
+            ])
+          );
           config = ''
             lua << EOF
             require('nvim-treesitter.configs').setup {
@@ -305,6 +323,7 @@
             EOF
           '';
         }
+        # allows manipulation of additional objects e.g. paragraphs
         nvim-treesitter-textobjects
         {
           plugin = nvim-lspconfig;
@@ -321,10 +340,9 @@
         luasnip
         cmp_luasnip
         {
-          plugin = edge;
+          plugin = tokyonight-nvim;
           config = ''
-            let g:edge_style = 'neon'
-            colorscheme edge
+            colorscheme tokyonight-night
           '';
         }
         {
@@ -334,7 +352,7 @@
             require('lualine').setup {
               options = {
                 icons_enabled = false,
-                theme = 'edge',
+                theme = 'tokyonight',
                 component_separators = '|',
                 section_separators = ' ',
               },
