@@ -319,12 +319,76 @@
                 enable = true,
                 additional_vim_regex_highlighting = false,
               },
+              indent = {
+                enable = true
+              },
+              incremental_selection = {
+                enable = true,
+                keymaps = {
+                  init_selection = '<c-space>',
+                  node_incremental = '<c-space>',
+                  -- TODO: I'm not sure for this one.
+                  scope_incremental = '<c-s>',
+                  node_decremental = '<c-backspace>',
+                },
+              },
+              move = {
+                enable = true,
+                set_jumps = true, -- whether to set jumps in the jumplist
+                goto_next_start = {
+                  [']m'] = '@function.outer',
+                  [']]'] = '@class.outer',
+                },
+                goto_next_end = {
+                  [']M'] = '@function.outer',
+                  [']['] = '@class.outer',
+                },
+                goto_previous_start = {
+                  ['[m'] = '@function.outer',
+                  ['[['] = '@class.outer',
+                },
+                goto_previous_end = {
+                  ['[M'] = '@function.outer',
+                  ['[]'] = '@class.outer',
+                },
+              },
+              swap = {
+                enable = true,
+                swap_next = {
+                  ['<leader>a'] = '@parameter.inner',
+                },
+                swap_previous = {
+                  ['<leader>A'] = '@parameter.inner',
+                },
+              },
             }
             EOF
           '';
         }
-        # allows manipulation of additional objects e.g. paragraphs
-        nvim-treesitter-textobjects
+        {
+          # allows manipulation of additional objects e.g. paragraphs
+          plugin = nvim-treesitter-textobjects;
+          config = ''
+            lua << EOF
+            require'nvim-treesitter.configs'.setup {
+              textobjects = {
+                select = {
+                  enable = true,
+                  -- Automatically jump forward to textobj, similar to targets.vim
+                  lookahead = true,
+                  keymaps = {
+                    -- You can use the capture groups defined in textobjects.scm
+                    ["af"] = "@function.outer",
+                    ["if"] = "@function.inner",
+                    ["ac"] = "@class.outer",
+                    ["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
+                  },
+                },
+              },
+            }
+            EOF
+          '';
+        }
         {
           plugin = nvim-lspconfig;
           config = ''
@@ -335,10 +399,74 @@
             EOF
           '';
         }
-        nvim-cmp
+        {
+          plugin = nvim-cmp;
+          config = ''
+            lua << EOF
+            local cmp = require 'cmp'
+            local luasnip = require 'luasnip'
+            
+            cmp.setup {
+              snippet = {
+                expand = function(args)
+                  luasnip.lsp_expand(args.body)
+                end,
+              },
+              mapping = cmp.mapping.preset.insert {
+                ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+                ['<C-f>'] = cmp.mapping.scroll_docs(4),
+                ['<C-Space>'] = cmp.mapping.complete(),
+                ['<CR>'] = cmp.mapping.confirm {
+                  behavior = cmp.ConfirmBehavior.Replace,
+                  select = true,
+                },
+                ['<Tab>'] = cmp.mapping(function(fallback)
+                  if cmp.visible() then
+                    cmp.select_next_item()
+                  elseif luasnip.expand_or_jumpable() then
+                    luasnip.expand_or_jump()
+                  else
+                    fallback()
+                  end
+                end, { 'i', 's' }),
+                ['<S-Tab>'] = cmp.mapping(function(fallback)
+                  if cmp.visible() then
+                    cmp.select_prev_item()
+                  elseif luasnip.jumpable(-1) then
+                    luasnip.jump(-1)
+                  else
+                    fallback()
+                  end
+                end, { 'i', 's' }),
+              },
+              sources = {
+                { name = 'path' },
+                { name = 'nvim_lsp' },
+                { name = 'buffer' },
+                { name = 'luasnip' },
+              },
+              formatting = {
+                fields = {'menu', 'abbr', 'kind'},
+                format = function(entry, item)
+                  local menu_icon = {
+                    nvim_lsp = 'λ',
+                    luasnip = '⋗',
+                    buffer = 'Ω',
+                    path = '🖫',
+                  }
+                  item.menu = menu_icon[entry.source.name]
+                  return item
+                end,
+              },
+            }
+            EOF
+          '';
+        }
         cmp-nvim-lsp
         luasnip
         cmp_luasnip
+        cmp-path
+        cmp-buffer
         {
           plugin = tokyonight-nvim;
           config = ''
