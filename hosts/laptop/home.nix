@@ -53,6 +53,8 @@
       '';
       shellAliases = {
         ls = "lsd -lah";
+        cat = "bat";
+        ssh = "kitty +kitten ssh";
       };
     };
     fzf = {
@@ -88,12 +90,13 @@
     kitty = {
       enable = true;
       # fake package - managed by homebrew instead
-      package = pkgs.runCommand "alacritty-0.0.0" {} "mkdir $out";
-      darwinLaunchOptions = "--single-instance";
-      theme = "tokyo_night_night";
+      package = pkgs.runCommand "kitty.0.0" {} "mkdir $out";
+      darwinLaunchOptions = [ "--single-instance" ];
+      # kitty +kitten themes
+      theme = "Tokyo Night";
       font = {
         name = "JetBrainsMono Nerd Font";
-        size = 12.0;
+        size = 14;
       };
       settings = {
         disable_ligatures = "never";
@@ -102,64 +105,6 @@
         window_padding_width = 10;
         scrollback_lines = 1000;
         hide_window_decorations = "titlebar-only";
-      };
-    };
-    alacritty = {
-      enable = true;
-      # fake package - managed by homebrew instead
-      package = pkgs.runCommand "alacritty-0.0.0" {} "mkdir $out";
-      settings = {
-        live_config_reload = true;
-        dynamic_title = true;
-        window = {
-	  decorations = "buttonless";
-	  padding = {
-            x = 15;
-            y = 15;
-          };
-	};
-        font = {
-          size = 13.0; 
-          normal = {
-            family = "JetBrainsMono Nerd Font";
-            style = "Regular";
-          };
-          bold = {
-            family = "JetBrainsMono Nerd Font";
-            style = "Bold";
-          };
-          italic = {
-            family = "JetBrainsMono Nerd Font";
-            style = "Italic";
-          };
-        };
-        draw_bold_text_with_bright_colors = true;
-        colors = {
-          primary = {
-            background = "0x1a1b26";
-            foreground = "0xc0caf5";
-          };
-          normal = {
-            black = "0x15161e";
-            red = "0xf7768e";
-            green = "0x9ece6a";
-            yellow = "0xe0af68";
-            blue = "0x7aa2f7";
-            magenta = "0xbb9af7";
-            cyan = "0x7dcfff";
-            white = "0xa9b1d6";
-          }; 
-          bright = {
-            black = "0x414868";
-            red = "0xf7768e";
-            green = "0x9ece6a";
-            yellow = "0xe0af68";
-            blue = "0x7aa2f7";
-            magenta = "0xbb9af7";
-            cyan = "0x7dcfff";
-            white = "0xc0caf5";
-          }; 
-	};
       };
     };
     firefox = {

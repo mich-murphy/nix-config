@@ -126,7 +126,6 @@ in
     ];
     casks = [
       "firefox"
-      "alacritty"
       "kitty"
       "spaceid"
       "1password"
@@ -174,6 +173,7 @@ in
           yabai -m rule --add app='^App Store$' manage=off layer=above
           yabai -m rule --add app='^System Preferences$' manage=off layer=above
           yabai -m rule --add app='^Activity Monitor$' manage=off layer=above
+	  yabai -m rule --add app='Finder' manage=off layer=above
 	  yabai -m rule --add app='Setapp' manage=off layer=above
 	  yabai -m rule --add app='Alfred' manage=off layer=above
 	  yabai -m rule --add app='1Password' manage=off layer=above
@@ -189,9 +189,9 @@ in
       package = pkgs.skhd;
       skhdConfig = ''
         # Applications Shortcuts
-        cmd - return : /Applications/Alacritty.App/Contents/MacOS/alacritty
+        cmd - return : /Applications/kitty.App/Contents/MacOS/kitty
 	cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
-	cmd + shift - f : /Applications/Alacritty.App/Contents/MacOS/alacritty -e ranger
+	cmd + lalt + shift - return : /Applications/kitty.App/Contents/MacOS/kitty launch ranger
         # Toggle Window
         lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
         lalt - f : yabai -m window --toggle zoom-fullscreen
