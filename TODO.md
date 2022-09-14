@@ -2,6 +2,12 @@
 
 Tasks relating to the initial creation and continuious maintenance of personal Nix configuration.
 
+## General
+
+- [ ] Add explanatory comments to home.nix
+- [ ] Add explanatory comments to darwinConfigurations.nix
+- [ ] Break configuration files into individual modules
+
 ## Neovim Configuration
 
 - [ ] Continue working through plugins
