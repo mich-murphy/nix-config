@@ -217,11 +217,11 @@ in
 	# Balance All Windows
 	lalt + cmd - e : yabai -m space --balance
         # Send to Space
-        shift + lctrl - 1 : yabai -m window --space 1; yabai -m space --focus 1
-        shift + lctrl - 2 : yabai -m window --space 2; yabai -m space --focus 2
-        shift + lctrl - 3 : yabai -m window --space 3; yabai -m space --focus 3
-        shift + lctrl - 4 : yabai -m window --space 4; yabai -m space --focus 4
-        shift + lctrl - 5 : yabai -m window --space 5; yabai -m space --focus 5
+        shift + lctrl - 1 : yabai -m window --space 1
+        shift + lctrl - 2 : yabai -m window --space 2
+        shift + lctrl - 3 : yabai -m window --space 3
+        shift + lctrl - 4 : yabai -m window --space 4
+        shift + lctrl - 5 : yabai -m window --space 5
       '';
     };
   };

@@ -8,7 +8,7 @@
     sessionVariables = {
       EDITOR = "nvim";
       VISUAL = "nvim";
-      TERMINAL = "alacritty";
+      TERMINAL = "kitty";
     };
     packages = with pkgs; [
       # shell prompt
