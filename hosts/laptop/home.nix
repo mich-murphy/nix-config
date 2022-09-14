@@ -96,7 +96,7 @@
       theme = "Tokyo Night";
       font = {
         name = "JetBrainsMono Nerd Font";
-        size = 14;
+        size = 13;
       };
       settings = {
         disable_ligatures = "never";
@@ -105,6 +105,7 @@
         window_padding_width = 10;
         scrollback_lines = 1000;
         hide_window_decorations = "titlebar-only";
+        tab_bar_edge = "top";
       };
     };
     firefox = {
