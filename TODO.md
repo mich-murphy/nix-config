@@ -16,6 +16,10 @@ Tasks relating to the initial creation and continuious maintenance of personal N
 
 - [ ] Setup skhd launch of ranger in Kitty
 
+## Ranger Configuration
+
+- [ ] Setup ranger based on existing DWM dotfiles
+
 ## SKHD Configuration
 
 - [ ] Review yabai keyboard shortcuts, simplify number of modifier keys
