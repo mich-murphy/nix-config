@@ -127,6 +127,7 @@ in
     casks = [
       "firefox"
       "alacritty"
+      "kitty"
       "spaceid"
       "1password"
       "setapp"

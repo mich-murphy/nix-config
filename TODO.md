@@ -8,7 +8,6 @@ Tasks relating to the initial creation and continuious maintenance of personal N
 
 ## Terminal Configuration
 
-- [ ] Configure Kitty terminal
 - [ ] Setup skhd launch of ranger in Kitty
 
 ## SKHD Configuration
@@ -19,3 +18,4 @@ Tasks relating to the initial creation and continuious maintenance of personal N
 
 - [x] Configure neovim treesitter
 - [x] Configure neovim cmp
+- [x] Configure Kitty terminal

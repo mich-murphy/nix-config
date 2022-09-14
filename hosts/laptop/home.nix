@@ -85,6 +85,25 @@
         symlink-arrow = "->";
       };
     };
+    kitty = {
+      enable = true;
+      # fake package - managed by homebrew instead
+      package = pkgs.runCommand "alacritty-0.0.0" {} "mkdir $out";
+      darwinLaunchOptions = "--single-instance";
+      theme = "tokyo_night_night";
+      font = {
+        name = "JetBrainsMono Nerd Font";
+        size = 12.0;
+      };
+      settings = {
+        disable_ligatures = "never";
+        enable_audio_bell = "no";
+        confirm_os_window_close = 0;
+        window_padding_width = 10;
+        scrollback_lines = 1000;
+        hide_window_decorations = "titlebar-only";
+      };
+    };
     alacritty = {
       enable = true;
       # fake package - managed by homebrew instead
