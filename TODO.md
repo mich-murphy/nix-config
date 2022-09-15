@@ -10,22 +10,21 @@ Tasks relating to the initial creation and continuious maintenance of personal N
 
 ## Neovim Configuration
 
-- [ ] Continue working through plugins
+- [ ] Configure keymappings
 
 ## Terminal Configuration
 
 - [ ] Setup skhd launch of ranger in Kitty
+- [ ] Test fish shell setup
 
 ## Ranger Configuration
 
 - [ ] Setup ranger based on existing DWM dotfiles
-
-## SKHD Configuration
-
-- [ ] Review yabai keyboard shortcuts, simplify number of modifier keys
 
 # DONE
 
 - [x] Configure neovim treesitter
 - [x] Configure neovim cmp
 - [x] Configure Kitty terminal
+- [x] Continue working through plugins
+- [x] Review yabai keyboard shortcuts, simplify number of modifier keys
