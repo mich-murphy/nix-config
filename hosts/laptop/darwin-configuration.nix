@@ -191,7 +191,6 @@ in
         # Applications Shortcuts
         cmd - return : /Applications/kitty.App/Contents/MacOS/kitty
 	cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
-	cmd + lalt + shift - return : /Applications/kitty.App/Contents/MacOS/kitty launch ranger
         # Toggle Window
         lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
         lalt - f : yabai -m window --toggle zoom-fullscreen
