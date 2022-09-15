@@ -356,6 +356,12 @@
           '';
         }
         {
+          plugin = nvim-treesitter-context;
+          config = ''
+          
+          '';
+        } 
+        {
           plugin = nvim-lspconfig;
           config = ''
             lua << EOF
