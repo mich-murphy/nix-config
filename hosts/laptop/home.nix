@@ -243,6 +243,10 @@
         vim-fugitive
         vim-nix
         {
+          plugin = nvim-comment;
+          config = "lua require('nvim_comment').setup()";
+        }
+        {
           plugin = gitsigns-nvim;
           config = ''
             lua << EOF
@@ -287,6 +291,9 @@
               },
               indent = {
                 enable = true
+              },
+              autopairs = {
+                enable = true,
               },
               incremental_selection = {
                 enable = true,
@@ -358,9 +365,97 @@
         {
           plugin = nvim-treesitter-context;
           config = ''
-          
+            lua << EOF
+            require'treesitter-context'.setup{
+              enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
+              max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
+              trim_scope = 'outer', -- Which context lines to discard if `max_lines` is exceeded. Choices: 'inner', 'outer'
+              patterns = { -- Match patterns for TS nodes. These get wrapped to match at word boundaries.
+                default = {
+                    'class',
+                    'function',
+                    'method',
+                    'for',
+                    'while',
+                    'if',
+                    'switch',
+                    'case',
+                },
+                tex = {
+                    'chapter',
+                    'section',
+                    'subsection',
+                    'subsubsection',
+                },
+                rust = {
+                    'impl_item',
+                    'struct',
+                    'enum',
+                },
+                scala = {
+                    'object_definition',
+                },
+                vhdl = {
+                    'process_statement',
+                    'architecture_body',
+                    'entity_declaration',
+                },
+                markdown = {
+                    'section',
+                },
+                elixir = {
+                    'anonymous_function',
+                    'arguments',
+                    'block',
+                    'do_block',
+                    'list',
+                    'map',
+                    'tuple',
+                    'quoted_content',
+                },
+                json = {
+                    'pair',
+                },
+                yaml = {
+                    'block_mapping_pair',
+                },
+              },
+              exact_patterns = {
+              },
+              zindex = 20, -- The Z-index of the context window
+              mode = 'cursor',  -- Line used to calculate context. Choices: 'cursor', 'topline'
+              separator = nil,
+            }
+            EOF
           '';
         } 
+        {
+          plugin = nvim-autopairs;
+          config = ''
+            lau << EOF
+            require('nvim-autopairs').setup {
+              check_ts = true,
+              ts_config = {
+                lua = { "string", "source" },
+                javascript = { "string", "template_string" },
+                java = false,
+              },
+              disable_filetype = { "TelescopePrompt", "spectre_panel" },
+              fast_wrap = {
+                map = "<M-e>",
+                chars = { "{", "[", "(", '"', "'" },
+                pattern = string.gsub([[ [%'%"%)%>%]%)%}%,] ]], "%s+", ""),
+                offset = 0, -- Offset from pattern match
+                end_key = "$",
+                keys = "qwertyuiopzxcvbnmasdfghjkl",
+                check_comma = true,
+                highlight = "PmenuSel",
+                highlight_grey = "LineNr",
+              },
+            }
+            EOF
+          '';
+        }
         {
           plugin = nvim-lspconfig;
           config = ''
@@ -377,7 +472,6 @@
             lua << EOF
             local cmp = require 'cmp'
             local luasnip = require 'luasnip'
-            
             cmp.setup {
               snippet = {
                 expand = function(args)
@@ -421,10 +515,10 @@
                 fields = {'menu', 'abbr', 'kind'},
                 format = function(entry, item)
                   local menu_icon = {
-                    nvim_lsp = 'λ',
-                    luasnip = '⋗',
-                    buffer = 'Ω',
-                    path = '🖫',
+                    nvim_lsp = '',
+                    luasnip = '',
+                    buffer = '﬘',
+                    path = '',
                   }
                   item.menu = menu_icon[entry.source.name]
                   return item
@@ -486,6 +580,22 @@
           '';
         }
         vim-sleuth
+        {
+          plugin = null-ls-nvim;
+          config = ''
+            lua << EOF
+            require("null-ls").setup({
+              sources = {
+                require("null-ls").builtins.formatting.stylua,
+                require("null-ls").builtins.formatting.black,
+                require("null-ls").builtins.diagnostics.eslint,
+                require("null-ls").builtins.diagnostics.flake8,
+                require("null-ls").builtins.completion.spell,
+              },
+            })
+            EOF
+          '';
+        }
         {
           plugin = telescope-nvim;
           config = ''
@@ -570,7 +680,12 @@
         }
         {
           plugin = impatient-nvim;
-          config = "lua require('impatient')";
+          config = ''
+            lua << EOF
+            require('impatient')
+            impatient.enable_profile()
+            EOF
+          '';
         }
       ];
       extraConfig = ''
