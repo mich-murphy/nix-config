@@ -37,8 +37,8 @@
       userName = "${gitUser}";
       userEmail = "${gitEmail}";
       extraConfig = {
-        init = { defaultBranch = "main"; };
-        pull = { rebase = true; };
+        init.defaultBranch = "main";
+        pull.rebase = true;
       };
       diff-so-fancy.enable = true;
     };
@@ -243,8 +243,8 @@
         vim-fugitive
         vim-nix
         {
-          plugin = nvim-comment;
-          config = "lua require('nvim_comment').setup()";
+          plugin = comment-nvim;
+          config = "lua require('Comment').setup()";
         }
         {
           plugin = gitsigns-nvim;
@@ -288,6 +288,9 @@
               highlight = {
                 enable = true,
                 additional_vim_regex_highlighting = false,
+              },
+              context_commentstring {
+                enable = true;
               },
               indent = {
                 enable = true
@@ -429,6 +432,7 @@
             EOF
           '';
         } 
+        nvim-ts-context-commentstring
         {
           plugin = nvim-autopairs;
           config = ''
@@ -463,6 +467,7 @@
             require('lspconfig').rust_analyzer.setup{}
             require('lspconfig').sumneko_lua.setup{}
             require('lspconfig').rnix.setup{}
+            require('lspconfig').python-language-server.setup{}
             EOF
           '';
         }
@@ -534,7 +539,12 @@
             lua << EOF
             local capabilities = vim.lsp.protocol.make_client_capabilities()
             capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
-            local servers = { 'rust-analyzer', 'sumneko_lua', 'rnix' }
+            local servers = { 
+              'rust-analyzer', 
+              'sumneko_lua', 
+              'rnix', 
+              'python-language-server' 
+            }
             for _, lsp in ipairs(servers) do
               require('lspconfig')[lsp].setup { 
                 capabilities = capabilities,
@@ -698,6 +708,11 @@
         sumneko-lua-language-server
         stylua
       ];
+      extraPython3Packages = (ps: with ps; [
+        python-language-server
+        black
+        flake8
+      ]);
     };
   };
 
