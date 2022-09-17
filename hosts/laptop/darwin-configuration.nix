@@ -3,8 +3,8 @@
 let 
   yabai = pkgs.yabai.overrideAttrs (old: rec {
     src = builtins.fetchTarball {
-      url = https://github.com/koekeishiya/yabai/releases/download/v4.0.2/yabai-v4.0.2.tar.gz;
-      sha256 = "00nxzk1g0hd8jqd1r0aig6wdsbpk60551qxnvvqb9475i8qbzjf6";
+      url = https://github.com/koekeishiya/yabai/releases/download/v4.0.4/yabai-v4.0.4.tar.gz;
+      sha256 = "0rfg6kqhnsryclny5drj85h442kz5bc9rks60c3lz0a842yvi1c2";
     };
   }); 
 in
@@ -129,9 +129,9 @@ in
       "kitty"
       "spaceid"
       "1password"
-      "setapp"
       "alfred"
       "little-snitch"
+      "stats"
     ];
     brews = [
       {
