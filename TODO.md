@@ -1,6 +1,6 @@
 # TODO
 
-Tasks relating to the initial creation and continuious maintenance of personal Nix configuration.
+Tasks relating to the initial creation and continuous maintenance of personal Nix configuration.
 
 ## General
 

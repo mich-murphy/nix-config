@@ -3,6 +3,9 @@
 - [Home Manager - Options](https://nix-community.github.io/home-manager/options.html)
 - [Home Manager - Darwin Options](https://nix-community.github.io/home-manager/nix-darwin-options.html)
 
+## Understanding Nix
+- [Overlays - Emacs Example](https://www.heinrichhartmann.com/posts/2021-08-08-nix-into/)
+
 ## Useful Repositories
 - [Matthias Benaets Dotfiles](https://github.com/MatthiasBenaets/nixos-config)
     - General Nix Darwin/Home Manager/Nix Flakes overview
