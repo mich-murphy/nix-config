@@ -1,5 +1,17 @@
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
+let
+  neovim = pkgs.neovim-unwrapped.overrideAttrs (old: rec {
+    version = "nightly";
+    src = pkgs.fetchFromGitHub {
+      owner = "neovim";
+      repo = "neovim";
+      rev = "abe2d90693e5cec3428c0162c48f0ea38972ff31";
+      sha256 = "Hx8y6wzot/IvtZdYsERJiLWjW6u11tUyiA2PK90hGD4=";
+    };
+    buildInputs = old.buildInputs ++ [ pkgs.tree-sitter ];
+  });
+in
 {
   home = {
     username = "${user}";
@@ -14,7 +26,6 @@
       # shell prompt
       starship
       # cli utilities
-      ranger
       fd
       fzf
       ripgrep
@@ -25,6 +36,7 @@
       tree
       btop
       spotify-tui
+      ranger
     ];
   };
 
@@ -88,11 +100,68 @@
         symlink-arrow = "->";
       };
     };
+    alacritty = {
+      enable = true;
+      # fake package - managed by homebrew instead
+      package = pkgs.runCommand "alacritty-0.0.0" {} "mkdir $out";
+      settings = {
+        live_config_reload = true;
+        dynamic_title = true;
+        window = {
+	  decorations = "buttonless";
+	  padding = {
+            x = 15;
+            y = 15;
+          };
+	};
+        font = {
+          size = 13.0; 
+          normal = {
+            family = "JetBrainsMono Nerd Font";
+            style = "Regular";
+          };
+          bold = {
+            family = "JetBrainsMono Nerd Font";
+            style = "Bold";
+          };
+          italic = {
+            family = "JetBrainsMono Nerd Font";
+            style = "Italic";
+          };
+        };
+        draw_bold_text_with_bright_colors = true;
+        colors = {
+          primary = {
+            background = "0x1a1b26";
+            foreground = "0xc0caf5";
+          };
+          normal = {
+            black = "0x15161e";
+            red = "0xf7768e";
+            green = "0x9ece6a";
+            yellow = "0xe0af68";
+            blue = "0x7aa2f7";
+            magenta = "0xbb9af7";
+            cyan = "0x7dcfff";
+            white = "0xa9b1d6";
+          }; 
+          bright = {
+            black = "0x414868";
+            red = "0xf7768e";
+            green = "0x9ece6a";
+            yellow = "0xe0af68";
+            blue = "0x7aa2f7";
+            magenta = "0xbb9af7";
+            cyan = "0x7dcfff";
+            white = "0xc0caf5";
+          }; 
+	};
+      };
+    };   
     kitty = {
       enable = true;
       # fake package - managed by homebrew instead
       package = pkgs.runCommand "kitty.0.0" {} "mkdir $out";
-      darwinLaunchOptions = [ "--single-instance" ];
       # kitty +kitten themes
       theme = "Tokyo Night";
       font = {
@@ -234,7 +303,8 @@
     };
     neovim = {
       enable = true;
-      package = pkgs.neovim-unwrapped;
+      package = neovim;
+#      package = pkgs.neovim-unwrapped;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
@@ -467,7 +537,7 @@
             require('lspconfig').rust_analyzer.setup{}
             require('lspconfig').sumneko_lua.setup{}
             require('lspconfig').rnix.setup{}
-            require('lspconfig').python-language-server.setup{}
+            require('lspconfig').pyright.setup{}
             EOF
           '';
         }
@@ -543,7 +613,7 @@
               'rust-analyzer', 
               'sumneko_lua', 
               'rnix', 
-              'python-language-server' 
+              'pyright' 
             }
             for _, lsp in ipairs(servers) do
               require('lspconfig')[lsp].setup { 
@@ -707,11 +777,11 @@
         rust-analyzer
         sumneko-lua-language-server
         stylua
+        nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [
-        python-language-server
-        black
         flake8
+        black
       ]);
     };
   };
