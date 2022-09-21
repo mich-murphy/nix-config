@@ -127,7 +127,6 @@ in
     casks = [
       "firefox"
       "alacritty"
-      "kitty"
       "spaceid"
       "1password"
       "alfred"
@@ -190,7 +189,7 @@ in
       package = pkgs.skhd;
       skhdConfig = ''
         # Applications Shortcuts
-        cmd - return : /Applications/kitty.App/Contents/MacOS/kitty
+        cmd - return : /Applications/Alacritty.App/Contents/MacOS/alacritty
 	cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
         # Toggle Window
         lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2

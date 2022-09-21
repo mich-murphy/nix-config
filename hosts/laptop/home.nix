@@ -1,12 +1,12 @@
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
 let
-  neovim = pkgs.neovim-unwrapped.overrideAttrs (old: rec {
-    version = "nightly";
+  neovim-nightly = pkgs.neovim-unwrapped.overrideAttrs (old: rec {
+    version = "0.8.0-dev";
     src = pkgs.fetchFromGitHub {
       owner = "neovim";
       repo = "neovim";
-      rev = "abe2d90693e5cec3428c0162c48f0ea38972ff31";
+      rev = "v${version}";
       sha256 = "Hx8y6wzot/IvtZdYsERJiLWjW6u11tUyiA2PK90hGD4=";
     };
     buildInputs = old.buildInputs ++ [ pkgs.tree-sitter ];
@@ -158,26 +158,6 @@ in
 	};
       };
     };   
-    kitty = {
-      enable = true;
-      # fake package - managed by homebrew instead
-      package = pkgs.runCommand "kitty.0.0" {} "mkdir $out";
-      # kitty +kitten themes
-      theme = "Tokyo Night";
-      font = {
-        name = "JetBrainsMono Nerd Font";
-        size = 13;
-      };
-      settings = {
-        disable_ligatures = "never";
-        enable_audio_bell = "no";
-        confirm_os_window_close = 0;
-        window_padding_width = 10;
-        scrollback_lines = 1000;
-        hide_window_decorations = "titlebar-only";
-        tab_bar_edge = "top";
-      };
-    };
     firefox = {
       enable = true;
       # fake package - managed by homebrew instead
@@ -303,8 +283,7 @@ in
     };
     neovim = {
       enable = true;
-      package = neovim;
-#      package = pkgs.neovim-unwrapped;
+      package = neovim-nightly;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
@@ -314,13 +293,13 @@ in
         vim-nix
         {
           plugin = comment-nvim;
-          config = "lua require('Comment').setup()";
+          config = "lua require('Comment').setup{}";
         }
         {
           plugin = gitsigns-nvim;
           config = ''
             lua << EOF
-            require('gitsigns').setup {
+            require('gitsigns').setup{
               signs = {
                 add = { text = '+' },
                 change = { text = '~' },
@@ -354,82 +333,16 @@ in
           );
           config = ''
             lua << EOF
-            require('nvim-treesitter.configs').setup {
+            require('nvim-treesitter.configs').setup{
               highlight = {
                 enable = true,
                 additional_vim_regex_highlighting = false,
               },
-              context_commentstring {
-                enable = true;
-              },
               indent = {
-                enable = true
+                enable = true,
               },
               autopairs = {
                 enable = true,
-              },
-              incremental_selection = {
-                enable = true,
-                keymaps = {
-                  init_selection = '<c-space>',
-                  node_incremental = '<c-space>',
-                  -- TODO: I'm not sure for this one.
-                  scope_incremental = '<c-s>',
-                  node_decremental = '<c-backspace>',
-                },
-              },
-            }
-            EOF
-          '';
-        }
-        {
-          # allows manipulation of additional objects e.g. paragraphs
-          plugin = nvim-treesitter-textobjects;
-          config = ''
-            lua << EOF
-            require'nvim-treesitter.configs'.setup {
-              textobjects = {
-                select = {
-                  enable = true,
-                  -- Automatically jump forward to textobj, similar to targets.vim
-                  lookahead = true,
-                  keymaps = {
-                    -- You can use the capture groups defined in textobjects.scm
-                    ["af"] = "@function.outer",
-                    ["if"] = "@function.inner",
-                    ["ac"] = "@class.outer",
-                    ["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
-                  },
-                },
-                move = {
-                  enable = true,
-                  set_jumps = true, -- whether to set jumps in the jumplist
-                  goto_next_start = {
-                    [']m'] = '@function.outer',
-                    [']]'] = '@class.outer',
-                  },
-                  goto_next_end = {
-                    [']M'] = '@function.outer',
-                    [']['] = '@class.outer',
-                  },
-                  goto_previous_start = {
-                    ['[m'] = '@function.outer',
-                    ['[['] = '@class.outer',
-                  },
-                  goto_previous_end = {
-                    ['[M'] = '@function.outer',
-                    ['[]'] = '@class.outer',
-                  },
-                },
-                swap = {
-                  enable = true,
-                  swap_next = {
-                    ['<leader>a'] = '@parameter.inner',
-                  },
-                  swap_previous = {
-                    ['<leader>A'] = '@parameter.inner',
-                  },
-                },
               },
             }
             EOF
@@ -502,12 +415,11 @@ in
             EOF
           '';
         } 
-        nvim-ts-context-commentstring
         {
           plugin = nvim-autopairs;
           config = ''
-            lau << EOF
-            require('nvim-autopairs').setup {
+            lua << EOF
+            require('nvim-autopairs').setup{
               check_ts = true,
               ts_config = {
                 lua = { "string", "source" },
@@ -534,7 +446,6 @@ in
           plugin = nvim-lspconfig;
           config = ''
             lua << EOF
-            require('lspconfig').rust_analyzer.setup{}
             require('lspconfig').sumneko_lua.setup{}
             require('lspconfig').rnix.setup{}
             require('lspconfig').pyright.setup{}
@@ -547,7 +458,7 @@ in
             lua << EOF
             local cmp = require 'cmp'
             local luasnip = require 'luasnip'
-            cmp.setup {
+            cmp.setup{
               snippet = {
                 expand = function(args)
                   luasnip.lsp_expand(args.body)
@@ -610,7 +521,6 @@ in
             local capabilities = vim.lsp.protocol.make_client_capabilities()
             capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
             local servers = { 
-              'rust-analyzer', 
               'sumneko_lua', 
               'rnix', 
               'pyright' 
@@ -637,7 +547,7 @@ in
           plugin = lualine-nvim;
           config = ''
             lua << EOF
-            require('lualine').setup {
+            require('lualine').setup{
               options = {
                 icons_enabled = false,
                 theme = 'tokyonight',
@@ -652,7 +562,7 @@ in
           plugin = indent-blankline-nvim;
           config = ''
             lua << EOF
-            require('indent_blankline').setup {
+            require('indent_blankline').setup{
               char = '┊',
               show_trailing_blankline_indent = false,
             }
@@ -678,94 +588,11 @@ in
         }
         {
           plugin = telescope-nvim;
-          config = ''
-            lua << EOF
-            require('telescope').setup {
-              defaults = {
-                prompt_prefix = " ",
-                selection_caret = " ",
-                path_display = { "smart" },
-                mappings = {
-                  i = {
-                    ["<C-n>"] = actions.cycle_history_next,
-                    ["<C-p>"] = actions.cycle_history_prev,
-                    ["<C-j>"] = actions.move_selection_next,
-                    ["<C-k>"] = actions.move_selection_previous,
-                    ["<C-c>"] = actions.close,
-                    ["<Down>"] = actions.move_selection_next,
-                    ["<Up>"] = actions.move_selection_previous,
-                    ["<CR>"] = actions.select_default,
-                    ["<C-x>"] = actions.select_horizontal,
-                    ["<C-v>"] = actions.select_vertical,
-                    ["<C-t>"] = actions.select_tab,
-                    ["<C-u>"] = actions.preview_scrolling_up,
-                    ["<C-d>"] = actions.preview_scrolling_down,
-                    ["<PageUp>"] = actions.results_scrolling_up,
-                    ["<PageDown>"] = actions.results_scrolling_down,
-                    ["<Tab>"] = actions.toggle_selection + actions.move_selection_worse,
-                    ["<S-Tab>"] = actions.toggle_selection + actions.move_selection_better,
-                    ["<C-q>"] = actions.send_to_qflist + actions.open_qflist,
-                    ["<M-q>"] = actions.send_selected_to_qflist + actions.open_qflist,
-                    ["<C-l>"] = actions.complete_tag,
-                  },
-                  n = {
-                    ["<esc>"] = actions.close,
-                    ["<CR>"] = actions.select_default,
-                    ["<C-x>"] = actions.select_horizontal,
-                    ["<C-v>"] = actions.select_vertical,
-                    ["<C-t>"] = actions.select_tab,
-                    ["<Tab>"] = actions.toggle_selection + actions.move_selection_worse,
-                    ["<S-Tab>"] = actions.toggle_selection + actions.move_selection_better,
-                    ["<C-q>"] = actions.send_to_qflist + actions.open_qflist,
-                    ["<M-q>"] = actions.send_selected_to_qflist + actions.open_qflist,
-                    ["j"] = actions.move_selection_next,
-                    ["k"] = actions.move_selection_previous,
-                    ["H"] = actions.move_to_top,
-                    ["M"] = actions.move_to_middle,
-                    ["L"] = actions.move_to_bottom,
-                    ["<Down>"] = actions.move_selection_next,
-                    ["<Up>"] = actions.move_selection_previous,
-                    ["gg"] = actions.move_to_top,
-                    ["G"] = actions.move_to_bottom,
-                    ["<C-u>"] = actions.preview_scrolling_up,
-                    ["<C-d>"] = actions.preview_scrolling_down,
-                    ["<PageUp>"] = actions.results_scrolling_up,
-                    ["<PageDown>"] = actions.results_scrolling_down,
-                  },
-                }
-              },
-              pickers = {
-                -- Default configuration for builtin pickers goes here:
-                -- picker_name = {
-                --   picker_config_key = value,
-                --   ...
-                -- }
-                -- Now the picker_config_key will be applied every time you call this
-                -- builtin picker
-              },
-              extensions = {
-                -- Your extension configuration goes here:
-                -- extension_name = {
-                --   extension_config_key = value,
-                -- }
-                -- please take a look at the readme of the extension you want to configure
-              }
-            }
-            EOF
-          '';
+          config = "lua require('telescope').setup{}";
         }
         {
           plugin = telescope-fzf-native-nvim;
           config = "lua pcall(require('telescope').load_extension, 'fzf')";
-        }
-        {
-          plugin = impatient-nvim;
-          config = ''
-            lua << EOF
-            require('impatient')
-            impatient.enable_profile()
-            EOF
-          '';
         }
       ];
       extraConfig = ''
@@ -774,7 +601,6 @@ in
       extraPackages = with pkgs; [
         rnix-lsp
         nixfmt
-        rust-analyzer
         sumneko-lua-language-server
         stylua
         nodePackages.pyright
