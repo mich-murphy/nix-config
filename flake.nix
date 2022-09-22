@@ -33,7 +33,6 @@
 	  {
             nixpkgs.overlays = with inputs; [
               nur.overlay
-              #(import ./overlays)
             ];
 	  }
         ];

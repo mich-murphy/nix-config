@@ -14,12 +14,8 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 ## Terminal Configuration
 
-- [ ] Setup skhd launch of ranger in Kitty
+- [ ] Configure Alacritty hotkey to launch ranger
 - [ ] Test fish shell setup
-
-## Ranger Configuration
-
-- [ ] Setup ranger based on existing DWM dotfiles
 
 # DONE
 
@@ -29,3 +25,4 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [x] Continue working through plugins
 - [x] Review yabai keyboard shortcuts, simplify number of modifier keys
 - [x] Break configuration files into individual modules
+- [x] Setup ranger based on existing DWM dotfiles

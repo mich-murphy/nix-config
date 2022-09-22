@@ -1,9 +1,9 @@
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
-let
+let 
   neovim-nightly = pkgs.neovim-unwrapped.overrideAttrs (old: rec {
     version = "0.8.0-dev";
-    src = pkgs.fetchFromGitHub {
+    src = old.fetchFromGitHub {
       owner = "neovim";
       repo = "neovim";
       rev = "v${version}";
@@ -283,7 +283,7 @@ in
     };
     neovim = {
       enable = true;
-      package = neovim-nightly;
+      package = pkgs.neovim-unwrapped;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
@@ -606,13 +606,14 @@ in
         nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [
-        flake8
-        black
+        pkgs.python310Packages.flake8
+        pkgs.python310Packages.black
       ]);
     };
   };
 
   xdg.configFile = {
     "nvim/settings.lua".source = ../../modules/nvim/init.lua;
+    "ranger/rc.conf".source = ../../modules/ranger/rc.conf;
   };
 }
