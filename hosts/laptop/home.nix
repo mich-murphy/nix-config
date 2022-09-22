@@ -3,7 +3,7 @@
 let 
   neovim-nightly = pkgs.neovim-unwrapped.overrideAttrs (old: rec {
     version = "0.8.0-dev";
-    src = old.fetchFromGitHub {
+    src = pkgs.fetchFromGitHub {
       owner = "neovim";
       repo = "neovim";
       rev = "v${version}";
@@ -283,7 +283,7 @@ in
     };
     neovim = {
       enable = true;
-      package = pkgs.neovim-unwrapped;
+      package = neovim-nightly;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
@@ -291,6 +291,7 @@ in
         vim-surround
         vim-fugitive
         vim-nix
+        nvim-web-devicons
         {
           plugin = comment-nvim;
           config = "lua require('Comment').setup{}";
@@ -588,7 +589,17 @@ in
         }
         {
           plugin = telescope-nvim;
-          config = "lua require('telescope').setup{}";
+          config = ''
+            lua << EOF
+            require('telescope').setup{
+              defaults = {
+                prompt_prefix = " ",
+                selection_caret = " ",
+                path_display = { "smart" },
+              },
+            }
+            EOF
+          '';
         }
         {
           plugin = telescope-fzf-native-nvim;
