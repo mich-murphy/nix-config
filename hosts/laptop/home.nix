@@ -67,7 +67,6 @@ in
       shellAliases = {
         ls = "lsd -lah";
         cat = "bat";
-        ssh = "kitty +kitten ssh";
       };
     };
     fzf = {

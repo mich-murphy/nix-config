@@ -17,6 +17,9 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [ ] Configure Alacritty hotkey to launch ranger
 - [ ] Test fish shell setup
 
+## TMUX Configuration
+- [ ] Setup TMUX
+
 # DONE
 
 - [x] Configure neovim treesitter
