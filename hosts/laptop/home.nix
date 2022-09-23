@@ -62,6 +62,7 @@ in
       defaultKeymap = "viins";
       history.size = 10000;
       initExtra = ''
+        bindkey '^f' ranger
         eval "$(starship init zsh)"
       '';
       shellAliases = {
