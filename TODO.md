@@ -7,6 +7,10 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [ ] Add explanatory comments to home.nix
 - [ ] Add explanatory comments to darwinConfigurations.nix
 
+## Karabiner Elements Configuration
+
+-[ ] Add settings to remap caps lock 
+
 ## Neovim Configuration
 
 - [ ] Configure keymappings
