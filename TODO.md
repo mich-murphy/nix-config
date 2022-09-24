@@ -11,6 +11,8 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 - [ ] Configure keymappings
 - [ ] Configure Telescope
+- [ ] Fix leader keymapping
+- [ ] Fix creation of conflicting init.lua during build
 
 ## Terminal Configuration
 
@@ -18,14 +20,5 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [ ] Test fish shell setup
 
 ## TMUX Configuration
+
 - [ ] Setup TMUX
-
-# DONE
-
-- [x] Configure neovim treesitter
-- [x] Configure neovim cmp
-- [x] Configure Kitty terminal
-- [x] Continue working through plugins
-- [x] Review yabai keyboard shortcuts, simplify number of modifier keys
-- [x] Break configuration files into individual modules
-- [x] Setup ranger based on existing DWM dotfiles
