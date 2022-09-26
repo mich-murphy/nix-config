@@ -605,14 +605,14 @@
         nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [
-        pkgs.python310Packages.flake8
-        pkgs.python310Packages.black
+        flake8
+        black
       ]);
     };
   };
 
   xdg.configFile = {
-    "nvim/settings.lua".source = ../../modules/nvim/init.lua;
-    "ranger/rc.conf".source = ../../modules/ranger/rc.conf;
+    "nvim/settings.lua".source = ../../config/nvim/init.lua;
+    "ranger/rc.conf".source = ../../config/ranger/rc.conf;
   };
 }
