@@ -11,7 +11,6 @@ let
 in
 {
   nixpkgs.config.allowUnfree = true;
-  time.timeZone = "Australia/Melbourne";
 
   networking = {
     computerName = "${host}";

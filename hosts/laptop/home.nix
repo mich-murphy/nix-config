@@ -1,17 +1,5 @@
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
-let 
-  neovim-nightly = pkgs.neovim-unwrapped.overrideAttrs (old: rec {
-    version = "0.8.0-dev";
-    src = pkgs.fetchFromGitHub {
-      owner = "neovim";
-      repo = "neovim";
-      rev = "v${version}";
-      sha256 = "Hx8y6wzot/IvtZdYsERJiLWjW6u11tUyiA2PK90hGD4=";
-    };
-    buildInputs = old.buildInputs ++ [ pkgs.tree-sitter ];
-  });
-in
 {
   home = {
     username = "${user}";
@@ -67,6 +55,7 @@ in
       shellAliases = {
         ls = "lsd -lah";
         cat = "bat";
+        spt = "spotifyd &; spt";
       };
     };
     fzf = {
@@ -282,7 +271,7 @@ in
     };
     neovim = {
       enable = true;
-      package = neovim-nightly;
+      package = pkgs.neovim-nightly;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
