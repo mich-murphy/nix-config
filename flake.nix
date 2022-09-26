@@ -9,6 +9,7 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = github:nix-community/NUR;
     neovim.url = github:neovim/neovim?dir=contrib;
+    neovim.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, darwin, home-manager, nur, neovim, ... }@inputs:

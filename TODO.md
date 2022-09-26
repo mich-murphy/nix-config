@@ -6,6 +6,7 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 - [ ] Add explanatory comments to home.nix
 - [ ] Add explanatory comments to darwinConfigurations.nix
+- [ ] Add flake-utils to configuration
 
 ## Karabiner Elements Configuration
 
@@ -16,7 +17,6 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [ ] Configure keymappings
 - [ ] Configure Telescope
 - [ ] Fix leader keymapping
-- [ ] Fix creation of conflicting init.lua during build
 
 ## Terminal Configuration
 
