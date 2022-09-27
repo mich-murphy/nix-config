@@ -132,6 +132,7 @@ in
       "alfred"
       "little-snitch"
       "stats"
+      "karabiner-elements"
     ];
     brews = [
       {
