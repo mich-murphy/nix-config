@@ -479,9 +479,7 @@
         cmp-buffer
         {
           plugin = tokyonight-nvim;
-          config = ''
-            colorscheme tokyonight-night
-          '';
+          config = "colorscheme tokyonight-night";
         }
         {
           plugin = lualine-nvim;
@@ -545,9 +543,7 @@
           config = "lua pcall(require('telescope').load_extension, 'fzf')";
         }
       ];
-      extraConfig = ''
-        luafile ~/.config/nvim/settings.lua
-      '';
+      extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
         rnix-lsp
         nixfmt
