@@ -1,6 +1,17 @@
 
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
+let
+  alpha-nvim = pkgs.vimUtils.buildVimPlugin {
+    name = "alpha-nvim";
+    src = pkgs.fetchFromGitHub {
+      owner = "goolord";
+      repo = "alpha-nvim";
+      rev = "0bb6fc0646bcd1cdb4639737a1cee8d6e08bcc31";
+      sha256 = "tKXSFZusajLLsbQj6VKZG1TJB+i5i1H5e5Q5tbe+ojM=";
+    };
+  };
+in
 {
   home = {
     username = "${user}";
@@ -26,6 +37,7 @@
       btop
       spotify-tui
       ranger
+      lazygit
     ];
   };
 
@@ -228,58 +240,54 @@
       withPython3 = true;
       plugins = with pkgs.vimPlugins; [ 
         vim-surround
-        vim-fugitive
-        vim-nix
+        vim-sleuth
+        vim-bbye
+        nvim-autopairs
+        comment-nvim
+        nvim-ts-context-commentstring
         nvim-web-devicons
-        {
-          plugin = comment-nvim;
-          config = "lua require('Comment').setup{}";
-        }
-        {
-          plugin = gitsigns-nvim;
-          config = ''
-            lua << EOF
-            require('gitsigns').setup{
-              signs = {
-                add = { text = '+' },
-                change = { text = '~' },
-                delete = { text = '_' },
-                topdelete = { text = '‾' },
-                changedelete = { text = '~' },
-              },
-            }
-            EOF
-          '';
-        }
+        indent-blankline-nvim
+        bufferline-nvim
+        lualine-nvim
+        toggleterm-nvim
+        impatient-nvim
+        project-nvim
+        alpha-nvim
+        nvim-tree-lua
+        # lsp
+        nvim-lspconfig
+        null-ls-nvim
+        vim-illuminate
+        # cmp
+        nvim-cmp
+        cmp_luasnip
+        cmp-path
+        cmp-buffer
+        cmp-nvim-lsp
+        cmp-nvim-lua
+        # snippets
+        luasnip
+        friendly-snippets
+        # colorscheme
+        tokyonight-nvim
+        # telescope
+        telescope-nvim
         plenary-nvim
+        telescope-fzf-native-nvim
+        telescope-file-browser-nvim
+        # treesitter - could not load parsers with with external config
         {
-          # install treesitter and listed grammars
-          plugin = (
-            nvim-treesitter.withPlugins (plugins: [
-              plugins.tree-sitter-python
-              plugins.tree-sitter-lua
-              plugins.tree-sitter-nix
-              plugins.tree-sitter-yaml
-              plugins.tree-sitter-toml
-              plugins.tree-sitter-bash
-              plugins.tree-sitter-vim
-              plugins.tree-sitter-markdown
-              plugins.tree-sitter-json
-              plugins.tree-sitter-html
-              plugins.tree-sitter-fish
-              plugins.tree-sitter-dockerfile
-              plugins.tree-sitter-css
-            ])
-          );
+          plugin = nvim-treesitter.withPlugins (plugins: pkgs.tree-sitter.allGrammars);
           config = ''
             lua << EOF
-            require('nvim-treesitter.configs').setup{
+            require('nvim-treesitter.configs').setup {
               highlight = {
                 enable = true,
                 additional_vim_regex_highlighting = false,
               },
               indent = {
                 enable = true,
+                disable = { "python", "css" }
               },
               autopairs = {
                 enable = true,
@@ -288,260 +296,11 @@
             EOF
           '';
         }
-        {
-          plugin = nvim-treesitter-context;
-          config = ''
-            lua << EOF
-            require'treesitter-context'.setup{
-              enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
-              max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
-              trim_scope = 'outer', -- Which context lines to discard if `max_lines` is exceeded. Choices: 'inner', 'outer'
-              patterns = { -- Match patterns for TS nodes. These get wrapped to match at word boundaries.
-                default = {
-                    'class',
-                    'function',
-                    'method',
-                    'for',
-                    'while',
-                    'if',
-                    'switch',
-                    'case',
-                },
-                tex = {
-                    'chapter',
-                    'section',
-                    'subsection',
-                    'subsubsection',
-                },
-                rust = {
-                    'impl_item',
-                    'struct',
-                    'enum',
-                },
-                scala = {
-                    'object_definition',
-                },
-                vhdl = {
-                    'process_statement',
-                    'architecture_body',
-                    'entity_declaration',
-                },
-                markdown = {
-                    'section',
-                },
-                elixir = {
-                    'anonymous_function',
-                    'arguments',
-                    'block',
-                    'do_block',
-                    'list',
-                    'map',
-                    'tuple',
-                    'quoted_content',
-                },
-                json = {
-                    'pair',
-                },
-                yaml = {
-                    'block_mapping_pair',
-                },
-              },
-              exact_patterns = {
-              },
-              zindex = 20, -- The Z-index of the context window
-              mode = 'cursor',  -- Line used to calculate context. Choices: 'cursor', 'topline'
-              separator = nil,
-            }
-            EOF
-          '';
-        } 
-        {
-          plugin = nvim-autopairs;
-          config = ''
-            lua << EOF
-            require('nvim-autopairs').setup{
-              check_ts = true,
-              ts_config = {
-                lua = { "string", "source" },
-                javascript = { "string", "template_string" },
-                java = false,
-              },
-              disable_filetype = { "TelescopePrompt", "spectre_panel" },
-              fast_wrap = {
-                map = "<M-e>",
-                chars = { "{", "[", "(", '"', "'" },
-                pattern = string.gsub([[ [%'%"%)%>%]%)%}%,] ]], "%s+", ""),
-                offset = 0, -- Offset from pattern match
-                end_key = "$",
-                keys = "qwertyuiopzxcvbnmasdfghjkl",
-                check_comma = true,
-                highlight = "PmenuSel",
-                highlight_grey = "LineNr",
-              },
-            }
-            EOF
-          '';
-        }
-        {
-          plugin = nvim-lspconfig;
-          config = ''
-            lua << EOF
-            require('lspconfig').sumneko_lua.setup{}
-            require('lspconfig').rnix.setup{}
-            require('lspconfig').pyright.setup{}
-            EOF
-          '';
-        }
-        {
-          plugin = nvim-cmp;
-          config = ''
-            lua << EOF
-            local cmp = require 'cmp'
-            local luasnip = require 'luasnip'
-            cmp.setup{
-              snippet = {
-                expand = function(args)
-                  luasnip.lsp_expand(args.body)
-                end,
-              },
-              mapping = cmp.mapping.preset.insert {
-                ['<C-d>'] = cmp.mapping.scroll_docs(-4),
-                ['<C-f>'] = cmp.mapping.scroll_docs(4),
-                ['<C-Space>'] = cmp.mapping.complete(),
-                ['<CR>'] = cmp.mapping.confirm {
-                  behavior = cmp.ConfirmBehavior.Replace,
-                  select = true,
-                },
-                ['<Tab>'] = cmp.mapping(function(fallback)
-                  if cmp.visible() then
-                    cmp.select_next_item()
-                  elseif luasnip.expand_or_jumpable() then
-                    luasnip.expand_or_jump()
-                  else
-                    fallback()
-                  end
-                end, { 'i', 's' }),
-                ['<S-Tab>'] = cmp.mapping(function(fallback)
-                  if cmp.visible() then
-                    cmp.select_prev_item()
-                  elseif luasnip.jumpable(-1) then
-                    luasnip.jump(-1)
-                  else
-                    fallback()
-                  end
-                end, { 'i', 's' }),
-              },
-              sources = {
-                { name = 'path' },
-                { name = 'nvim_lsp' },
-                { name = 'buffer' },
-                { name = 'luasnip' },
-              },
-              formatting = {
-                fields = {'menu', 'abbr', 'kind'},
-                format = function(entry, item)
-                  local menu_icon = {
-                    nvim_lsp = '',
-                    luasnip = '',
-                    buffer = '﬘',
-                    path = '',
-                  }
-                  item.menu = menu_icon[entry.source.name]
-                  return item
-                end,
-              },
-            }
-            EOF
-          '';
-        }
-        {
-          plugin = cmp-nvim-lsp;
-          config = ''
-            lua << EOF
-            local capabilities = vim.lsp.protocol.make_client_capabilities()
-            capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities)
-            local servers = { 
-              'sumneko_lua', 
-              'rnix', 
-              'pyright' 
-            }
-            for _, lsp in ipairs(servers) do
-              require('lspconfig')[lsp].setup { 
-                capabilities = capabilities,
-              }
-            end
-            EOF
-          '';
-        }
-        luasnip
-        cmp_luasnip
-        cmp-path
-        cmp-buffer
-        {
-          plugin = tokyonight-nvim;
-          config = "colorscheme tokyonight-night";
-        }
-        {
-          plugin = lualine-nvim;
-          config = ''
-            lua << EOF
-            require('lualine').setup{
-              options = {
-                icons_enabled = false,
-                theme = 'tokyonight',
-                component_separators = '|',
-                section_separators = ' ',
-              },
-            }
-            EOF
-          '';
-        }
-        {
-          plugin = indent-blankline-nvim;
-          config = ''
-            lua << EOF
-            require('indent_blankline').setup{
-              char = '┊',
-              show_trailing_blankline_indent = false,
-            }
-            EOF
-          '';
-        }
-        vim-sleuth
-        {
-          plugin = null-ls-nvim;
-          config = ''
-            lua << EOF
-            require("null-ls").setup({
-              sources = {
-                require("null-ls").builtins.formatting.stylua,
-                require("null-ls").builtins.formatting.black,
-                require("null-ls").builtins.diagnostics.eslint,
-                require("null-ls").builtins.diagnostics.flake8,
-                require("null-ls").builtins.completion.spell,
-              },
-            })
-            EOF
-          '';
-        }
-        {
-          plugin = telescope-nvim;
-          config = ''
-            lua << EOF
-            require('telescope').setup{
-              defaults = {
-                prompt_prefix = " ",
-                selection_caret = " ",
-                path_display = { "smart" },
-              },
-            }
-            EOF
-          '';
-        }
-        {
-          plugin = telescope-fzf-native-nvim;
-          config = "lua pcall(require('telescope').load_extension, 'fzf')";
-        }
+        nvim-treesitter-context
+        vim-nix
+        # git
+        gitsigns-nvim
+        vim-fugitive
       ];
       extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
@@ -552,14 +311,20 @@
         nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [
-        flake8
-        black
+        jedi
+        pynvim
+        pkgs.python310Packages.python-lsp-server
+        pkgs.python310Packages.python-lsp-black
       ]);
     };
   };
 
   xdg.configFile = {
-    "nvim/settings.lua".source = ../../config/nvim/init.lua;
+    nvim = {
+      source = ../../config/nvim;
+      target =  "nvim";
+      recursive = true;
+    };
     "ranger/rc.conf".source = ../../config/ranger/rc.conf;
     "karabiner/karabiner.json".source = ../../config/karabiner/karabiner.json;
   };
