@@ -38,6 +38,7 @@ in
       spotify-tui
       ranger
       lazygit
+      thefuck
     ];
   };
 
@@ -133,28 +134,36 @@ in
         draw_bold_text_with_bright_colors = true;
         colors = {
           primary = {
-            background = "0x1a1b26";
-            foreground = "0xc0caf5";
+            background = "0x282c34";
+            foreground = "0xabb2bf";
+          };
+          cursor = {
+            text = "0x2c323c";
+            cursor = "0x5c6370";
+          };
+          selection = {
+            text = "CellForeground";
+            background = "0x3e4452";
           };
           normal = {
-            black = "0x15161e";
-            red = "0xf7768e";
-            green = "0x9ece6a";
-            yellow = "0xe0af68";
-            blue = "0x7aa2f7";
-            magenta = "0xbb9af7";
-            cyan = "0x7dcfff";
-            white = "0xa9b1d6";
+            black = "0x2c323c";
+            red = "0xe06c75";
+            green = "0x98c379";
+            yellow = "0xe5c07b";
+            blue = "0x61afef";
+            magenta = "0xc678dd";
+            cyan = "0x56b6c2";
+            white = "0x5c6370";
           }; 
           bright = {
-            black = "0x414868";
-            red = "0xf7768e";
-            green = "0x9ece6a";
-            yellow = "0xe0af68";
-            blue = "0x7aa2f7";
-            magenta = "0xbb9af7";
-            cyan = "0x7dcfff";
-            white = "0xc0caf5";
+            black = "0x3e4452";
+            red = "0xe06c75";
+            green = "0x98c379";
+            yellow = "0xe5c07b";
+            blue = "0x61afef";
+            magenta = "0xc678dd";
+            cyan = "0x56b6c2";
+            white = "0xabb2bf";
           }; 
 	};
       };
@@ -270,6 +279,17 @@ in
         friendly-snippets
         # colorscheme
         tokyonight-nvim
+        { 
+          plugin = onedark-nvim;
+          config = ''
+            lua <<EOF
+            require('onedark').setup {
+                style = 'darker'
+            }
+            require('onedark').load()
+            EOF
+          '';
+        }
         # telescope
         telescope-nvim
         plenary-nvim
@@ -279,7 +299,7 @@ in
         {
           plugin = nvim-treesitter.withPlugins (plugins: pkgs.tree-sitter.allGrammars);
           config = ''
-            lua << EOF
+            lua <<EOF
             require('nvim-treesitter.configs').setup {
               highlight = {
                 enable = true,
