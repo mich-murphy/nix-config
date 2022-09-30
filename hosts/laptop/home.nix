@@ -273,6 +273,7 @@ in
         nvim-tree-lua
         dressing-nvim
         nvim-colorizer-lua
+        vim-nix
         # lsp
         nvim-lspconfig
         null-ls-nvim
@@ -327,10 +328,10 @@ in
           '';
         }
         nvim-treesitter-context
-        vim-nix
+        nvim-treesitter-textobjects
+        nvim-ts-context-commentstring
         # comments
         comment-nvim
-        nvim-ts-context-commentstring
         # git
         gitsigns-nvim
         vim-fugitive
