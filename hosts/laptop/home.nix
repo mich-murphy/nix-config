@@ -11,6 +11,15 @@ let
       sha256 = "tKXSFZusajLLsbQj6VKZG1TJB+i5i1H5e5Q5tbe+ojM=";
     };
   };
+  monokai-pro = pkgs.vimUtils.buildVimPlugin {
+    name = "monokai-pro";
+    src = pkgs.fetchFromGitLab {
+      owner = "__tpb";
+      repo = "monokai-pro.nvim";
+      rev = "826d028edbcc7a8aadc0f7a32b32747d97575615";
+      sha256 = "UJeg6Kneicf+Mb2BzFHsQYp6U0ol9imBqpIq6QafyFE=";
+    };
+  };
 in
 {
   home = {
@@ -140,36 +149,32 @@ in
         draw_bold_text_with_bright_colors = true;
         colors = {
           primary = {
-            background = "0x282c34";
-            foreground = "0xabb2bf";
-          };
-          cursor = {
-            text = "0x2c323c";
-            cursor = "0x5c6370";
+            background = "#222222";
+            foreground = "#f7f1ff";
           };
           selection = {
-            text = "CellForeground";
-            background = "0x3e4452";
+            text = "#bab6c0";
+            background = "#403e41";
           };
           normal = {
-            black = "0x2c323c";
-            red = "0xe06c75";
-            green = "0x98c379";
-            yellow = "0xe5c07b";
+            black = "#363537";
+            red = "#fc618d";
+            green = "#7db88f";
+            yellow = "#fce566";
             blue = "0x61afef";
-            magenta = "0xc678dd";
-            cyan = "0x56b6c2";
-            white = "0x5c6370";
+            magenta = "#948ae3";
+            cyan = "#5ad4e6";
+            white = "#f7f1ff";
           }; 
           bright = {
-            black = "0x3e4452";
-            red = "0xe06c75";
-            green = "0x98c379";
-            yellow = "0xe5c07b";
+            black = "#403e41";
+            red = "#fc618d";
+            green = "#7db88f";
+            yellow = "#fce566";
             blue = "0x61afef";
-            magenta = "0xc678dd";
-            cyan = "0x56b6c2";
-            white = "0xabb2bf";
+            magenta = "#948ae3";
+            cyan = "#5ad4e6";
+            white = "#f7f1ff";
           }; 
 	};
       };
@@ -284,15 +289,15 @@ in
         luasnip
         friendly-snippets
         # colorscheme
-        tokyonight-nvim
-        { 
-          plugin = onedark-nvim;
+        {
+          plugin = monokai-pro;
           config = ''
             lua <<EOF
-            require('onedark').setup {
-                style = 'darker'
-            }
-            require('onedark').load()
+              vim.g.monokaipro_filter = "spectrum"
+              vim.g.monokaipro_flat_sidebar = true
+              vim.g.monokaipro_flat_float = true
+              vim.g.monokaipro_flat_term = true
+              vim.cmd[[colorscheme monokaipro]]
             EOF
           '';
         }
