@@ -29,7 +29,7 @@ in
     sessionVariables = {
       EDITOR = "nvim";
       VISUAL = "nvim";
-      TERMINAL = "kitty";
+      TERMINAL = "alacritty";
     };
     packages = with pkgs; [
       # shell prompt
