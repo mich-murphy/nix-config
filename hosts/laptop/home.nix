@@ -293,6 +293,7 @@ in
         # telescope
         telescope-nvim
         plenary-nvim
+        telescope-file-browser-nvim
         telescope-fzf-native-nvim
         # treesitter - could not load parsers with with external config
         {
