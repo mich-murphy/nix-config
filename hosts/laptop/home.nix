@@ -294,7 +294,6 @@ in
         telescope-nvim
         plenary-nvim
         telescope-fzf-native-nvim
-        telescope-file-browser-nvim
         # treesitter - could not load parsers with with external config
         {
           plugin = nvim-treesitter.withPlugins (plugins: pkgs.tree-sitter.allGrammars);
