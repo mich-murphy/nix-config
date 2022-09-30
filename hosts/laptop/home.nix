@@ -70,6 +70,12 @@ in
         ls = "lsd -lah";
         cat = "bat";
         spt = "spotifyd &; spt";
+        gs = "git status";
+        ga = "git add";
+        gc = "git commit";
+        gh = "git pull";
+        gp = "git push";
+        nix = "cd ~/nix-config";
       };
     };
     fzf = {
