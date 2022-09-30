@@ -260,11 +260,8 @@ in
       withPython3 = true;
       plugins = with pkgs.vimPlugins; [ 
         vim-surround
-        vim-sleuth
         vim-bbye
         nvim-autopairs
-        comment-nvim
-        nvim-ts-context-commentstring
         nvim-web-devicons
         indent-blankline-nvim
         bufferline-nvim
@@ -274,6 +271,8 @@ in
         project-nvim
         alpha-nvim
         nvim-tree-lua
+        dressing-nvim
+        nvim-colorizer-lua
         # lsp
         nvim-lspconfig
         null-ls-nvim
@@ -329,6 +328,9 @@ in
         }
         nvim-treesitter-context
         vim-nix
+        # comments
+        comment-nvim
+        nvim-ts-context-commentstring
         # git
         gitsigns-nvim
         vim-fugitive
