@@ -6,7 +6,16 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 - [ ] Add explanatory comments to home.nix
 - [ ] Add explanatory comments to darwinConfigurations.nix
+- [ ] Configure flake-utils 
+- [ ] Test nix-update
 
-## TMUX Configuration
+## Applications
 
 - [ ] Setup TMUX
+- [ ] Configure Tailscale
+- [ ] Setup Obsidian (homebrew)
+
+## Neovim
+
+- [ ] Migrate lap-config to home.nix 
+ 
