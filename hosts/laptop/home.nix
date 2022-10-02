@@ -341,6 +341,7 @@ in
         nixfmt
         sumneko-lua-language-server
         stylua
+        python310
         nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [

@@ -13,9 +13,8 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 - [ ] Setup TMUX
 - [ ] Configure Tailscale
-- [ ] Setup Obsidian (homebrew)
 
 ## Neovim
 
-- [ ] Migrate lap-config to home.nix 
+- [ ] Resolve Flake8 issue null-ls
  
