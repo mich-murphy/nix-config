@@ -295,7 +295,6 @@ in
             lua <<EOF
               vim.g.monokaipro_filter = "spectrum"
               vim.g.monokaipro_flat_sidebar = true
-              vim.g.monokaipro_flat_float = true
               vim.g.monokaipro_flat_term = true
               vim.cmd[[colorscheme monokaipro]]
             EOF
@@ -345,10 +344,8 @@ in
         nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [
-        jedi
-        pynvim
-        pkgs.python310Packages.python-lsp-server
-        pkgs.python310Packages.python-lsp-black
+        black
+        flake8
       ]);
     };
   };
