@@ -337,7 +337,6 @@ in
       ];
       extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
-        rnix-lsp
         nixfmt
         sumneko-lua-language-server
         stylua
@@ -345,6 +344,7 @@ in
         nodePackages.pyright
       ];
       extraPython3Packages = (ps: with ps; [
+        pynvim
         black
         flake8
       ]);
