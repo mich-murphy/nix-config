@@ -262,6 +262,7 @@ in
         vim-surround
         vim-bbye
         nvim-autopairs
+        vim-sleuth
         nvim-web-devicons
         indent-blankline-nvim
         bufferline-nvim
