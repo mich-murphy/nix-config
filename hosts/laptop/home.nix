@@ -84,7 +84,6 @@ in
         gc = "git commit";
         gh = "git pull";
         gp = "git push";
-        nix = "cd ~/nix-config";
       };
     };
     fzf = {
