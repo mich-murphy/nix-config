@@ -3,7 +3,7 @@
 
 let
   alpha-nvim = pkgs.vimUtils.buildVimPlugin {
-    name = "alpha-nvim";
+    pname = "alpha-nvim";
     src = pkgs.fetchFromGitHub {
       owner = "goolord";
       repo = "alpha-nvim";
@@ -12,7 +12,7 @@ let
     };
   };
   monokai-pro = pkgs.vimUtils.buildVimPlugin {
-    name = "monokai-pro";
+    pname = "monokai-pro";
     src = pkgs.fetchFromGitLab {
       owner = "__tpb";
       repo = "monokai-pro.nvim";
@@ -50,6 +50,9 @@ in
       thefuck
     ];
   };
+  
+  # use local registry for nix search, nix shell and nix run
+  nix.registry.nixpkgs.flake = nixpkgs;
 
   programs = {
     home-manager = {
