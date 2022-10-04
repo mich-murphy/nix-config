@@ -85,6 +85,7 @@ in
         gc = "git commit";
         gh = "git pull";
         gp = "git push";
+        gpl = "git pull";
       };
     };
     fzf = {
