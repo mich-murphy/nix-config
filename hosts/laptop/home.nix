@@ -90,6 +90,73 @@ in
       enable = true;
       enableZshIntegration = true;
     };
+    tmux = {
+      enable = true;
+      baseIndex = 1;
+      customPaneNavigationAndResize = true;
+      disableConfirmationPrompt = true;
+      escapeTime = 10;
+      historyLimit = 10000;
+      keyMode = "vi";
+      newSession = true;
+      prefix = "C-Space";
+      terminal = "screen-256color";
+      tmuxp.enable = true;
+      plugins = with pkgs; [
+        tmuxPlugins.tmux-fzf
+      ];
+      extraConfig = ''
+        # Vim settings
+        set-option -g focus-events on
+        # Changing key bindings
+        unbind r
+        bind r source-file $XDG_CONFIG_HOME/tmux/tmux.conf \; display "Reloaded tmux conf"
+        set -g mouse on
+        unbind v
+        unbind h
+        unbind %
+        unbind '"'
+        bind v split-window -h -c "#{pane_current_path}"
+        bind h split-window -v -c "#{pane_current_path}"
+        bind -n C-h select-pane -L
+        bind -n C-j select-pane -D
+        bind -n C-k select-pane -U
+        bind -n C-l select-pane -R
+        unbind n
+        unbind w
+        bind n command-prompt "rename-window '%%'"
+        bind w new-window -c "#{pane_current_path}"
+        bind -n M-j previous-window
+        bind -n M-k next-window
+        # Vim keybindings
+        unbind -T copy-mode-vi Space;
+        unbind -T copy-mode-vi Enter;
+        bind -T copy-mode-vi v send-keys -X begin-selection
+        bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xsel --clipboard" 
+        set -g -a terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q'
+        is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
+            | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
+        bind -n C-h if-shell "$is_vim" "send-keys C-h"  "select-pane -L"
+        bind -n C-j if-shell "$is_vim" "send-keys C-j"  "select-pane -D"
+        bind -n C-k if-shell "$is_vim" "send-keys C-k"  "select-pane -U"
+        bind -n C-l if-shell "$is_vim" "send-keys C-l"  "select-pane -R"
+        bind -n C-\\ if-shell "$is_vim" "send-keys C-\\" "select-pane -l"
+        # --> Monokai Pro Spectrum
+        thm_bg="#222222"
+        thm_fg="#f7f1ff"
+        thm_cyan="#5ad4e6"
+        thm_black="#131313"
+        thm_gray="#525053"
+        thm_magenta="#948ae3"
+        thm_pink="#e5b4e2"
+        thm_red="#fc618d"
+        thm_green="#7db88f"
+        thm_yellow="#fce566"
+        thm_blue="#5ad4e6"
+        thm_orange="#fd9353"
+        thm_black4="#525053"
+      '';
+    };
     lsd = {
       enable = true;
       settings = {
@@ -334,6 +401,11 @@ in
         # git
         gitsigns-nvim
         vim-fugitive
+        # tmux
+        vim-tmux-navigator
+        tmux-complete-vim
+        vim-tmux
+        vim-tmux-focus-events
       ];
       extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
