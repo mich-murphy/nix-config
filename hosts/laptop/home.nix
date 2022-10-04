@@ -405,7 +405,6 @@ in
         vim-tmux-navigator
         tmux-complete-vim
         vim-tmux
-        vim-tmux-focus-events
       ];
       extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
