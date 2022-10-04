@@ -1,9 +1,9 @@
-
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
 let
   alpha-nvim = pkgs.vimUtils.buildVimPlugin {
     pname = "alpha-nvim";
+    version = "1.0.0";
     src = pkgs.fetchFromGitHub {
       owner = "goolord";
       repo = "alpha-nvim";
@@ -13,6 +13,7 @@ let
   };
   monokai-pro = pkgs.vimUtils.buildVimPlugin {
     pname = "monokai-pro";
+    version = "1.0.0";
     src = pkgs.fetchFromGitLab {
       owner = "__tpb";
       repo = "monokai-pro.nvim";
@@ -51,9 +52,6 @@ in
     ];
   };
   
-  # use local registry for nix search, nix shell and nix run
-  nix.registry.nixpkgs.flake = nixpkgs;
-
   programs = {
     home-manager = {
       enable = true;
@@ -344,6 +342,7 @@ in
         dressing-nvim
         nvim-colorizer-lua
         vim-nix
+        vim-markdown-toc
         # lsp
         nvim-lspconfig
         null-ls-nvim
