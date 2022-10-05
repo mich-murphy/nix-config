@@ -191,8 +191,8 @@ in
         cmd - return : /Applications/Alacritty.App/Contents/MacOS/alacritty
         cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
         # Toggle Window
-        lcmd + lctrl + lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
-        lcmd + lctrl + lalt - f : yabai -m window --toggle zoom-fullscreen
+        lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+        lalt - f : yabai -m window --toggle zoom-fullscreen
         lalt + shift - f : yabai -m window --toggle native-fullscreen
         lalt - q : yabai -m window --close
         # Toggle Gaps
