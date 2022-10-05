@@ -49,6 +49,8 @@ in
       ranger
       lazygit
       thefuck
+      # gui utilities
+      obsidian
     ];
   };
   
@@ -106,6 +108,10 @@ in
       tmuxp.enable = true;
       plugins = with pkgs; [
         tmuxPlugins.tmux-fzf
+        {
+          plugin = tmuxPlugins.power-theme;
+          extraConfig = "set -g @tmux_power_theme 'moon'";
+        }
       ];
       extraConfig = ''
         # Vim settings
