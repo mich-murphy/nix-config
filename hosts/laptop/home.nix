@@ -259,6 +259,7 @@ in
         privacy-badger
         darkreader
         sponsorblock
+        new-tab-override
       ];
       profiles."${user}" = {
         isDefault = true;
