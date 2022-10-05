@@ -2,6 +2,8 @@
 
 ![screenshot](https://github.com/mich-murphy/nix-config/blob/master/screenshot/screenshot.png)
 
+## Contents
+
 <!-- vim-markdown-toc Marked -->
 
 * [Overview](#overview)
