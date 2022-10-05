@@ -143,20 +143,6 @@ in
         bind -n C-k if-shell "$is_vim" "send-keys C-k"  "select-pane -U"
         bind -n C-l if-shell "$is_vim" "send-keys C-l"  "select-pane -R"
         bind -n C-\\ if-shell "$is_vim" "send-keys C-\\" "select-pane -l"
-        # --> Monokai Pro Spectrum
-        thm_bg="#222222"
-        thm_fg="#f7f1ff"
-        thm_cyan="#5ad4e6"
-        thm_black="#131313"
-        thm_gray="#525053"
-        thm_magenta="#948ae3"
-        thm_pink="#e5b4e2"
-        thm_red="#fc618d"
-        thm_green="#7db88f"
-        thm_yellow="#fce566"
-        thm_blue="#5ad4e6"
-        thm_orange="#fd9353"
-        thm_black4="#525053"
       '';
     };
     lsd = {
