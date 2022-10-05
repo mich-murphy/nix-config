@@ -1,5 +1,7 @@
 # Nix-Darwin Configuration Flake
 
+![screenshot](https://github.com/mich-murphy/nix-config/blob/master/screenshot/screenshot.png)
+
 <!-- vim-markdown-toc Marked -->
 
 * [Overview](#overview)
