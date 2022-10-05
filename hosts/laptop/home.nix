@@ -49,8 +49,6 @@ in
       ranger
       lazygit
       thefuck
-      # gui utilities
-      obsidian
     ];
   };
   

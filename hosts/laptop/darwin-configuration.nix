@@ -134,6 +134,7 @@ in
       "little-snitch"
       "stats"
       "karabiner-elements"
+      "obsidian"
     ];
     brews = [
       {
