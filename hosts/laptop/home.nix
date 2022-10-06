@@ -346,6 +346,7 @@ in
         cmp-buffer
         cmp-nvim-lsp
         cmp-nvim-lua
+        lspkind-nvim
         # snippets
         luasnip
         friendly-snippets

@@ -186,7 +186,6 @@ in
     };
     skhd = {
       enable = true;
-      package = pkgs.skhd;
       skhdConfig = ''
         # Applications Shortcuts
         cmd - return : /Applications/Alacritty.App/Contents/MacOS/alacritty
