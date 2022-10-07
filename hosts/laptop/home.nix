@@ -351,17 +351,7 @@ in
         luasnip
         friendly-snippets
         # colorscheme
-        {
-          plugin = monokai-pro;
-          config = ''
-            lua <<EOF
-              vim.g.monokaipro_filter = "spectrum"
-              vim.g.monokaipro_flat_sidebar = true
-              vim.g.monokaipro_flat_term = true
-              vim.cmd[[colorscheme monokaipro]]
-            EOF
-          '';
-        }
+        monokai-pro
         # telescope
         telescope-nvim
         plenary-nvim
@@ -400,19 +390,32 @@ in
         vim-tmux-navigator
         tmux-complete-vim
         vim-tmux
+        # DAP
+        nvim-dap
+        nvim-dap-ui
       ];
       extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
-        nixfmt
-        sumneko-lua-language-server
-        stylua
         python310
+        # formatters
+        nixfmt
+        stylua
+        # language servers
+        rnix-lsp
+        sumneko-lua-language-server
         nodePackages.pyright
+        nodePackages.yaml-language-server
+        nodePackages.bash-language-server
+        nodePackages.vscode-json-language-server
+        nodePackages.vscode-html-language-server
+        nodePackages.vscode-css-language-server
       ];
       extraPython3Packages = (ps: with ps; [
-        pynvim
+        # python linting/formatting
         black
         flake8
+        # debugger
+        debugpy
       ]);
     };
   };

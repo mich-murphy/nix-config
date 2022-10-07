@@ -1,6 +1,13 @@
 local servers = {
   "sumneko_lua",
+  "cssls",
+  "html",
+  "tsserver",
   "pyright",
+  "bashls",
+  "jsonls",
+  "yamlls",
+  "rnix",
 }
 
 local lspconfig_status_ok, lspconfig = pcall(require, "lspconfig")
