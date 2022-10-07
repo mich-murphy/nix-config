@@ -10,10 +10,10 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 ## Applications
 
 - [ ] Configure Obsidian
-- [ ] resolve shortcut conflicts between flux and yabai
+- [ ] Resolve shortcut conflicts between tmux and yabai
 
 ## Neovim
 
 - [ ] Resolve Flake8 issue null-ls
-- [ ] simplify neovim config
+- [ ] Removed rounded borders of LSP and float windows
  
