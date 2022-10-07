@@ -9,19 +9,13 @@ if not dap_ui_status_ok then
 end
 
 dapui.setup {
-  sidebar = {
+  layouts = {
     elements = {
-      {
-        id = "scopes",
-        size = 0.25, -- Can be float or integer > 1
-      },
-      { id = "breakpoints", size = 0.25 },
+      "scopes",
+      "breakpoints",
     },
     size = 40,
-    position = "right", -- Can be "left", "right", "top", "bottom"
-  },
-  tray = {
-    elements = {},
+    position = "right",
   },
 }
 

@@ -329,7 +329,6 @@ in
         toggleterm-nvim
         impatient-nvim
         project-nvim
-        alpha-nvim
         nvim-tree-lua
         dressing-nvim
         nvim-colorizer-lua
@@ -402,13 +401,13 @@ in
         stylua
         # language servers
         rnix-lsp
-        sumneko-lua-language-server
         nodePackages.pyright
+        sumneko-lua-language-server
         nodePackages.yaml-language-server
         nodePackages.bash-language-server
-        nodePackages.vscode-json-language-server
-        nodePackages.vscode-html-language-server
-        nodePackages.vscode-css-language-server
+        nodePackages.vscode-json-languageserver
+        nodePackages.vscode-html-languageserver-bin
+        nodePackages.vscode-css-languageserver-bin
       ];
       extraPython3Packages = (ps: with ps; [
         # python linting/formatting
