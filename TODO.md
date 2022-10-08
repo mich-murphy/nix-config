@@ -11,9 +11,9 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 - [ ] Configure Obsidian
 - [ ] Resolve shortcut conflicts between tmux and yabai
+- [ ] Migrate from ranger to lf
 
 ## Neovim
 
-- [ ] Resolve Flake8 issue null-ls
 - [ ] Removed rounded borders of LSP and float windows
  
