@@ -395,7 +395,13 @@ in
       ];
       extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
-        python310
+        (python310.withPackages (ps: with ps; [
+        # python linting/formatting
+        black
+        flake8
+        # debugger
+        debugpy
+        ]))
         # formatters
         nixfmt
         stylua
@@ -409,13 +415,6 @@ in
         nodePackages.vscode-html-languageserver-bin
         nodePackages.vscode-css-languageserver-bin
       ];
-      extraPython3Packages = (ps: with ps; [
-        # python linting/formatting
-        black
-        flake8
-        # debugger
-        debugpy
-      ]);
     };
   };
 
