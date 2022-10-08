@@ -47,7 +47,6 @@ in
       btop
       spotify-tui
       ranger
-      lazygit
       thefuck
     ];
   };
