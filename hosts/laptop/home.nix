@@ -323,13 +323,10 @@ in
         vim-sleuth
         nvim-web-devicons
         indent-blankline-nvim
-        bufferline-nvim
         lualine-nvim
-        toggleterm-nvim
         impatient-nvim
         project-nvim
         nvim-tree-lua
-        dressing-nvim
         nvim-colorizer-lua
         vim-nix
         vim-markdown-toc
