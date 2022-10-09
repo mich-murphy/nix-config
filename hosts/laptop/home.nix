@@ -1,16 +1,6 @@
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
 let
-  alpha-nvim = pkgs.vimUtils.buildVimPlugin {
-    pname = "alpha-nvim";
-    version = "1.0.0";
-    src = pkgs.fetchFromGitHub {
-      owner = "goolord";
-      repo = "alpha-nvim";
-      rev = "0bb6fc0646bcd1cdb4639737a1cee8d6e08bcc31";
-      sha256 = "tKXSFZusajLLsbQj6VKZG1TJB+i5i1H5e5Q5tbe+ojM=";
-    };
-  };
   monokai-pro = pkgs.vimUtils.buildVimPlugin {
     pname = "monokai-pro";
     version = "1.0.0";
