@@ -36,8 +36,9 @@ in
       tree
       btop
       spotify-tui
-      ranger
       thefuck
+      # previewer for lf
+      pistol
     ];
   };
   
@@ -163,6 +164,32 @@ in
 	};
         symlink-arrow = "->";
       };
+    };
+    lf = {
+      enable = true;
+      keybindings = {
+        DD = "delete";
+        p = "paste";
+        x = "cut";
+        y = "copy";
+        l = "open";
+        c = "clear";
+        gn = "cd ~/nix-config";
+        gg = "cd ~/git";
+        gd = "cd ~/Downloads";
+        gD = "cd ~/Documents";
+        gp = "cd ~/Pictures";
+        gc = "cd ~/.config";
+      };
+      settings = {
+        hidden = true;
+        dirfirst = true;
+        relativenumber = true;
+        ignorecase = true;
+        globsearch = true;
+        scrolloff = 8;
+      };
+    extraConfig = "set previewer /etc/profiles/per-user/mm/bin/pistol";
     };
     alacritty = {
       enable = true;
@@ -410,7 +437,6 @@ in
       target =  "nvim";
       recursive = true;
     };
-    "ranger/rc.conf".source = ../../config/ranger/rc.conf;
     "karabiner/karabiner.json".source = ../../config/karabiner/karabiner.json;
   };
 }
