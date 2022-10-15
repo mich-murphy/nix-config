@@ -18,7 +18,7 @@
       host = "macbook";
       system = "aarch64-darwin";
       gitUser = "mich-murphy";
-      gitEmail = "mich+git@elmurphy.com";
+      gitEmail = "github@elmurphy.com";
     in
     {
       darwinConfigurations.macbook = darwin.lib.darwinSystem {

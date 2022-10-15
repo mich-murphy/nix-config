@@ -11,7 +11,6 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 ## Applications
 
-- [ ] Add vim keys to Obsidian
 - [ ] Resolve shortcut conflicts between tmux and yabai
 - [ ] Configure opening of default applications lf
 - [ ] Customise Zathura config
