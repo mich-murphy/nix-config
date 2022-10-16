@@ -263,66 +263,95 @@ in
         vimium
         decentraleyes
         privacy-badger
-        darkreader
         sponsorblock
         new-tab-override
       ];
       profiles."${user}" = {
         isDefault = true;
         settings = {
-          "browser.send_pings" = false;
-          "browser.urlbar.speculativeConnect.enabled" = false;
-          "dom.event.clipboardevents.enabled" = true;
-          "media.navigator.enabled" = false;
-          "network.cookie.cookieBehavior" = 1;
-          "network.http.referer.XOriginPolicy" = 2;
-          "network.http.referer.XOriginTrimmingPolicy" = 2;
-          "beacon.enabled" = false;
-          "browser.safebrowsing.downloads.remote.enabled" = false;
-          "network.IDN_show_punycode" = true;
-          "extensions.activeThemeID" = "firefox-compact-dark@mozilla.org";
+          # Configured via Firefox Profilemaker
+          "app.normandy.api_url" = "";
+          "app.normandy.enabled" = false;
           "app.shield.optoutstudies.enabled" = false;
-          "dom.security.https_only_mode_ever_enabled" = true;
-          "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
-          "browser.toolbars.bookmarks.visibility" = "never";
-          "geo.enabled" = false;
-          # Disable telemetry
-          "browser.newtabpage.activity-stream.feeds.telemetry" = false;
-          "browser.ping-centre.telemetry" = false;
-          "browser.tabs.crashReporting.sendReport" = false;
-          "devtools.onboarding.telemetry.logged" = false;
-          "toolkit.telemetry.enabled" = false;
-          "toolkit.telemetry.unified" = false;
-          "toolkit.telemetry.server" = "";
-          # Disable Pocket
-          "browser.newtabpage.activity-stream.feeds.discoverystreamfeed" = false;
-          "browser.newtabpage.activity-stream.feeds.section.topstories" = false;
+          "app.update.auto" = false;
+          "beacon.enabled" = false;
+          "breakpad.reportURL" = "";
+          "browser.aboutConfig.showWarning" = false;
+          "browser.crashReports.unsubmittedCheck.autoSubmit" = false;
+          "browser.crashReports.unsubmittedCheck.autoSubmit2" = false;
+          "browser.crashReports.unsubmittedCheck.enabled" = false;
+          "browser.disableResetPrompt" = true;
           "browser.newtabpage.activity-stream.section.highlights.includePocket" = false;
-          "browser.newtabpage.activity-stream.showSponsored" = false;
+          "browser.newtabpage.enhanced" = false;
+          "browser.newtabpage.introShown" = true;
+          "browser.safebrowsing.appRepURL" = "";
+          "browser.safebrowsing.blockedURIs.enabled" = false;
+          "browser.safebrowsing.downloads.enabled" = false;
+          "browser.safebrowsing.downloads.remote.enabled" = false;
+          "browser.safebrowsing.downloads.remote.url" = "";
+          "browser.safebrowsing.enabled" = false;
+          "browser.safebrowsing.malware.enabled" = false;
+          "browser.safebrowsing.phishing.enabled" = false;
+          "browser.selfsupport.url" = "";
+          "browser.sessionstore.privacy_level" = 2;
+          "browser.shell.checkDefaultBrowser" = false;
+          "browser.startup.homepage_override.mstone" = "ignore";
+          "browser.tabs.crashReporting.sendReport" = false;
+          "browser.urlbar.groupLabels.enabled" = false;
+          "browser.urlbar.quicksuggest.enabled" = false;
+          "browser.urlbar.trimURLs" = false;
+          "datareporting.healthreport.service.enabled" = false;
+          "datareporting.healthreport.uploadEnabled" = false;
+          "datareporting.policy.dataSubmissionEnabled" = false;
+          "device.sensors.ambientLight.enabled" = false;
+          "device.sensors.enabled" = false;
+          "device.sensors.motion.enabled" = false;
+          "device.sensors.orientation.enabled" = false;
+          "device.sensors.proximity.enabled" = false;
+          "dom.battery.enabled" = false;
+          "dom.security.https_only_mode" = true;
+          "dom.security.https_only_mode_ever_enabled" = true;
+          "experiments.activeExperiment" = false;
+          "experiments.enabled" = false;
+          "experiments.manifest.uri" = "";
+          "experiments.supported" = false;
+          "extensions.getAddons.cache.enabled" = false;
+          "extensions.getAddons.showPane" = false;
           "extensions.pocket.enabled" = false;
-          # Disable prefetching
-          "network.dns.disablePrefetch" = true;
-          "network.prefetch-next" = false;
-          # Disable JS in PDFs
-          "pdfjs.enableScripting" = false;
-          # Harden SSL 
-          "security.ssl.require_safe_negotiation" = true;
-          # Extra
-          "identity.fxaccounts.enabled" = false;
-          "browser.search.suggest.enabled" = false;
-          "browser.urlbar.shortcuts.bookmarks" = false;
-          "browser.urlbar.shortcuts.history" = false;
-          "browser.urlbar.shortcuts.tabs" = false;
-          "browser.urlbar.suggest.bookmark" = true;
-          "browser.urlbar.suggest.engines" = false;
-          "browser.urlbar.suggest.history" = true;
-          "browser.urlbar.suggest.openpage" = true;
-          "browser.urlbar.suggest.topsites" = false;
-          "browser.uidensity" = 1;
+          "extensions.shield-recipe-client.api_url" = "";
+          "extensions.shield-recipe-client.enabled" = false;
+          "extensions.webservice.discoverURL" = "";
+          "media.autoplay.default" = 1;
           "media.autoplay.enabled" = false;
-          "toolkit.zoomManager.zoomValues" = ".8,.90,.95,1,1.1,1.2";
-          "privacy.firstparty.isolate" = true;
-          "network.http.sendRefererHeader" = 0;
+          "media.navigator.enabled" = false;
+          "network.allow-experiments" = false;
+          "network.cookie.cookieBehavior" = 1;
+          "network.http.referer.spoofSource" = true;
+          "privacy.query_stripping" = true;
+          "privacy.trackingprotection.cryptomining.enabled" = true;
+          "privacy.trackingprotection.enabled" = true;
+          "privacy.trackingprotection.fingerprinting.enabled" = true;
+          "privacy.trackingprotection.pbmode.enabled" = true;
+          "privacy.usercontext.about_newtab_segregation.enabled" = true;
+          "services.sync.prefs.sync.browser.newtabpage.activity-stream.showSponsoredTopSite" = false;
+          "signon.autofillForms" = false;
+          "toolkit.telemetry.archive.enabled" = false;
+          "toolkit.telemetry.bhrPing.enabled" = false;
+          "toolkit.telemetry.cachedClientID" = "";
+          "toolkit.telemetry.enabled" = false;
+          "toolkit.telemetry.firstShutdownPing.enabled" = false;
+          "toolkit.telemetry.hybridContent.enabled" = false;
+          "toolkit.telemetry.newProfilePing.enabled" = false;
+          "toolkit.telemetry.prompted" = 2;
+          "toolkit.telemetry.rejected" = true;
+          "toolkit.telemetry.reportingpolicy.firstRun" = false;
+          "toolkit.telemetry.server" = "";
+          "toolkit.telemetry.shutdownPingSender.enabled" = false;
+          "toolkit.telemetry.unified" = false;
+          "toolkit.telemetry.unifiedIsOptIn" = false;
+          "toolkit.telemetry.updatePing.enabled" = false;
+          "webgl.renderer-string-override" = " ";
+          "webgl.vendor-string-override" = " ";
         };
         userChrome = builtins.readFile ../../config/firefox/userChrome.css;
       };
@@ -369,27 +398,8 @@ in
         plenary-nvim
         telescope-file-browser-nvim
         telescope-fzf-native-nvim
-        # treesitter - could not load parsers with with external config
-        {
-          plugin = nvim-treesitter.withPlugins (plugins: pkgs.tree-sitter.allGrammars);
-          config = ''
-            lua <<EOF
-            require('nvim-treesitter.configs').setup {
-              highlight = {
-                enable = true,
-                additional_vim_regex_highlighting = false,
-              },
-              indent = {
-                enable = true,
-                disable = { "python", "css" }
-              },
-              autopairs = {
-                enable = true,
-              },
-            }
-            EOF
-          '';
-        }
+        # treesitter - with grammars loaded
+        (nvim-treesitter.withPlugins (plugins: pkgs.tree-sitter.allGrammars))
         nvim-treesitter-context
         nvim-treesitter-textobjects
         nvim-ts-context-commentstring
