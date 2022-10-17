@@ -14,6 +14,7 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [ ] Resolve shortcut conflicts between tmux and yabai
 - [ ] Configure opening of default applications lf
 - [ ] Customise Zathura config
+- [ ] Loosen security settings for Firefox
 
 ## Neovim
 
