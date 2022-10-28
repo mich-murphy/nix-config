@@ -78,6 +78,8 @@ in
         gh = "git pull";
         gp = "git push";
         gpl = "git pull";
+        gb = "git branch";
+        gch = "git checkout";
       };
     };
     fzf = {

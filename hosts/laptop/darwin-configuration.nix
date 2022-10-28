@@ -125,7 +125,6 @@ in
       "homebrew/cask-versions"
       "homebrew/cask-drivers"
       "homebrew/services"
-      "zegervdv/zathura"
     ];
     casks = [
       "firefox"
@@ -143,8 +142,6 @@ in
 	name = "spotifyd";
 	start_service = true;
       }
-      "zathura"
-      "zathura-pdf-mupdf"
     ];
   };
 
