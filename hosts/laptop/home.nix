@@ -1,6 +1,8 @@
 { config, pkgs, user, gitUser, gitEmail, ... }:
 
 let
+  # fake package - managed by homebrew instead
+  fakepkg = name: pkgs.runCommand name {} "mkdir $out";
   monokai-pro = pkgs.vimUtils.buildVimPlugin {
     pname = "monokai-pro";
     version = "1.0.0";
@@ -193,8 +195,7 @@ in
     };
     alacritty = {
       enable = true;
-      # fake package - managed by homebrew instead
-      package = pkgs.runCommand "alacritty-0.0.0" {} "mkdir $out";
+      package = fakepkg "alacritty";
       settings = {
         live_config_reload = true;
         dynamic_title = true;
@@ -256,7 +257,7 @@ in
     firefox = {
       enable = true;
       # fake package - managed by homebrew instead
-      package = pkgs.runCommand "firefox-0.0.0" {} "mkdir $out";
+      package = fakepkg "firefox";
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         ublock-origin
         onepassword-password-manager
