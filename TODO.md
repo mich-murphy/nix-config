@@ -7,6 +7,7 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 - [ ] Add explanatory comments to home.nix
 - [ ] Add explanatory comments to darwinConfigurations.nix
 - [ ] Configure zsh environment variables
+- [ ] Replace Obsidian with Vim Wiki
 
 ## Applications
 

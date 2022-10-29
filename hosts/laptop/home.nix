@@ -379,6 +379,7 @@ in
         nvim-colorizer-lua
         vim-nix
         vim-markdown-toc
+        vimwiki
         # lsp
         nvim-lspconfig
         null-ls-nvim
