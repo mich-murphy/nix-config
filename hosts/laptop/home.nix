@@ -37,7 +37,6 @@ in
       wget
       tree
       btop
-      spotify-tui
       thefuck
       # previewer for lf
       pistol
@@ -71,7 +70,6 @@ in
       shellAliases = {
         ls = "lsd -lah";
         cat = "bat";
-        spt = "spotifyd &; spt";
         gs = "git status";
         ga = "git add";
         gc = "git commit";

@@ -136,12 +136,6 @@ in
       "stats"
       "karabiner-elements"
     ];
-    brews = [
-      {
-	name = "spotifyd";
-	start_service = true;
-      }
-    ];
   };
 
   programs.zsh.enable = true;
