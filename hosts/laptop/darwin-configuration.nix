@@ -135,6 +135,8 @@ in
       "little-snitch"
       "stats"
       "karabiner-elements"
+      "mullvadvpn"
+      "roon"
     ];
   };
 
