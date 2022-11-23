@@ -137,6 +137,7 @@ in
       "karabiner-elements"
       "mullvadvpn"
       "roon"
+      "utm"
     ];
   };
 
