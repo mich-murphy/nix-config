@@ -137,7 +137,6 @@ in
       "karabiner-elements"
       "roon"
       "utm"
-      "macfuse"
     ];
   };
 
