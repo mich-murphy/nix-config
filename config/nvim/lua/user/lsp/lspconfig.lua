@@ -2,6 +2,7 @@ local servers = {
   "sumneko_lua",
   "pyright",
   "rnix",
+  "sqls",
   "cssls",
   "html",
   "bashls",

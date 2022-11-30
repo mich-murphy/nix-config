@@ -430,6 +430,7 @@ in
         stylua
         # language servers
         rnix-lsp
+        sqlfluff
         nodePackages.pyright
         sumneko-lua-language-server
         nodePackages.yaml-language-server
