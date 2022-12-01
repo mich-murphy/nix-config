@@ -65,6 +65,7 @@ in
       defaultKeymap = "viins";
       history.size = 10000;
       initExtra = ''
+        eval $(thefuck --alias)
         eval "$(starship init zsh)"
       '';
       shellAliases = {
