@@ -101,3 +101,7 @@ For further information regarding Nix refer to the below resources:
     - Useful reference for Neovim config
 - [sliminality Dotfiles](https://github.com/sliminality/nix-config)
     - Useful reference for Yabai, Firefox and Neovim configs
+- [dustinlyons](https://github.com/dustinlyons/nixos-config)
+    - Useful reference for combining Nix Darwin and NixOS flakes
+- [jordanisaacs](https://github.com/jordanisaacs/dotfiles)
+    - More complex principles around impermanence and building modules
