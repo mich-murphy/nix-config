@@ -25,7 +25,7 @@
         inherit system;
 	specialArgs = { inherit user host gitUser gitEmail; };
         modules = [
-	  ./hosts/laptop/darwin-configuration.nix
+	  ./hosts/laptop/default.nix
 	  home-manager.darwinModules.home-manager {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;

@@ -39,6 +39,7 @@ in
   };
 
   system = {
+    checks.verifyNixPath = false;
     defaults = {
       dock = {
         autohide = true;
