@@ -101,5 +101,5 @@ For further information regarding Nix refer to the below resources:
     - Useful reference for combining Nix Darwin and NixOS flakes
 - [Jordan Isaac's Doftiles](https://github.com/jordanisaacs/dotfiles)
     - More complex principles around impermanence and building modules
-- [Xe Iaso's Dotfiles](https://tulpa.dev/cadey/nixos-configs)
+- [Cadey Ratio's Dotfiles](https://tulpa.dev/cadey/nixos-configs)
     - A lot of more technical concepts e.g. secrets management
