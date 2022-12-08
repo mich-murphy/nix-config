@@ -434,6 +434,8 @@ in
         sqlfluff
         nodePackages.pyright
         sumneko-lua-language-server
+        nodejs
+        node2nix
         nodePackages.yaml-language-server
         nodePackages.bash-language-server
         nodePackages.vscode-json-languageserver
