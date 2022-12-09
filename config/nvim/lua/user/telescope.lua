@@ -9,12 +9,12 @@ telescope.setup {
   defaults = {
     prompt_prefix = " ",
     selection_caret = " ",
-    path_display = { 
-      "smart" 
+    path_display = {
+      "smart"
     },
-    file_ignore_patterns = { 
-      ".git/", 
-      "node_modules" 
+    file_ignore_patterns = {
+      ".git/",
+      "node_modules"
     },
     mappings = {
       i = {
@@ -24,14 +24,15 @@ telescope.setup {
         ["<C-k>"] = actions.move_selection_previous,
         ["<C-u>"] = actions.preview_scrolling_up,
         ["<C-d>"] = actions.preview_scrolling_down,
-      },
-    },
-    extensions = {
-      file_browser = {
-        hijack_netrw = true,
-      },
-    },
+      }
+    }
   },
+  extensions = {
+    file_browser = {
+      hijack_netrw = true,
+    }
+  }
 }
 
 require("telescope").load_extension "file_browser"
+
