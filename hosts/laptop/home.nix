@@ -38,8 +38,7 @@ in
       tree
       btop
       thefuck
-      # previewer for lf
-      pistol
+      cachix
     ];
   };
   
@@ -365,7 +364,7 @@ in
     };
     neovim = {
       enable = true;
-      package = pkgs.neovim;
+      package = pkgs.neovim-nightly;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
