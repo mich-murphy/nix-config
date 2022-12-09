@@ -433,17 +433,13 @@ in
         nixfmt
         stylua
         # language servers
+        sqls
         rnix-lsp
-        sqlfluff
         nodePackages.pyright
         sumneko-lua-language-server
-        nodejs
-        node2nix
         nodePackages.yaml-language-server
         nodePackages.bash-language-server
-        nodePackages.vscode-json-languageserver
-        nodePackages.vscode-html-languageserver-bin
-        nodePackages.vscode-css-languageserver-bin
+        nodePackages_latest.vscode-langservers-extracted
       ];
     };
   };
