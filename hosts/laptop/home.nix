@@ -38,7 +38,6 @@ in
       tree
       btop
       thefuck
-      cachix
     ];
   };
   
