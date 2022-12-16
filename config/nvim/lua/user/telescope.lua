@@ -29,7 +29,7 @@ telescope.setup {
   },
   extensions = {
     file_browser = {
-      hijack_netrw = true,
+      hijack_netrw = false,
     }
   }
 }
