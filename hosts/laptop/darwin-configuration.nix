@@ -103,7 +103,7 @@ in
     };
     keyboard = {
       enableKeyMapping = true;
-      remapCapsLockToEscape = true;
+      remapCapsLockToControl = true;
     };
     stateVersion = 4;
   };
@@ -146,7 +146,6 @@ in
       "alfred"
       "little-snitch"
       "stats"
-      "karabiner-elements"
       "roon"
       "utm"
     ];
