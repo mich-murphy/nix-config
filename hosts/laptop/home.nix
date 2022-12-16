@@ -297,7 +297,6 @@ in
       extensions = with pkgs.nur.repos.rycee.firefox-addons; [
         ublock-origin
         onepassword-password-manager
-        vimium
         decentraleyes
         privacy-badger
         sponsorblock
@@ -305,6 +304,10 @@ in
       ];
       profiles."${user}" = {
         isDefault = true;
+        search = {
+          default = "DuckDuckGo";
+          force = true;
+        };
         settings = {
           # Configured via Firefox Profilemaker
           "app.normandy.api_url" = "";
