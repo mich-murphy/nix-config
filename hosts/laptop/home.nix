@@ -65,7 +65,7 @@ in
       history.size = 10000;
       initExtra = ''
         eval $(thefuck --alias)
-        eval $(direnv hook zsh)
+        eval "$(direnv hook zsh)"
       '';
       shellAliases = {
         ls = "lsd -lah";

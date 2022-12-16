@@ -101,10 +101,10 @@ in
 	NSNavPanelExpandedStateForSaveMode2 = true;
       };
     };
-    # keyboard = {
-    #   enableKeyMapping = true;
-    #   remapCapsLockToControl = true;
-    # };
+    keyboard = {
+      enableKeyMapping = true;
+      remapCapsLockToControl = true;
+    };
     stateVersion = 4;
   };
 
@@ -157,7 +157,6 @@ in
     nix-daemon.enable = true;
     tailscale.enable = true;
     lorri.enable = true;
-    karabiner-elements.enable = true;
     yabai = {
       enable = true; 
       enableScriptingAddition = true;
