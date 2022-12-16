@@ -25,25 +25,15 @@ in
       TERMINAL = "alacritty";
     };
     packages = with pkgs; [
-      # shell prompt
-      starship
       # cli utilities
       fd
       sd
-      fzf
       ripgrep
-      bat
-      lsd
       jq
-      wget
       tree
-      btop
       thefuck
       du-dust
-      tealdeer
       grex
-      zoxide
-      delta
     ];
   };
   
@@ -75,7 +65,6 @@ in
       history.size = 10000;
       initExtra = ''
         eval $(thefuck --alias)
-        eval "$(starship init zsh)"
       '';
       shellAliases = {
         ls = "lsd -lah";
@@ -88,10 +77,35 @@ in
         gpl = "git pull";
         gb = "git branch";
         gch = "git checkout";
-        z = "zoxide";
-        za = "zoxide add";
-        zq = "zoxide query";
-        zr = "zoxide";
+      };
+    };
+    starship = {
+      enable = true;
+      enableZshIntegration = true;
+      settings = {
+        scan_timeout = 10;
+      };
+    };
+    zoxide = {
+      enable = true;
+      enableZshIntegration = true;
+    };
+    bat = {
+      enable = true;
+      config = {
+        theme = "Monokai Extended Origin";
+      };
+      extraPackages = with pkgs.bat-extras; [
+        batgrep
+        batdiff
+      ];
+    };
+    tealdeer = {
+      enable = true;
+      settings = {
+        display = {
+          compact = true;
+        };
       };
     };
     fzf = {
@@ -154,6 +168,14 @@ in
         bind -n C-l if-shell "$is_vim" "send-keys C-l"  "select-pane -R"
         bind -n C-\\ if-shell "$is_vim" "send-keys C-\\" "select-pane -l"
       '';
+    };
+    btop = {
+      enable = true;
+      settings = {
+        color_theme = "TTY";
+        theme_background = false;
+        vim_keys = true;
+      };
     };
     lsd = {
       enable = true;
