@@ -23,7 +23,7 @@ in
   };
 
   nix = {
-    package = pkgs.nix;
+    package = pkgs.nixUnstable;
     gc = {
       automatic = true;
       interval.Day = 7;
