@@ -29,6 +29,7 @@ in
       starship
       # cli utilities
       fd
+      sd
       fzf
       ripgrep
       bat
@@ -38,6 +39,11 @@ in
       tree
       btop
       thefuck
+      du-dust
+      tealdeer
+      grex
+      zoxide
+      delta
     ];
   };
   
@@ -82,6 +88,10 @@ in
         gpl = "git pull";
         gb = "git branch";
         gch = "git checkout";
+        z = "zoxide";
+        za = "zoxide add";
+        zq = "zoxide query";
+        zr = "zoxide";
       };
     };
     fzf = {
