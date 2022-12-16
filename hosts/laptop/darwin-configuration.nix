@@ -15,11 +15,14 @@ in
   networking = {
     computerName = "${host}";
     hostName = "${host}";
+    dns = [ "9.9.9.9" "149.112.112.112"];
+    knownNetworkServices = [ "Wi-Fi" "Thunderbolt Bridge" ];
   };
 
   users.users."${user}" = {
     shell = pkgs.zsh;
     home = "/Users/${user}";
+    createHome = true;
   };
 
   nix = {
@@ -30,7 +33,8 @@ in
       options = "--delete-older-than 7d";
     };
     settings = {
-      trusted-users = [ "root" "${user}" ];
+      trusted-users = [ "@admin" "${user}" ];
+      auto-optimise-store = true;
       substituters = [
         "https://nix-community.cachix.org"
       ];
@@ -39,7 +43,6 @@ in
       ];
     };
     extraOptions = ''
-      auto-optimise-store = true
       experimental-features = nix-command flakes
     '';
   };
