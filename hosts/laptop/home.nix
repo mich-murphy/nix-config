@@ -483,6 +483,5 @@ in
       target =  "nvim";
       recursive = true;
     };
-    "karabiner/karabiner.json".source = ../../config/karabiner/karabiner.json;
   };
 }
