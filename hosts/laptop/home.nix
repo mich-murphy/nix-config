@@ -416,6 +416,7 @@ in
         nvim-tree-lua
         nvim-colorizer-lua
         vim-nix
+        direnv-vim
         # lsp
         nvim-lspconfig
         null-ls-nvim
