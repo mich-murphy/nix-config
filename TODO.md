@@ -4,10 +4,7 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 ## General
 
-- [ ] Add explanatory comments to home.nix
-- [ ] Add explanatory comments to darwinConfigurations.nix
-- [ ] Configure zsh environment variables
-- [ ] Replace Obsidian with Vim Wiki
+- [ ] Create GitHub action to create cachix build of flake
 
 ## Applications
 
@@ -16,5 +13,6 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 ## Neovim
 
-- [ ] Remove rounded borders of LSP and float windows
+- [ ] Create Neovim module
+- [ ] Test managing Neovim plugins via Packer and LSP Zero
  
