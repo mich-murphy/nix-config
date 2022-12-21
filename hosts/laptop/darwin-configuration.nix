@@ -144,7 +144,6 @@ in
       "spaceid"
       "1password"
       "alfred"
-      "little-snitch"
       "stats"
       "roon"
       "utm"
