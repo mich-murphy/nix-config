@@ -2,9 +2,9 @@
 
 let
   yabai = pkgs.yabai.overrideAttrs (old: rec {
-    version = "5.0.1";
+    version = "5.0.2";
     src = builtins.fetchTarball {
-      url = https://github.com/koekeishiya/yabai/releases/download/v5.0.1/yabai-v5.0.1.tar.gz;
+      url = https://github.com/koekeishiya/yabai/releases/download/v5.0.2/yabai-v5.0.2.tar.gz;
       sha256 = "0rfg6kqhnsryclny5drj85h442kz5bc9rks60c3lz0a842yvi1c2";
     };
   });
