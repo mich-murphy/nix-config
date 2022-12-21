@@ -36,7 +36,7 @@ in
       grex
     ];
   };
-  
+
   programs = {
     home-manager = {
       enable = true;
@@ -55,6 +55,20 @@ in
         pull.rebase = true;
       };
       diff-so-fancy.enable = true;
+    };
+    ssh = {
+      enable = true;
+      matchBlocks = {
+        "media" = {
+          hostname = "media";
+          user = "mm";
+          forwardAgent = true;
+        };
+        "nix-media" = {
+          hostname = "nix-media";
+          user = "mm";
+        };
+      };
     };
     zsh = {
       enable = true;
