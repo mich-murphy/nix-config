@@ -68,6 +68,10 @@ in
           hostname = "nix-media";
           user = "mm";
         };
+        "alpha" = {
+          hostname = "alpha";
+          user = "root";
+        };
       };
     };
     zsh = {
