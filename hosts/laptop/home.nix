@@ -385,9 +385,6 @@ in
           "media.navigator.enabled" = false;
           "network.allow-experiments" = false;
           "network.cookie.cookieBehavior" = 1;
-          # testing for paypal issues
-          "network.http.referer.spoofSource" = false;
-          "privacy.query_stripping" = true;
           "privacy.trackingprotection.cryptomining.enabled" = true;
           "privacy.trackingprotection.enabled" = true;
           "privacy.trackingprotection.fingerprinting.enabled" = true;
