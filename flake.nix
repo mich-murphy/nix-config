@@ -8,11 +8,9 @@
     home-manager.url = github:nix-community/home-manager;
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = github:nix-community/NUR;
-    neovim-nightly.url = github:nix-community/neovim-nightly-overlay;
-    neovim-nightly.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, darwin, home-manager, nur, neovim-nightly, ... }@inputs:
+  outputs = { self, nixpkgs, darwin, home-manager, nur, ... }@inputs:
     let
       user = "mm";
       host = "macbook";
@@ -35,7 +33,6 @@
 	  {
             nixpkgs.overlays = with inputs; [
               nur.overlay
-              neovim-nightly.overlay
             ];
 	  }
         ];

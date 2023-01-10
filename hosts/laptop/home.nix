@@ -418,7 +418,6 @@ in
     };
     neovim = {
       enable = true;
-      package = pkgs.neovim-nightly;
       viAlias = true;
       vimAlias = true;
       withPython3 = true;
