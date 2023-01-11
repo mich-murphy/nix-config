@@ -59,11 +59,6 @@ in
     ssh = {
       enable = true;
       matchBlocks = {
-        "media" = {
-          hostname = "media";
-          user = "mm";
-          forwardAgent = true;
-        };
         "nix-media" = {
           hostname = "nix-media";
           user = "mm";
