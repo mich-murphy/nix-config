@@ -158,7 +158,7 @@ in
     lorri.enable = true;
     yabai = {
       enable = true; 
-      enableScriptingAddition = false;
+      enableScriptingAddition = true;
       package = yabai;
       config = {
         focus_follows_mouse = "off";
