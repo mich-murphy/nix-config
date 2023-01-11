@@ -103,7 +103,7 @@ in
     };
     keyboard = {
       enableKeyMapping = true;
-      remapCapsLockToControl = true;
+      # remapCapsLockToControl = true;
     };
     stateVersion = 4;
   };
@@ -113,7 +113,6 @@ in
       git
       curl
       xcode-install
-      tailscale
     ];
   };
 
@@ -159,7 +158,7 @@ in
     lorri.enable = true;
     yabai = {
       enable = true; 
-      enableScriptingAddition = true;
+      enableScriptingAddition = false;
       package = yabai;
       config = {
         focus_follows_mouse = "off";
