@@ -147,6 +147,7 @@ in
       "stats"
       "roon"
       "utm"
+      "karabiner-elements"
     ];
   };
 
