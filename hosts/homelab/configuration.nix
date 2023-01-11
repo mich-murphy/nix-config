@@ -9,6 +9,7 @@ in
   imports = [
     ./hardware-configuration.nix
     "${impermanence}/nixos.nix"
+    ./modules/s3fs.nix
   ];
 
   boot.loader.grub.enable = true;
@@ -32,6 +33,7 @@ in
     persistence."/nix/persist" = {
       directories = [
         "/etc/nixos"
+        "/srv"
         "/var/log"
         "/var/lib"
         "/data"
@@ -58,6 +60,7 @@ in
     roon-server.enable = true;
     roon-server.openFirewall = true;
     tailscale.enable = true;
+    s3fs.enable = true;
     #nextcloud = {
       #enable = false;
       #hostName = "localhost";
