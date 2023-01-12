@@ -21,12 +21,23 @@ in
   i18n.defaultLocale = "en_AU.UTF-8";
   services.xserver.layout = "us";
 
-  users.mutableUsers = false;
-  users.users.mm = {
-    isNormalUser = true;
-    home = "/home/mm";
-    passwordFile = "/nix/persist/users/mm";
-    extraGroups = [ "wheel" ];
+  users = {
+    mutableUsers = false;
+    groups.seedbox-sync = {};
+    users = {
+      mm = {
+        isNormalUser = true;
+        home = "/home/mm";
+        passwordFile = "/nix/persist/users/mm";
+        extraGroups = [ "wheel" ];
+      };
+      seedbox-sync = {
+        group = "seedbox-sync";
+        isSystemUser = true;
+        createHome = true;
+        home = "/srv/seedbox-sync";
+      };
+    };
   };
 
   environment = {
@@ -51,7 +62,6 @@ in
     };
     systemPackages = with pkgs; [
       vim
-      rsync
     ];
   };
 
@@ -60,19 +70,7 @@ in
     roon-server.enable = true;
     roon-server.openFirewall = true;
     tailscale.enable = true;
-    s3fs.enable = true;
-    #nextcloud = {
-      #enable = false;
-      #hostName = "localhost";
-      #autoUpdateApps.enable = true;
-      #https = true;
-      #config = {
-        #adminpassFile = "/etc/passwd-nextcloud";
-        #extraTrustedDomains = [ "nix-media.zonkey-goblin.ts.net" ];
-        #dbtype = "pgsql";
-        #defaultPhoneRegion = "AU";
-      #};
-    #};
+    s3fs.enable = false;
     openssh = {
       enable = true;
       allowSFTP = false;
@@ -88,6 +86,26 @@ in
     };
   };
 
+  systemd = {
+    services = {
+      seedbox-sync = {
+        path = [
+          pkgs.rsync
+          pkgs.openssh
+        ];
+        serviceConfig = {
+          User = "seedbox-sync";
+          Group = "seedbox-sync";
+          ProtectSystem = "full";
+          ProtectHome = true;
+          NoNewPriviliges = true;
+        };
+        script = builtins.readFile ./seedbox-sync.bash;
+        startAt = "*-*-* *:*0:00";
+      };
+    };
+  };
+
   networking = {
     hostName = "nix-media";
     firewall = {
@@ -96,31 +114,11 @@ in
       checkReversePath = "loose";
       allowedUDPPorts = [ config.services.tailscale.port ];
       extraCommands = ''
-        iptables -A nixos-fw -p tcp --source 192.168.1.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p udp --source 192.168.1.0/24 -j nixos-fw-accept
+        iptables -A nixos-fw -p tcp --source 10.77.2.0/24 -j nixos-fw-accept
+        iptables -A nixos-fw -p udp --source 10.77.2.0/24 -j nixos-fw-accept
       '';
     };
   };
-
-  # Example service config
-  #systemd.services.roon-server = {
-    #wantedBy = [ "mulit-user.target" ];
-    #serviceConfig = {
-      #User = "roon-server";
-      #Group = "roon-server";
-      #ProtectSystem = "full";
-      #ProtectHome = true;
-      #NoNewPrivileges = true;
-    #};
-  #};
-
-  # Example service user config
-  #users.users.roon-server = {
-    #group = "roon-server";
-    #isSystemUser = true;
-    #createHome = true;
-    #home = "/var/lib/roon-server";
-  #};
 
   security = {
     sudo.execWheelOnly = true;
