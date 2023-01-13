@@ -13,11 +13,11 @@ in {
     };
     mountPath = mkOption {
       type = types.str;
-      default = "/mnt/backup";
+      default = "/mnt/storage";
     };
     bucket = mkOption {
       type = types.str;
-      default = "backup";
+      default = "storage";
     };
     url = mkOption {
       type = types.str;
@@ -29,10 +29,11 @@ in {
     systemd.services.s3fs = {
       description = "Linode object storage s3fs";
       wantedBy = [ "multi-user.target" ];
+      startLimitIntervalSec = 5;
       serviceConfig = {
         ExecStartPre = [
-          "${pkgs.coreutils}/bin/mkdir -pv ${cfg.mountPath}"
-          "${pkgs.e2fsprogs}/bin/chattr +i ${cfg.mountPath}" # stop files being written to unmounted dir
+          "${pkgs.coreutils}/bin/mkdir -m 777 -pv ${cfg.mountPath}"
+          #"${pkgs.e2fsprogs}/bin/chattr +i ${cfg.mountPath}" # stop files being written to unmounted dir
         ];
         ExecStart = let
           options = [
@@ -40,7 +41,7 @@ in {
             "use_path_request_style"
             "allow_other"
             "url=${cfg.url}"
-            "umask=0777"
+            "umask=0000"
           ];
         in
           "${pkgs.s3fs}/bin/s3fs ${cfg.bucket} ${cfg.mountPath} -f "
