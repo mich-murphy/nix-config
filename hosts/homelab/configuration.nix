@@ -71,6 +71,32 @@ in
     roon-server.openFirewall = true;
     tailscale.enable = true;
     s3fs.enable = false;
+    # nextcloud = {
+    #   enable = true;
+    #   hostName = "localhost";
+    #   autoUpdateApps.enable = true;
+    #   https = true;
+    #   config = {
+    #     overwriteProtocol = "https";
+    #     dbtype = "pgsql";
+    #     dbuser = "nextcloud";
+    #     dbhost = "/run/postgresql";
+    #     dbname = "nextcloud";
+    #     adminuser = "admin";
+    #     dbpassFile = "/srv/nextcloud/passwd-db"
+    #     adminpassFile = "/srv/nextcloud/passwd-admin";
+    #     extraTrustedDomains = [ "nix-media.zonkey-goblin.ts.net" ];
+    #     defaultPhoneRegion = "AU";
+    #   };
+    # };    
+    # postgresql = {
+    #   enable = true;
+    #   ensureDatabases = [ "nextcloud" ];
+    #   ensureUsers = [{
+    #     name = "nextcloud";
+    #     ensurePermissions."DATABASE nextcloud" = "ALL PRIVILEGES";
+    #   }];
+    # };
     openssh = {
       enable = true;
       allowSFTP = false;
@@ -87,6 +113,10 @@ in
   };
 
   systemd = {
+    # services."nextcloud-setup" = {
+    #   requires = [ "postgresql.service" ];
+    #   after = [ "postgresql.service" ];
+    # };
     services.seedbox-sync = {
       path = [
         pkgs.rsync
