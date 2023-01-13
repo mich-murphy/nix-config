@@ -70,7 +70,7 @@ in
     roon-server.enable = true;
     roon-server.openFirewall = true;
     tailscale.enable = true;
-    s3fs.enable = false;
+    s3fs.enable = true;
     # nextcloud = {
     #   enable = true;
     #   hostName = "localhost";
