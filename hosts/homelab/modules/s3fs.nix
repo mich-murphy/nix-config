@@ -9,7 +9,7 @@ in {
     enable = mkEnableOption "Mounts s3 object storage using s3fs";
     keyPath = mkOption {
       type = types.str;
-      default = "/srv/passwd-s3fs";
+      default = "/srv/s3fs/passwd-s3fs";
     };
     mountPath = mkOption {
       type = types.str;

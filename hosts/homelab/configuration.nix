@@ -87,21 +87,26 @@ in
   };
 
   systemd = {
-    services = {
-      seedbox-sync = {
-        path = [
-          pkgs.rsync
-          pkgs.openssh
-        ];
-        serviceConfig = {
-          User = "seedbox-sync";
-          Group = "seedbox-sync";
-          ProtectSystem = "full";
-          ProtectHome = true;
-          NoNewPriviliges = true;
-        };
-        script = builtins.readFile ./seedbox-sync.bash;
-        startAt = "*-*-* *:*0:00";
+    services.seedbox-sync = {
+      path = [
+        pkgs.rsync
+        pkgs.openssh
+      ];
+      serviceConfig = {
+        User = "seedbox-sync";
+        Group = "seedbox-sync";
+        ProtectSystem = "full";
+        ProtectHome = true;
+        NoNewPriviliges = true;
+        ReadWritePaths = "/data/media";
+      };
+      script = builtins.readFile ./seedbox-sync.bash;
+    };
+    timers.seedbox-sync = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        Unit = "seedbox-sync.service";
+        OnCalendar = "hourly";
       };
     };
   };
