@@ -12,7 +12,7 @@
     nur.url = github:nix-community/NUR;
   };
 
-  outputs = { self, nixpkgs, darwin, home-manager, nur, ... }@inputs:
+  outputs = { self, nixpkgs, nixpkgs-stable, nixpkgs-darwin-stable, darwin, home-manager, nur, ... }@inputs:
     let
       user = "mm";
       host = "macbook";
