@@ -2,9 +2,11 @@
   description = "personal nix-darwin flake configuration";
 
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
+    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
+    nixpkgs-stable.url = github:nixos/nixpkgs/nixos-22.11;
+    nixpkgs-darwin-stable.url = github:nixos/nixpkgs/nixpkgs-22.11-darwin;
     darwin.url = github:lnl7/nix-darwin;
-    darwin.inputs.nixpkgs.follows = "nixpkgs";
+    darwin.inputs.nixpkgs.follows = "nixpkgs-darwin-stable";
     home-manager.url = github:nix-community/home-manager;
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nur.url = github:nix-community/NUR;
