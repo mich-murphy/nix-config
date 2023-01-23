@@ -102,7 +102,7 @@ in
       };
     };
     keyboard = {
-      enableKeyMapping = true;
+      enableKeyMapping = true;  # needed for skhd
       # remapCapsLockToControl = true;
     };
     stateVersion = 4;

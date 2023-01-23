@@ -8,7 +8,7 @@
     darwin.url = github:lnl7/nix-darwin;
     darwin.inputs.nixpkgs.follows = "nixpkgs-darwin-stable";
     home-manager.url = github:nix-community/home-manager;
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs-darwin-stable";
     nur.url = github:nix-community/NUR;
   };
 
