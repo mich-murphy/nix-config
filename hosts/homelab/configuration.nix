@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ lib, config, pkgs, inputs, ... }:
 
 let
   impermanence = builtins.fetchTarball {
@@ -8,7 +8,7 @@ in
 {
   imports = [
     ./hardware-configuration.nix
-    "${impermanence}/nixos.nix"
+    inputs.impermanence.nixosModules.impermanence
     ./modules/s3fs.nix
   ];
 
@@ -28,7 +28,7 @@ in
       mm = {
         isNormalUser = true;
         home = "/home/mm";
-        passwordFile = "/nix/persist/users/mm";
+        passwordFile = config.age.secrets.userPass.path;
         extraGroups = [ "wheel" ];
       };
       seedbox-sync = {
@@ -51,7 +51,6 @@ in
       ];
       files = [
         "/etc/machine-id"
-        "/users/mm"
       ];
     };
     etc = {
@@ -84,7 +83,7 @@ in
         dbhost = "/run/postgresql";
         dbname = "nextcloud";
         adminuser = "admin";
-        adminpassFile = "/etc/nixos/secrets/passwd-admin";
+        adminpassFile = config.age.secrets.nextcloudPass.path;
         defaultPhoneRegion = "AU";
       };
     };    
@@ -136,7 +135,7 @@ in
         NoNewPriviliges = true;
         ReadWritePaths = "/data/media";
       };
-      script = builtins.readFile ./seedbox-sync.bash;
+      script = config.age.secrets.syncScript.path;
     };
     timers.seedbox-sync = {
       wantedBy = [ "timers.target" ];
@@ -184,4 +183,9 @@ in
   nixpkgs.config.allowUnfree = true;
   system.stateVersion = "22.11";
 
+  age.secrets = {
+    userPass.file = ../../secrets/userPass.age;
+    nextcloudPass.file = ../../secrets/nextcloudPass.age;
+    syncScript.file = ../../secrets/syncScript.age;
+  };
 }
