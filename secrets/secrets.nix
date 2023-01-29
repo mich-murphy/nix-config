@@ -4,6 +4,5 @@ in
 {
   "userPass.age".publicKeys = [ nix-media ];
   "nextcloudPass.age".publicKeys = [ nix-media ];
-  "nextcloudDomain.age".publicKeys = [ nix-media ];
-  "syncScript.age".publicKeys = [ nix-media ];
+  "syncthingDevice.age".publicKeys = [ nix-media ];
 }

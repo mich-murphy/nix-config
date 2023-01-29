@@ -1,29 +1,36 @@
 { lib, config, pkgs, inputs, ... }:
 
-let
-  impermanence = builtins.fetchTarball {
-    url = "https://github.com/nix-community/impermanence/archive/master.tar.gz";
-  };
-in
 {
   imports = [
     ./hardware-configuration.nix
     inputs.impermanence.nixosModules.impermanence
-    ./modules/s3fs.nix
   ];
 
-  boot.loader.grub.enable = true;
-  boot.loader.grub.version = 2;
-  boot.loader.grub.device = "/dev/sda";
+  boot.loader.grub = {
+    enable = true;
+    version = 2;
+    device = "/dev/sda";
+  };
 
   time.timeZone = "Australia/Melbourne";
 
-  i18n.defaultLocale = "en_AU.UTF-8";
+  i18n = {
+    consoleFont = "Lat2-Terminus16";
+    consoleKeyMap = "us";
+    defaultLocale = "en_US.UTF-8";
+    extraLocaleSettings = {
+      LC_ALL = "en_AU.UTF-8";
+      LANG = "en_AU.UTF-8";
+    };
+  };
+
   services.xserver.layout = "us";
 
   users = {
     mutableUsers = false;
-    groups.seedbox-sync = {};
+    groups = {
+      syncthing = {};
+    };
     users = {
       mm = {
         isNormalUser = true;
@@ -31,11 +38,11 @@ in
         passwordFile = config.age.secrets.userPass.path;
         extraGroups = [ "wheel" ];
       };
-      seedbox-sync = {
-        group = "seedbox-sync";
+      syncthing = {
+        group = "syncthing";
         isSystemUser = true;
         createHome = true;
-        home = "/srv/seedbox-sync";
+        home = "/srv/syncthing";
       };
     };
   };
@@ -61,6 +68,7 @@ in
     };
     systemPackages = with pkgs; [
       vim
+      tmux
     ];
   };
 
@@ -68,7 +76,30 @@ in
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
-    s3fs.enable = true;
+    duplicati = {
+      enable = true;
+      interface = "0.0.0.0";
+    };
+    syncthing = {
+      enable = true;
+      user = "syncthing";
+      group = "syncthing";
+      dataDir = "/srv/syncthing";
+      configDir = "/srv/syncthing/.config/syncthing";
+      guiAddress = "0.0.0.0:8384";
+      overrideDevices = true;
+      overrideFolders = true;
+      devices = {
+        "seedbox" = { id = config.age.secrets.syncthingDevice.path; };
+      };
+      folders = {
+        "Music" = {
+          path = "/data/media/music";
+          devices = [ "seedbox" ];
+          type = "receiveonly";
+        };
+      };
+    };
     nextcloud = {
       enable = true;
       package = pkgs.nextcloud25;
@@ -122,28 +153,6 @@ in
       requires = [ "postgresql.service" ];
       after = [ "postgresql.service" ];
     };
-    services.seedbox-sync = {
-      path = [
-        pkgs.rsync
-        pkgs.openssh
-      ];
-      serviceConfig = {
-        User = "seedbox-sync";
-        Group = "seedbox-sync";
-        ProtectSystem = "full";
-        ProtectHome = true;
-        NoNewPriviliges = true;
-        ReadWritePaths = "/data/media";
-      };
-      script = config.age.secrets.syncScript.path;
-    };
-    timers.seedbox-sync = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        Unit = "seedbox-sync.service";
-        OnCalendar = "hourly";
-      };
-    };
   };
 
   networking = {
@@ -154,14 +163,15 @@ in
       checkReversePath = "loose";
       allowedUDPPorts = [ config.services.tailscale.port ];
       extraCommands = ''
+        iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
         iptables -A nixos-fw -p tcp --source 10.77.2.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p udp --source 10.77.2.0/24 -j nixos-fw-accept
       '';
     };
   };
 
   security = {
     sudo.execWheelOnly = true;
+    sudo.wheelNeedsPassword = false;
     auditd.enable = true;
     audit.enable = true;
     audit.rules = [
@@ -186,6 +196,6 @@ in
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
     nextcloudPass.file = ../../secrets/nextcloudPass.age;
-    syncScript.file = ../../secrets/syncScript.age;
+    syncthingDevice.file = ../../secrets/syncthingDevice.age;
   };
 }
