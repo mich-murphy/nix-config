@@ -15,16 +15,12 @@
   time.timeZone = "Australia/Melbourne";
 
   i18n = {
-    consoleFont = "Lat2-Terminus16";
-    consoleKeyMap = "us";
     defaultLocale = "en_US.UTF-8";
     extraLocaleSettings = {
       LC_ALL = "en_AU.UTF-8";
       LANG = "en_AU.UTF-8";
     };
   };
-
-  services.xserver.layout = "us";
 
   users = {
     mutableUsers = false;
@@ -73,6 +69,7 @@
   };
 
   services = {
+    xserver.layout = "us";
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;

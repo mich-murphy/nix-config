@@ -74,7 +74,7 @@
         hostname = "nix-media";
         remoteBuild = true;
         profiles.system = {
-          user = "mm";
+          user = "root";
           sshUser = "mm";
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nix-media;
         };
