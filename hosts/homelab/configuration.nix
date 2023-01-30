@@ -47,16 +47,18 @@
     persistence."/nix/persist" = {
       directories = [
         "/etc/nixos"
-        "/srv"
         "/var/log"
         "/var/lib"
         "/data"
+        "/srv"
       ];
       files = [
         "/etc/machine-id"
       ];
     };
     etc = {
+      "ssh/seedbox".source = "/nix/persist/etc/ssh/seedbox";
+      "ssh/seedbox.pub".source = "/nix/persist/etc/ssh/seedbox.pub";
       "ssh/ssh_host_rsa_key".source = "/nix/persist/etc/ssh/ssh_host_rsa_key";
       "ssh/ssh_host_rsa_key.pub".source = "/nix/persist/etc/ssh/ssh_host_rsa_key.pub";
       "ssh/ssh_host_ed25519_key".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key";
@@ -70,6 +72,7 @@
 
   services = {
     xserver.layout = "us";
+    s3fs.enable = true;
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
@@ -133,8 +136,10 @@
     openssh = {
       enable = true;
       allowSFTP = false;
-      kbdInteractiveAuthentication = false;
-      permitRootLogin = "no";
+      settings = {
+        PermitRootLogin = "no";
+        KbdInteractiveAuthentication = false;
+      };
       extraConfig = ''
         AllowTcpForwarding yes
         X11Forwarding no
@@ -162,6 +167,7 @@
       extraCommands = ''
         iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
         iptables -A nixos-fw -p tcp --source 10.77.2.0/24 -j nixos-fw-accept
+        iptables -A nixos-fw -p udp --source 10.77.2.0/24 -j nixos-fw-accept
       '';
     };
   };
@@ -192,7 +198,17 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
-    nextcloudPass.file = ../../secrets/nextcloudPass.age;
-    syncthingDevice.file = ../../secrets/syncthingDevice.age;
+    nextcloudPass = {
+      file = ../../secrets/nextcloudPass.age;
+      mode = "770";
+      owner = "nextcloud";
+      group = "nextcloud";
+    };
+    syncthingDevice = {
+      file = ../../secrets/syncthingDevice.age;
+      mode = "770";
+      owner = "syncthing";
+      group = "syncthing";
+    };
   };
 }

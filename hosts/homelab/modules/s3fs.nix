@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 with lib;
 
@@ -9,7 +9,7 @@ in {
     enable = mkEnableOption "Mounts s3 object storage using s3fs";
     keyPath = mkOption {
       type = types.str;
-      default = "/srv/s3fs/passwd-s3fs";
+      default = config.age.secrets.objectStorage.path;
     };
     mountPath = mkOption {
       type = types.str;
@@ -17,7 +17,7 @@ in {
     };
     bucket = mkOption {
       type = types.str;
-      default = "storage";
+      default = "s3-storage";
     };
     url = mkOption {
       type = types.str;
@@ -52,4 +52,6 @@ in {
       };
     };
   };
+
+  age.secrets.objectStorage.file = ../../../secrets/objectStorage.age;
 }

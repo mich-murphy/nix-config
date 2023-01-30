@@ -147,7 +147,7 @@ in
       "roon"
       "utm"
       "karabiner-elements"
-      "pokemon-trading-card-game-online"
+      "cyberduck"
     ];
   };
 
