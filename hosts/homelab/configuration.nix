@@ -89,6 +89,12 @@
       guiAddress = "0.0.0.0:8384";
       overrideDevices = true;
       overrideFolders = true;
+      extraOptions = {
+        gui = {
+          user = "mm";
+          password = config.age.secrets.syncthingPass.path;
+        };
+      };
       devices = {
         "seedbox" = { id = config.age.secrets.syncthingDevice.path; };
       };
@@ -97,6 +103,7 @@
           path = "/data/media/music";
           devices = [ "seedbox" ];
           type = "receiveonly";
+          ignoreDelete = true;
         };
       };
     };
@@ -206,6 +213,12 @@
     };
     syncthingDevice = {
       file = ../../secrets/syncthingDevice.age;
+      mode = "770";
+      owner = "syncthing";
+      group = "syncthing";
+    };
+    syncthingPass = {
+      file = ../../secrets/syncthingPass.age;
       mode = "770";
       owner = "syncthing";
       group = "syncthing";
