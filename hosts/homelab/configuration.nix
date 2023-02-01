@@ -101,7 +101,7 @@
     roon-server.enable = true;
     tailscale.enable = true;
     duplicati = {
-      enable = false;
+      enable = true;
       user = "duplicati";
       dataDir = "/srv/duplicati";
       interface = "0.0.0.0";
