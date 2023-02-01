@@ -66,7 +66,7 @@
         specialArgs = { inherit inputs; };
         modules = [
           ./hosts/homelab/configuration.nix
-          agenix.nixosModule
+          agenix.nixosModules.default
         ];
       };
 

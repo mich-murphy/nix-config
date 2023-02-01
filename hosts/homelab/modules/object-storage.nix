@@ -1,4 +1,4 @@
-{ config, lib, pkgs, inputs, ... }:
+{ config, lib, pkgs, ... }:
 
 with lib;
 
@@ -58,6 +58,4 @@ in {
       };
     };
   };
-
-  age.secrets.objectStorage.file = ../../../secrets/objectStorage.age;
 }

@@ -60,8 +60,9 @@ in
       enable = true;
       matchBlocks = {
         "nix-media" = {
-          hostname = "nix-media";
+          hostname = "10.77.2.9";
           user = "mm";
+          identityFile = "~/.ssh/nix-media";
         };
         "alpha" = {
           hostname = "alpha";

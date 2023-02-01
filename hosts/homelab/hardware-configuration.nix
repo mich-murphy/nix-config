@@ -21,13 +21,25 @@
     };
 
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/6aa79c3d-d167-4876-b1f9-8af2890de49f";
+    { device = "/dev/disk/by-label/boot";
       fsType = "ext4";
     };
 
   fileSystems."/nix" =
-    { device = "/dev/disk/by-uuid/854534f2-cb20-4f62-9240-cc9805fcee28";
+    { device = "/dev/disk/by-label/nix";
       fsType = "ext4";
+    };
+
+  fileSystems."/etc/nixos" =
+    { device = "/nix/persist/etc/nixos";
+      fsType = "none";
+      options = [ "bind" ];
+    };
+
+  fileSystems."/var/log" =
+    { device = "/nix/persist/var/log";
+      fsType = "none";
+      options = [ "bind" ];
     };
 
   swapDevices = [ ];

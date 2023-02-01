@@ -29,6 +29,7 @@
       object-storage = {};
       duplicati = {};
       syncthing = {};
+      nextcloud = {};
     };
     users = {
       mm = {
@@ -36,6 +37,9 @@
         home = "/home/mm";
         passwordFile = config.age.secrets.userPass.path;
         extraGroups = [ "wheel" ];
+        openssh.authorizedKeys.keys = [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN"
+        ];
       };
       object-storage = {
         group = "object-storage";
@@ -55,10 +59,17 @@
         createHome = true;
         home = "/srv/syncthing";
       };
+      nextcloud = {
+        group = "nextcloud";
+        isSystemUser = true;
+        createHome = true;
+        home = "/srv/nextcloud";
+      };
     };
   };
 
   environment = {
+
     persistence."/nix/persist" = {
       directories = [
         "/etc/nixos"
@@ -72,8 +83,6 @@
       ];
     };
     etc = {
-      "ssh/seedbox".source = "/nix/persist/etc/ssh/seedbox";
-      "ssh/seedbox.pub".source = "/nix/persist/etc/ssh/seedbox.pub";
       "ssh/ssh_host_rsa_key".source = "/nix/persist/etc/ssh/ssh_host_rsa_key";
       "ssh/ssh_host_rsa_key.pub".source = "/nix/persist/etc/ssh/ssh_host_rsa_key.pub";
       "ssh/ssh_host_ed25519_key".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key";
@@ -87,19 +96,18 @@
 
   services = {
     xserver.layout = "us";
-    object-storage.enable = true;
+    object-storage.enable = false;
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
     duplicati = {
-      enable = true;
+      enable = false;
       user = "duplicati";
-      group = "duplicati";
       dataDir = "/srv/duplicati";
       interface = "0.0.0.0";
     };
     syncthing = {
-      enable = true;
+      enable = false;
       user = "syncthing";
       group = "syncthing";
       dataDir = "/srv/syncthing";
@@ -126,7 +134,7 @@
       };
     };
     nextcloud = {
-      enable = true;
+      enable = false;
       package = pkgs.nextcloud25;
       home = "/srv/nextcloud";
       hostName = "nix-media.zonkey-goblin.ts.net";
@@ -144,7 +152,7 @@
       };
     };    
     postgresql = {
-      enable = true;
+      enable = false;
       ensureDatabases = [ "nextcloud" ];
       ensureUsers = [{
         name = "nextcloud";
@@ -161,8 +169,10 @@
     openssh = {
       enable = true;
       allowSFTP = false;
-      passwordAuthentication = false;
-      challengeResponseAuthentication = false;
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+      };
       settings = {
         PermitRootLogin = "no";
       };
@@ -192,6 +202,7 @@
       allowedUDPPorts = [ config.services.tailscale.port ];
       extraCommands = ''
         iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
+        iptables -A nixos-fw -p udp --source 10.77.1.0/24 -j nixos-fw-accept
         iptables -A nixos-fw -p tcp --source 10.77.2.0/24 -j nixos-fw-accept
         iptables -A nixos-fw -p udp --source 10.77.2.0/24 -j nixos-fw-accept
       '';
@@ -241,6 +252,12 @@
       mode = "770";
       owner = "syncthing";
       group = "syncthing";
+    };
+    objectStorage = {
+      file = ../../secrets/objectStorage.age;
+      mode = "770";
+      owner = "object-storage";
+      group = "object-storage";
     };
   };
 }
