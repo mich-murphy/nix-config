@@ -26,8 +26,9 @@
   users = {
     mutableUsers = false;
     groups = {
-      syncthing = {};
       object-storage = {};
+      duplicati = {};
+      syncthing = {};
     };
     users = {
       mm = {
@@ -36,17 +37,23 @@
         passwordFile = config.age.secrets.userPass.path;
         extraGroups = [ "wheel" ];
       };
-      syncthing = {
-        group = "syncthing";
-        isSystemUser = true;
-        createHome = true;
-        home = "/srv/syncthing";
-      };
       object-storage = {
         group = "object-storage";
         isSystemUser = true;
         createHome = true;
         home = "/srv/object-storage";
+      };
+      duplicati = {
+        group = "duplicati";
+        isSystemUser = true;
+        createHome = true;
+        home = "/srv/duplicati";
+      };
+      syncthing = {
+        group = "syncthing";
+        isSystemUser = true;
+        createHome = true;
+        home = "/srv/syncthing";
       };
     };
   };
@@ -86,6 +93,9 @@
     tailscale.enable = true;
     duplicati = {
       enable = true;
+      user = "duplicati";
+      group = "duplicati";
+      dataDir = "/srv/duplicati";
       interface = "0.0.0.0";
     };
     syncthing = {
@@ -201,7 +211,7 @@
   nix = {
     settings.auto-optimise-store = true;
     settings.allowed-users = [ "@wheel" ];
-    package = pkgs.nix;
+    package = pkgs.nixUnstable;
     gc.automatic = true;
     gc.options = "--delete-older-than 7d";
     extraOptions = ''
