@@ -3,9 +3,9 @@
 with lib;
 
 let
-  cfg = config.services.s3fs;
+  cfg = config.services.object-storage;
 in {
-  options.services.s3fs = {
+  options.services.object-storage = {
     enable = mkEnableOption "Mounts s3 object storage using s3fs";
     keyPath = mkOption {
       type = types.str;
@@ -26,11 +26,17 @@ in {
   };
 
   config = mkIf cfg.enable {
-    systemd.services.s3fs = {
+    systemd.services.object-storage = {
       description = "Linode object storage s3fs";
       wantedBy = [ "multi-user.target" ];
       startLimitIntervalSec = 5;
       serviceConfig = {
+        User = "object-storage";
+        Group = "object-storage";
+        ProtectSystem = "full";
+        ProtectHome = true;
+        NoNewPriviliges = true;
+        ReadWritePaths  = "${cfg.mountPath}";
         ExecStartPre = [
           "${pkgs.coreutils}/bin/mkdir -m 777 -pv ${cfg.mountPath}"
           #"${pkgs.e2fsprogs}/bin/chattr +i ${cfg.mountPath}" # stop files being written to unmounted dir

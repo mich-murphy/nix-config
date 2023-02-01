@@ -3,6 +3,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./modules/object-storage.nix
     inputs.impermanence.nixosModules.impermanence
   ];
 
@@ -26,6 +27,7 @@
     mutableUsers = false;
     groups = {
       syncthing = {};
+      object-storage = {};
     };
     users = {
       mm = {
@@ -39,6 +41,12 @@
         isSystemUser = true;
         createHome = true;
         home = "/srv/syncthing";
+      };
+      object-storage = {
+        group = "object-storage";
+        isSystemUser = true;
+        createHome = true;
+        home = "/srv/object-storage";
       };
     };
   };
@@ -72,7 +80,7 @@
 
   services = {
     xserver.layout = "us";
-    s3fs.enable = true;
+    object-storage.enable = true;
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
@@ -143,9 +151,10 @@
     openssh = {
       enable = true;
       allowSFTP = false;
+      passwordAuthentication = false;
+      challengeResponseAuthentication = false;
       settings = {
         PermitRootLogin = "no";
-        KbdInteractiveAuthentication = false;
       };
       extraConfig = ''
         AllowTcpForwarding yes

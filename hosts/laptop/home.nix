@@ -67,6 +67,11 @@ in
           hostname = "alpha";
           user = "root";
         };
+        "seedhost" = {
+          hostname = "mole.seedhost.eu";
+          user = "mm";
+          identityFile = "~/.ssh/seedhost";
+        };
       };
     };
     zsh = {
