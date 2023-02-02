@@ -118,11 +118,12 @@
       extraOptions = {
         gui = {
           user = "mm";
-          password = config.age.secrets.syncthingPass.path;
+          password = "makenotificationgoaway";
         };
       };
       devices = {
-        "seedbox" = { id = config.age.secrets.syncthingDevice.path; };
+        "seedbox" = { id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT"
+        };
       };
       folders = {
         "Music" = {
@@ -240,18 +241,6 @@
       mode = "770";
       owner = "nextcloud";
       group = "nextcloud";
-    };
-    syncthingDevice = {
-      file = ../../secrets/syncthingDevice.age;
-      mode = "770";
-      owner = "syncthing";
-      group = "syncthing";
-    };
-    syncthingPass = {
-      file = ../../secrets/syncthingPass.age;
-      mode = "770";
-      owner = "syncthing";
-      group = "syncthing";
     };
     objectStorage = {
       file = ../../secrets/objectStorage.age;
