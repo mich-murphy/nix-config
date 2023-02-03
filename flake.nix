@@ -17,7 +17,7 @@
     agenix.url = github:ryantm/agenix;
 
     deploy-rs.url = github:serokell/deploy-rs;
-    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
+    deploy-rs.inputs.nixpkgs.follows = "nixpkgs-stable";
 
     impermanence.url = "github:nix-community/impermanence";
   };

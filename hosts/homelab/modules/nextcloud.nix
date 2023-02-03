@@ -31,9 +31,9 @@
     nginx.virtualHosts.${config.services.nextcloud.hostName} = {
       forceSSL = true;
       # generate with `sudo tailscale cert nix-media.zonkey-goblin.ts.net && sudo chmod 644 *.key`
-      sslCertificate = "/etc/nixos/secrets/nix-media.zonkey-goblin.ts.net.crt";
-      sslTrustedCertificate = "/etc/nixos/secrets/nix-media.zonkey-goblin.ts.net.crt";
-      sslCertificateKey = "/etc/nixos/secrets/nix-media.zonkey-goblin.ts.net.key";
+      sslCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
+      sslTrustedCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
+      sslCertificateKey = "/etc/nixos/nix-media.zonkey-goblin.ts.net.key";
     };
   };
 
@@ -47,9 +47,7 @@
   age.secrets = {
     nextcloudPass = {
       file = ../../../secrets/nextcloudPass.age;
-      mode = "770";
       owner = "nextcloud";
-      group = "nextcloud";
     };
   };
 }
