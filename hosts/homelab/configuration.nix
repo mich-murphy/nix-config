@@ -4,6 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ./modules/object-storage.nix
+    #./modules/nextcloud.nix
     inputs.impermanence.nixosModules.impermanence
   ];
 
@@ -25,12 +26,6 @@
 
   users = {
     mutableUsers = false;
-    groups = {
-      object-storage = {};
-      duplicati = {};
-      syncthing = {};
-      nextcloud = {};
-    };
     users = {
       mm = {
         isNormalUser = true;
@@ -41,35 +36,10 @@
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN"
         ];
       };
-      object-storage = {
-        group = "object-storage";
-        isSystemUser = true;
-        createHome = true;
-        home = "/srv/object-storage";
-      };
-      duplicati = {
-        group = "duplicati";
-        isSystemUser = true;
-        createHome = true;
-        home = "/srv/duplicati";
-      };
-      syncthing = {
-        group = "syncthing";
-        isSystemUser = true;
-        createHome = true;
-        home = "/srv/syncthing";
-      };
-      nextcloud = {
-        group = "nextcloud";
-        isSystemUser = true;
-        createHome = true;
-        home = "/srv/nextcloud";
-      };
     };
   };
 
   environment = {
-
     persistence."/nix/persist" = {
       directories = [
         "/etc/nixos"
@@ -96,18 +66,21 @@
 
   services = {
     xserver.layout = "us";
-    object-storage.enable = false;
+    object-storage = {
+      enable = true;
+      keyPath = config.age.secrets.objectStorage.path;
+    };
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
+    plex.enable = true;
     duplicati = {
       enable = true;
       user = "duplicati";
-      dataDir = "/srv/duplicati";
       interface = "0.0.0.0";
     };
     syncthing = {
-      enable = false;
+      enable = true;
       user = "syncthing";
       group = "syncthing";
       dataDir = "/srv/syncthing";
@@ -115,57 +88,25 @@
       guiAddress = "0.0.0.0:8384";
       overrideDevices = true;
       overrideFolders = true;
-      extraOptions = {
-        gui = {
-          user = "mm";
-          password = "makenotificationgoaway";
-        };
-      };
       devices = {
-        "seedbox" = { id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT"
+        "seedbox" = {
+          id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
         };
       };
       folders = {
         "Music" = {
+          id = "mrpfh-btugj";
           path = "/data/media/music";
           devices = [ "seedbox" ];
           type = "receiveonly";
-          ignoreDelete = true;
+        };
+        "Audiobooks" = {
+          id = "mqh32-k7ykn";
+          path = "/data/media/audiobooks";
+          devices = [ "seedbox" ];
+          type = "receiveonly";
         };
       };
-    };
-    nextcloud = {
-      enable = false;
-      package = pkgs.nextcloud25;
-      home = "/srv/nextcloud";
-      hostName = "nix-media.zonkey-goblin.ts.net";
-      autoUpdateApps.enable = true;
-      https = true;
-      config = {
-        overwriteProtocol = "https";
-        dbtype = "pgsql";
-        dbuser = "nextcloud";
-        dbhost = "/run/postgresql";
-        dbname = "nextcloud";
-        adminuser = "admin";
-        adminpassFile = config.age.secrets.nextcloudPass.path;
-        defaultPhoneRegion = "AU";
-      };
-    };    
-    postgresql = {
-      enable = false;
-      ensureDatabases = [ "nextcloud" ];
-      ensureUsers = [{
-        name = "nextcloud";
-        ensurePermissions."DATABASE nextcloud" = "ALL PRIVILEGES";
-      }];
-    };
-    nginx.virtualHosts.${config.services.nextcloud.hostName} = {
-      forceSSL = true;
-      # generate with `sudo tailscale cert nix-media.zonkey-goblin.ts.net && sudo chmod 644 *.key`
-      sslCertificate = "/etc/nixos/secrets/nix-media.zonkey-goblin.ts.net.crt";
-      sslTrustedCertificate = "/etc/nixos/secrets/nix-media.zonkey-goblin.ts.net.crt";
-      sslCertificateKey = "/etc/nixos/secrets/nix-media.zonkey-goblin.ts.net.key";
     };
     openssh = {
       enable = true;
@@ -184,13 +125,6 @@
         AllowStreamLocalForwarding no
         AuthenticationMethods publickey
       '';
-    };
-  };
-
-  systemd = {
-    services."nextcloud-setup" = {
-      requires = [ "postgresql.service" ];
-      after = [ "postgresql.service" ];
     };
   };
 
@@ -236,17 +170,6 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
-    nextcloudPass = {
-      file = ../../secrets/nextcloudPass.age;
-      mode = "770";
-      owner = "nextcloud";
-      group = "nextcloud";
-    };
-    objectStorage = {
-      file = ../../secrets/objectStorage.age;
-      mode = "770";
-      owner = "object-storage";
-      group = "object-storage";
-    };
+    objectStorage.file = ../../secrets/objectStorage.age;
   };
 }
