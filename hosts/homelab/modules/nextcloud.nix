@@ -4,20 +4,18 @@
   services = {
     nextcloud = {
       enable = true;
-      package = pkgs.nextcloud25;
-      home = "/srv/nextcloud";
       hostName = "nix-media.zonkey-goblin.ts.net";
       autoUpdateApps.enable = true;
       https = true;
       config = {
-        overwriteProtocol = "https";
         dbtype = "pgsql";
+        dbname = "nextcloud";
         dbuser = "nextcloud";
         dbhost = "/run/postgresql";
-        dbname = "nextcloud";
         adminuser = "admin";
         adminpassFile = config.age.secrets.nextcloudPass.path;
         defaultPhoneRegion = "AU";
+        extraTrustedDomains = [ "0.0.0.0" ];
       };
     };    
     postgresql = {
@@ -27,6 +25,11 @@
         name = "nextcloud";
         ensurePermissions."DATABASE nextcloud" = "ALL PRIVILEGES";
       }];
+    };
+    postgresqlBackup = {
+      enable = true;
+      location = "/data/backup/nextclouddb";
+      databases = [ "nextcloud" ];
     };
     nginx.virtualHosts.${config.services.nextcloud.hostName} = {
       forceSSL = true;

@@ -14,7 +14,7 @@ in
 {
   imports = [
     ./hardware-configuration.nix
-    ./modules/object-storage.nix
+    ./modules/nextcloud.nix
     inputs.impermanence.nixosModules.impermanence
   ];
 
@@ -76,10 +76,10 @@ in
 
   services = {
     xserver.layout = "us";
-    object-storage = {
-      enable = true;
-      keyPath = config.age.secrets.objectStorage.path;
-    };
+    # object-storage = {
+    #   enable = true;
+    #   keyPath = config.age.secrets.objectStorage.path;
+    # };
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
@@ -183,6 +183,6 @@ in
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
-    objectStorage.file = ../../secrets/objectStorage.age;
+    # objectStorage.file = ../../secrets/objectStorage.age;
   };
 }
