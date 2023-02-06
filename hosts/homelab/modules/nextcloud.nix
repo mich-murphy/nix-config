@@ -7,6 +7,7 @@
       hostName = "nix-media.zonkey-goblin.ts.net";
       autoUpdateApps.enable = true;
       https = true;
+      caching.redis = true;
       config = {
         dbtype = "pgsql";
         dbname = "nextcloud";
@@ -15,7 +16,14 @@
         adminuser = "admin";
         adminpassFile = config.age.secrets.nextcloudPass.path;
         defaultPhoneRegion = "AU";
-        extraTrustedDomains = [ "0.0.0.0" ];
+      };
+      extraOptions = {
+        redis = {
+          host = "127.0.0.1";
+          port = 31638;
+          dbindex = 0;
+          timeout = 1.5;
+        };
       };
     };    
     postgresql = {
@@ -30,6 +38,11 @@
       enable = true;
       location = "/data/backup/nextclouddb";
       databases = [ "nextcloud" ];
+    };
+    redis.servers.nextcloud = {
+      enable = true;
+      port = 31638;
+      bind = "127.0.0.1";
     };
     nginx.virtualHosts.${config.services.nextcloud.hostName} = {
       forceSSL = true;
