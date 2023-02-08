@@ -5,4 +5,7 @@ in
   "userPass.age".publicKeys = [ nix-media ];
   "nextcloudPass.age".publicKeys = [ nix-media ];
   "objectStorage.age".publicKeys = [ nix-media ];
+  "mediaBorgPass.age".publicKeys = [ nix-media ];
+  "nextcloudBorgPass.age".publicKeys = [ nix-media ];
+  "borgSSHKey.age".publicKeys = [ nix-media ];
 }

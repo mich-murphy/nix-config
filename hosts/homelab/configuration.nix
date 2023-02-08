@@ -15,6 +15,7 @@ in
   imports = [
     ./hardware-configuration.nix
     ./modules/nextcloud.nix
+    ./modules/borgbackup.nix
     inputs.impermanence.nixosModules.impermanence
   ];
 
@@ -138,6 +139,11 @@ in
         AllowStreamLocalForwarding no
         AuthenticationMethods publickey
       '';
+      # default to ed25519 key generation
+      hostKeys = [{
+        path = "/etc/ssh/ssh_host_ed25519_key";
+        type = "ed25519";
+      }];
     };
   };
 
