@@ -1,5 +1,5 @@
 {
-  description = "personal nix-darwin flake configuration";
+  description = "Nix flake to configure personal M2 Macbook Air and homelab";
 
   inputs = {
     nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;

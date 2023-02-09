@@ -5,7 +5,6 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 ## General
 
 - [ ] Create GitHub action to create cachix build of flake
-- [ ] Break configs into modules and/or profiles
 
 ## Applications
 
@@ -19,8 +18,4 @@ Tasks relating to the initial creation and continuous maintenance of personal Ni
 
 ## Homelab
 
-- [ ] Update homelab for passwordless sudo to allow deploy-rs to work
-- [ ] Confirm working deployment with deploy-rs
-- [ ] Test seedbox-sync service is working after updating script to use agenix
-- [ ] Configure ssh keys using agenix
  
