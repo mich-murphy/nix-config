@@ -1,16 +1,5 @@
 { lib, config, pkgs, inputs, ... }:
 
-let
-  audnexusPlugin = pkgs.stdenv.mkDerivation {
-    name = "Audnexus.bundle";
-    src = pkgs.fetchurl {
-      url = https://github.com/djdembeck/Audnexus.bundle/archive/refs/tags/v1.1.0.zip;
-      sha256 = "sha256-i5ssEe7SFoQHFXvYiB0nG1mQrcA/wgSeYZiyYKDYtuQ=";
-    };
-    buildInputs = [ pkgs.unzip ];
-    installPhase = "mkdir -p $out; cp -R * $out/";
-  };
-in
 {
   imports = [
     ./hardware-configuration.nix
@@ -77,6 +66,8 @@ in
   common = {
     borgbackup.enable = true;
     nextcloud.enable = true;
+    syncthing.enable = true;
+    plex.enable = true;
   };
 
   services = {
@@ -84,43 +75,10 @@ in
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
-    plex = {
-      enable = true;
-      extraPlugins = [ audnexusPlugin ];
-    };
     duplicati = {
       enable = true;
       user = "duplicati";
       interface = "0.0.0.0";
-    };
-    syncthing = {
-      enable = true;
-      user = "syncthing";
-      group = "syncthing";
-      dataDir = "/srv/syncthing";
-      configDir = "/srv/syncthing/.config/syncthing";
-      guiAddress = "0.0.0.0:8384";
-      overrideDevices = true;
-      overrideFolders = true;
-      devices = {
-        "seedbox" = {
-          id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
-        };
-      };
-      folders = {
-        "Music" = {
-          id = "mrpfh-btugj";
-          path = "/data/media/music";
-          devices = [ "seedbox" ];
-          type = "receiveonly";
-        };
-        "Audiobooks" = {
-          id = "mqh32-k7ykn";
-          path = "/data/media/audiobooks";
-          devices = [ "seedbox" ];
-          type = "receiveonly";
-        };
-      };
     };
     openssh = {
       enable = true;
