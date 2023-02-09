@@ -3,45 +3,30 @@
 with lib;
 
 let
-  cfg = config.services.object-storage;
-in {
-  options.services.object-storage = {
+  cfg = config.common.object-storage;
+in 
+{
+  options.common.object-storage = {
     enable = mkEnableOption (lib.mdDoc "Mounts s3 object storage using s3fs");
     keyPath = mkOption {
       type = types.str;
-      default = "";
-      description = lib.mdDoc ''
-        Path to file containing 'access-key:secret-key'
-
-        Default: ""
-      '';
+      default = config.age.secrets.objectStorage.path;
+      description = "Path to file containing 'access-key:secret-key'";
     };
     mountPath = mkOption {
       type = types.str;
       default = "/mnt/storage";
-      description = lib.mdDoc ''
-        File system location for the object storage to be mounted to
-        
-        Default: /mnt/storage
-      '';
+      description = "File system location for the object storage to be mounted to";
     };
     bucket = mkOption {
       type = types.str;
       default = "s3-storage";
-      description = lib.mdDoc ''
-        Name of bucket
-
-        Default: s3-storage
-      '';
+      description = "Name of bucket";
     };
     url = mkOption {
       type = types.str;
       default = "https://ap-south-1.linodeobjects.com/";
-      description = lib.mdDoc ''
-        URL to access object storage
-        
-        Default: https://ap-south-1.linodeobjects.com/ 
-      '';
+      description = "URL to access object storage";
     };
   };
 
@@ -71,5 +56,7 @@ in {
         Restart = "on-failure";
       };
     };
+
+    age.secrets.objectStorage.file = ../../secrets/objectStorage.age;
   };
 }
