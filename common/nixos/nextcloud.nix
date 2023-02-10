@@ -55,12 +55,23 @@ in
         port = 31638;
         bind = "127.0.0.1";
       };
-      nginx.virtualHosts.${config.services.nextcloud.hostName} = {
-        forceSSL = true;
-        # generate with `sudo tailscale cert nix-media.zonkey-goblin.ts.net && sudo chmod 644 *.key`
-        sslCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
-        sslTrustedCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
-        sslCertificateKey = "/etc/nixos/nix-media.zonkey-goblin.ts.net.key";
+      nginx = {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        virtualHosts.${config.services.nextcloud.hostName} = {
+          forceSSL = true;
+          # generate with `sudo tailscale cert nix-media.zonkey-goblin.ts.net && sudo chmod 644 *.key`
+          sslCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
+          sslTrustedCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
+          sslCertificateKey = "/etc/nixos/nix-media.zonkey-goblin.ts.net.key";
+          locations."/" = {
+            proxyPass = "http://127.0.0.1/8080";
+            proxyWebsockets = true;
+          };
+        };
       };
     };
 

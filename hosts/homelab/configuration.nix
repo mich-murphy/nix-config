@@ -2,8 +2,8 @@
 
 {
   imports = [
-    ./hardware-configuration.nix
     ../../common/nixos
+    ./hardware-configuration.nix
     inputs.impermanence.nixosModules.impermanence
   ];
 
