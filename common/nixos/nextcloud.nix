@@ -1,4 +1,4 @@
-{ lib, config, pkgs, inputs, ... }:
+{ lib, config, pkgs, ... }:
 
 with lib;
 
@@ -7,14 +7,14 @@ let
 in
 {
   options.common.nextcloud = {
-    enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
+    enable = mkEnableOption "Enable Nextcloud with Postgres DB, Redis caching and automatic DNS validation";
   };
 
   config = mkIf cfg.enable {
     services = {
       nextcloud = {
         enable = true;
-        hostName = "nix-media.zonkey-goblin.ts.net";
+        hostName = "nextcloud.elmurphy.com";
         autoUpdateApps.enable = true;
         https = true;
         caching.redis = true;
@@ -62,18 +62,28 @@ in
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
         virtualHosts.${config.services.nextcloud.hostName} = {
-          forceSSL = true;
-          # generate with `sudo tailscale cert nix-media.zonkey-goblin.ts.net && sudo chmod 644 *.key`
-          sslCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
-          sslTrustedCertificate = "/etc/nixos/nix-media.zonkey-goblin.ts.net.crt";
-          sslCertificateKey = "/etc/nixos/nix-media.zonkey-goblin.ts.net.key";
+          enableACME = true;
+          acmeRoot = null;
+          addSSL = true;
           locations."/" = {
-            proxyPass = "http://127.0.0.1/8080";
+            proxyPass = "http://localhost:8080";
             proxyWebsockets = true;
           };
         };
       };
     };
+
+    security.acme = {
+      acceptTerms = true;
+      preliminarySelfsigned = false;
+      defaults = {
+        email = "acme@elmurphy.com";
+        dnsProvider = "cloudflare";
+        credentialsFile = config.age.secrets.acmeCredentials.path;
+      };
+    };
+
+    users.users.nginx.extraGroups = [ "acme" ];
 
     systemd = {
       services."nextcloud-setup" = {
@@ -87,6 +97,7 @@ in
         file = ../../secrets/nextcloudPass.age;
         owner = "nextcloud";
       };
+      acmeCredentials.file = ../../secrets/acmeCredentials.age;
     };
   };
 }
