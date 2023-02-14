@@ -76,8 +76,7 @@
     roon-server.enable = true;
     tailscale.enable = true;
     duplicati = {
-      enable = true;
-      user = "duplicati";
+      enable = false;
       interface = "0.0.0.0";
     };
     openssh = {

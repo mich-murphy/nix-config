@@ -16,7 +16,7 @@ in
         enable = true;
         dataDir = "/srv/syncthing";
         configDir = "/srv/syncthing/.config/syncthing";
-        guiAddress = "127.0.0.1:8384";
+        guiAddress = "0.0.0.0:8384";
         overrideDevices = true;
         overrideFolders = true;
         devices = {
