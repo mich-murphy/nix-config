@@ -1,7 +1,7 @@
 # Nix-Darwin Configuration Flake
 
-![screenshot](https://github.com/mich-murphy/nix-config/blob/master/screenshot/screenshot.png)
-![screenshot-browser](https://github.com/mich-murphy/nix-config/blob/master/screenshot/screenshot-2.png)
+![screenshot](https://github.com/mich-murphy/nix-config/blob/master/images/screenshot.png)
+![screenshot-browser](https://github.com/mich-murphy/nix-config/blob/master/images/screenshot-2.png)
 
 ## Contents
 

@@ -19,7 +19,9 @@
     deploy-rs.url = github:serokell/deploy-rs;
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs-stable";
 
-    impermanence.url = "github:nix-community/impermanence";
+    impermanence.url = github:nix-community/impermanence;
+
+    neovim.url = github:neovim/neovim?dir=contrib;
   };
 
   outputs = { 
@@ -33,29 +35,29 @@
     agenix, 
     deploy-rs,
     impermanence,
+    neovim,
     ... 
   }@inputs:
     let
       user = "mm";
       host = "macbook";
-      gitUser = "mich-murphy";
-      gitEmail = "github@elmurphy.com";
     in
     {
       darwinConfigurations.macbook = darwin.lib.darwinSystem {
         system = "aarch64-darwin";
-	specialArgs = { inherit user host gitUser gitEmail; };
+	specialArgs = { inherit user host; };
         modules = [
 	  ./hosts/laptop/darwin-configuration.nix
 	  home-manager.darwinModules.home-manager {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit user gitUser gitEmail; };
+            home-manager.extraSpecialArgs = { inherit user; };
             home-manager.users.${user} = import ./hosts/laptop/home.nix;
 	  }
 	  {
             nixpkgs.overlays = with inputs; [
               nur.overlay
+              neovim.overlay
             ];
 	  }
         ];

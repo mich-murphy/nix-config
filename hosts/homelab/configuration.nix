@@ -75,10 +75,6 @@
     qemuGuest.enable = true;
     roon-server.enable = true;
     tailscale.enable = true;
-    duplicati = {
-      enable = false;
-      interface = "0.0.0.0";
-    };
     openssh = {
       enable = true;
       allowSFTP = false;
