@@ -23,6 +23,11 @@ in
       extraPackages = with pkgs; [
         nodePackages.npm
         wget
+        # (python310.withPackages (ps: with ps; [
+        #   black
+        #   flake8
+        #   debugpy
+        # ]))
       ];
     };
 
