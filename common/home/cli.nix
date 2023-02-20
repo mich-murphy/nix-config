@@ -26,6 +26,7 @@ in
         shellAliases = {
           ls = "lsd -lah";
           cat = "bat";
+          vim = "nvim";
           g = "git";
           gs = "g status";
           ga = "g add";

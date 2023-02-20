@@ -45,6 +45,8 @@ in
         environment.BORG_RSH = "ssh -i ${cfg.identityFile}";
         compression = "auto,lzma";
         startAt = "daily";
+        preHook = "sudo -i nextcloud-occ maintenance:mode --on";
+        postHook = "sudo -i nextcloud-occ maintenance:mode --off";
       };
     };
      
