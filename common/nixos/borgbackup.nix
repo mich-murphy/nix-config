@@ -30,7 +30,7 @@ in
         };
         environment.BORG_RSH = "ssh -i ${cfg.identityFile}";
         compression = "auto,lzma";
-        startAt = "daily";
+        startAt = "hourly";
       };
       "nextcloud" = {
         paths = [
