@@ -49,7 +49,6 @@
       ];
       files = [
         "/etc/machine-id"
-        "/root/.ssh/known_hosts"
       ];
     };
     etc = {
