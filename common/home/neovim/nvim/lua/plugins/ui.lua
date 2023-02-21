@@ -10,6 +10,17 @@ return {
     },
   },
 
+  {
+    "nvim-lualine/lualine.nvim",
+    event = "VeryLazy",
+    opts = function(_, opts)
+      opts.options = vim.tbl_extend("force", opts.options, {
+        section_separators = "",
+        component_separators = "",
+      })
+    end,
+  },
+
   -- change dashboard logo
   {
     "goolord/alpha-nvim",
