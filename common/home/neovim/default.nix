@@ -23,12 +23,7 @@ in
       extraPackages = with pkgs; [
         nodePackages.npm
         wget
-        rnix-lsp
-        # (python310.withPackages (ps: with ps; [
-        #   black
-        #   flake8
-        #   debugpy
-        # ]))
+        lazygit
       ];
     };
 
