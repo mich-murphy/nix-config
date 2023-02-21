@@ -24,6 +24,12 @@ in
         nodePackages.npm
         wget
         lazygit
+        rnix-lsp
+      ];
+      extraPython3Packages = py: with py; [
+        black
+        flake8
+        debugpy
       ];
     };
 

@@ -2,7 +2,7 @@ return {
 
   {
     "nvim-treesitter/nvim-treesitter",
-    dependancies = {
+    dependencies = {
       "nvim-treesitter/nvim-treesitter-context",
       config = true,
     },
