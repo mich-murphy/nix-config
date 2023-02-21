@@ -1,4 +1,12 @@
 return {
+
+  -- disable tokyonight
+  { "folke/tokyonight.nvim", enabled = false },
+
+  -- disable catppuccin
+  { "catppuccin/nvim", name = "catppuccin", enabled = false },
+
+  -- enable monkaiipro
   {
     "https://gitlab.com/__tpb/monokai-pro.nvim",
     lazy = false,
