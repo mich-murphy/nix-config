@@ -1,5 +1,9 @@
 { lib, config, pkgs, ... }:
 
+# NOTE: Neovim Config Needs to Be Clones Manually:
+# git clone git@github.com:mich-murphy/neovim.git ~/.config/nvim
+# allows management of neovim outside of nix (for use on any computer)
+ 
 with lib;
 
 let
@@ -7,43 +11,28 @@ let
 in
 {
   options.common.neovim = {
-    enable = mkEnableOption "Enable LazyVim with personalised config";
+    enable = mkEnableOption "Enable neovim with personalised config";
   };
 
   config = mkIf cfg.enable {
     programs.neovim = {
       enable = true;
       package = pkgs.neovim;
-      viAlias = true;
       vimAlias = true;
       defaultEditor = true;
       withPython3 = true;
       withNodeJs = true;
-      extraConfig = "luafile ~/.config/nvim/settings.lua";
       extraPackages = with pkgs; [
         nodePackages.npm
         wget
         lazygit
-        rnix-lsp
-      ];
-      extraPython3Packages = py: with py; [
-        black
-        flake8
-        debugpy
+        cargo
       ];
     };
 
     home.sessionVariables = {
       EDITOR = "nvim";
       VISUAL = "nvim";
-    };
-
-    xdg.configFile = {
-      nvim = {
-        source = ./nvim;
-        target = "nvim";
-        recursive = true;
-      };
     };
   };
 }

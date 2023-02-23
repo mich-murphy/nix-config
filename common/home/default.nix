@@ -2,8 +2,8 @@
 
 {
   imports = [
-    ./neovim
     ./firefox
+    ./neovim.nix
     ./alacritty.nix
     ./kitty.nix
     ./git.nix
