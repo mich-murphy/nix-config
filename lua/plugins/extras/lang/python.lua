@@ -1,4 +1,5 @@
 return {
+
   -- add python treesitter
   {
     "nvim-treesitter/nvim-treesitter",
