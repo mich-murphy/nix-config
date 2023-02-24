@@ -31,11 +31,16 @@ in
           gs = "g status";
           ga = "g add";
           gc = "g commit";
-          gh = "g pull";
           gp = "g push";
           gpl = "g pull";
           gb = "g branch";
           gch = "g checkout";
+          gst = "g stash";
+          gl = "g log";
+          gd = "g diff";
+          rg = "batgrep";
+          man = "batman";
+          diff = "batdiff";
         };
       };
       direnv = {
@@ -51,6 +56,7 @@ in
         extraPackages = with pkgs.bat-extras; [
           batgrep
           batdiff
+          batman
         ];
       };
       starship = {
@@ -121,6 +127,7 @@ in
       thefuck
       du-dust
       grex
+      delta
     ];
   };
 }
