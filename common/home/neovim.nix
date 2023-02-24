@@ -28,6 +28,9 @@ in
         lazygit
         cargo
       ];
+      extraPython3Packages = py: with py; [
+        pip
+      ];
     };
 
     home.sessionVariables = {
