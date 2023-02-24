@@ -51,7 +51,7 @@ in
       bat = {
         enable = true;
         config = {
-          theme = "Monokai Extended Origin";
+          theme = "ansi";
         };
         extraPackages = with pkgs.bat-extras; [
           batgrep
