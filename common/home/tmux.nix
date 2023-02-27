@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, stdenv, ... }:
 
 with lib;
 
@@ -14,9 +14,8 @@ in
     programs.tmux = {
       enable = true;
       baseIndex = 1;
-      customPaneNavigationAndResize = true;
       disableConfirmationPrompt = true;
-      escapeTime = 10;
+      escapeTime = 0;
       historyLimit = 10000;
       keyMode = "vi";
       newSession = true;
@@ -24,48 +23,47 @@ in
       terminal = "screen-256color";
       tmuxp.enable = true;
       plugins = with pkgs; [
-        tmuxPlugins.tmux-fzf
         {
           plugin = tmuxPlugins.power-theme;
           extraConfig = "set -g @tmux_power_theme 'moon'";
         }
       ];
       extraConfig = ''
+        # Additional terminal color settings
+        set-option -ga terminal-overrides ",xterm-256color:Tc"
+
         # Vim settings
         set-option -g focus-events on
-        # Changing key bindings
-        unbind r
-        bind r source-file $XDG_CONFIG_HOME/tmux/tmux.conf \; display "Reloaded tmux conf"
-        set -g mouse on
-        unbind v
-        unbind h
-        unbind %
-        unbind '"'
-        bind v split-window -h -c "#{pane_current_path}"
-        bind h split-window -v -c "#{pane_current_path}"
-        bind -n C-h select-pane -L
-        bind -n C-j select-pane -D
-        bind -n C-k select-pane -U
-        bind -n C-l select-pane -R
-        unbind n
-        unbind w
-        bind n command-prompt "rename-window '%%'"
-        bind w new-window -c "#{pane_current_path}"
-        bind -n M-j previous-window
-        bind -n M-k next-window
+
+        # Easier split pane bindings
+        bind - split-window -v -c "#{pane_current_path}"
+        bind | split-window -h -c "#{pane_current_path}"
+
         # Vim keybindings
         unbind -T copy-mode-vi Space;
         unbind -T copy-mode-vi Enter;
         bind -T copy-mode-vi v send-keys -X begin-selection
         bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xsel --clipboard" 
-        set -g -a terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q'
+
+        # Smart pane switching with awareness of Vim splits.
+        # See: https://github.com/christoomey/vim-tmux-navigator
         is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
-            | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
-        bind -n C-h if-shell "$is_vim" "send-keys C-h"  "select-pane -L"
-        bind -n C-j if-shell "$is_vim" "send-keys C-j"  "select-pane -D"
-        bind -n C-k if-shell "$is_vim" "send-keys C-k"  "select-pane -U"
-        bind -n C-l if-shell "$is_vim" "send-keys C-l"  "select-pane -R"
-        bind -n C-\\ if-shell "$is_vim" "send-keys C-\\" "select-pane -l"
+            | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|l?n?vim?x?)(diff)?$'"
+        bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
+        bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j'  'select-pane -D'
+        bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k'  'select-pane -U'
+        bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l'  'select-pane -R'
+        tmux_version='$(tmux -V | sed -En "s/^tmux ([0-9]+(.[0-9]+)?).*/\1/p")'
+        if-shell -b '[ "$(echo "$tmux_version < 3.0" | bc)" = 1 ]' \
+            "bind-key -n 'C-\\' if-shell \"$is_vim\" 'send-keys C-\\'  'select-pane -l'"
+        if-shell -b '[ "$(echo "$tmux_version >= 3.0" | bc)" = 1 ]' \
+            "bind-key -n 'C-\\' if-shell \"$is_vim\" 'send-keys C-\\\\'  'select-pane -l'"
+
+        bind-key -T copy-mode-vi 'C-h' select-pane -L
+        bind-key -T copy-mode-vi 'C-j' select-pane -D
+        bind-key -T copy-mode-vi 'C-k' select-pane -U
+        bind-key -T copy-mode-vi 'C-l' select-pane -R
+        bind-key -T copy-mode-vi 'C-\' select-pane -l
       '';
     };
   };

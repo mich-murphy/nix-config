@@ -31,6 +31,7 @@ in
           force = true;
         };
         settings = {
+          # https://sunknudsen.com/privacy-guides/how-to-configure-firefox-for-privacy-and-security
           # Firefox hardening using preferences (automated)
           "app.normandy.first_run" = false;
           "app.shield.optoutstudies.enabled" = false;
@@ -54,9 +55,9 @@ in
           "extensions.pocket.enabled" = false;
           "identity.fxaccounts.enabled" = false;
           "layout.spellcheckDefault" = 1; # Used to disable spellchecker… set to `0` for increased privacy
-          "media.peerconnection.enabled" = false; # Used to disable WebRTC (mitigating WebRTC leaks)… set to `true` to enable WebRTC
+          "media.peerconnection.enabled" = true; # Used to disable WebRTC (mitigating WebRTC leaks)… set to `true` to enable WebRTC
           "network.cookie.cookieBehavior" = 1;
-          "network.cookie.lifetimePolicy" = 2; # Used to delete cookies when Firefox is closed… set to `0` to enable default cookie persistence
+          "network.cookie.lifetimePolicy" = 0; # Used to delete cookies when Firefox is closed… set to `0` to enable default cookie persistence
           "network.proxy.socks_remote_dns" = true;
           "network.trr.custom_uri" = "https:#doh.mullvad.net/dns-query";
           "network.trr.mode" = 5; # Used to enable Mullvad DNS over HTTPS… set to `5` to disable Mullvad DNS over HTTPS
@@ -64,7 +65,7 @@ in
           "places.history.enabled" = false;
           "privacy.donottrackheader.enabled" = true;
           "privacy.history.custom" = true;
-          "privacy.sanitize.sanitizeOnShutdown" = true; # Used to delete cookies and site data when Firefox is closed… set to `false` to enable cookie and site data persistence
+          "privacy.sanitize.sanitizeOnShutdown" = false; # Used to delete cookies and site data when Firefox is closed… set to `false` to enable cookie and site data persistence
           "privacy.trackingprotection.enabled" = true;
           "privacy.trackingprotection.socialtracking.enabled" = true;
           "signon.management.page.breach-alerts.enabled" = false;

@@ -17,6 +17,9 @@ in
       enable = true;
       package = fakepkg "alacritty";
       settings = {
+        env = {
+          TERM = "xterm-256color";
+        };
         live_config_reload = true;
         dynamic_title = true;
         window = {
@@ -56,7 +59,7 @@ in
             magenta = "0xbb9af7";
             cyan = "0x7dcfff";
             white = "0xa9b1d6";
-          }; 
+          };
           bright = {
             black = "0x414868";
             red = "0xf7768e";
@@ -66,13 +69,13 @@ in
             magenta = "0xbb9af7";
             cyan = "0x7dcfff";
             white = "0xc0caf5";
-          }; 
+          };
           indexed_colors = [
             {
               index = 16;
               color = "0xff9e64";
             }
-            { 
+            {
               index = 17;
               color = "0xdb4b4b";
             }
