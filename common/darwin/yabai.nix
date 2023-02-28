@@ -21,7 +21,6 @@ in
     services = {
       yabai = {
         enable = true; 
-        enableScriptingAddition = true;
         package = yabai;
         config = {
           focus_follows_mouse = "off";
