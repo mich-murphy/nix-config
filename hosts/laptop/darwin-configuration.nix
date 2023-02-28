@@ -64,6 +64,8 @@
 
   common.yabai.enable = true;
 
+  programs.zsh.enable = true;
+
   services = {
     nix-daemon.enable = true;
     tailscale.enable = true;
