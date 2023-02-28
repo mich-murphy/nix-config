@@ -39,17 +39,20 @@ in
           window_gap = 5;
           window_placement = "second_child";
           extraConfig = ''
-            yabai -m rule --add title='Preferences' manage=off layer=above
-            yabai -m rule --add title='^(Opening)' manage=off layer=above
-            yabai -m rule --add title='Library' manage=off layer=above
-            yabai -m rule --add app='^Calculator$' manage=off layer=above
+            # RULES
+            # Some of these guys are hidden and supper irritating to find. 
+            # Use `yabai -m query --windows --space <int>`
+            yabai -m rule --add app='^Finder$' manage=off layer=above
+            yabai -m rule --add app='^System Settings$' manage=off layer=above
             yabai -m rule --add app='^App Store$' manage=off layer=above
-            yabai -m rule --add app='^System Preferences$' manage=off layer=above
             yabai -m rule --add app='^Activity Monitor$' manage=off layer=above
-            yabai -m rule --add app='Finder' manage=off layer=above
-            yabai -m rule --add app='Alfred' manage=off layer=above
-            yabai -m rule --add app='1Password' manage=off layer=above
             yabai -m rule --add app='^System Information$' manage=off layer=above
+            yabai -m rule --add app='^Calculator$' manage=off layer=above
+            yabai -m rule --add label="Dictionary" app="^Dictionary$" manage=off
+            yabai -m rule --add label="Software Update" title="Software Update" manage=off
+            yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off
+            yabai -m rule --add title='^(Opening)' manage=off layer=above
+            yabai -m rule --add app='Alfred' manage=off layer=above
           '';
         };
       };
