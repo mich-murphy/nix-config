@@ -17,19 +17,19 @@ in
       enable = true;
       # fake package - managed by homebrew instead
       package = fakepkg "firefox";
-      extensions = with pkgs.nur.repos.rycee.firefox-addons; [
-        ublock-origin
-        onepassword-password-manager
-        decentraleyes
-        privacy-badger
-        new-tab-override
-      ];
       profiles."mm" = {
         isDefault = true;
         search = {
           default = "DuckDuckGo";
           force = true;
         };
+        extensions = with pkgs.nur.repos.rycee.firefox-addons; [
+          ublock-origin
+          onepassword-password-manager
+          decentraleyes
+          privacy-badger
+          new-tab-override
+        ];
         settings = {
           # https://sunknudsen.com/privacy-guides/how-to-configure-firefox-for-privacy-and-security
           # Firefox hardening using preferences (automated)
