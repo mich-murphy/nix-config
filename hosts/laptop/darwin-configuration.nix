@@ -59,6 +59,7 @@
       "roon"
       "karabiner-elements"
       "cyberduck"
+      "bartender"
     ];
   };
 

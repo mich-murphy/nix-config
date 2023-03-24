@@ -53,6 +53,7 @@ in
             yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off
             yabai -m rule --add title='^(Opening)' manage=off layer=above
             yabai -m rule --add app='Alfred' manage=off layer=above
+            yabai -m rule --add app='Stats' manage=off layer=above
           '';
         };
       };
