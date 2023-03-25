@@ -1,4 +1,6 @@
 return {
+
+  -- disable autoformat
   {
     "neovim/nvim-lspconfig",
     opts = function(_, opts)
