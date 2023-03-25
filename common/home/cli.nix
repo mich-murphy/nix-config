@@ -20,8 +20,14 @@ in
         defaultKeymap = "viins";
         history.size = 10000;
         initExtra = ''
+          function zvm_config() {
+            ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
+            ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
+          }
+
           eval $(thefuck --alias)
           eval "$(direnv hook zsh)"
+          source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
         '';
         shellAliases = {
           ls = "lsd -lah";
