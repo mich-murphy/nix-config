@@ -47,7 +47,7 @@ return {
       ["<leader>d"] = {
         name = "+debug",
       }
-    }) 
+    })
     vim.keymap.set('n', '<leader>db', dap.toggle_breakpoint, { desc = "Toggle breakpoint"} )
     vim.keymap.set('n', '<leader>dB', function()
       dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
