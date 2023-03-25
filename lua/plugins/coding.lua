@@ -1,18 +1,17 @@
 return {
-  {
 
-    -- remap surround keys
-    "echasnovski/mini.surround",
-    opts = {
-      mappings = {
-        add = "sa", -- Add surrounding in Normal and Visual modes
-        delete = "sd", -- Delete surrounding
-        find = "sf", -- Find surrounding (to the right)
-        find_left = "sF", -- Find surrounding (to the left)
-        highlight = "sh", -- Highlight surrounding
-        replace = "sr", -- Replace surrounding
-        update_n_lines = "sn", -- Update `n_lines`
-      }
-    }
+    -- disable in favour of vim surround
+  { "echasnovski/mini.surround", enabled = false },
+
+  -- enable vim surround
+  {
+    "kylechui/nvim-surround",
+    version = "*", -- Use for stability; omit to use `main` branch for the latest features
+    event = "VeryLazy",
+    config = function()
+      require("nvim-surround").setup({
+          -- Configuration here, or leave empty to use defaults
+      })
+    end
   }
 }

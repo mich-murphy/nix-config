@@ -2,8 +2,6 @@ local Util = require("lazyvim.util")
 
 return {
 
-  { "ggandor/leap.nvim", enabled = false },
-
   -- undo tree
   {
     "simnalamburt/vim-mundo",
@@ -21,7 +19,9 @@ return {
         local keymaps = {
           mode = { "n", "v" },
           ["g"] = { name = "+goto" },
-          ["s"] = { name = "+surround" },
+          ["ys"] = { name = "+surround" },
+          ["ds"] = { name = "+surround" },
+          ["cs"] = { name = "+surround" },
           ["]"] = { name = "+next" },
           ["["] = { name = "+prev" },
           ["<leader><tab>"] = { name = "+tabs" },
