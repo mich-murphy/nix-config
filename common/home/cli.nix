@@ -39,13 +39,13 @@ in
           fg+:white,\
           border:black,\
           spinner:0,\
-          hl:yellow,\
-          header:blue,\
-          info:green,\
-          pointer:red,\
-          marker:blue,\
+          hl:cyan,\
+          header:yellow,\
+          info:blue,\
+          pointer:blue,\
+          marker:red,\
           prompt:gray,\
-          hl+:red"
+          hl+:blue"
 
           export FZF_DEFAULT_OPTS="--height 60% \
           --border sharp \
@@ -64,7 +64,6 @@ in
           setopt PUSHD_SILENT
           setopt CORRECT
           setopt CDABLE_VARS
-          setopt EXTENDED_GLOB
         '';
         initExtra = ''
           # history (options unavailable in homemanager)
@@ -86,9 +85,9 @@ in
           zstyle ':completion:*:*:*:*:messages' format ' %F{purple} -- %d --%f'
           zstyle ':completion:*:*:*:*:warnings' format ' %F{red}-- no matches found --%f'
           zstyle ':completion:*:*:cd:*' tag-order local-directories directory-stack path-directories
-          zstyle ':completion:*' group-name ' '
+          zstyle ':completion:*' group-name '''
           zstyle ':completion:*:*:-command-:*:*' group-order aliases builtins functions commands
-          zstyle ':completion:*' matcher-list ' ' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+          zstyle ':completion:*' matcher-list ''' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
           zstyle ':completion:*' keep-prefix true
 
           # zsh-vi-mode config
