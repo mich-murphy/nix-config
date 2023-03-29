@@ -14,20 +14,95 @@ in
     programs = {
       zsh = {
         enable = true;
+        dotDir = ".config/zsh";
         enableAutosuggestions = true;
         enableSyntaxHighlighting = true;
         enableCompletion = true;
+        historySubstringSearch.enable = true;
         defaultKeymap = "viins";
-        history.size = 10000;
+        history = {
+          extended = true;
+          share = true;
+          expireDuplicatesFirst = true;
+          ignoreDups = true;
+          ignoreSpace = true;
+          size = 10000;
+        };
+        autocd = true;
+        envExtra = ''
+          # fzf
+          export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
+          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+          FZF_COLORS="bg+:-1,\
+          fg:gray,\
+          fg+:white,\
+          border:black,\
+          spinner:0,\
+          hl:yellow,\
+          header:blue,\
+          info:green,\
+          pointer:red,\
+          marker:blue,\
+          prompt:gray,\
+          hl+:red"
+
+          export FZF_DEFAULT_OPTS="--height 60% \
+          --border sharp \
+          --layout reverse \
+          --color '$FZF_COLORS' \
+          --prompt '∷ ' \
+          --pointer ▶ \
+          --marker ⇒"
+          export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -n 10'"
+          export FZF_COMPLETION_DIR_COMMANDS="cd pushd rmdir tree ls"
+        '';
+        initExtraBeforeCompInit = ''
+          # navigation
+          setopt AUTO_PUSHD
+          setopt PUSHD_IGNORE_DUPS
+          setopt PUSHD_SILENT
+          setopt CORRECT
+          setopt CDABLE_VARS
+          setopt EXTENDED_GLOB
+        '';
         initExtra = ''
+          # history (options unavailable in homemanager)
+          setopt HIST_IGNORE_ALL_DUPS 
+          setopt HIST_FIND_NO_DUPS 
+          setopt HIST_SAVE_NO_DUPS 
+          setopt HIST_VERIFY
+
+          # completions
+          zstyle ':completion:*' completer _extensions _complete _approximate
+          zstyle ':completion:*' use-cache on
+          zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/.zcompcache"
+          zstyle ':completion:*' complete true
+          zstyle ':completion:*' menu select
+          zstyle ':completion:*' complete-options true
+          zstyle ':completion:*' file-sort modification
+          zstyle ':completion:*:*:*:*:corrections' format '%F{yellow}!- %d (errors: %e) -!%f'
+          zstyle ':completion:*:*:*:*:descriptions' format '%F{blue}-- %D %d --%f'
+          zstyle ':completion:*:*:*:*:messages' format ' %F{purple} -- %d --%f'
+          zstyle ':completion:*:*:*:*:warnings' format ' %F{red}-- no matches found --%f'
+          zstyle ':completion:*:*:cd:*' tag-order local-directories directory-stack path-directories
+          zstyle ':completion:*' group-name ' '
+          zstyle ':completion:*:*:-command-:*:*' group-order aliases builtins functions commands
+          zstyle ':completion:*' matcher-list ' ' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+          zstyle ':completion:*' keep-prefix true
+
+          # zsh-vi-mode config
           function zvm_config() {
             ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
             ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
           }
-
-          eval $(thefuck --alias)
-          eval "$(direnv hook zsh)"
           source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
+
+          # the fuck config
+          eval $(thefuck --alias)
+
+          # direnv config
+          eval "$(direnv hook zsh)"
         '';
         shellAliases = {
           ls = "lsd -lah";
@@ -40,13 +115,18 @@ in
           gp = "g push";
           gpl = "g pull";
           gb = "g branch";
-          gch = "g checkout";
+          gco = "g checkout";
           gst = "g stash";
           gl = "g log";
           gd = "g diff";
           rg = "batgrep";
           man = "batman";
           diff = "batdiff";
+          # detect yabai windows in space - make sure to add space no. after alias
+          ybw = "yabai -m query --windows --space";
+          drb = "darwin-rebuild switch --flake";
+          dp = "nix run github:serokell/deploy-rs";
+          agn = "nix run github:ryantm/agenix --";
         };
       };
       direnv = {
