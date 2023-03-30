@@ -14,6 +14,7 @@ in
     services = {
       nextcloud = {
         enable = true;
+        package = pkgs.nextcloud26;
         hostName = "nextcloud.elmurphy.com";
         autoUpdateApps.enable = true;
         https = true;
