@@ -5,9 +5,9 @@ with lib;
 let
   cfg = config.common.yabai;
   yabai = pkgs.yabai.overrideAttrs (old: rec {
-    version = "5.0.2";
+    version = "5.0.3";
     src = builtins.fetchTarball {
-      url = https://github.com/koekeishiya/yabai/releases/download/v5.0.2/yabai-v5.0.2.tar.gz;
+      url = https://github.com/koekeishiya/yabai/releases/download/v5.0.3/yabai-v5.0.3.tar.gz;
       sha256 = "13q8awbmp2vb1f9iycbvlfd5c2fmk5786cwm40bv6zwi4w8bplgy";
     };
   });
