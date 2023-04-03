@@ -20,9 +20,10 @@ in
         overrideDevices = true;
         overrideFolders = true;
         devices = {
-          "seedbox" = {
-            id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
-          };
+          "seedbox".id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
+        };
+        extraOptions.gui = {
+          insecureAdminAccess = true;
         };
         folders = {
           "Music" = {
