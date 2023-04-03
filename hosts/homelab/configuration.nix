@@ -74,7 +74,6 @@
     xserver.layout = "us";
     qemuGuest.enable = true;
     roon-server.enable = true;
-    roon-server.openFirewall = true;
     tailscale.enable = true;
     openssh = {
       enable = true;
@@ -107,7 +106,8 @@
       enable = true;
       trustedInterfaces = [ "tailscale0" ];
       checkReversePath = "loose";
-      allowedUDPPorts = [ config.services.tailscale.port ];
+      allowedTCPPorts = [ 55000 ];
+      allowedUDPPorts = [ config.services.tailscale.port 55000 ];
       extraCommands = ''
         iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
         iptables -A nixos-fw -p udp --source 10.77.1.0/24 -j nixos-fw-accept
