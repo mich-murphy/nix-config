@@ -57,15 +57,14 @@ in
           export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -n 10'"
           export FZF_COMPLETION_DIR_COMMANDS="cd pushd rmdir tree ls"
         '';
-        initExtraBeforeCompInit = ''
+        initExtra = ''
           # navigation
           setopt AUTO_PUSHD
           setopt PUSHD_IGNORE_DUPS
           setopt PUSHD_SILENT
           setopt CORRECT
           setopt CDABLE_VARS
-        '';
-        initExtra = ''
+
           # history (options unavailable in homemanager)
           setopt HIST_IGNORE_ALL_DUPS 
           setopt HIST_FIND_NO_DUPS 
@@ -103,6 +102,19 @@ in
           # direnv config
           eval "$(direnv hook zsh)"
         '';
+        plugins = [
+          {
+            # https://github.com/hlissner/zsh-autopair
+            name = "zsh-autopair";
+            file = "zsh-autopair.plugin.zsh";
+            src = pkgs.fetchFromGitHub {
+              owner = "hlissner";
+              repo = "zsh-autopair";
+              rev = "396c38a7468458ba29011f2ad4112e4fd35f78e6";
+              sha256 = "1h0vm2dgrmb8i2pvsgis3lshc5b0ad846836m62y8h3rdb3zmpy1";
+            };
+          }
+        ];
         shellAliases = {
           ls = "lsd -lah";
           cat = "bat";

@@ -65,7 +65,7 @@
       "inputs": {
         "flake-compat": "flake-compat",
         "nixpkgs": [
-          "nixpkgs-stable"
+          "nixpkgs"
         ],
         "utils": "utils"
       },

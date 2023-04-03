@@ -74,6 +74,7 @@
     xserver.layout = "us";
     qemuGuest.enable = true;
     roon-server.enable = true;
+    roon-server.openFirewall = true;
     tailscale.enable = true;
     openssh = {
       enable = true;
