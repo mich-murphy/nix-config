@@ -70,9 +70,6 @@
     plex.enable = true;
   };
 
-  proxmox.qemuConf.bios = "bios";
-  proxmox.partitionTableType = "hybrid";
-
   services = {
     xserver.layout = "us";
     qemuGuest.enable = true;
