@@ -138,7 +138,7 @@
         AppleKeyboardUIMode = 3;
         ApplePressAndHoldEnabled = false;
         AppleInterfaceStyle = "Dark";
-        InitialKeyRepeat = 2;
+        InitialKeyRepeat = 15;
         KeyRepeat = 1;
         NSAutomaticCapitalizationEnabled = false;
         NSAutomaticDashSubstitutionEnabled = false;
