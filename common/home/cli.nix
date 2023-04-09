@@ -93,6 +93,7 @@ in
           function zvm_config() {
             ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
             ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
+            ZVM_VI_SURROUND_BINDKEY=s-prefix
           }
           source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 

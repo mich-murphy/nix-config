@@ -60,6 +60,8 @@
       "karabiner-elements"
       "cyberduck"
       "bartender"
+      "visual-studio-code"
+      "docker"
     ];
   };
 
@@ -136,7 +138,7 @@
         AppleKeyboardUIMode = 3;
         ApplePressAndHoldEnabled = false;
         AppleInterfaceStyle = "Dark";
-        InitialKeyRepeat = 10;
+        InitialKeyRepeat = 2;
         KeyRepeat = 1;
         NSAutomaticCapitalizationEnabled = false;
         NSAutomaticDashSubstitutionEnabled = false;
