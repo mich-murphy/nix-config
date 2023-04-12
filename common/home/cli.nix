@@ -31,30 +31,6 @@ in
         autocd = true;
         envExtra = ''
           # fzf
-          export FZF_DEFAULT_COMMAND='rg --files --hidden --glob "!.git"'
-          export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
-          FZF_COLORS="bg+:-1,\
-          fg:gray,\
-          fg+:white,\
-          border:black,\
-          spinner:0,\
-          hl:cyan,\
-          header:yellow,\
-          info:blue,\
-          pointer:blue,\
-          marker:red,\
-          prompt:gray,\
-          hl+:blue"
-
-          export FZF_DEFAULT_OPTS="--height 60% \
-          --border sharp \
-          --layout reverse \
-          --color '$FZF_COLORS' \
-          --prompt '∷ ' \
-          --pointer ▶ \
-          --marker ⇒"
-          export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -n 10'"
           export FZF_COMPLETION_DIR_COMMANDS="cd pushd rmdir tree ls"
         '';
         initExtra = ''
@@ -167,6 +143,35 @@ in
       fzf = {
         enable = true;
         enableZshIntegration = true;
+        tmux.enableShellIntegration = true;
+        defaultCommand = ''rg --files --hidden --glob "!.git"'';
+        fileWidgetCommand = "$FZF_DEFAULT_COMMAND";
+        colors = {
+          "bg+" = "#1a1b26";
+          fg = "#a9b1d6";
+          "fg+" = "#c0caf5";
+          border = "#1a1b26";
+          spinner = "#3b4261";
+          hl = "#7dcfff";
+          header = "#e0af68";
+          info = "#7aa2f7";
+          pointer = "#7aa2f7";
+          marker = "#f7768e";
+          prompt = "#a9b1d6";
+          "hl+" = "#7aa2f7";
+        };
+        defaultOptions = [
+          "--height 60%"
+          "--border sharp"
+          "--layout reverse"
+          "--color '$FZF_COLORS'"
+          "--prompt '∷ '"
+          "--pointer ▶"
+          "--marker ⇒"
+        ];
+        changeDirWidgetOptions = [
+          "--preview 'tree -C {} | head -n 10'"
+        ];
       };
       lsd = {
         enable = true;

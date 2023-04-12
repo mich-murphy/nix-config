@@ -58,10 +58,8 @@
       "stats"
       "roon"
       "karabiner-elements"
-      "cyberduck"
       "bartender"
-      "visual-studio-code"
-      "docker"
+      "logseq"
     ];
   };
 
