@@ -44,7 +44,15 @@ sh <(curl -L https://nixos.org/nix/install)
 mkdir ~/.config/nix
 echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
-3. Install Git, clone the repository and run the first build of the Flake to make darwin commands available
+
+3. Some packages aren't yet available for Darwin in Nix - for these we need to configure Homebrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew analytics off
+```
+
+4. Install Git, clone the repository and run the first build of the Flake to make darwin commands available
 
 ```bash
 nix-env -iA nixpkgs.git
@@ -53,7 +61,7 @@ cd ~/.config/nix-config
 nix build .#darwinConfigurations.macbook.system
 ./result/sw/bin/darwin-rebuild switch --flake .#macbook
 ```
-4. In future you can rebuild and activate the Flake using the following command
+5. In future you can rebuild and activate the Flake using the following command
 
 ```bash
 darwin-rebuild switch --flake .
