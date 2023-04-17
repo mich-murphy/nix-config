@@ -58,8 +58,8 @@
       "stats"
       "roon"
       "karabiner-elements"
-      "bartender"
       "logseq"
+      "calibre"
     ];
   };
 
