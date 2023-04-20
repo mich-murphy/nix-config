@@ -32,12 +32,6 @@ in
           ensurePermissions."DATABASE freshrss" = "ALL PRIVILEGES";
         }];
       };
-      postgresqlBackup = {
-        enable = true;
-        location = "/data/backup/freshrssdb";
-        databases = [ "freshrss" ];
-        startAt = "*-*-* 00:15:00";
-      };
     };
 
     systemd = {

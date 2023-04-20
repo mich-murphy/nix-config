@@ -9,4 +9,5 @@ in
   "mediaBorgPass.age".publicKeys = [ nix-media ];
   "nextcloudBorgPass.age".publicKeys = [ nix-media ];
   "borgSSHKey.age".publicKeys = [ nix-media ];
+  "freshrssPass.age".publicKeys = [ nix-media ];
 }
