@@ -7,5 +7,6 @@
     ./object-storage.nix
     ./syncthing.nix
     ./plex.nix
+    ./freshrss.nix
   ];
 }

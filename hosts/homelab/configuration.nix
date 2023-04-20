@@ -68,6 +68,7 @@
     nextcloud.enable = true;
     syncthing.enable = true;
     plex.enable = true;
+    freshrss.enable = true;
   };
 
   services = {
