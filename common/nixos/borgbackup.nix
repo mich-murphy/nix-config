@@ -32,10 +32,10 @@ in
         compression = "auto,lzma";
         startAt = "hourly";
         prune.keep = {
-          within = "1d"; # Keep all archives from the last day
+          within = "1d";
           daily = 7;
           weekly = 4;
-          monthly = -1;  # Keep at least one archive for each month
+          monthly = -1;
         };
       };
       "nextcloud" = {
@@ -52,10 +52,10 @@ in
         compression = "auto,lzma";
         startAt = "daily";
         prune.keep = {
-          within = "1d"; # Keep all archives from the last day
+          within = "1d";
           daily = 7;
           weekly = 4;
-          monthly = -1;  # Keep at least one archive for each month
+          monthly = -1;
         };
       };
     };
