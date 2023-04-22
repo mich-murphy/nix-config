@@ -31,6 +31,12 @@ in
         environment.BORG_RSH = "ssh -i ${cfg.identityFile}";
         compression = "auto,lzma";
         startAt = "hourly";
+        prune.keep = {
+          within = "1d"; # Keep all archives from the last day
+          daily = 7;
+          weekly = 4;
+          monthly = -1;  # Keep at least one archive for each month
+        };
       };
       "nextcloud" = {
         paths = [
@@ -45,9 +51,15 @@ in
         environment.BORG_RSH = "ssh -i ${cfg.identityFile}";
         compression = "auto,lzma";
         startAt = "daily";
+        prune.keep = {
+          within = "1d"; # Keep all archives from the last day
+          daily = 7;
+          weekly = 4;
+          monthly = -1;  # Keep at least one archive for each month
+        };
       };
     };
-     
+
     age.secrets.mediaBorgPass.file = ../../secrets/mediaBorgPass.age;
     age.secrets.nextcloudBorgPass.file = ../../secrets/nextcloudBorgPass.age;
     age.secrets.borgSSHKey.file = ../../secrets/borgSSHKey.age;
