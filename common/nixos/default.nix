@@ -8,5 +8,6 @@
     ./syncthing.nix
     ./plex.nix
     ./freshrss.nix
+    ./calibre-web.nix
   ];
 }

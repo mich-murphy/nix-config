@@ -69,6 +69,7 @@
     syncthing.enable = true;
     plex.enable = true;
     freshrss.enable = true;
+    calibre-web.enable = true;
   };
 
   services = {

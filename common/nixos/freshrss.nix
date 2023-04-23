@@ -7,7 +7,7 @@ let
 in
 {
   options.common.freshrss = {
-    enable = mkEnableOption "Enable FreshRSS with Postgres DB";
+    enable = mkEnableOption "Enable FreshRSS";
   };
 
   config = mkIf cfg.enable {
@@ -16,7 +16,7 @@ in
         enable = true;
         defaultUser = "mm";
         passwordFile = config.age.secrets.freshrssPass.path;
-        baseUrl = "http://10.77.2.9";
+        baseUrl = "http://0.0.0.0";
         database = {
           name = "freshrss";
           user = "freshrss";
