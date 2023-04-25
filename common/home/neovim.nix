@@ -1,6 +1,6 @@
 { lib, config, pkgs, ... }:
 
-# NOTE: Neovim Config Needs to Be Clones Manually:
+# NOTE: Neovim config needs to be cloned manually:
 # git clone git@github.com:mich-murphy/neovim.git ~/.config/nvim
 # allows management of neovim outside of nix (for use on any computer)
  

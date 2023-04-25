@@ -34,6 +34,8 @@ in
           export FZF_COMPLETION_DIR_COMMANDS="cd pushd rmdir tree ls"
         '';
         initExtra = ''
+          export PATH="/opt/homebrew/bin:$PATH"
+
           # navigation
           setopt AUTO_PUSHD
           setopt PUSHD_IGNORE_DUPS
