@@ -10,11 +10,6 @@ return {
     }
   },
 
-  -- github copilot
-  {
-    "github/copilot.vim"
-  },
-
   -- customize file explorer
   {
     "nvim-neo-tree/neo-tree.nvim",
