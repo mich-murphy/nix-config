@@ -41,4 +41,24 @@ return {
       },
     },
   },
+
+  -- dap configuration for python
+  {
+    "mfussenegger/nvim-dap",
+
+    dependencies = {
+    {
+      "mfussenegger/nvim-dap-python",
+      keys = {
+          { "<leader>dm", function() require("dap-python").test_method() end, desc = "Test Python method"},
+          { "<leader>dc", function() require("dap-python").test_class() end, desc = "Test Python class"},
+      },
+      config = function()
+        local dappy = require("dap-python")
+        dappy.setup('~/.virtualenvs/debugpy/bin/python')
+        dappy.test_runner = "pytest"
+      end,
+      },
+    }
+  }
 }

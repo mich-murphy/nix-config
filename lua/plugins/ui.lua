@@ -32,6 +32,9 @@ return {
       ██║╚██╗██║ ██╔══╝   ██║   ██║ ╚██╗ ██╔╝ ██║ ██║╚██╔╝██║
       ██║ ╚████║ ███████╗ ╚██████╔╝  ╚████╔╝  ██║ ██║ ╚═╝ ██║
       ╚═╝  ╚═══╝ ╚══════╝  ╚═════╝    ╚═══╝   ╚═╝ ╚═╝     ╚═╝
+
+                
+               Talk is cheap. Show me the code. 
       ]]
       opts.section.header.val = vim.split(logo, "\n", { trimempty = true })
     end,
