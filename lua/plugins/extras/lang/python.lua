@@ -45,7 +45,6 @@ return {
   -- dap configuration for python
   {
     "mfussenegger/nvim-dap",
-
     dependencies = {
     {
       "mfussenegger/nvim-dap-python",
