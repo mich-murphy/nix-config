@@ -25,8 +25,15 @@ return {
         sources = {
           -- nls.builtins.formatting.prettierd,
           nls.builtins.formatting.stylua,
-          nls.builtins.formatting.black,
-          nls.builtins.diagnostics.flake8,
+          nls.builtins.formatting.black.with({
+            prefer_local = "./.virtualenv/bin/black",
+          }),
+          nls.builtins.diagnostics.flake8.with({
+            prefer_local = "./.virtualenv/bin/flake8",
+            extra_args = {
+              "--max-line-length", "120",
+            }
+          }),
         },
       }
     end,
@@ -54,7 +61,7 @@ return {
       },
       config = function()
         local dappy = require("dap-python")
-        dappy.setup('~/.virtualenvs/debugpy/bin/python')
+        dappy.setup("./.virtualenv/bin/python")
         dappy.test_runner = "pytest"
       end,
       },
