@@ -34,6 +34,9 @@ return {
               "--max-line-length", "120",
             }
           }),
+          nls.builtins.formatting.isort.with({
+            prefer_local = "./.virtualenv/bin/isort",
+          })
         },
       }
     end,
