@@ -1,7 +1,10 @@
 return {
 
   -- neovim plugin for nix
-  { "LnL7/vim-nix" },
+  {
+    "LnL7/vim-nix",
+    ft = "nix"
+  },
 
   -- add nix treesitter
   {

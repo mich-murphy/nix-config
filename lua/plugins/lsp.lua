@@ -12,15 +12,20 @@ return {
     end,
   },
 
+  -- enable lsp_lines for diagnostics
   {
     "https://git.sr.ht/~whynothugo/lsp_lines.nvim",
-    config = function()
-      require("lsp_lines").setup()
-    end,
+    event = { "BufReadPost", "BufNewFile" },
+    config = true
   },
 
-  -- Disable virtual_text since it's redundant due to lsp_lines.
-  vim.diagnostic.config({
-    virtual_text = false,
-  })
+  --disable virtual_text in place of lsp_lines
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      diagnostics = {
+        virtual_text = false
+      }
+    }
+  }
 }

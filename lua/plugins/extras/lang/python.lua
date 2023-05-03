@@ -23,7 +23,6 @@ return {
       local nls = require("null-ls")
       return {
         sources = {
-          -- nls.builtins.formatting.prettierd,
           nls.builtins.formatting.stylua,
           nls.builtins.formatting.black.with({
             prefer_local = "./.virtualenv/bin/black",
@@ -31,7 +30,7 @@ return {
           nls.builtins.diagnostics.flake8.with({
             prefer_local = "./.virtualenv/bin/flake8",
             extra_args = {
-              "--max-line-length", "120",
+              "--max-line-length", "90",
             }
           }),
           nls.builtins.formatting.isort.with({
