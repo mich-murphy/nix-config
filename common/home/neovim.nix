@@ -17,7 +17,7 @@ in
   config = mkIf cfg.enable {
     programs.neovim = {
       enable = true;
-      package = pkgs.neovim;
+      package = pkgs.neovim-unwrapped;
       vimAlias = true;
       defaultEditor = true;
       withPython3 = true;

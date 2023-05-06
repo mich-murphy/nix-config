@@ -58,7 +58,6 @@
       "stats"
       "roon"
       "karabiner-elements"
-      "logseq"
       "calibre"
     ];
   };

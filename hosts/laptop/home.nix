@@ -9,6 +9,10 @@
     username = "${user}";
     homeDirectory = "/Users/${user}";
     stateVersion = "22.05";
+    packages = with pkgs; [
+      sox
+      mediainfo
+    ];
   };
 
   common = {

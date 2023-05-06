@@ -48,7 +48,6 @@ in
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
         };
-        environment.BORG_RSH = "ssh -i ${cfg.identityFile}";
         compression = "auto,lzma";
         startAt = "daily";
         prune.keep = {

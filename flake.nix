@@ -7,10 +7,10 @@
     nixpkgs-darwin-stable.url = github:nixos/nixpkgs/nixpkgs-22.11-darwin;
 
     darwin.url = github:lnl7/nix-darwin;
-    darwin.inputs.nixpkgs.follows = "nixpkgs-darwin-stable";
+    darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     home-manager.url = github:nix-community/home-manager;
-    home-manager.inputs.nixpkgs.follows = "nixpkgs-darwin-stable";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     nur.url = github:nix-community/NUR;
 
@@ -21,21 +21,21 @@
 
     impermanence.url = github:nix-community/impermanence;
 
-    neovim.url = github:neovim/neovim?dir=contrib;
+    # neovim.url = github:neovim/neovim?dir=contrib;
   };
 
   outputs = { 
     self, 
     nixpkgs, 
-    nixpkgs-stable, 
-    nixpkgs-darwin-stable, 
-    darwin, 
-    home-manager, 
-    nur, 
-    agenix, 
+    nixpkgs-stable,
+    nixpkgs-darwin-stable,
+    darwin,
+    home-manager,
+    nur,
+    agenix,
     deploy-rs,
     impermanence,
-    neovim,
+    # neovim,
     ... 
   }@inputs:
   let
@@ -57,7 +57,7 @@
         {
           nixpkgs.overlays = with inputs; [
             nur.overlay
-            neovim.overlay
+            # neovim.overlay
           ];
         }
       ];
