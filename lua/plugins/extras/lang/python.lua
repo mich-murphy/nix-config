@@ -12,7 +12,7 @@ return {
   {
     "williamboman/mason.nvim",
     opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "pyright", "flake8", "black", "debugpy" })
+      vim.list_extend(opts.ensure_installed, { "pyright", "ruff", "black", "debugpy" })
     end,
   },
 
@@ -27,14 +27,14 @@ return {
           nls.builtins.formatting.black.with({
             prefer_local = "./.virtualenv/bin/black",
           }),
-          nls.builtins.diagnostics.flake8.with({
-            prefer_local = "./.virtualenv/bin/flake8",
+          nls.builtins.diagnostics.ruff.with({
+            prefer_local = "./.virtualenv/bin/ruff",
             extra_args = {
-              "--max-line-length", "90",
+              "--line-length", "88",
             }
           }),
-          nls.builtins.formatting.isort.with({
-            prefer_local = "./.virtualenv/bin/isort",
+          nls.builtins.formatting.ruff.with({
+            prefer_local = "./.virtualenv/bin/ruff",
           })
         },
       }
@@ -46,7 +46,9 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        pyright = {},
+        pyright = {
+          autoImportCompletion = true,
+        },
       },
     },
   },
