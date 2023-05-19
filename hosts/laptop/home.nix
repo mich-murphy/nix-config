@@ -12,6 +12,7 @@
     packages = with pkgs; [
       sox
       mediainfo
+      statix
     ];
   };
 

@@ -49,6 +49,9 @@
       "homebrew/cask-drivers"
       "homebrew/services"
     ];
+    brews = [
+      "gcc"
+    ];
     casks = [
       "firefox"
       "alacritty"

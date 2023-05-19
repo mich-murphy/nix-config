@@ -2,26 +2,26 @@
   description = "Nix flake to configure personal M2 Macbook Air and homelab";
 
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixos-unstable;
-    nixpkgs-stable.url = github:nixos/nixpkgs/nixos-22.11;
-    nixpkgs-darwin-stable.url = github:nixos/nixpkgs/nixpkgs-22.11-darwin;
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-22.11";
+    nixpkgs-darwin-stable.url = "github:nixos/nixpkgs/nixpkgs-22.11-darwin";
 
-    darwin.url = github:lnl7/nix-darwin;
+    darwin.url = "github:lnl7/nix-darwin";
     darwin.inputs.nixpkgs.follows = "nixpkgs";
 
-    home-manager.url = github:nix-community/home-manager;
+    home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
-    nur.url = github:nix-community/NUR;
+    nur.url = "github:nix-community/NUR";
 
-    agenix.url = github:ryantm/agenix;
+    agenix.url = "github:ryantm/agenix";
 
-    deploy-rs.url = github:serokell/deploy-rs;
+    deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
-    impermanence.url = github:nix-community/impermanence;
+    impermanence.url = "github:nix-community/impermanence";
 
-    # neovim.url = github:neovim/neovim?dir=contrib;
+    # neovim.url = "github:neovim/neovim?dir=contrib";
   };
 
   outputs = { 
@@ -55,7 +55,7 @@
           home-manager.users.${user} = import ./hosts/laptop/home.nix;
         }
         {
-          nixpkgs.overlays = with inputs; [
+          nixpkgs.overlays = [
             nur.overlay
             # neovim.overlay
           ];

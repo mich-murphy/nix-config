@@ -27,6 +27,7 @@ in
         wget
         lazygit
         cargo
+        nil
       ];
       extraPython3Packages = py: with py; [
         pip

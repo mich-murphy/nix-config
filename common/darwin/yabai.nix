@@ -4,10 +4,10 @@ with lib;
 
 let
   cfg = config.common.yabai;
-  yabai = pkgs.yabai.overrideAttrs (old: rec {
+  yabai = pkgs.yabai.overrideAttrs (old: {
     version = "5.0.4";
     src = builtins.fetchTarball {
-      url = https://github.com/koekeishiya/yabai/releases/download/v5.0.4/yabai-v5.0.4.tar.gz;
+      url =" https://github.com/koekeishiya/yabai/releases/download/v5.0.4/yabai-v5.0.4.tar.gz";
       sha256 = "13q8awbmp2vb1f9iycbvlfd5c2fmk5786cwm40bv6zwi4w8bplgy";
     };
   });
