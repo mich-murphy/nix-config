@@ -61,8 +61,8 @@
       "stats"
       "roon"
       "karabiner-elements"
-      "calibre"
       "little-snitch"
+      "obsidian"
     ];
   };
 

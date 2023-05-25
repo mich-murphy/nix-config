@@ -165,12 +165,25 @@ in
         };
         defaultOptions = [
           "--height 60%"
-          "--border sharp"
+          "--border none"
           "--layout reverse"
           "--color '$FZF_COLORS'"
           "--prompt '∷ '"
           "--pointer ▶"
           "--marker ⇒"
+        ];
+        fileWidgetOptions = [
+          "--height 60%"
+          "--border none"
+          "--no-scrollbar"
+          "--inline-info"
+          "--layout reverse"
+          "--color '$FZF_COLORS'"
+          "--prompt '∷ '"
+          "--pointer ▶"
+          "--marker ⇒"
+          "--preview 'bat --color=always {}'"
+          "--preview-window '~2',border-none"
         ];
         changeDirWidgetOptions = [
           "--preview 'tree -C {} | head -n 10'"
