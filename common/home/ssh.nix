@@ -14,13 +14,10 @@ in
     programs.ssh = {
       enable = true;
       matchBlocks = {
-        "nix-media" = {
-          hostname = "nix-media";
+        "media" = {
+          hostname = "10.77.2.234";
           user = "mm";
-        };
-        "alpha" = {
-          hostname = "alpha";
-          user = "root";
+          identityFile = "~/.ssh/nix-media";
         };
         "seedhost" = {
           hostname = "mole.seedhost.eu";

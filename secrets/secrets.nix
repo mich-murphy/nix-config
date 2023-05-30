@@ -1,13 +1,13 @@
 let
-  nix-media = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN";
+  media = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVyN0R5mTtfcbkmVXjicuvSRotJY4IOuetOgPyG2lg8";
 in
 {
-  "userPass.age".publicKeys = [ nix-media ];
-  "nextcloudPass.age".publicKeys = [ nix-media ];
-  "acmeCredentials.age".publicKeys = [ nix-media ];
-  "objectStorage.age".publicKeys = [ nix-media ];
-  "mediaBorgPass.age".publicKeys = [ nix-media ];
-  "nextcloudBorgPass.age".publicKeys = [ nix-media ];
-  "borgSSHKey.age".publicKeys = [ nix-media ];
-  "freshrssPass.age".publicKeys = [ nix-media ];
+  "userPass.age".publicKeys = [ media ];
+  "nextcloudPass.age".publicKeys = [ media ];
+  "acmeCredentials.age".publicKeys = [ media ];
+  "objectStorage.age".publicKeys = [ media ];
+  "mediaBorgPass.age".publicKeys = [ media ];
+  "nextcloudBorgPass.age".publicKeys = [ media ];
+  "borgSSHKey.age".publicKeys = [ media ];
+  "freshrssPass.age".publicKeys = [ media ];
 }

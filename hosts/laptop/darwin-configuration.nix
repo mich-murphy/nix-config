@@ -10,7 +10,7 @@
   networking = {
     computerName = "${host}";
     hostName = "${host}";
-    dns = [ "9.9.9.9" "149.112.112.112"];
+    dns = [ "100.100.100.100" ];
     knownNetworkServices = [ "Wi-Fi" "Thunderbolt Bridge" ];
   };
 

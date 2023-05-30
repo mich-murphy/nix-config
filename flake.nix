@@ -63,22 +63,22 @@
       ];
     };
 
-    nixosConfigurations.nix-media = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.media = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
       modules = [
-        ./hosts/homelab/configuration.nix
+        ./hosts/media/configuration.nix
         agenix.nixosModules.default
       ];
     };
 
-    deploy.nodes.homelab = {
-      hostname = "nix-media";
+    deploy.nodes.media = {
+      hostname = "media";
       remoteBuild = true;
       profiles.system = {
         user = "root";
         sshUser = "mm";
-        path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.nix-media;
+        path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.media;
       };
     };
 

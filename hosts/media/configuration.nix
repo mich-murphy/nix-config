@@ -9,19 +9,11 @@
 
   boot.loader.grub = {
     enable = true;
-    version = 2;
     device = "/dev/sda";
   };
 
   time.timeZone = "Australia/Melbourne";
-
-  i18n = {
-    defaultLocale = "en_US.UTF-8";
-    extraLocaleSettings = {
-      LC_ALL = "en_AU.UTF-8";
-      LANG = "en_AU.UTF-8";
-    };
-  };
+  i18n.defaultLocale = "en_US.UTF-8";
 
   users = {
     mutableUsers = false;
@@ -44,14 +36,10 @@
         "/etc/nixos"
         "/var/log"
         "/var/lib"
-        "/data"
-        "/srv"
-      ];
-      files = [
-        "/etc/machine-id"
       ];
     };
     etc = {
+      "machine-id".source = "/nix/persist/etc/machine-id";
       "ssh/ssh_host_rsa_key".source = "/nix/persist/etc/ssh/ssh_host_rsa_key";
       "ssh/ssh_host_rsa_key.pub".source = "/nix/persist/etc/ssh/ssh_host_rsa_key.pub";
       "ssh/ssh_host_ed25519_key".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key";
@@ -63,20 +51,20 @@
     ];
   };
 
-  common = {
-    borgbackup.enable = true;
-    nextcloud.enable = true;
-    syncthing.enable = true;
-    plex.enable = true;
-    freshrss.enable = true;
-    calibre-web.enable = true;
-  };
+  # common = {
+  #   borgbackup.enable = true;
+  #   nextcloud.enable = true;
+  #   syncthing.enable = true;
+  #   plex.enable = true;
+  #   freshrss.enable = true;
+  #   calibre-web.enable = true;
+  # };
 
   services = {
     xserver.layout = "us";
     qemuGuest.enable = true;
-    roon-server.enable = true;
-    tailscale.enable = true;
+    # roon-server.enable = true;
+    # tailscale.enable = true;
     openssh = {
       enable = true;
       allowSFTP = false;
@@ -103,7 +91,7 @@
   };
 
   networking = {
-    hostName = "nix-media";
+    hostName = "media";
     firewall = {
       enable = true;
       trustedInterfaces = [ "tailscale0" ];
@@ -122,11 +110,6 @@
   security = {
     sudo.execWheelOnly = true;
     sudo.wheelNeedsPassword = false;
-    auditd.enable = true;
-    audit.enable = true;
-    audit.rules = [
-      "-a exit,always -F arch=b64 -S execve"
-    ];
   };
 
   nix = {
