@@ -54,9 +54,9 @@
   common = {
     audiobookshelf.enable = true;
     tailscale.enable = true;
+    syncthing.enable = true;
   #   borgbackup.enable = true;
   #   nextcloud.enable = true;
-  #   syncthing.enable = true;
   #   plex.enable = true;
   #   freshrss.enable = true;
   #   calibre-web.enable = true;

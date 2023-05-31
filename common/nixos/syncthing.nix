@@ -14,29 +14,27 @@ in
     services = {
       syncthing = {
         enable = true;
-        dataDir = "/srv/syncthing";
-        configDir = "/srv/syncthing/.config/syncthing";
         guiAddress = "0.0.0.0:8384";
         overrideDevices = true;
         overrideFolders = true;
-        devices = {
-          "seedbox".id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
-        };
-        extraOptions.gui = {
-          insecureAdminAccess = true;
-        };
-        folders = {
-          "Music" = {
-            id = "mrpfh-btugj";
-            path = "/data/media/music";
-            devices = [ "seedbox" ];
-            type = "receiveonly";
+        settings = {
+          gui.insecureAdminAccess = true;
+          devices = {
+            "seedbox".id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
           };
-          "Audiobooks" = {
-            id = "mqh32-k7ykn";
-            path = "/data/media/audiobooks";
-            devices = [ "seedbox" ];
-            type = "receiveonly";
+          folders = {
+            "Music" = {
+              id = "mrpfh-btugj";
+              path = "/data/media/music";
+              devices = [ "seedbox" ];
+              type = "receiveonly";
+            };
+            "Audiobooks" = {
+              id = "mqh32-k7ykn";
+              path = "/data/media/audiobooks";
+              devices = [ "seedbox" ];
+              type = "receiveonly";
+            };
           };
         };
       };
