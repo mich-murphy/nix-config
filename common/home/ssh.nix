@@ -15,7 +15,7 @@ in
       enable = true;
       matchBlocks = {
         "media" = {
-          hostname = "10.77.2.234";
+          hostname = "media";
           user = "mm";
           identityFile = "~/.ssh/nix-media";
         };

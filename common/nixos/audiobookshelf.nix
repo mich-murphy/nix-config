@@ -26,12 +26,17 @@ in
   };
 
   config = mkIf cfg.enable {
-    environment.systemPackages = pkgs.audiobookshelf;
+    environment.systemPackages = [ pkgs.audiobookshelf ];
 
     users = {
-      groups.audiobookshelf.members = [ "audiobookshelf" ];
+      users.audiobookshelf.group = "audiobookshelf";
+      groups.audiobookshelf = {};
       users.audiobookshelf.isSystemUser = true;
     };
+
+    system.activationScripts.makeAudiobookshelf = lib.stringAfter [ "var" ] ''
+      mkdir -p ${cfg.workingDir}
+    '';
 
     systemd.services.audiobookshelf = with pkgs; {
       enable = true;
@@ -39,9 +44,11 @@ in
       serviceConfig = {
         Type = "simple";
         WorkingDirectory = "${cfg.workingDir}";
+        # ExecStartPre = "${coreutils}/bin/mkdir -m 777 -pv ${cfg.workingDir}";
         ExecStart = "${audiobookshelf}/bin/audiobookshelf --host ${cfg.hostName} --port ${cfg.port}";
         ExecReload = "${util-linux}/bin/kill -HUP $MAINPID";
-        Restart = "always";
+        startLimitIntervalSec = 5;
+        Restart = "on-failure";
         User = "audiobookshelf";
         Group = "audiobookshelf";
       };

@@ -47,8 +47,8 @@ in
         bind -T copy-mode-vi v send-keys -X begin-selection
         bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xsel --clipboard" 
 
-        # Move status bar to top
-        set-option -g status-position top
+        # Allow mouse scrolling
+        set -g mouse on
       '';
     };
   };
