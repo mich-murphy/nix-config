@@ -8,11 +8,6 @@ in
 {
   options.common.borgbackup = {
     enable = mkEnableOption "Enable borgbackup for media and Nextcloud to BorgBase";
-    identityFile = mkOption {
-      type = types.str;
-      default = config.age.secrets.borgSSHKey.path;
-      description = "Identity file used to authenticate SSH connection to repo";
-    };
   };
 
   config = mkIf cfg.enable {
@@ -28,7 +23,6 @@ in
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.mediaBorgPass.path}";
         };
-        environment.BORG_RSH = "ssh -i ${cfg.identityFile}";
         compression = "auto,lzma";
         startAt = "hourly";
         prune.keep = {
@@ -48,6 +42,8 @@ in
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
         };
+        preHook = "su --command 'nextcloud-occ maintenance:mode --on' nextcloud";
+        postHook = "su --command 'nextcloud-occ maintenance:mode --off' nextcloud";
         compression = "auto,lzma";
         startAt = "daily";
         prune.keep = {
@@ -61,6 +57,5 @@ in
 
     age.secrets.mediaBorgPass.file = ../../secrets/mediaBorgPass.age;
     age.secrets.nextcloudBorgPass.file = ../../secrets/nextcloudBorgPass.age;
-    age.secrets.borgSSHKey.file = ../../secrets/borgSSHKey.age;
   };
 }

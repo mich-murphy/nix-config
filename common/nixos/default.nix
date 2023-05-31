@@ -9,5 +9,7 @@
     ./plex.nix
     ./freshrss.nix
     ./calibre-web.nix
+    ./audiobookshelf.nix
+    ./tailscale.nix
   ];
 }

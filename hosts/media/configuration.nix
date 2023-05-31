@@ -51,20 +51,22 @@
     ];
   };
 
-  # common = {
+  common = {
+    audiobookshelf.enable = true;
+    tailscale.enable = true;
   #   borgbackup.enable = true;
   #   nextcloud.enable = true;
   #   syncthing.enable = true;
   #   plex.enable = true;
   #   freshrss.enable = true;
   #   calibre-web.enable = true;
-  # };
+  };
 
   services = {
     xserver.layout = "us";
     qemuGuest.enable = true;
+    jellyfin.enable = true;
     # roon-server.enable = true;
-    # tailscale.enable = true;
     openssh = {
       enable = true;
       allowSFTP = false;
@@ -94,10 +96,8 @@
     hostName = "media";
     firewall = {
       enable = true;
-      trustedInterfaces = [ "tailscale0" ];
-      checkReversePath = "loose";
       allowedTCPPorts = [ 55000 ];
-      allowedUDPPorts = [ config.services.tailscale.port 55000 ];
+      allowedUDPPorts = [ 55000 ];
       extraCommands = ''
         iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
         iptables -A nixos-fw -p udp --source 10.77.1.0/24 -j nixos-fw-accept

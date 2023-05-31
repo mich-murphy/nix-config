@@ -8,6 +8,6 @@ in
   "objectStorage.age".publicKeys = [ media ];
   "mediaBorgPass.age".publicKeys = [ media ];
   "nextcloudBorgPass.age".publicKeys = [ media ];
-  "borgSSHKey.age".publicKeys = [ media ];
   "freshrssPass.age".publicKeys = [ media ];
+  "tailscaleAuthKey.age".publicKeys = [ media ];
 }
