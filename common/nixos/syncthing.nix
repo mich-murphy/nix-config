@@ -35,6 +35,18 @@ in
               devices = [ "seedbox" ];
               type = "receiveonly";
             };
+            "Movies" = {
+              id = "naolq-r7zlm";
+              path = "/data/media/movies";
+              devices = [ "seedbox" ];
+              type = "receiveonly";
+            };
+            "TV" = {
+              id = "hhqvi-jv4wy";
+              path = "/data/media/tv";
+              devices = [ "seedbox" ];
+              type = "receiveonly";
+            };
           };
         };
       };

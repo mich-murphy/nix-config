@@ -55,6 +55,7 @@
     audiobookshelf.enable = true;
     tailscale.enable = true;
     syncthing.enable = true;
+    jellyfin.enable = true;
   #   borgbackup.enable = true;
   #   nextcloud.enable = true;
   #   plex.enable = true;
@@ -65,7 +66,6 @@
   services = {
     xserver.layout = "us";
     qemuGuest.enable = true;
-    jellyfin.enable = true;
     # roon-server.enable = true;
     openssh = {
       enable = true;

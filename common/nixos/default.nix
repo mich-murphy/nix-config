@@ -11,5 +11,6 @@
     ./calibre-web.nix
     ./audiobookshelf.nix
     ./tailscale.nix
+    ./jellyfin.nix
   ];
 }
