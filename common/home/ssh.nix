@@ -15,9 +15,16 @@ in
       enable = true;
       matchBlocks = {
         "media" = {
-          hostname = "10.77.2.201";
+          hostname = "media";
           user = "mm";
           identityFile = "~/.ssh/nix-media";
+          setEnv = {
+            "LC_ALL" = "C";
+          };
+        };
+        "proxmox" = {
+          hostname = "proxmox";
+          user = "root";
         };
         "seedhost" = {
           hostname = "mole.seedhost.eu";

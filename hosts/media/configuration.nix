@@ -57,8 +57,8 @@
     syncthing.enable = true;
     jellyfin.enable = true;
     nginx.enable = true;
+    # nextcloud.enable = true;
   #   borgbackup.enable = true;
-  #   nextcloud.enable = true;
   #   plex.enable = true;
   #   freshrss.enable = true;
   #   calibre-web.enable = true;

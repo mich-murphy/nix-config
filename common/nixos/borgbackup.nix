@@ -34,7 +34,7 @@ in
       };
       "nextcloud" = {
         paths = [
-          "/data/backup/nextclouddb"
+          "/data/backups/nextclouddb"
           "/var/lib/nextcloud"
         ];
         repo = "duqvv98y@duqvv98y.repo.borgbase.com:repo";

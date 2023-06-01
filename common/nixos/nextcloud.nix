@@ -16,6 +16,7 @@ in
         enable = true;
         package = pkgs.nextcloud26;
         hostName = "nextcloud.pve.elmurphy.com";
+        datadir = "/data/nextcloud";
         autoUpdateApps.enable = true;
         https = true;
         caching.redis = true;
@@ -47,7 +48,7 @@ in
       };
       postgresqlBackup = {
         enable = true;
-        location = "/data/backup/nextclouddb";
+        location = "/data/backups/nextclouddb";
         databases = [ "nextcloud" ];
         startAt = "*-*-* 23:15:00";
       };
