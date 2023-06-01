@@ -67,7 +67,7 @@
   services = {
     xserver.layout = "us";
     qemuGuest.enable = true;
-    # roon-server.enable = true;
+    roon-server.enable = true;
     openssh = {
       enable = true;
       allowSFTP = false;

@@ -16,7 +16,7 @@ in
         paths = [
           "/data/media/music"
           "/data/media/audiobooks"
-          "/data/backup/RoonBackups"
+          "/data/backups/RoonBackups"
         ];
         repo = "g268tdfo@g268tdfo.repo.borgbase.com:repo";
         encryption = {
