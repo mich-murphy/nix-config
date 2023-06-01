@@ -15,7 +15,7 @@ in
       nextcloud = {
         enable = true;
         package = pkgs.nextcloud26;
-        hostName = "nextcloud.elmurphy.com";
+        hostName = "nextcloud.pve.elmurphy.com";
         autoUpdateApps.enable = true;
         https = true;
         caching.redis = true;
@@ -56,35 +56,7 @@ in
         port = 31638;
         bind = "127.0.0.1";
       };
-      nginx = {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        virtualHosts.${config.services.nextcloud.hostName} = {
-          enableACME = true;
-          acmeRoot = null;
-          addSSL = true;
-          locations."/" = {
-            proxyPass = "http://localhost:8080";
-            proxyWebsockets = true;
-          };
-        };
-      };
     };
-
-    security.acme = {
-      acceptTerms = true;
-      preliminarySelfsigned = false;
-      defaults = {
-        email = "acme@elmurphy.com";
-        dnsProvider = "cloudflare";
-        credentialsFile = config.age.secrets.acmeCredentials.path;
-      };
-    };
-
-    users.users.nginx.extraGroups = [ "acme" ];
 
     systemd = {
       services."nextcloud-setup" = {
@@ -98,7 +70,6 @@ in
         file = ../../secrets/nextcloudPass.age;
         owner = "nextcloud";
       };
-      acmeCredentials.file = ../../secrets/acmeCredentials.age;
     };
   };
 }

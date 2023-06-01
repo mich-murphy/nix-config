@@ -56,6 +56,7 @@
     tailscale.enable = true;
     syncthing.enable = true;
     jellyfin.enable = true;
+    nginx.enable = true;
   #   borgbackup.enable = true;
   #   nextcloud.enable = true;
   #   plex.enable = true;

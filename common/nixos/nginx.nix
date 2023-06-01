@@ -1,0 +1,66 @@
+{ lib, config, pkgs, ... }:
+
+with lib;
+
+let
+  cfg = config.common.nginx;
+in
+{
+  options.common.nginx = {
+    enable = mkEnableOption "Enable Nginx with ACME wildcard certificate";
+  };
+
+  config = mkIf cfg.enable {
+    services.nginx = {
+      enable = true;
+      recommendedGzipSettings = true;
+      recommendedOptimisation = true;
+      recommendedProxySettings = true;
+      recommendedTlsSettings = true;
+      virtualHosts."audiobookshelf.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://0.0.0.0:13378";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."syncthing.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://0.0.0.0:8384";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."jellyfin.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://0.0.0.0:8096";
+          proxyWebsockets = true;
+        };
+      };
+    };
+
+    security.acme = {
+      acceptTerms = true;
+      preliminarySelfsigned = false;
+      defaults = {
+        email = "acme@elmurphy.com";
+        dnsProvider = "cloudflare";
+        credentialsFile = config.age.secrets.acmeCredentials.path;
+      };
+      certs."elmurphy.com" = {
+        domain = "*.elmurphy.com";
+      };
+    };
+
+    users.users.nginx.extraGroups = [ "acme" ];
+
+    age.secrets.acmeCredentials.file = ../../secrets/acmeCredentials.age;
+  };
+}

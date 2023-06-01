@@ -12,5 +12,6 @@
     ./audiobookshelf.nix
     ./tailscale.nix
     ./jellyfin.nix
+    ./nginx.nix
   ];
 }
