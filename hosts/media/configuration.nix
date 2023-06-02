@@ -64,6 +64,7 @@
     nginx.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;
+    linkding.enable = true;
   #   plex.enable = true;
   #   freshrss.enable = true;
   #   calibre-web.enable = true;
@@ -73,6 +74,18 @@
     xserver.layout = "us";
     qemuGuest.enable = true;
     roon-server.enable = true;
+    navidrome = {
+      enable = true;
+      settings = {
+        Address = "0.0.0.0";
+        Port = 4533;
+        MusicFolder = "/data/media/music";
+      };
+    };
+    kavita = {
+      enable = true;
+      tokenKeyFile = config.age.secrets.kavitaToken.path;
+    };
     openssh = {
       enable = true;
       allowSFTP = false;
@@ -134,5 +147,6 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
+    kavitaToken.file = ../../secrets/kavitaToken.age;
   };
 }

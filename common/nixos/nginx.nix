@@ -53,6 +53,33 @@ in
           proxyWebsockets = true;
         };
       };
+      virtualHosts."navidrome.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:4533";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."kavita.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:5000";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."linkding.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:9090";
+          proxyWebsockets = true;
+        };
+      };
     };
 
     security.acme = {

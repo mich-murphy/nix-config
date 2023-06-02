@@ -13,5 +13,6 @@
     ./tailscale.nix
     ./jellyfin.nix
     ./nginx.nix
+    ./linkding.nix
   ];
 }

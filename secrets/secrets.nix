@@ -9,4 +9,5 @@ in
   "mediaBorgPass.age".publicKeys = [ media ];
   "nextcloudBorgPass.age".publicKeys = [ media ];
   "freshrssPass.age".publicKeys = [ media ];
+  "kavitaToken.age".publicKeys = [ media ];
 }
