@@ -15,6 +15,7 @@ in
       "media" = {
         paths = [
           "/data/media/music"
+          "data/media/books"
           "/data/media/audiobooks"
           "/data/backups/RoonBackups"
         ];
@@ -35,15 +36,15 @@ in
       "nextcloud" = {
         paths = [
           "/data/backups/nextclouddb"
-          "/var/lib/nextcloud"
+          "/data/nextcloud"
         ];
         repo = "duqvv98y@duqvv98y.repo.borgbase.com:repo";
         encryption = {
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
         };
-        preHook = "su --command 'nextcloud-occ maintenance:mode --on' nextcloud";
-        postHook = "su --command 'nextcloud-occ maintenance:mode --off' nextcloud";
+        preHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --on";
+        postHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --off";
         compression = "auto,lzma";
         startAt = "daily";
         prune.keep = {

@@ -37,6 +37,11 @@
         "/var/log"
         "/var/lib"
       ];
+      files = [
+        # borgbackup default ssh key location - for sudo user
+        "/root/.ssh/id_ed25519"
+        "/root/.ssh/id_ed25519.pub"
+      ];
     };
     etc = {
       "machine-id".source = "/nix/persist/etc/machine-id";
@@ -58,7 +63,7 @@
     jellyfin.enable = true;
     nginx.enable = true;
     nextcloud.enable = true;
-  #   borgbackup.enable = true;
+    borgbackup.enable = true;
   #   plex.enable = true;
   #   freshrss.enable = true;
   #   calibre-web.enable = true;
