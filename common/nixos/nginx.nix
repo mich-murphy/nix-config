@@ -17,12 +17,21 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
+      virtualHosts."nextcloud.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:80";
+          proxyWebsockets = true;
+        };
+      };
       virtualHosts."audiobookshelf.pve.elmurphy.com"= {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://0.0.0.0:13378";
+          proxyPass = "http://127.0.0.1:13378";
           proxyWebsockets = true;
         };
       };
@@ -31,7 +40,7 @@ in
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://0.0.0.0:8384";
+          proxyPass = "http://127.0.0.1:8384";
           proxyWebsockets = true;
         };
       };
@@ -40,7 +49,7 @@ in
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://0.0.0.0:8096";
+          proxyPass = "http://127.0.0.1:8096";
           proxyWebsockets = true;
         };
       };

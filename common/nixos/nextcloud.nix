@@ -7,7 +7,7 @@ let
 in
 {
   options.common.nextcloud = {
-    enable = mkEnableOption "Enable Nextcloud with Postgres DB, Redis caching and automatic DNS validation";
+    enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
   };
 
   config = mkIf cfg.enable {
@@ -17,6 +17,7 @@ in
         package = pkgs.nextcloud26;
         hostName = "nextcloud.pve.elmurphy.com";
         datadir = "/data/nextcloud";
+        database.createLocally = true;
         autoUpdateApps.enable = true;
         https = true;
         caching.redis = true;
@@ -24,7 +25,6 @@ in
           dbtype = "pgsql";
           dbname = "nextcloud";
           dbuser = "nextcloud";
-          dbhost = "/run/postgresql";
           adminuser = "admin";
           adminpassFile = config.age.secrets.nextcloudPass.path;
           defaultPhoneRegion = "AU";
