@@ -25,6 +25,9 @@ in
         "proxmox" = {
           hostname = "proxmox";
           user = "root";
+          setEnv = {
+            "LC_ALL" = "C";
+          };
         };
         "seedhost" = {
           hostname = "mole.seedhost.eu";
