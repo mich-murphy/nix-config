@@ -51,5 +51,7 @@ in
         };
       };
     };
+
+    users.users.syncthing.extraGroups = [ "media" ];
   };
 }

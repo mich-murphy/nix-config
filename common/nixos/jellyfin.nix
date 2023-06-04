@@ -35,13 +35,17 @@ in
       };
       systemPackages = with pkgs; [
         linux-firmware 
+        jellyfin-ffmpeg
         intel-gpu-tools
         libva-utils
       ];
     };
 
-    users.users.jellyfin.extraGroups = [ "render" ];
+    users.users.jellyfin.extraGroups = [ "render" "media" ];
 
-    services.jellyfin.enable = true;
+    services.jellyfin = {
+      enable = true;
+      openFirewall = true;
+    };
   };
 }

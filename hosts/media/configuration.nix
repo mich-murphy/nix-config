@@ -12,10 +12,12 @@
     device = "/dev/sda";
   };
 
+  networking.hostName = "media";
   time.timeZone = "Australia/Melbourne";
   i18n.defaultLocale = "en_US.UTF-8";
 
   users = {
+    groups.media = {};
     mutableUsers = false;
     users = {
       mm = {
@@ -53,6 +55,7 @@
     systemPackages = with pkgs; [
       vim
       tmux
+      dua
     ];
   };
 
@@ -74,6 +77,12 @@
     xserver.layout = "us";
     qemuGuest.enable = true;
     roon-server.enable = true;
+    roon-server.openFirewall = true;
+    komga = {
+      enable = true;
+      port = 6080;
+      openFirewall = true;
+    };
     navidrome = {
       enable = true;
       settings = {
@@ -108,21 +117,6 @@
         path = "/etc/ssh/ssh_host_ed25519_key";
         type = "ed25519";
       }];
-    };
-  };
-
-  networking = {
-    hostName = "media";
-    firewall = {
-      enable = true;
-      allowedTCPPorts = [ 55000 ];
-      allowedUDPPorts = [ 55000 ];
-      extraCommands = ''
-        iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p udp --source 10.77.1.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p tcp --source 10.77.2.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p udp --source 10.77.2.0/24 -j nixos-fw-accept
-      '';
     };
   };
 

@@ -80,6 +80,15 @@ in
           proxyWebsockets = true;
         };
       };
+      virtualHosts."komga.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:6080";
+          proxyWebsockets = true;
+        };
+      };
     };
 
     security.acme = {
