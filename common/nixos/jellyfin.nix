@@ -11,10 +11,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.config.packageOverrides = pkgs: {
-      vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
-    };
-
     hardware.opengl = {
       enable = true;
       extraPackages = with pkgs; [
@@ -27,7 +23,7 @@ in
     };
 
     # specify integrated driver Intel Alder Lake - https://nixos.wiki/wiki/Intel_Graphics
-    boot.kernelParams = [ "i915.force_probe=4692" ];
+    # boot.kernelParams = [ "i915.force_probe=4692" ];
 
     environment = {
       sessionVariables = {
@@ -35,7 +31,6 @@ in
       };
       systemPackages = with pkgs; [
         linux-firmware 
-        jellyfin-ffmpeg
         intel-gpu-tools
         libva-utils
       ];
