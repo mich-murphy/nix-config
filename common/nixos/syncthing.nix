@@ -27,25 +27,25 @@ in
               id = "mrpfh-btugj";
               path = "/data/media/music";
               devices = [ "seedbox" ];
-              type = "receiveonly";
+              ignorePerm = true;
             };
             "Audiobooks" = {
               id = "mqh32-k7ykn";
               path = "/data/media/audiobooks";
               devices = [ "seedbox" ];
-              type = "receiveonly";
+              ignorePerm = true;
             };
             "Movies" = {
               id = "naolq-r7zlm";
               path = "/data/media/movies";
               devices = [ "seedbox" ];
-              type = "receiveonly";
+              ignorePerm = true;
             };
             "TV" = {
               id = "hhqvi-jv4wy";
               path = "/data/media/tv";
               devices = [ "seedbox" ];
-              type = "receiveonly";
+              ignorePerm = true;
             };
           };
         };
