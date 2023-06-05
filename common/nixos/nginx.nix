@@ -53,6 +53,15 @@ in
           proxyWebsockets = true;
         };
       };
+      virtualHosts."jellyseerr.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:5055";
+          proxyWebsockets = true;
+        };
+      };
       virtualHosts."navidrome.pve.elmurphy.com"= {
         enableACME = true;
         addSSL = true;
@@ -86,6 +95,15 @@ in
         acmeRoot = null;
         locations."/" = {
           proxyPass = "http://127.0.0.1:6080";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."uptime-kuma.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:3001";
           proxyWebsockets = true;
         };
       };

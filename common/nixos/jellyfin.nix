@@ -42,5 +42,9 @@ in
       enable = true;
       openFirewall = true;
     };
+    services.jellyseerr = {
+      enable = true;
+      openFirewall = true;
+    };
   };
 }

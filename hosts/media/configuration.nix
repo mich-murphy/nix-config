@@ -78,6 +78,14 @@
     qemuGuest.enable = true;
     roon-server.enable = true;
     roon-server.openFirewall = true;
+    ntopng.enable = true;
+    uptime-kuma = {
+      enable = true;
+      settings = {
+        HOST = "0.0.0.0";
+        PORT = "3001";
+      };
+    };
     komga = {
       enable = true;
       port = 6080;
@@ -93,6 +101,7 @@
     };
     kavita = {
       enable = true;
+      ipAdresses = [ "0.0.0.0" ];
       tokenKeyFile = config.age.secrets.kavitaToken.path;
     };
     openssh = {
