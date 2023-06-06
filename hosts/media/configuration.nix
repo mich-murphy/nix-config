@@ -43,7 +43,6 @@
         # borgbackup default ssh key location - for sudo user
         "/root/.ssh/id_ed25519"
         "/root/.ssh/id_ed25519.pub"
-        "/etc/ssh/ssh_config"
       ];
     };
     etc = {
