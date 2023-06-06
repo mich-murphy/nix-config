@@ -43,6 +43,7 @@
         # borgbackup default ssh key location - for sudo user
         "/root/.ssh/id_ed25519"
         "/root/.ssh/id_ed25519.pub"
+        "/etc/ssh/ssh_config"
       ];
     };
     etc = {
@@ -60,15 +61,15 @@
   };
 
   common = {
-    audiobookshelf.enable = true;
     tailscale.enable = true;
     syncthing.enable = true;
-    jellyfin.enable = true;
     nginx.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;
     linkding.enable = true;
-  #   plex.enable = true;
+    plex.enable = true;
+    # jellyfin.enable = true;
+    # audiobookshelf.enable = true;
   #   freshrss.enable = true;
   #   calibre-web.enable = true;
   };
@@ -78,7 +79,6 @@
     qemuGuest.enable = true;
     roon-server.enable = true;
     roon-server.openFirewall = true;
-    ntopng.enable = true;
     uptime-kuma = {
       enable = true;
       settings = {
@@ -99,11 +99,11 @@
         MusicFolder = "/data/media/music";
       };
     };
-    kavita = {
-      enable = true;
-      ipAdresses = [ "0.0.0.0" ];
-      tokenKeyFile = config.age.secrets.kavitaToken.path;
-    };
+    # kavita = {
+    #   enable = true;
+    #   ipAdresses = [ "0.0.0.0" ];
+    #   tokenKeyFile = config.age.secrets.kavitaToken.path;
+    # };
     openssh = {
       enable = true;
       allowSFTP = false;

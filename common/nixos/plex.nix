@@ -20,9 +20,36 @@ in
   };
 
   config = mkIf cfg.enable {
-      services.plex = {
-      enable = true;
-      extraPlugins = [ audnexusPlugin ];
+    services = {
+      plex = {
+        enable = true;
+        extraPlugins = [ audnexusPlugin ];
+      };
+      tautulli.enable = true;
     };
+
+    hardware.opengl = {
+      enable = true;
+      extraPackages = with pkgs; [
+        intel-media-driver
+        vaapiIntel
+        vaapiVdpau
+        libvdpau-va-gl
+        intel-compute-runtime
+      ];
+    };
+
+    environment = {
+      sessionVariables = {
+        LIBVA_DRIVER_NAME = "iHD";
+      };
+      systemPackages = with pkgs; [
+        linux-firmware 
+        intel-gpu-tools
+        libva-utils
+      ];
+    };
+
+    users.users.plex.extraGroups = [ "render" "media" ];
   };
 }

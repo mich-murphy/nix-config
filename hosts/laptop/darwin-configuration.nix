@@ -48,9 +48,11 @@
       "homebrew/cask-versions"
       "homebrew/cask-drivers"
       "homebrew/services"
+      "borgbackup/tap"
     ];
     brews = [
       "gcc"
+      "borgbackup/tap/borgbackup-fuse"
     ];
     casks = [
       "firefox"
@@ -63,6 +65,8 @@
       "karabiner-elements"
       "little-snitch"
       "obsidian"
+      "macfuse"
+      "vorta"
     ];
   };
 
