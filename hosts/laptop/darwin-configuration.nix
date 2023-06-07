@@ -10,7 +10,7 @@
   networking = {
     computerName = "${host}";
     hostName = "${host}";
-    dns = [ "100.100.100.100" ];
+    dns = [ "100.100.100.100" "1.1.1.1" "1.0.0.1" ];
     knownNetworkServices = [ "Wi-Fi" "Thunderbolt Bridge" ];
   };
 
@@ -48,11 +48,9 @@
       "homebrew/cask-versions"
       "homebrew/cask-drivers"
       "homebrew/services"
-      "borgbackup/tap"
     ];
     brews = [
       "gcc"
-      "borgbackup/tap/borgbackup-fuse"
     ];
     casks = [
       "firefox"
@@ -63,10 +61,7 @@
       "stats"
       "roon"
       "karabiner-elements"
-      "little-snitch"
       "obsidian"
-      "macfuse"
-      "vorta"
     ];
   };
 
