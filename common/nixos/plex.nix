@@ -17,6 +17,11 @@ in
 {
   options.common.plex = {
     enable = mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
+    nginx = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable nginx reverse proxy with SSL";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -26,6 +31,26 @@ in
         extraPlugins = [ audnexusPlugin ];
       };
       tautulli.enable = true;
+      nginx = mkIf cfg.nginx {
+        virtualHosts."plex.pve.elmurphy.com"= {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:32400";
+            proxyWebsockets = true;
+          };
+        };
+        virtualHosts."tautulli.pve.elmurphy.com"= {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:8181";
+            proxyWebsockets = true;
+          };
+        };
+      };
     };
 
     hardware.opengl = {

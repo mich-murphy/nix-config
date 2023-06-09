@@ -8,6 +8,11 @@ in
 {
   options.common.nextcloud = {
     enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
+    nginx = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable nginx reverse proxy with SSL";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -56,6 +61,17 @@ in
         enable = true;
         port = 31638;
         bind = "127.0.0.1";
+      };
+      nginx = mkIf cfg.nginx {
+        virtualHosts."${config.services.nextcloud.hostName}"= {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:80";
+            proxyWebsockets = true;
+          };
+        };
       };
     };
 

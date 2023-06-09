@@ -17,84 +17,12 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."nextcloud.pve.elmurphy.com"= {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:80";
-          proxyWebsockets = true;
-        };
-      };
-      # virtualHosts."audiobookshelf.pve.elmurphy.com"= {
-      #   enableACME = true;
-      #   addSSL = true;
-      #   acmeRoot = null;
-      #   locations."/" = {
-      #     proxyPass = "http://127.0.0.1:13378";
-      #     proxyWebsockets = true;
-      #   };
-      # };
-      virtualHosts."syncthing.pve.elmurphy.com"= {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8384";
-          proxyWebsockets = true;
-        };
-      };
-      # virtualHosts."jellyfin.pve.elmurphy.com"= {
-      #   enableACME = true;
-      #   addSSL = true;
-      #   acmeRoot = null;
-      #   locations."/" = {
-      #     proxyPass = "http://127.0.0.1:8096";
-      #     proxyWebsockets = true;
-      #   };
-      # };
-      virtualHosts."plex.pve.elmurphy.com"= {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:32400";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."tautulli.pve.elmurphy.com"= {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8181";
-          proxyWebsockets = true;
-        };
-      };
-      # virtualHosts."jellyseerr.pve.elmurphy.com"= {
-      #   enableACME = true;
-      #   addSSL = true;
-      #   acmeRoot = null;
-      #   locations."/" = {
-      #     proxyPass = "http://127.0.0.1:5055";
-      #     proxyWebsockets = true;
-      #   };
-      # };
       virtualHosts."navidrome.pve.elmurphy.com"= {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
           proxyPass = "http://127.0.0.1:4533";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."linkding.pve.elmurphy.com"= {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:9090";
           proxyWebsockets = true;
         };
       };
