@@ -56,54 +56,25 @@
     systemPackages = with pkgs; [
       vim
       tmux
-      dua
     ];
   };
 
   common = {
     tailscale.enable = true;
-    syncthing.enable = true;
     nginx.enable = true;
+    syncthing.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;
     linkding.enable = true;
     plex.enable = true;
-    # jellyfin.enable = true;
-    # audiobookshelf.enable = true;
-  #   freshrss.enable = true;
-  #   calibre-web.enable = true;
+    uptime-kuma.enable = true;
+    komga.enable = true;
+    navidrome.enable = true;
   };
 
   services = {
     xserver.layout = "us";
     qemuGuest.enable = true;
-    roon-server.enable = true;
-    roon-server.openFirewall = true;
-    uptime-kuma = {
-      enable = true;
-      settings = {
-        HOST = "0.0.0.0";
-        PORT = "3001";
-      };
-    };
-    komga = {
-      enable = true;
-      port = 6080;
-      openFirewall = true;
-    };
-    navidrome = {
-      enable = true;
-      settings = {
-        Address = "0.0.0.0";
-        Port = 4533;
-        MusicFolder = "/data/media/music";
-      };
-    };
-    # kavita = {
-    #   enable = true;
-    #   ipAdresses = [ "0.0.0.0" ];
-    #   tokenKeyFile = config.age.secrets.kavitaToken.path;
-    # };
     openssh = {
       enable = true;
       allowSFTP = false;
@@ -150,6 +121,5 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
-    kavitaToken.file = ../../secrets/kavitaToken.age;
   };
 }

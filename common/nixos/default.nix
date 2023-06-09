@@ -14,5 +14,9 @@
     ./jellyfin.nix
     ./nginx.nix
     ./linkding.nix
+    ./uptime-kuma.nix
+    ./komga.nix
+    ./navidrome.nix
+    ./roon-server.nix
   ];
 }

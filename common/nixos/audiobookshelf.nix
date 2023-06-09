@@ -16,7 +16,7 @@ in
     port = mkOption {
       type = types.str;
       default = "13378";
-      description = "Port for linkding to be advertised on";
+      description = "Port for Audiobookshelf to be advertised on";
     };
     nginx = mkOption {
       type = types.bool;
