@@ -24,7 +24,7 @@
         isNormalUser = true;
         home = "/home/mm";
         passwordFile = config.age.secrets.userPass.path;
-        extraGroups = [ "wheel" ];
+        extraGroups = [ "wheel" "media" ];
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN"
         ];
@@ -43,7 +43,7 @@
         # borgbackup default ssh key location - for sudo user
         "/root/.ssh/id_ed25519"
         "/root/.ssh/id_ed25519.pub"
-        "/root/.ssh/known_hosts"
+        #"/root/.ssh/known_hosts"
       ];
     };
     etc = {
@@ -70,6 +70,7 @@
     uptime-kuma.enable = true;
     komga.enable = true;
     navidrome.enable = true;
+    kapowarr.enable = true;
   };
 
   services = {
