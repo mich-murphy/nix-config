@@ -38,12 +38,7 @@
         "/etc/nixos"
         "/var/log"
         "/var/lib"
-      ];
-      files = [
-        # borgbackup default ssh key location - for sudo user
-        "/root/.ssh/id_ed25519"
-        "/root/.ssh/id_ed25519.pub"
-        #"/root/.ssh/known_hosts"
+        "/root/.ssh"
       ];
     };
     etc = {
@@ -67,6 +62,7 @@
     borgbackup.enable = true;
     linkding.enable = true;
     plex.enable = true;
+    roon-server.enable = true;
     uptime-kuma.enable = true;
     komga.enable = true;
     navidrome.enable = true;

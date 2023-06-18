@@ -15,7 +15,9 @@ in
       "media" = {
         paths = [
           "/data/media/music"
-          "data/media/books"
+          "/data/media/books"
+          "/data/media/comics"
+          "/data/media/manga"
           "/data/media/audiobooks"
           "/data/backups/RoonBackups"
         ];
