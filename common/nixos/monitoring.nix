@@ -36,12 +36,12 @@ in
             http_addr = "127.0.0.1";
           };
         };
-        provision = {
-          enable = true;
-          datasources.settings = {
-            datasources.prometheus.url = "http://127.0.0.1:${toString cfg.prometheus-port}";
-          };
-        };
+        # provision = {
+        #   enable = true;
+        #   datasources.settings = {
+        #     datasources.prometheus.url = "http://127.0.0.1:${toString cfg.prometheus-port}";
+        #   };
+        # };
       };
       prometheus = {
         enable = true;
