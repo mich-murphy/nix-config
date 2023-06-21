@@ -67,6 +67,7 @@
     komga.enable = true;
     navidrome.enable = true;
     kapowarr.enable = true;
+    monitoring.enable = true;
   };
 
   services = {

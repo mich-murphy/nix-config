@@ -19,5 +19,6 @@
     ./navidrome.nix
     ./roon-server.nix
     ./kapowarr.nix
+    ./monitoring.nix
   ];
 }

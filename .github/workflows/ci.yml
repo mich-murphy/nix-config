@@ -1,0 +1,24 @@
+name: "Build and Deploy Flake via Deploy-rs over Tailscale"
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Tailscale
+        uses: tailscale/github-action@v1
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: Install Nix flake and deploy via Deploy-rs
+        uses: cachix/install-nix-action@v18
+        with:
+          install_url: https://github.com/nix-community/nix-unstable-installer/releases/download/nix-2.12.0pre20221116_62960f3/install
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - run: nix flake check
+      - run: nix run github:serokell/deploy-rs .#media
