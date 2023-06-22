@@ -75,21 +75,21 @@
     qemuGuest.enable = true;
     openssh = {
       enable = true;
-      # allowSFTP = false;
-      settings = {
-        PasswordAuthentication = false;
-        KbdInteractiveAuthentication = false;
-      };
+      allowSFTP = false;
+      # settings = {
+      #   PasswordAuthentication = false;
+      #   KbdInteractiveAuthentication = false;
+      # };
       settings = {
         PermitRootLogin = "no";
       };
-      extraConfig = ''
-        AllowTcpForwarding yes
-        X11Forwarding no
-        AllowAgentForwarding no
-        AllowStreamLocalForwarding no
-        AuthenticationMethods publickey
-      '';
+      # extraConfig = ''
+      #   AllowTcpForwarding yes
+      #   X11Forwarding no
+      #   AllowAgentForwarding no
+      #   AllowStreamLocalForwarding no
+      #   AuthenticationMethods publickey
+      # '';
       # default to ed25519 key generation
       hostKeys = [{
         path = "/etc/ssh/ssh_host_ed25519_key";
