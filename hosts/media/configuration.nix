@@ -27,6 +27,7 @@
         extraGroups = [ "wheel" "media" ];
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN"
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" #github
         ];
       };
     };
@@ -76,20 +77,20 @@
     openssh = {
       enable = true;
       allowSFTP = false;
-      # settings = {
-      #   PasswordAuthentication = false;
-      #   KbdInteractiveAuthentication = false;
-      # };
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+      };
       settings = {
         PermitRootLogin = "no";
       };
-      # extraConfig = ''
-      #   AllowTcpForwarding yes
-      #   X11Forwarding no
-      #   AllowAgentForwarding no
-      #   AllowStreamLocalForwarding no
-      #   AuthenticationMethods publickey
-      # '';
+      extraConfig = ''
+        AllowTcpForwarding yes
+        X11Forwarding no
+        AllowAgentForwarding no
+        AllowStreamLocalForwarding no
+        AuthenticationMethods publickey
+      '';
       # default to ed25519 key generation
       hostKeys = [{
         path = "/etc/ssh/ssh_host_ed25519_key";
