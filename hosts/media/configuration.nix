@@ -68,6 +68,7 @@
     navidrome.enable = true;
     kapowarr.enable = true;
     monitoring.enable = true;
+    code-server.enable = true;
   };
 
   services = {

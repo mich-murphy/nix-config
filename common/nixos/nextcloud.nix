@@ -19,7 +19,7 @@ in
     services = {
       nextcloud = {
         enable = true;
-        package = pkgs.nextcloud26;
+        package = pkgs.nextcloud27;
         hostName = "nextcloud.pve.elmurphy.com";
         datadir = "/data/nextcloud";
         database.createLocally = true;

@@ -20,5 +20,6 @@
     ./roon-server.nix
     ./kapowarr.nix
     ./monitoring.nix
+    ./code-server.nix
   ];
 }
