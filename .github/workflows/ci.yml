@@ -21,7 +21,7 @@ jobs:
           user: ${{ secrets.USER }}
           private-key: ${{ secrets.SSH_KEY }}
       - name: Install Nix flake and deploy via Deploy-rs
-        uses: cachix/install-nix-action@22
+        uses: cachix/install-nix-action@20
         with:
           install_url: https://github.com/nix-community/nix-unstable-installer/releases/download/nix-2.12.0pre20221116_62960f3/install
           extra_nix_config: |
