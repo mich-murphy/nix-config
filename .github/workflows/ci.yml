@@ -13,7 +13,7 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
           version: '1.42.0'
-          args: '--ssh'
+          args: --ssh
       - name: Install Nix flake and deploy via Deploy-rs
         uses: cachix/install-nix-action@v18
         with:
