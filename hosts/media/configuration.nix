@@ -75,7 +75,7 @@
     qemuGuest.enable = true;
     openssh = {
       enable = true;
-      allowSFTP = false;
+      # allowSFTP = false;
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
