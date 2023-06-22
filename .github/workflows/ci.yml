@@ -12,7 +12,7 @@ jobs:
         uses: tailscale/github-action@v1
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: '1.32.1' #pinning as v1.14 was grabbed otherwise
+          #version: '1.42.0'
       - name: Install Nix flake and deploy via Deploy-rs
         uses: cachix/install-nix-action@v18
         with:
