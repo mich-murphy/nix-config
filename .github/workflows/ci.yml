@@ -15,7 +15,7 @@ jobs:
         args: --ssh
     - name: Create SSH key
       run: |
-        # install -m 600 -D /dev/null ~/.ssh/id_ed25519
+        install -m 600 -D /dev/null ~/.ssh/id_ed25519
         # echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - name: Install Nix
