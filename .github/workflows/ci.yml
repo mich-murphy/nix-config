@@ -2,6 +2,11 @@ name: "deploy-rs"
 on:
   push:
     branches: [ master ]
+    paths:
+    - 'flake.nix'
+    - 'hosts/media/**'
+    - 'secrets/**'
+    - 'common/nixos/**'
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
