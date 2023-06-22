@@ -13,6 +13,11 @@ jobs:
       with:
         authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
         args: --ssh
+    - name: Create SSH key
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_ed25519
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - name: Install Nix
       uses: cachix/install-nix-action@v22
       with:
@@ -24,11 +29,6 @@ jobs:
       with:
         name: mich-murphy
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - name: Create SSH key
-      run: |
-        install -m 600 -D /dev/null ~/.ssh/id_ed25519
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - run: nix flake check
     - run: nix run github:serokell/deploy-rs .#media
     - run: sudo tailscale logout
