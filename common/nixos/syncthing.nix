@@ -19,6 +19,7 @@ in
     services = {
       syncthing = {
         enable = true;
+        group = "media";
         guiAddress = "0.0.0.0:8384";
         overrideDevices = true;
         overrideFolders = true;
@@ -71,7 +72,5 @@ in
         };
       };
     };
-
-    users.users.syncthing.extraGroups = [ "media" ];
   };
 }
