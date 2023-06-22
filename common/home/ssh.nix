@@ -17,7 +17,6 @@ in
         "media" = {
           hostname = "media";
           user = "mm";
-          identityFile = "~/.ssh/nix-media";
           setEnv = {
             "LC_ALL" = "C";
           };

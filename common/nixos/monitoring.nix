@@ -56,7 +56,7 @@ in
           }
         ];
       };
-      nginx.virtualHosts.${config.services.grafana.domain} = {
+      nginx.virtualHosts.${config.services.grafana.settings.server.domain} = {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;
