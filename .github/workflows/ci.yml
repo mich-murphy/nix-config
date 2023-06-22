@@ -9,7 +9,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
       - name: Tailscale
-        uses: tailscale/github-action
+        uses: tailscale/github-action@HEAD
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
           version: '1.42.0'
