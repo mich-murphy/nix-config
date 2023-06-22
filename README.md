@@ -1,4 +1,4 @@
-[![deploy-rs](https://github.com/mich-murphy/nix-config/actions/workflows/ci.yml/badge.svg)](https://github.com/mich-murphy/nix-config/actions/workflows/ci.yml)
+[![deploy-rs](https://github.com/mich-murphy/nix-config/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/mich-murphy/nix-config/actions/workflows/ci.yml)
 ---
 
 # Nix-Darwin Configuration Flake
