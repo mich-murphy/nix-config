@@ -12,10 +12,16 @@ jobs:
         uses: tailscale/github-action@HEAD
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: '1.42.0'
           args: --ssh
+      - name: Set SSH Config for Deploy-rs
+        uses: prx0/setup-ssh-config@v1
+        with:
+          host: ${{ secrets.HOST }}
+          hostname: ${{ secrets.HOST }} 
+          user: ${{ secrets.USER }}
+          private-key: ${{ secrets.SSH_KEY }}
       - name: Install Nix flake and deploy via Deploy-rs
-        uses: cachix/install-nix-action@v18
+        uses: cachix/install-nix-action@22
         with:
           install_url: https://github.com/nix-community/nix-unstable-installer/releases/download/nix-2.12.0pre20221116_62960f3/install
           extra_nix_config: |
