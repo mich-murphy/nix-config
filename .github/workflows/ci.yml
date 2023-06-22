@@ -1,4 +1,4 @@
-name: "Deploy Flake via Deploy-rs Over Tailscale"
+name: "deploy-rs"
 on:
   push:
     branches: [ master ]
