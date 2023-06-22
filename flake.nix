@@ -73,7 +73,7 @@
     };
 
     deploy.nodes.media = {
-      hostname = "100.115.54.87";
+      hostname = "media";
       remoteBuild = true;
       profiles.system = {
         user = "root";
