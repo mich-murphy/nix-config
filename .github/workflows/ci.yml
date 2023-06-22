@@ -26,6 +26,11 @@ jobs:
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     # - run: nix flake check
     # - run: nix run github:serokell/deploy-rs .#media
+    - name: Create SSH key
+      run: |
+        install -m 600 -D /dev/null ~/.ssh/id_ed25519
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - run: |
         ssh mm@media
         uname -r
