@@ -1,3 +1,6 @@
+[![deploy-rs](https://github.com/mich-murphy/nix-config/actions/workflows/ci.yml/badge.svg)](https://github.com/mich-murphy/nix-config/actions/workflows/ci.yml)
+---
+
 # Nix-Darwin Configuration Flake
 
 ![screenshot](https://github.com/mich-murphy/nix-config/blob/master/images/screenshot.png)
