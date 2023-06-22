@@ -24,6 +24,9 @@ jobs:
       with:
         name: mich-murphy
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - run: nix flake check
-    - run: nix run github:serokell/deploy-rs .#media
+    # - run: nix flake check
+    # - run: nix run github:serokell/deploy-rs .#media
+    - run: |
+        ssh mm@media
+        uname -r
     - run: tailscale logout
