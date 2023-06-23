@@ -33,8 +33,13 @@ in
         host = cfg.host;
         port = cfg.port;
         proxyDomain = "code.pve.elmurphy.com";
+        extraPackages = with pkgs; [
+          python311 
+          python311Packages.pip
+        ];
         disableTelemetry = true;
         disableUpdateCheck =true;
+        disableGettingStartedOverride = true;
         auth = "none";
       };
       nginx = mkIf cfg.nginx {
