@@ -45,8 +45,8 @@ in
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
         };
-        preHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --on";
-        postHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --off";
+        # preHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --on";
+        # postHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --off";
         compression = "auto,lzma";
         startAt = "daily";
         prune.keep = {
