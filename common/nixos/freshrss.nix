@@ -21,7 +21,7 @@ in
         enable = true;
         defaultUser = "mm";
         passwordFile = config.age.secrets.freshrssPass.path;
-        baseUrl = "http://0.0.0.0";
+        baseUrl = "https://0.0.0.0";
         virtualHost = if cfg.nginx then "freshrss.pve.elmurphy.com" else null;
         database = {
           name = "freshrss";
@@ -33,11 +33,6 @@ in
         virtualHosts.${config.services.freshrss.virtualHost}= {
           enableACME = true;
           addSSL = true;
-          acmeRoot = null;
-          locations."/" = {
-            proxyPass = "${config.services.freshrss.baseUrl}:80";
-            proxyWebsockets = true;
-          };
         };
       };
     };
