@@ -21,7 +21,7 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
-    # neovim.url = "github:neovim/neovim?dir=contrib";
+    neovim.url = "github:neovim/neovim?dir=contrib";
   };
 
   outputs = { 
@@ -35,7 +35,7 @@
     agenix,
     deploy-rs,
     impermanence,
-    # neovim,
+    neovim,
     ... 
   }@inputs:
   let

@@ -59,7 +59,7 @@ in
             type = "receiveonly";
           };
           "Downloads" = {
-            id = "ezkhn-a5n5g";
+            id = "rr5rs-jrz2o";
             path = "/data/media/downloads";
             devices = [ "seedbox" ];
             ignorePerms = true;

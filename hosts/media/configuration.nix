@@ -63,12 +63,8 @@
     linkding.enable = true;
     plex.enable = true;
     roon-server.enable = true;
-    uptime-kuma.enable = true;
     komga.enable = true;
-    navidrome.enable = true;
     kapowarr.enable = true;
-    monitoring.enable = true;
-    code-server.enable = true;
   };
 
   services = {
@@ -105,11 +101,23 @@
   };
 
   nix = {
-    settings.auto-optimise-store = true;
-    settings.allowed-users = [ "@wheel" ];
+    gc = {
+      automatic = true;
+      options = "--delete-older-than 7d";
+    };
+    settings = {
+      auto-optimise-store = true;
+      allowed-users = [ "@wheel" ];
+      substituters = [
+        "https://nix-community.cachix.org"
+        "https://mich-murphy.cachix.org"
+      ];
+      trusted-public-keys = [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        "mich-murphy.cachix.org-1:N3hbImjsw9hwKSDZasLevmQCdQBoLabHgeq+LuSvLhs="
+      ];
+    };
     package = pkgs.nixUnstable;
-    gc.automatic = true;
-    gc.options = "--delete-older-than 7d";
     extraOptions = ''
       experimental-features = nix-command flakes
     '';
