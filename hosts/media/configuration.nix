@@ -65,6 +65,7 @@
     roon-server.enable = true;
     komga.enable = true;
     kapowarr.enable = true;
+    freshrss.enable = true;
   };
 
   services = {
