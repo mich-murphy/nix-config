@@ -62,6 +62,7 @@
       "roon"
       "karabiner-elements"
       "obsidian"
+      "tailscale"
     ];
   };
 
@@ -71,7 +72,6 @@
 
   services = {
     nix-daemon.enable = true;
-    tailscale.enable = true;
     lorri.enable = true;
   };
 
