@@ -33,7 +33,7 @@ in
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${builtins.toString cfg.port}";
+            proxyPass = "http://127.0.0.1:${toString cfg.port}";
             proxyWebsockets = true;
           };
         };

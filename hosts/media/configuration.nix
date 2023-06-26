@@ -66,6 +66,9 @@
     komga.enable = true;
     kapowarr.enable = true;
     freshrss.enable = true;
+    jellyfin.enable = true;
+    audiobookshelf.enable = true;
+    uptime-kuma.enable = true;
   };
 
   services = {

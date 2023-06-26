@@ -14,8 +14,8 @@ in
       description = "Path to Audiobookshelf config files";
     };
     port = mkOption {
-      type = types.str;
-      default = "13378";
+      type = types.port;
+      default = 13378;
       description = "Port for Audiobookshelf to be advertised on";
     };
     nginx = mkOption {
@@ -35,7 +35,7 @@ in
           AUDIOBOOKSHELF_UID = "99";
           AUDIOBOOKSHELF_GID = "100";
         };
-        ports = [ "${cfg.port}:80" ];
+        ports = [ "${toString cfg.port}:80" ];
         volumes = [
           "/data/media/audiobooks:/audiobooks"
           "/data/media/podcasts:/podcasts"
@@ -51,7 +51,7 @@ in
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${cfg.port}";
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
         };
       };

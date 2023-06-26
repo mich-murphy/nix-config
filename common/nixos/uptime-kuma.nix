@@ -9,8 +9,8 @@ in
   options.common.uptime-kuma = {
     enable = mkEnableOption "Enable Uptime Kuma";
     port = mkOption {
-      type = types.str;
-      default = "3001";
+      type = types.port;
+      default = 3001;
       description = "Port for Uptime Kuma to be advertised on";
     };
     host = mkOption {
@@ -31,7 +31,7 @@ in
         enable = true;
         settings = {
           HOST = "${cfg.host}";
-          PORT = "${cfg.port}";
+          PORT = "${toString cfg.port}";
         };
       };
       nginx = mkIf cfg.nginx {
@@ -40,7 +40,7 @@ in
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://${cfg.host}:${cfg.port}";
+            proxyPass = "http://${cfg.host}:${toString cfg.port}";
             proxyWebsockets = true;
           };
         };

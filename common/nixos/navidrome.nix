@@ -46,7 +46,7 @@ in
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://${cfg.host}:${builtins.toString cfg.port}";
+            proxyPass = "http://${cfg.host}:${toString cfg.port}";
             proxyWebsockets = true;
           };
         };

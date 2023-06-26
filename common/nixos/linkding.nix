@@ -14,8 +14,8 @@ in
       description = "Path to Linkding config files";
     };
     port = mkOption {
-      type = types.str;
-      default = "9090";
+      type = types.port;
+      default = 9090;
       description = "Port for linkding to be advertised on";
     };
     nginx = mkOption {
@@ -31,7 +31,7 @@ in
       containers."linkding" = {
         autoStart = true;
         image = "sissbruecker/linkding:latest";
-        ports = [ "${cfg.port}:9090" ];
+        ports = [ "${toString cfg.port}:9090" ];
         volumes = [
           "${cfg.workingDir}/data:/etc/linkding/data"
         ];
@@ -44,7 +44,7 @@ in
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${cfg.port}";
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
         };
       };

@@ -9,8 +9,8 @@ in
   options.common.kapowarr = {
     enable = mkEnableOption "Enable Kapowarr";
     port = mkOption {
-      type = types.str;
-      default = "5656";
+      type = types.port;
+      default = 5656;
       description = "Port for Kapowarr to be advertised on";
     };
     nginx = mkOption {
@@ -30,7 +30,7 @@ in
           AUDIOBOOKSHELF_UID = "99";
           AUDIOBOOKSHELF_GID = "100";
         };
-        ports = [ "${cfg.port}:5656" ];
+        ports = [ "${toString cfg.port}:5656" ];
         volumes = [
           "kapowarr-db:/app/db"
           "/data/temp/kapowarr:/app/temp_downloads"
@@ -46,7 +46,7 @@ in
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://127.0.0.1:${cfg.port}";
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
           proxyWebsockets = true;
         };
       };
