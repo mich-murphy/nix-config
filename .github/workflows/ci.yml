@@ -32,11 +32,8 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: |
           experimental-features = nix-command flakes
-    - name: Cachix Build Cache
-      uses: cachix/cachix-action@v12
-      with:
-        name: mich-murphy
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - name: Cache Nix Build
+      uses: DeterminateSystems/magic-nix-cache-action@main
     - run: nix flake check
     - run: nix run github:serokell/deploy-rs .#media
     - run: sudo tailscale logout
