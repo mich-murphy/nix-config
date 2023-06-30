@@ -20,6 +20,7 @@ in
           "/data/media/manga"
           "/data/media/audiobooks"
           "/data/backups/RoonBackups"
+          "/var/lib/audiobookshelf/audiobooks"
         ];
         repo = "g268tdfo@g268tdfo.repo.borgbase.com:repo";
         encryption = {

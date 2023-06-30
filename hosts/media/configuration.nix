@@ -60,7 +60,6 @@
     syncthing.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;
-    linkding.enable = true;
     roon-server.enable = true;
     komga.enable = true;
     kapowarr.enable = true;
