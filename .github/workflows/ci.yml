@@ -37,4 +37,3 @@ jobs:
     - name: Deploy Nix FLake
       run: |
         nix run github:serokell/deploy-rs .#media
-        sudo tailscale logout
