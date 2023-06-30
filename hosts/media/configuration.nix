@@ -61,14 +61,12 @@
     nextcloud.enable = true;
     borgbackup.enable = true;
     linkding.enable = true;
-    plex.enable = true;
     roon-server.enable = true;
     komga.enable = true;
     kapowarr.enable = true;
     freshrss.enable = true;
     jellyfin.enable = true;
     audiobookshelf.enable = true;
-    uptime-kuma.enable = true;
   };
 
   services = {
