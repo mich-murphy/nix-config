@@ -35,7 +35,7 @@
  +---+---+---+---+---+---*/
 
 
- :root {
+:root {
 
   /*  Global Border Radius
    *  applied to ALL UI elements
@@ -69,21 +69,24 @@
  +---+---+---+---+---+---+---*/
 
 
+/*  Position of the Personal Toolbar
+ *  possible values:
+ *  0 – toolbar on top
+ *  4 – toolbar on bottom
+ */
 :root {
-
-  /*  Position of the Personal Toolbar
-   *  possible values:
-   *  0 – toolbar on top
-   *  4 – toolbar on bottom
-   */ --uc-toolbar-position: 0;
-
-  /*  Darken the Personal Toolbar by X amount
-   *  where X = 1 means pure black
-   *  and X = 0 means no darkening at all
-   */ --uc-darken-toolbar: .2;
-
+  --uc-toolbar-position: 0;
 }
 
+/*  Darken the Personal Toolbar by X amount
+ *  where X = 1 means pure black
+ *  and X = 0 means no darkening at all
+ */
+@media (prefers-color-scheme: dark) { :root {
+  --uc-darken-toolbar: 0.2;
+}} @media (prefers-color-scheme: light) { :root {
+  --uc-darken-toolbar: 0;
+}}
 
 
 
@@ -98,8 +101,8 @@
   /*  Width of the URL Bar for the Oneline layout
    *  If enabled the max-width is applied on focus
    *  otherwise the URL Bar will always be it's min-width
-   */ --uc-urlbar-min-width: 40vw;
-      --uc-urlbar-max-width: 40vw;
+   */ --uc-urlbar-min-width: 35vw;
+      --uc-urlbar-max-width: 35vw;
 
   /*  Position of the URL Bar
    *  possible values:
@@ -107,10 +110,17 @@
    *  3 – tabs on the left
    */ --uc-urlbar-position: 1;
 
+  /*  Firefox can be a little wonky with the vertical
+   *  URL Bar placement. Change this variable to adapt
+   *  to this when necessary.
+   */ --uc-urlbar-top-spacing: 1px;
+
 }
 
 
 /* Disable the Navigation Buttons */
+/* #back-button, */
+/* #forward-button { display: none !important; } */
 
 /* Disables the Tracking Protection Shield */
 /* #tracking-protection-icon-container { display: none !important; } */
@@ -124,9 +134,11 @@
 /* Hide everything BUT the zoom indicator within the URL Bar */
 #page-action-buttons > :not(#urlbar-zoom-button) { display: none !important; }
 
-
 /* Hide the »Go«-arrow in the URL Bar */
 #urlbar-go-button { display: none !important; }
+
+/* Hides the Extensions Menu Icon */
+#unified-extensions-button { display: none !important; }
 
 
 
@@ -290,7 +302,6 @@
 
 
 
-
 :root {
 
   --toolbarbutton-border-radius: var(--uc-border-radius) !important;
@@ -323,6 +334,14 @@
 /* remove "padding" left and right from tabs */
 .titlebar-spacer { display: none !important; }
 
+/* fix Shield Icon padding */
+#urlbar-input-container[pageproxystate="valid"]
+  > #tracking-protection-icon-container
+  > #tracking-protection-icon-box
+  > #tracking-protection-icon {
+    padding-bottom: 1px;
+}
+
 
 
 
@@ -349,12 +368,10 @@
 
 
 
-
-
 @media (min-width: 1000px) {
 
 
-  #navigator-toolbox { display: flex; flex-wrap: wrap; }
+  #navigator-toolbox { display: flex; flex-wrap: wrap; flex-direction: row; }
 
 
   #nav-bar {
@@ -363,6 +380,8 @@
     width: var(--uc-urlbar-min-width);
 
   }
+  
+  #nav-bar #urlbar-container { min-width: 0px !important; }
 
 
   #titlebar {
@@ -391,12 +410,13 @@
 
 
 
-
-
 #statuspanel #statuspanel-label { margin: 0 0 var(--uc-status-panel-spacing) var(--uc-status-panel-spacing) !important; }
 
 
 
+
+
+#navigator-toolbox:not(:-moz-lwtheme) { background: var(--toolbar-field-background-color) !important; ) }
 
 
 
@@ -424,7 +444,6 @@
 
 #urlbar-background { border: transparent !important; }
 
-
 #urlbar[focused='true']
   > #urlbar-background,
 #urlbar:not([open])
@@ -441,6 +460,9 @@
   > .urlbarView-row-inner { background: var(--toolbar-field-focus-background-color) !important; }
 
 
+.urlbar-icon, #urlbar-go-button { margin: auto; }
+
+.urlbar-page-action { padding: 0 inherit !important; }
 
 
 

@@ -21,5 +21,6 @@
     ./kapowarr.nix
     ./monitoring.nix
     ./code-server.nix
+    ./vaultwarden.nix
   ];
 }
