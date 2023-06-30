@@ -16,8 +16,10 @@ jobs:
     - name: Install Tailscale
       uses: tailscale/github-action@HEAD
       with:
-        authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         args: --ssh
+        tags: tag:github
     - name: Create SSH key
       run: |
         install -m 600 -D /dev/null ~/.ssh/id_ed25519
