@@ -32,9 +32,6 @@ jobs:
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
-      with:
-        extra_conf: |
-          experimental-features = nix-command flakes
     - name: Cache Nix Build
       uses: DeterminateSystems/magic-nix-cache-action@main
     - name: Deploy Nix FLake
