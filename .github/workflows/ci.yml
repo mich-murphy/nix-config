@@ -14,8 +14,12 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
+    - name: Check Nix Flake Inputs
+      uses: DeterminateSystems/flake-checker-action@main
+      with:
+        send-statistics: false
     - name: Install Tailscale
-      uses: tailscale/github-action@HEAD
+      uses: tailscale/github-action@main
       with:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
@@ -27,13 +31,13 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
         echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - name: Install Nix
-      uses: cachix/install-nix-action@v22
+      uses: DeterminateSystems/nix-installer-action@main
       with:
-        nix_path: nixpkgs=channel:nixos-unstable
-        extra_nix_config: |
+        extra_conf: |
           experimental-features = nix-command flakes
     - name: Cache Nix Build
       uses: DeterminateSystems/magic-nix-cache-action@main
-    - run: nix flake check
-    - run: nix run github:serokell/deploy-rs .#media
-    - run: sudo tailscale logout
+    - name: Deploy Nix FLake
+      run: |
+        nix run github:serokell/deploy-rs .#media
+        sudo tailscale logout
