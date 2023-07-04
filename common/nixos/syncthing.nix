@@ -58,12 +58,6 @@ in
             ignorePerms = true;
             type = "receiveonly";
           };
-          "Downloads" = {
-            id = "rr5rs-jrz2o";
-            path = "/data/media/downloads";
-            devices = [ "seedbox" ];
-            ignorePerms = true;
-          };
         };
       };
       nginx = mkIf cfg.nginx {
