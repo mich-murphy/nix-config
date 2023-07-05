@@ -8,19 +8,48 @@ in
 {
   options.common.calibre-web = {
     enable = mkEnableOption "Enable Calibre-Web";
+    port = mkOption {
+      type = types.port;
+      default = 8083;
+      description = "Port for Calibe-Web to be advertised on";
+    };
+    nginx = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable nginx reverse proxy with SSL";
+    };
   };
 
   config = mkIf cfg.enable {
-    services = {
-      calibre-web = {
-        enable = true;
-        listen.ip = "0.0.0.0";
-        options = {
-          enableBookUploading = true;
-          enableBookConversion = true;
-          calibreLibrary = "/data/media/books";
+    virtualisation.oci-containers = {
+      backend = "docker";
+      containers."calibre-web" = {
+        autoStart = true;
+        image = "lscr.io/linuxserver/calibre-web:latest";
+        environment = {
+          PUID = "1000";
+          PGID = "1000";
+          TZ = "Australia/Melbourne";
+          DOCKER_MODS = "linuxserver/mods:universal-calibre";
         };
-      };    
+        ports = [ "${toString cfg.port}:8083" ];
+        volumes = [
+          "/var/lib/calibre-web:/config"
+          "/data/media/books:/books"
+        ];
+      };
+    };
+
+    services.nginx = mkIf cfg.nginx {
+      virtualHosts."calibre.pve.elmurphy.com"= {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:${toString cfg.port}";
+          proxyWebsockets = true;
+        };
+      };
     };
   };
 }
