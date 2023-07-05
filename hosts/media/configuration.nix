@@ -66,6 +66,7 @@
     freshrss.enable = true;
     jellyfin.enable = true;
     audiobookshelf.enable = true;
+    calibre-web.enable = true;
   };
 
   services = {
