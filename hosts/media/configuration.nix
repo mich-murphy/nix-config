@@ -67,6 +67,7 @@
     jellyfin.enable = true;
     audiobookshelf.enable = true;
     calibre-web.enable = true;
+    tandoor.enable = true;
   };
 
   services = {

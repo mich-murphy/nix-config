@@ -22,5 +22,6 @@
     ./monitoring.nix
     ./code-server.nix
     ./vaultwarden.nix
+    ./tandoor.nix
   ];
 }
