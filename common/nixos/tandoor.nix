@@ -26,6 +26,9 @@ in
         enable = true;
         port = cfg.port;
         address = "127.0.0.1";
+        extraConfig = {
+          GUNICORN_MEDIA = "0";
+        };
       };
       nginx = mkIf cfg.nginx {
         virtualHosts."tandoor.pve.elmurphy.com"= {
