@@ -29,7 +29,7 @@ return {
       local nls = require("null-ls")
       return {
         sources = {
-          nls.builtins.code_actions.statix,
+          nls.builtins.formatting.nixpkgs_fmt,
         },
       }
     end,
