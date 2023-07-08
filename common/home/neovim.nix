@@ -3,7 +3,7 @@
 # NOTE: Neovim config needs to be cloned manually:
 # git clone git@github.com:mich-murphy/neovim.git ~/.config/nvim
 # allows management of neovim outside of nix (for use on any computer)
- 
+
 with lib;
 
 let
@@ -27,7 +27,8 @@ in
         wget
         lazygit
         cargo
-        nixd
+        nil
+        nixpkgs-fmt
       ];
       extraPython3Packages = py: with py; [
         pip
