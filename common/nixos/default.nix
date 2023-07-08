@@ -20,7 +20,7 @@
     ./roon-server.nix
     ./kapowarr.nix
     ./monitoring.nix
-    ./code-server.nix
+    ./openvscode.nix
     ./vaultwarden.nix
     ./tandoor.nix
   ];

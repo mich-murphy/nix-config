@@ -3,20 +3,20 @@
 with lib;
 
 let
-  cfg = config.common.code-server;
+  cfg = config.common.openvscode;
 in
 {
-  options.common.code-server = {
-    enable = mkEnableOption "Enable Code Server";
+  options.common.openvscode = {
+    enable = mkEnableOption "Enable Open VSCode";
     port = mkOption {
       type = types.port;
-      default = 4444;
-      description = "Port for Code Server to be advertised on";
+      default = 3000;
+      description = "Port for Open VSCode to be advertised on";
     };
     host = mkOption {
       type = types.str;
       default = "0.0.0.0";
-      description = "Host address for Code Server";
+      description = "Host address for Open VSCode";
     };
     nginx = mkOption {
       type = types.bool;
@@ -27,23 +27,20 @@ in
 
   config = mkIf cfg.enable {
     services = {
-      code-server = {
+      openvscode-server = {
         enable = true;
-        package = pkgs.code-server;
         host = cfg.host;
         port = cfg.port;
-        proxyDomain = "code.pve.elmurphy.com";
         extraPackages = with pkgs; [
-          python311 
+          neovim
+          python311
           python311Packages.pip
         ];
-        disableTelemetry = true;
-        disableUpdateCheck =true;
-        disableGettingStartedOverride = true;
-        auth = "none";
+        telemetryLevel = "off";
+        withoutConnectionToken = true;
       };
       nginx = mkIf cfg.nginx {
-        virtualHosts.${config.services.code-server.proxyDomain}= {
+        virtualHosts."code.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -56,7 +53,7 @@ in
     };
 
     nixpkgs.config.permittedInsecurePackages = [
-      "nodejs-16.20.0"
+      "nodejs-16.20.1"
     ];
   };
- }
+}
