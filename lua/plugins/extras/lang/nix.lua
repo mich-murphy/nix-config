@@ -10,7 +10,9 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "nix" })
+      if type(opts.ensure_installed) == "table" then
+        vim.list_extend(opts.ensure_installed, { "nix" })
+      end
     end,
   },
 
@@ -18,20 +20,18 @@ return {
   {
     "williamboman/mason.nvim",
     opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "nil" })
+      if type(opts.ensure_installed) == "table" then
+        vim.list_extend(opts.ensure_installed, { "nil" })
+      end
     end,
   },
 
   -- add diagnostic and formatter options to null-ls
   {
     "jose-elias-alvarez/null-ls.nvim",
-    opts = function()
+    opts = function(_, opts)
       local nls = require("null-ls")
-      return {
-        sources = {
-          nls.builtins.formatting.nixpkgs_fmt,
-        },
-      }
+      table.insert(opts.sources, nls.builtins.formatting.nixpkgs_fmt)
     end,
   },
 

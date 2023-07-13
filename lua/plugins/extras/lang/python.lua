@@ -1,74 +1,21 @@
 return {
 
-  -- add python treesitter
-  {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "python" })
-    end,
-  },
-
-  -- add lsp and dap extensions to mason
-  {
-    "williamboman/mason.nvim",
-    opts = function(_, opts)
-      vim.list_extend(opts.ensure_installed, { "pyright", "ruff", "black", "debugpy" })
-    end,
-  },
-
   -- add diagnostic and formatter options to null-ls
   {
     "jose-elias-alvarez/null-ls.nvim",
-    opts = function()
+    opts = function(_, opts)
       local nls = require("null-ls")
-      return {
-        sources = {
-          nls.builtins.formatting.stylua,
-          nls.builtins.formatting.black.with({
-            prefer_local = "./.virtualenv/bin/black",
-          }),
+      if type(opts.sources) == "table" then
+        vim.list_extend(opts.sources, {
+          nls.builtins.formatting.black,
           nls.builtins.diagnostics.ruff.with({
-            prefer_local = "./.virtualenv/bin/ruff",
             extra_args = {
               "--line-length", "88",
             }
           }),
-          nls.builtins.formatting.ruff.with({
-            prefer_local = "./.virtualenv/bin/ruff",
-          })
-        },
-      }
+          nls.builtins.formatting.ruff
+        })
+      end
     end,
   },
-
-  -- add lsp server for python
-  {
-    "neovim/nvim-lspconfig",
-    opts = {
-      servers = {
-        pyright = {
-          autoImportCompletion = true,
-        },
-      },
-    },
-  },
-
-  -- dap configuration for python
-  {
-    "mfussenegger/nvim-dap",
-    dependencies = {
-    {
-      "mfussenegger/nvim-dap-python",
-      keys = {
-          { "<leader>dm", function() require("dap-python").test_method() end, desc = "Test Python method"},
-          { "<leader>dc", function() require("dap-python").test_class() end, desc = "Test Python class"},
-      },
-      config = function()
-        local dappy = require("dap-python")
-        dappy.setup("./.virtualenv/bin/python")
-        dappy.test_runner = "pytest"
-      end,
-      },
-    }
-  }
 }
