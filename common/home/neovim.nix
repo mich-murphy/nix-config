@@ -27,7 +27,6 @@ in
         wget
         lazygit
         cargo
-        nil
         nixpkgs-fmt
       ];
       extraPython3Packages = py: with py; [
