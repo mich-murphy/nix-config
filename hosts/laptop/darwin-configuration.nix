@@ -63,6 +63,7 @@
       "karabiner-elements"
       "obsidian"
       "tailscale"
+      "nextcloud"
     ];
   };
 
