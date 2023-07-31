@@ -16,7 +16,7 @@ in
         enable = true;
         dotDir = ".config/zsh";
         enableAutosuggestions = true;
-        enableSyntaxHighlighting = true;
+        syntaxHighlighting.enable = true;
         enableCompletion = true;
         historySubstringSearch.enable = true;
         defaultKeymap = "viins";
