@@ -3,6 +3,7 @@ on:
   push:
     branches: [ master ]
     paths:
+    - 'flake.lock'
     - 'flake.nix'
     - 'hosts/media/**'
     - 'secrets/**'
