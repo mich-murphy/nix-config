@@ -35,28 +35,24 @@ in
             path = "/data/media/music";
             devices = [ "seedbox" ];
             ignorePerms = true;
-            type = "receiveonly";
           };
           "Audiobooks" = {
             id = "mqh32-k7ykn";
             path = "/data/media/audiobooks";
             devices = [ "seedbox" ];
             ignorePerms = true;
-            type = "receiveonly";
           };
           "Movies" = {
             id = "naolq-r7zlm";
             path = "/data/media/movies";
             devices = [ "seedbox" ];
             ignorePerms = true;
-            type = "receiveonly";
           };
           "TV" = {
             id = "hhqvi-jv4wy";
             path = "/data/media/tv";
             devices = [ "seedbox" ];
             ignorePerms = true;
-            type = "receiveonly";
           };
         };
       };
