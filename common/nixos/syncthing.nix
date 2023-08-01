@@ -23,36 +23,35 @@ in
         guiAddress = "0.0.0.0:8384";
         overrideDevices = true;
         overrideFolders = true;
-        extraOptions = {
-          gui.insecureAdminAccess = true;
-        };
-        devices = {
-          "seedbox".id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
-        };
-        folders = {
-          "Music" = {
-            id = "mrpfh-btugj";
-            path = "/data/media/music";
-            devices = [ "seedbox" ];
-            ignorePerms = true;
+        settings = {
+          devices = {
+            "seedbox".id = "5N3E33W-SCXYEL5-URIJLAW-Y32VCKK-UYNSVR2-R5I6KMJ-YZ4CIKB-6SDUOAT";
           };
-          "Audiobooks" = {
-            id = "mqh32-k7ykn";
-            path = "/data/media/audiobooks";
-            devices = [ "seedbox" ];
-            ignorePerms = true;
-          };
-          "Movies" = {
-            id = "naolq-r7zlm";
-            path = "/data/media/movies";
-            devices = [ "seedbox" ];
-            ignorePerms = true;
-          };
-          "TV" = {
-            id = "hhqvi-jv4wy";
-            path = "/data/media/tv";
-            devices = [ "seedbox" ];
-            ignorePerms = true;
+          folders = {
+            "Music" = {
+              id = "mrpfh-btugj";
+              path = "/data/media/music";
+              devices = [ "seedbox" ];
+              ignorePerms = true;
+            };
+            "Audiobooks" = {
+              id = "mqh32-k7ykn";
+              path = "/data/media/audiobooks";
+              devices = [ "seedbox" ];
+              ignorePerms = true;
+            };
+            "Movies" = {
+              id = "naolq-r7zlm";
+              path = "/data/media/movies";
+              devices = [ "seedbox" ];
+              ignorePerms = true;
+            };
+            "TV" = {
+              id = "hhqvi-jv4wy";
+              path = "/data/media/tv";
+              devices = [ "seedbox" ];
+              ignorePerms = true;
+            };
           };
         };
       };

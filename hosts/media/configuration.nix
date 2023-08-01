@@ -68,7 +68,6 @@
     audiobookshelf.enable = true;
     calibre-web.enable = true;
     tandoor.enable = true;
-    openvscode.enable = true;
   };
 
   services = {
