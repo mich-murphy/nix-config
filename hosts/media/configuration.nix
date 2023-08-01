@@ -51,6 +51,12 @@
     systemPackages = with pkgs; [
       vim
       tmux
+      docker-compose
+      lazydocker
+      # disk usage tooling
+      du-dust
+      duf
+      dua
     ];
   };
 
@@ -95,6 +101,16 @@
         path = "/etc/ssh/ssh_host_ed25519_key";
         type = "ed25519";
       }];
+    };
+  };
+
+  virtualisation = {
+    docker = {
+      enable = true;
+      autoPrune = {
+        enable = true;
+        dates = "weekly";
+      };
     };
   };
 
