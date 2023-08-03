@@ -45,7 +45,12 @@ in
         acmeRoot = null;
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.port}";
-          proxyWebsockets = true;
+          # proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Host $server_name;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-For $remote_addr;
+          '';
         };
       };
     };
