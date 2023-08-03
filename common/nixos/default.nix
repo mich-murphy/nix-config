@@ -23,5 +23,6 @@
     ./openvscode.nix
     ./vaultwarden.nix
     ./tandoor.nix
+	./wallabag.nix
   ];
 }
