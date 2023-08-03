@@ -31,10 +31,6 @@ in
 		  SYMFONY__ENV__DATABASE_DRIVER = "pdo_sqlite";
         };
         ports = [ "${toString cfg.port}:80" ];
-        volumes = [
-		  "/data/app/wallabag/data:/var/www/wallabag/data"
-		  "/data/app/wallabag/images:/var/www/wallabag/web/assets/images"
-        ];
       };
     };
 
