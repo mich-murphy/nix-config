@@ -32,8 +32,8 @@ in
         };
         ports = [ "${toString cfg.port}:80" ];
         volumes = [
-		  "/var/lib/wallabag/data:/var/www/wallabag/data"
-		  "/var/lib/wallabag/images:/var/www/wallabag/web/assets/images"
+		  "/data/app/wallabag/data:/var/www/wallabag/data"
+		  "/data/app/wallabag/images:/var/www/wallabag/web/assets/images"
         ];
       };
     };
