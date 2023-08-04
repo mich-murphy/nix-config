@@ -26,7 +26,6 @@ in
       containers."wallabag" = {
         autoStart = true;
         image = "wallabag/wallabag";
-        user = "wallabag:wallabag";
         environment = {
 		  SYMFONY__ENV__DOMAIN_NAME = "https://wallabag.pve.elmurphy.com"; 
         };
@@ -49,13 +48,5 @@ in
         };
       };
     };
-    
-    users = {
-      groups.wallabag = {}; 
-      users.wallabag = {
-        isSystemUser = true;
-        group = "wallabag";
-      };
-    };  
   };
 }
