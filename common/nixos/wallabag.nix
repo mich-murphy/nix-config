@@ -27,8 +27,7 @@ in
         autoStart = true;
         image = "wallabag/wallabag";
         environment = {
-		  SYMFONY__ENV__DOMAIN_NAME = "http://127.0.0.1";
-		  SYMFONY__ENV__DATABASE_DRIVER = "pdo_sqlite";
+		  SYMFONY__ENV__DOMAIN_NAME = "https://wallabag.pve.elmurphy.com";
         };
         ports = [ "${toString cfg.port}:80" ];
       };
@@ -41,12 +40,7 @@ in
         acmeRoot = null;
         locations."/" = {
           proxyPass = "http://127.0.0.1:${toString cfg.port}";
-          # proxyWebsockets = true;
-          extraConfig = ''
-            proxy_set_header X-Forwarded-Host $server_name;
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_set_header X-Forwarded-For $remote_addr;
-          '';
+          proxyWebsockets = true;
         };
       };
     };
