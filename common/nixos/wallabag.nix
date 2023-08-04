@@ -26,13 +26,14 @@ in
       containers."wallabag" = {
         autoStart = true;
         image = "wallabag/wallabag";
+        user = "1000:1000";
         environment = {
 		  SYMFONY__ENV__DOMAIN_NAME = "https://wallabag.pve.elmurphy.com"; 
         };
         ports = [ "${toString cfg.port}:80" ];
         volumes = [
-          "/opt/wallabag/data:/var/www/wallabag/data"
-          "/opt/wallabag/images:/var/www/wallabag/web/assets/images"
+          "/data/appdata/wallabag/data:/var/www/wallabag/data"
+          "/data/appdata/wallabag/images:/var/www/wallabag/web/assets/images"
         ];
       };
     };
