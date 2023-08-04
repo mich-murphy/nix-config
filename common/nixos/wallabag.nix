@@ -54,7 +54,7 @@ in
       groups.wallabag = {}; 
       users.wallabag = {
         isSystemUser = true;
-        extraGroups = [ "wallabag" ];
+        group = "wallabag";
       };
     };  
   };
