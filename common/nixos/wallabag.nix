@@ -30,10 +30,11 @@ in
 		  SYMFONY__ENV__DOMAIN_NAME = "https://wallabag.pve.elmurphy.com"; 
         };
         ports = [ "${toString cfg.port}:80" ];
-        # volumes = [
-          # "/data/appdata/wallabag/data:/var/www/wallabag/data"
-          # "/data/appdata/wallabag/images:/var/www/wallabag/web/assets/images"
-        # ];
+        # https://github.com/wallabag/docker/issues/316#issuecomment-1465048886
+        volumes = [
+          "/data/appdata/wallabag/data:/var/www/wallabag/data"
+          "/data/appdata/wallabag/images:/var/www/wallabag/web/assets/images"
+        ];
       };
     };
 
