@@ -21,7 +21,7 @@ in
         enable = true;
         defaultUser = "mm";
         passwordFile = config.age.secrets.freshrssPass.path;
-        baseUrl = "https://0.0.0.0";
+        baseUrl = "https://127.0.0.1";
         virtualHost = if cfg.nginx then "freshrss.pve.elmurphy.com" else null;
         database = {
           name = "freshrss";
