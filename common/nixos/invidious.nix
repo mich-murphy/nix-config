@@ -13,15 +13,31 @@ in
       default = 3000;
       description = "Port for Invidious to be advertised on";
     };
+    nginx = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable nginx reverse proxy with SSL";
+    };
   };
 
   config = mkIf cfg.enable {
     services = {
       invidious = {
         enable = true;
-        domain = "invidious.pve.elmurphy.com";
+        #domain = "invidious.pve.elmurphy.com";
         port = cfg.port;
-        nginx.enable = true;
+        #nginx.enable = mkIf (cfg.nginx) true;
+      };
+      nginx = mkIf cfg.nginx {
+        virtualHosts.${config.services.indivious.domain} = {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            proxyWebsockets = true;
+          };
+        };
       };
     };
   };
