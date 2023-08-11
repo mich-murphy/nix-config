@@ -29,7 +29,7 @@ in
         #nginx.enable = mkIf (cfg.nginx) true;
       };
       nginx = mkIf cfg.nginx {
-        virtualHosts.${config.services.indivious.domain} = {
+        virtualHosts.${config.services.invidious.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
