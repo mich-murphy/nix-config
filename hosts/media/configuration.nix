@@ -74,6 +74,7 @@
     audiobookshelf.enable = true;
     calibre-web.enable = true;
 	wallabag.enable = true;
+	linkding.enable = true;
   };
 
   services = {
