@@ -70,7 +70,6 @@
     komga.enable = true;
     kapowarr.enable = true;
     freshrss.enable = true;
-    plex.enable = true;
     jellyfin.enable = true;
     audiobookshelf.enable = true;
     calibre-web.enable = true;

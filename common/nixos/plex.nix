@@ -28,7 +28,7 @@ in
     services = {
       plex = {
         enable = true;
-        #extraPlugins = [ audnexusPlugin ];
+        extraPlugins = [ audnexusPlugin ];
       };
       tautulli.enable = true;
       nginx = mkIf cfg.nginx {
