@@ -7,7 +7,7 @@ let
 in 
 {
   options.common.object-storage = {
-    enable = mkEnableOption (lib.mdDoc "Mounts s3 object storage using s3fs");
+    enable = mkEnableOption "Mounts s3 object storage using s3fs";
     keyPath = mkOption {
       type = types.str;
       default = config.age.secrets.objectStorage.path;
