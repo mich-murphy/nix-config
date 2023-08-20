@@ -35,7 +35,6 @@ in
         '';
         initExtra = ''
           export PATH="/opt/homebrew/bin:$PATH"
-          export CC="/opt/homebrew/bin/gcc-13"
 
           # navigation
           setopt AUTO_PUSHD

@@ -19,7 +19,7 @@ in
       historyLimit = 10000;
       keyMode = "vi";
       newSession = false;
-      prefix = "C-Space";
+      prefix = "C-a";
       terminal = "screen-256color";
       tmuxp.enable = true;
       plugins = with pkgs; [
