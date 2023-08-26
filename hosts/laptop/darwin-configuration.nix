@@ -64,6 +64,8 @@
       "obsidian"
       "tailscale"
       "nextcloud"
+      "monitorcontrol"
+      "macwhisper"
     ];
   };
 
@@ -71,13 +73,11 @@
 
   programs.zsh.enable = true;
 
-  services = {
-    nix-daemon.enable = true;
-    lorri.enable = true;
-  };
+  services.nix-daemon.enable = true;
 
   nix = {
     package = pkgs.nixUnstable;
+    registry.nixpkgs.flake = pkgs;
     gc = {
       automatic = true;
       interval.Day = 7;
@@ -151,6 +151,7 @@
         NSNavPanelExpandedStateForSaveMode = true;
         NSNavPanelExpandedStateForSaveMode2 = true;
       };
+      LaunchServices.LSQuarantine = false; # disables "Are you sure?" for new apps
     };
     keyboard = {
       enableKeyMapping = true;  # needed for skhd
