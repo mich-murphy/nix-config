@@ -45,7 +45,7 @@
   {
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
       system = "aarch64-darwin";
-      specialArgs = { inherit user host; };
+      specialArgs = { inherit inputs user host; };
       modules = [
         ./hosts/laptop/darwin-configuration.nix
         home-manager.darwinModules.home-manager {

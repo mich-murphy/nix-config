@@ -1,5 +1,8 @@
-{ config, pkgs, user, host, ... }:
+{ config, pkgs, user, host, inputs, ... }:
 
+let
+  inherit (inputs) nixpkgs;
+in
 {
   imports = [
     ../../common/darwin
@@ -43,14 +46,10 @@
       cleanup = "zap";
     };
     taps = [
-      "homebrew/core"
-      "homebrew/cask"
-      "homebrew/cask-versions"
-      "homebrew/cask-drivers"
-      "homebrew/services"
+      # "homebrew/core"
     ];
     brews = [
-      "gcc"
+      # "gcc"
     ];
     casks = [
       "firefox"
@@ -77,7 +76,7 @@
 
   nix = {
     package = pkgs.nixUnstable;
-    registry.nixpkgs.flake = pkgs;
+    registry.nixpkgs.flake = nixpkgs;
     gc = {
       automatic = true;
       interval.Day = 7;
