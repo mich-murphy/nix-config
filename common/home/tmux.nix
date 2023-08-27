@@ -49,6 +49,9 @@ in
 
         # Allow mouse scrolling
         set -g mouse on
+
+        # Clear terminal hotkey
+        bind -n C-l clear-history
       '';
     };
   };
