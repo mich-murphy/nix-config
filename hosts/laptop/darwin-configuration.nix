@@ -1,8 +1,5 @@
 { config, pkgs, user, host, inputs, ... }:
 
-let
-  inherit (inputs) nixpkgs;
-in
 {
   imports = [
     ../../common/darwin
@@ -76,7 +73,7 @@ in
 
   nix = {
     package = pkgs.nixUnstable;
-    registry.nixpkgs.flake = nixpkgs;
+    registry.nixpkgs.flake = inputs.nixpkgs;
     gc = {
       automatic = true;
       interval.Day = 7;
