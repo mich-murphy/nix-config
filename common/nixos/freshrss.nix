@@ -21,18 +21,20 @@ in
         enable = true;
         defaultUser = "mm";
         passwordFile = config.age.secrets.freshrssPass.path;
-        baseUrl = "https://127.0.0.1";
+        baseUrl = "https://127.0.0.";
         virtualHost = if cfg.nginx then "freshrss.pve.elmurphy.com" else null;
         database = {
           name = "freshrss";
           user = "freshrss";
           passFile = config.age.secrets.freshrssPass.path;
         };
-      };    
+      };
+      # creation of cert potentially problematic - deactivate nginx option to provision
       nginx = mkIf cfg.nginx {
         virtualHosts.${config.services.freshrss.virtualHost}= {
           enableACME = true;
           addSSL = true;
+          acmeRoot = null;
         };
       };
     };

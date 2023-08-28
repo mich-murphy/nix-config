@@ -121,6 +121,7 @@
   };
 
   nix = {
+    registry.nixpkgs.flake = inputs.nixpkgs;
     gc = {
       automatic = true;
       options = "--delete-older-than 7d";
