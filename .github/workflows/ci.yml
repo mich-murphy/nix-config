@@ -26,11 +26,11 @@ jobs:
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         args: --ssh
         tags: tag:github
-    - name: Create SSH key
-      run: |
-        install -m 600 -D /dev/null ~/.ssh/id_ed25519
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-        echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+    # - name: Create SSH key
+    #   run: |
+    #     install -m 600 -D /dev/null ~/.ssh/id_ed25519
+    #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+    #     echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
     - name: Cache Nix Build
