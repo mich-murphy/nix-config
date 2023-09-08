@@ -31,6 +31,7 @@
   fonts = {
     fontDir.enable = true;
     fonts = with pkgs; [
+      # https://github.com/NixOS/nixpkgs/blob/nixos-23.05/pkgs/data/fonts/nerdfonts/shas.nix
       (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
     ];
   };
@@ -62,6 +63,7 @@
       "nextcloud"
       "monitorcontrol"
       "macwhisper"
+      "element"
     ];
   };
 

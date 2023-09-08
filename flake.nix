@@ -13,15 +13,15 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     nur.url = "github:nix-community/NUR";
+    nur.inputs.nixpkgs.follows = "nixpkgs";
 
     agenix.url = "github:ryantm/agenix";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
 
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
     impermanence.url = "github:nix-community/impermanence";
-
-    neovim.url = "github:neovim/neovim?dir=contrib";
   };
 
   outputs = { 
@@ -35,7 +35,6 @@
     agenix,
     deploy-rs,
     impermanence,
-    neovim,
     ... 
   }@inputs:
   let
