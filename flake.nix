@@ -56,7 +56,6 @@
         {
           nixpkgs.overlays = [
             nur.overlay
-            # neovim.overlay
           ];
         }
       ];

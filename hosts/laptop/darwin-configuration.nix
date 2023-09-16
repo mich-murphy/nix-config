@@ -64,6 +64,7 @@
       "monitorcontrol"
       "macwhisper"
       "element"
+      "displaylink"
     ];
   };
 
