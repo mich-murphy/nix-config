@@ -62,9 +62,9 @@
       "tailscale"
       "nextcloud"
       "monitorcontrol"
-      "macwhisper"
       "element"
       "displaylink"
+      "discord"
     ];
   };
 

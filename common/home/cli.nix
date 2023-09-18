@@ -35,6 +35,7 @@ in
         '';
         initExtra = ''
           export PATH="/opt/homebrew/bin:$PATH"
+          export CC="/opt/homebrew/bin/gcc-13"
 
           # navigation
           setopt AUTO_PUSHD
@@ -114,7 +115,7 @@ in
           diff = "batdiff";
           # detect yabai windows in space - make sure to add space no. after alias
           ybw = "yabai -m query --windows --space";
-          drb = "darwin-rebuild switch --flake";
+          db = "darwin-rebuild switch --flake";
           dp = "nix run github:serokell/deploy-rs";
           agn = "nix run github:ryantm/agenix --";
         };
