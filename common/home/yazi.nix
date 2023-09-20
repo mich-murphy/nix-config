@@ -6,7 +6,7 @@ let
   cfg = config.common.yazi;
 in
 {
-  options.common.lf = {
+  options.common.yazi = {
     enable = mkEnableOption "Enable Yazi with personalised settings";
   };
 
