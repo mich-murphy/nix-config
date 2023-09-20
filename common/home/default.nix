@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ ... }:
 
 {
   imports = [
@@ -11,5 +11,6 @@
     ./ssh.nix
     ./tmux.nix
     ./lf.nix
+    ./yazi.nix
   ];
 }

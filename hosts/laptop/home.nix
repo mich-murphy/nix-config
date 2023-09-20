@@ -1,4 +1,4 @@
-{ config, pkgs, user, ... }:
+{ pkgs, user, ... }:
 
 {
   imports = [
@@ -24,7 +24,7 @@
     cli.enable = true;
     ssh.enable = true;
     tmux.enable = true;
-    lf.enable = true;
+    yazi.enable = true;
   };
 
   programs.home-manager.enable = true;
