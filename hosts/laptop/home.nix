@@ -19,7 +19,7 @@
   common = {
     neovim.enable = true;
     firefox.enable = true;
-    alacritty.enable = true;
+    kitty.enable = true;
     git.enable = true;
     cli.enable = true;
     ssh.enable = true;

@@ -17,8 +17,9 @@ in
       enable = true;
       package = fakepkg "kitty";
       darwinLaunchOptions = [
-        "--single-instance"
+        "--single-instance, -1"
         "--directory=/Users/mm"
+        "--listen-on=unix:/tmp/my-socket"
       ];
       font = {
         name = "JetBrainsMono Nerd Font";
@@ -35,5 +36,7 @@ in
         tab_bar_edge = "top";
       };
     };
+
+    home.sessionVariables.TERMINAL = "kitty";
   };
 }

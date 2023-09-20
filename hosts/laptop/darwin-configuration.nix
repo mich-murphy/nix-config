@@ -51,7 +51,7 @@
     ];
     casks = [
       "firefox"
-      "alacritty"
+      "kitty"
       "spaceid"
       "1password"
       "alfred"
