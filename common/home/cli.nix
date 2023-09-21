@@ -113,6 +113,7 @@ in
           rg = "batgrep";
           man = "batman";
           diff = "batdiff";
+          ssh = "kitty +kitten ssh";
           # detect yabai windows in space - make sure to add space no. after alias
           ybw = "yabai -m query --windows --space";
           db = "darwin-rebuild switch --flake";
