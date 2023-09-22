@@ -5,11 +5,11 @@ with lib;
 let
   cfg = config.common.yabai;
   # nix-prefetch-url --unpack $YOUR_URL
-  yabai = pkgs.yabai.overrideAttrs (old: {
-    version = "5.0.6";
+  yabai = pkgs.yabai.overrideAttrs (final: {
+    version = "5.0.8";
     src = builtins.fetchTarball {
-      url ="https://github.com/koekeishiya/yabai/releases/download/v5.0.6/yabai-v5.0.6.tar.gz";
-      sha256 = "1szyjcwkhn2wbrcfhh9lh5bnfm1cavxrx6xj4q7521z3zj29a9kf";
+      url ="https://github.com/koekeishiya/yabai/releases/download/v5.0.8/yabai-v5.0.8.tar.gz";
+      sha256 = "11dimky2r0gskp8vniwjc4d70bpkkck5mnjwcbjxid2csykhrx8p";
     };
   });
 in
