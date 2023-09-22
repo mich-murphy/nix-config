@@ -1,4 +1,4 @@
-{ lib, config, pkgs, stdenv, ... }:
+{ lib, config, pkgs, ... }:
 
 with lib;
 
@@ -26,8 +26,14 @@ in
         tmuxPlugins.tmux-fzf
         tmuxPlugins.vim-tmux-navigator
         {
-          plugin = tmuxPlugins.power-theme;
-          extraConfig = "set -g @tmux_power_theme '#7aa2f7'";
+          plugin = tmuxPlugins.catppuccin;
+          extraConfig = ''
+            set -g @catppuccin_flavor 'mocha'
+            set -g @catppuccin_status_left_separator "█"
+            set -g @catppuccin_window_default_text "#W"
+            set -g @catppuccin_window_current_text "#W"
+            set -g @catppuccin_status_modules_right "directory host session"
+          '';
         }
       ];
       extraConfig = ''
@@ -50,8 +56,8 @@ in
         # Allow mouse scrolling
         set -g mouse on
 
-        # Clear terminal hotkey
-        bind -n C-l clear-history
+        # Status bar at top
+        set-option -g status-position top
       '';
     };
   };

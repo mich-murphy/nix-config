@@ -16,11 +16,6 @@ in
     programs.kitty = {
       enable = true;
       package = fakepkg "kitty";
-      darwinLaunchOptions = [
-        "--single-instance, -1"
-        "--directory=/Users/mm"
-        "--listen-on=unix:/tmp/my-socket"
-      ];
       font = {
         name = "JetBrainsMono Nerd Font";
         size = 13;
@@ -34,6 +29,7 @@ in
         scrollback_lines = 1000;
         hide_window_decorations = "titlebar-only";
         tab_bar_edge = "top";
+        macos_option_as_alt = "yes";
       };
     };
 
