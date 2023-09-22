@@ -4,6 +4,15 @@ with lib;
 
 let
   cfg = config.common.tmux;
+  catppuccin = pkgs.tmuxPlugins.catppuccin.overrideAttrs (final: {
+    version = "unstable-2023-09-11";
+    src = pkgs.fetchFromGitHub {
+      owner = "catppuccin";
+      repo = "tmux";
+      rev = "89ad057";
+      sha256 = "sha256-4JFuX9clpPr59vnCUm6Oc5IOiIc/v706fJmkaCiY2Hc=";
+    };
+  });
 in
 {
   options.common.tmux = {
@@ -26,7 +35,7 @@ in
         tmuxPlugins.tmux-fzf
         tmuxPlugins.vim-tmux-navigator
         {
-          plugin = tmuxPlugins.catppuccin;
+          plugin = catppuccin;
           extraConfig = ''
             set -g @catppuccin_flavor 'mocha'
             set -g @catppuccin_status_left_separator "█"
