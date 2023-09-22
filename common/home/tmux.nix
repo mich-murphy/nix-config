@@ -9,7 +9,7 @@ let
     src = pkgs.fetchFromGitHub {
       owner = "catppuccin";
       repo = "tmux";
-      rev = "89ad057";
+      rev = "89ad057ebd47a3052d55591c2dcab31be3825a49";
       sha256 = "sha256-4JFuX9clpPr59vnCUm6Oc5IOiIc/v706fJmkaCiY2Hc=";
     };
   });
@@ -34,6 +34,7 @@ in
       plugins = with pkgs; [
         tmuxPlugins.tmux-fzf
         tmuxPlugins.vim-tmux-navigator
+        tmuxPlugins.extrakto
         {
           plugin = catppuccin;
           extraConfig = ''
