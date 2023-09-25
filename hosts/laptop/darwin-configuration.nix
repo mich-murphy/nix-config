@@ -19,7 +19,7 @@
   };
 
   environment = {
-    systemPackages = with pkgs; [ 
+    systemPackages = with pkgs; [
       git
       curl
       xcode-install
@@ -148,7 +148,7 @@
       LaunchServices.LSQuarantine = false; # disables "Are you sure?" for new apps
     };
     keyboard = {
-      enableKeyMapping = true;  # needed for skhd
+      enableKeyMapping = true; # needed for skhd
       # remapCapsLockToControl = true;
     };
     stateVersion = 4;

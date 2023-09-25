@@ -24,7 +24,7 @@ in
     services = {
       komga = {
         enable = true;
-        port = cfg.port;
+        inherit (cfg) port;
         openFirewall = true;
       };
       nginx = mkIf cfg.nginx {

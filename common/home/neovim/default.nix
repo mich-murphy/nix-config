@@ -37,8 +37,8 @@ in
     };
 
     home.file.".config/nvim" = {
-        source = ./nvim;
-        recursive = true;
+      source = ./nvim;
+      recursive = true;
     };
   };
 }

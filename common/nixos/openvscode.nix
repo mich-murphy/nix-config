@@ -29,8 +29,8 @@ in
     services = {
       openvscode-server = {
         enable = true;
-        host = cfg.host;
-        port = cfg.port;
+        inherit (cfg) host;
+        inherit (cfg) port;
         extraPackages = with pkgs; [
           neovim
           python311
