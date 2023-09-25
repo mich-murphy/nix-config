@@ -1,3 +1,9 @@
-result
-$XDG_STATE_HOME
-.DS_Store
+tt.*
+.tests
+doc/tags
+debug
+.repro
+foo.*
+*.log
+data
+lazy-lock.json
