@@ -70,5 +70,7 @@ in
         set-option -g status-position top
       '';
     };
+
+    home.file.".tmuxp/tmuxp.yaml".source = ./tmuxp.yaml;
   };
 }

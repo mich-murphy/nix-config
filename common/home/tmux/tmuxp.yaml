@@ -1,0 +1,13 @@
+session_name: dotfiles
+start_directory: $HOME/nix-config
+
+windows:
+  - window_name: nvim dotfiles
+    layout: tiled
+    panes:
+      - nvim .
+      - null
+  - window_name: terms
+    layout: tiled
+    panes:
+      - btop

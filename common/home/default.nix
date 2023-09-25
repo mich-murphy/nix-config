@@ -2,14 +2,14 @@
 
 {
   imports = [
+    ./tmux
     ./firefox
-    ./neovim.nix
+    ./neovim
     ./alacritty.nix
     ./kitty.nix
     ./git.nix
     ./cli.nix
     ./ssh.nix
-    ./tmux.nix
     ./lf.nix
     ./yazi.nix
   ];

@@ -38,5 +38,10 @@ in
       EDITOR = "nvim";
       VISUAL = "nvim";
     };
+
+    home.file.".config/nvim" = {
+        source = ./nvim;
+        recursive = true;
+    };
   };
 }
