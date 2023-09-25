@@ -99,6 +99,10 @@ in
           ls = "lsd -lah";
           cat = "bat";
           vim = "nvim";
+          rg = "batgrep";
+          man = "batman";
+          diff = "batdiff";
+          # git
           g = "git";
           gs = "g status";
           ga = "g add";
@@ -110,12 +114,11 @@ in
           gst = "g stash";
           gl = "g log";
           gd = "g diff";
-          rg = "batgrep";
-          man = "batman";
-          diff = "batdiff";
+          # kitty
           ssh = "kitty +kitten ssh";
           # detect yabai windows in space - make sure to add space no. after alias
           ybw = "yabai -m query --windows --space";
+          # nix
           db = "darwin-rebuild switch --flake";
           dp = "nix run github:serokell/deploy-rs";
           agn = "nix run github:ryantm/agenix --";
