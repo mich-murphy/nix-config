@@ -24,6 +24,7 @@ in
         lazygit
         cargo
         nixpkgs-fmt
+        nixd
       ];
       extraPython3Packages = py: with py; [
         pip
