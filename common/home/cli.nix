@@ -119,6 +119,9 @@ in
           db = "darwin-rebuild switch --flake";
           dp = "nix run github:serokell/deploy-rs";
           agn = "nix run github:ryantm/agenix --";
+          nph = "nix profile history --profile /nix/var/nix/profiles/system";
+          ndh = "sudo nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 7d";
+          ngc = "nix store gc";
         };
       };
       direnv = {
