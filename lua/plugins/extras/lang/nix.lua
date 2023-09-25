@@ -40,12 +40,7 @@ return {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        nil_ls = {
-          nix = {
-            binary = "/run/current-system/sw/bin/nix",
-            flake = { autoArchive = true, }
-          }
-        },
+        nixd = {},
       },
     },
   },
