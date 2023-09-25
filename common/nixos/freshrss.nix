@@ -41,7 +41,7 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts.${cfg.hostname}= {
+        virtualHosts.${cfg.hostname} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -50,7 +50,7 @@ in
     };
 
     environment.persistence."/nix/persist".directories = [
-        "/var/lib/freshrss"
+      "/var/lib/freshrss"
     ];
 
     age.secrets = {

@@ -8,6 +8,26 @@ in
 {
   options.common.arrs = {
     enable = mkEnableOption "Enable arr services";
+    enableSonarr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable sonarr";
+    };
+    enableRadarr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable radarr";
+    };
+    enableLidarr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable lidarr";
+    };
+    enableKapowarr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable kapowarr";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -16,7 +36,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    virtualisation.oci-containers = {
+    virtualisation.oci-containers = mkIf cfg.enableKapowarr {
       backend = "docker";
       containers."kapowarr" = {
         autoStart = true;
@@ -35,17 +55,16 @@ in
       };
     };
     services = {
-      sonarr.enable = true;
-      radarr.enable = true;
-      lidarr.enable = true;
-      readarr.enable = true;
+      sonarr.enable = if cfg.enableSonarr then true else false;
+      radarr.enable = if cfg.enableRadarr then true else false;
+      lidarr.enable = if cfg.enableLidarr then true else false;
       nginx = mkIf cfg.nginx {
         enable = true;
         recommendedGzipSettings = true;
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."sonarr.pve.elmurphy.com"= {
+        virtualHosts."sonarr.pve.elmurphy.com" = mkIf cfg.enableSonarr {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -54,7 +73,7 @@ in
             proxyWebsockets = true;
           };
         };
-        virtualHosts."radarr.pve.elmurphy.com"= {
+        virtualHosts."radarr.pve.elmurphy.com" = mkIf cfg.enableRadarr {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -63,7 +82,7 @@ in
             proxyWebsockets = true;
           };
         };
-        virtualHosts."lidarr.pve.elmurphy.com"= {
+        virtualHosts."lidarr.pve.elmurphy.com" = mkIf cfg.enableLidarr {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -72,16 +91,7 @@ in
             proxyWebsockets = true;
           };
         };
-        virtualHosts."readarr.pve.elmurphy.com"= {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:8787";
-            proxyWebsockets = true;
-          };
-        };
-        virtualHosts."kapowarr.pve.elmurphy.com"= {
+        virtualHosts."kapowarr.pve.elmurphy.com" = mkIf cfg.enableKapowarr {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
