@@ -4,7 +4,8 @@ with lib;
 
 let
   cfg = config.common.tmux;
-  catppuccin = pkgs.tmuxPlugins.catppuccin.overrideAttrs (final: {
+  catppuccin = pkgs.tmuxPlugins.mkTmuxPlugin {
+    pluginName = "catppuccin";
     version = "unstable-2023-09-11";
     src = pkgs.fetchFromGitHub {
       owner = "catppuccin";
@@ -12,7 +13,7 @@ let
       rev = "89ad057ebd47a3052d55591c2dcab31be3825a49";
       sha256 = "sha256-4JFuX9clpPr59vnCUm6Oc5IOiIc/v706fJmkaCiY2Hc=";
     };
-  });
+  };
 in
 {
   options.common.tmux = {

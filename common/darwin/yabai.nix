@@ -62,7 +62,7 @@ in
         enable = true;
         skhdConfig = ''
           # Applications Shortcuts
-          cmd - return : /Applications/kitty.app/Contents/MacOS/kitty --directory=/Users/mm
+          cmd - return : /Applications/kitty.app/Contents/MacOS/kitty --directory=/Users/mm --single-instance
           cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
           # Toggle Window
           lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2

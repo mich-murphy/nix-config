@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 
 with lib;
 
@@ -8,6 +8,11 @@ in
 {
   options.common.freshrss = {
     enable = mkEnableOption "Enable FreshRSS";
+    hostname = mkOption {
+      type = types.str;
+      default = "freshrss.pve.elmurphy.com";
+      description = "Hostname to expose freshrss on";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -21,8 +26,8 @@ in
         enable = true;
         defaultUser = "mm";
         passwordFile = config.age.secrets.freshrssPass.path;
-        baseUrl = "https://127.0.0.";
-        virtualHost = if cfg.nginx then "freshrss.pve.elmurphy.com" else null;
+        baseUrl = "https://${cfg.hostname}";
+        virtualHost = if cfg.nginx then cfg.hostname else null;
         database = {
           name = "freshrss";
           user = "freshrss";
@@ -31,13 +36,16 @@ in
       };
       # creation of cert potentially problematic - deactivate nginx option to provision
       nginx = mkIf cfg.nginx {
-        virtualHosts.${config.services.freshrss.virtualHost}= {
+        virtualHosts.${cfg.hostname}= {
           enableACME = true;
           addSSL = true;
-          acmeRoot = null;
         };
       };
     };
+
+    environment.persistence."/nix/persist".directories = [
+        "/var/lib/freshrss"
+    ];
 
     age.secrets = {
       freshrssPass = {
