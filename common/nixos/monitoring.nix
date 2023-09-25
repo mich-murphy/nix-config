@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 
 with lib;
 
@@ -22,6 +22,11 @@ in
       type = types.port;
       default = 9002;
       description = "Port for Prometheus node to be advertised on";
+    };
+    nginx = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable nginx reverse proxy with SSL";
     };
   };
 
@@ -56,13 +61,20 @@ in
           }
         ];
       };
-      nginx.virtualHosts.${config.services.grafana.settings.server.domain} = {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:${toString cfg.grafana-port}";
-          proxyWebsockets = true;
+      nginx = mkIf cfg.nginx {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        virtualHosts.${config.services.grafana.settings.server.domain} = {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.grafana-port}";
+            proxyWebsockets = true;
+          };
         };
       };
     };

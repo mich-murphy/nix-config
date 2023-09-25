@@ -36,9 +36,15 @@ in
       };
       # creation of cert potentially problematic - deactivate nginx option to provision
       nginx = mkIf cfg.nginx {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
         virtualHosts.${cfg.hostname}= {
           enableACME = true;
           addSSL = true;
+          acmeRoot = null;
         };
       };
     };

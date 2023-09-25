@@ -62,7 +62,7 @@
 
   common = {
     tailscale.enable = true;
-    nginx.enable = true;
+    acme.enable = true;
     syncthing.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;

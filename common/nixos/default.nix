@@ -12,16 +12,14 @@
     ./audiobookshelf.nix
     ./tailscale.nix
     ./jellyfin.nix
-    ./nginx.nix
+    ./acme.nix
     ./linkding.nix
     ./uptime-kuma.nix
     ./komga.nix
-    ./navidrome.nix
     ./roon-server.nix
     ./kapowarr.nix
     ./monitoring.nix
     ./openvscode.nix
-    ./vaultwarden.nix
     ./tandoor.nix
 	  ./wallabag.nix
   ];

@@ -27,13 +27,8 @@ in
       ];
     };
 
-    # specify integrated driver Intel Alder Lake - https://nixos.wiki/wiki/Intel_Graphics
-    # boot.kernelParams = [ "i915.force_probe=4692" ];
-
     environment = {
-      sessionVariables = {
-        LIBVA_DRIVER_NAME = "iHD";
-      };
+      sessionVariables.LIBVA_DRIVER_NAME = "iHD";
       systemPackages = with pkgs; [
         linux-firmware 
         intel-gpu-tools
@@ -41,18 +36,18 @@ in
       ];
     };
 
-    users.users.jellyfin.extraGroups = [ "render" "media" ];
-
     services = {
       jellyfin = {
         enable = true;
         openFirewall = true;
       };
-      jellyseerr = {
-        enable = true;
-        openFirewall = true;
-      };
       nginx = mkIf cfg.nginx {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc. 
         virtualHosts."jellyfin.pve.elmurphy.com"= {
           enableACME = true;
           addSSL = true;
@@ -60,18 +55,19 @@ in
           locations."/" = {
             proxyPass = "http://127.0.0.1:8096";
             proxyWebsockets = true;
-          };
-        };
-        virtualHosts."jellyseerr.pve.elmurphy.com"= {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:5055";
-            proxyWebsockets = true;
+            extraConfig = ''
+              # Disable buffering when the nginx proxy gets very resource heavy upon streaming 
+              proxy_buffering off;
+            '';
           };
         };
       };
     };
+
+    users.users.jellyfin.extraGroups = [ "render" "media" ];
+
+    environment.persistence."/nix/persist".directories = [
+        "/var/lib/jellyfin"
+    ];
   };
 }

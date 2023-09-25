@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 
 with lib;
 
@@ -31,6 +31,11 @@ in
         };
       };
       nginx = mkIf cfg.nginx {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
         virtualHosts."tandoor.pve.elmurphy.com"= {
           enableACME = true;
           addSSL = true;

@@ -40,6 +40,11 @@ in
         withoutConnectionToken = true;
       };
       nginx = mkIf cfg.nginx {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
         virtualHosts."code.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;

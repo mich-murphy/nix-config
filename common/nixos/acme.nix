@@ -1,23 +1,17 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 
 with lib;
 
 let
-  cfg = config.common.nginx;
+  cfg = config.common.acme;
 in
 {
-  options.common.nginx = {
+  options.common.acme = {
     enable = mkEnableOption "Enable Nginx with ACME wildcard certificate";
   };
 
   config = mkIf cfg.enable {
-    services.nginx = {
-      enable = true;
-      recommendedGzipSettings = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-    };
+    services.nginx.enable = true;
 
     security.acme = {
       acceptTerms = true;

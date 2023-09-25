@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 
 with lib;
 
@@ -46,6 +46,11 @@ in
     };
 
     services.nginx = mkIf cfg.nginx {
+      enable = true;
+      recommendedGzipSettings = true;
+      recommendedOptimisation = true;
+      recommendedProxySettings = true;
+      recommendedTlsSettings = true;
       virtualHosts."audiobookshelf.pve.elmurphy.com"= {
         enableACME = true;
         addSSL = true;

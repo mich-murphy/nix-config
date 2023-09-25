@@ -68,6 +68,11 @@ in
       #   port = 7333;
       # };
       nginx = mkIf cfg.nginx {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
         virtualHosts."${config.services.nextcloud.hostName}"= {
           enableACME = true;
           addSSL = true;
