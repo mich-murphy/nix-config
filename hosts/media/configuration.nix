@@ -1,4 +1,4 @@
-{ lib, config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   imports = [
@@ -68,14 +68,11 @@
     borgbackup.enable = true;
     roon-server.enable = true;
     komga.enable = true;
-    kapowarr.enable = true;
     freshrss.enable = true;
     jellyfin.enable = true;
     audiobookshelf.enable = true;
     calibre-web.enable = true;
-	wallabag.enable = true;
-	linkding.enable = true;
-	tandoor.enable = true;
+    wallabag.enable = true;
   };
 
   services = {

@@ -6,7 +6,7 @@ let
   cfg = config.common.arrs;
 in
 {
-  options.common.piracy = {
+  options.common.arrs = {
     enable = mkEnableOption "Enable arr services";
     nginx = mkOption {
       type = types.bool;
@@ -16,13 +16,29 @@ in
   };
 
   config = mkIf cfg.enable {
+    virtualisation.oci-containers = {
+      backend = "docker";
+      containers."kapowarr" = {
+        autoStart = true;
+        image = "mrcas/kapowarr:latest";
+        environment = {
+          AUDIOBOOKSHELF_UID = "99";
+          AUDIOBOOKSHELF_GID = "100";
+        };
+        ports = [ "5656:5656" ];
+        volumes = [
+          "kapowarr-db:/app/db"
+          "/data/temp/kapowarr:/app/temp_downloads"
+          "/data/media/comics:/comics"
+          "/data/media/manga:/manga"
+        ];
+      };
+    };
     services = {
       sonarr.enable = true;
       radarr.enable = true;
       lidarr.enable = true;
       readarr.enable = true;
-      bazarr.enable = true;
-      prowlarr.enable = true;
       nginx = mkIf cfg.nginx {
         enable = true;
         recommendedGzipSettings = true;
@@ -65,21 +81,12 @@ in
             proxyWebsockets = true;
           };
         };
-        virtualHosts."bazarr.pve.elmurphy.com"= {
+        virtualHosts."kapowarr.pve.elmurphy.com"= {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:6767";
-            proxyWebsockets = true;
-          };
-        };
-        virtualHosts."prowlarr.pve.elmurphy.com"= {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:9696";
+            proxyPass = "http://127.0.0.1:5656";
             proxyWebsockets = true;
           };
         };

@@ -17,10 +17,9 @@
     ./uptime-kuma.nix
     ./komga.nix
     ./roon-server.nix
-    ./kapowarr.nix
     ./monitoring.nix
     ./openvscode.nix
-    ./tandoor.nix
 	  ./wallabag.nix
+    ./arrs.nix
   ];
 }

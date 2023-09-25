@@ -1,11 +1,9 @@
-{ config, pkgs, user, host, inputs, ... }:
+{ pkgs, user, host, inputs, ... }:
 
 {
   imports = [
     ../../common/darwin
   ];
-
-  nixpkgs.config.allowUnfree = true;
 
   networking = {
     computerName = "${host}";
@@ -61,7 +59,6 @@
       "obsidian"
       "tailscale"
       "nextcloud"
-      "monitorcontrol"
       "element"
       "displaylink"
       "discord"
@@ -69,10 +66,10 @@
   };
 
   common.yabai.enable = true;
-
   programs.zsh.enable = true;
-
   services.nix-daemon.enable = true;
+  security.pam.enableSudoTouchIdAuth = true;
+  nixpkgs.config.allowUnfree = true;
 
   nix = {
     package = pkgs.nixUnstable;
@@ -96,8 +93,6 @@
       experimental-features = nix-command flakes
     '';
   };
-
-  security.pam.enableSudoTouchIdAuth = true;
 
   system = {
     checks.verifyNixPath = false;

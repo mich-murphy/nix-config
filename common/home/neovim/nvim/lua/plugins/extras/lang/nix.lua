@@ -34,14 +34,20 @@ return {
       table.insert(opts.sources, nls.builtins.formatting.nixpkgs_fmt)
     end,
   },
-
+  --
   -- add lsp server for nix
   {
     "neovim/nvim-lspconfig",
     opts = {
       servers = {
-        nil_ls = {},
+        nil_ls = {
+          nix = {
+            binary = "/run/current-system/sw/bin/nix",
+            flake = { autoArchive = true, }
+          }
+        },
       },
     },
   },
 }
+
