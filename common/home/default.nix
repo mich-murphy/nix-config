@@ -4,7 +4,7 @@
   imports = [
     ./tmux
     ./firefox
-    ./neovim
+    ./neovim.nix
     ./alacritty.nix
     ./kitty.nix
     ./git.nix
