@@ -13,6 +13,11 @@ in
       default = true;
       description = "Whether to enable sabnzbd";
     };
+    enableProwlarr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable prowlarr";
+    };
     enableSonarr = mkOption {
       type = types.bool;
       default = true;
@@ -61,6 +66,7 @@ in
     };
     services = {
       nzbget.enable = if cfg.enableNzbget then true else false; # default user: nzbget, default pass: tegbzn6789 
+      prowlarr.enable = if cfg.enableProwlarr then true else false; # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
       sonarr.enable = if cfg.enableSonarr then true else false;
       radarr.enable = if cfg.enableRadarr then true else false;
       lidarr.enable = if cfg.enableLidarr then true else false;
@@ -70,12 +76,21 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."nzbget.pve.elmurphy.com" = mkIf cfg.enableSabnzbd {
+        virtualHosts."nzbget.pve.elmurphy.com" = mkIf cfg.enableNzbget {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
             proxyPass = "http://127.0.0.1:6789";
+            proxyWebsockets = true;
+          };
+        };
+        virtualHosts."prowlarr.pve.elmurphy.com" = mkIf cfg.enableProwlarr {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:9696";
             proxyWebsockets = true;
           };
         };
