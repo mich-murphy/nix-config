@@ -65,11 +65,23 @@ in
       };
     };
     services = {
-      nzbget.enable = if cfg.enableNzbget then true else false; # default user: nzbget, default pass: tegbzn6789 
       prowlarr.enable = if cfg.enableProwlarr then true else false; # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
-      sonarr.enable = if cfg.enableSonarr then true else false;
-      radarr.enable = if cfg.enableRadarr then true else false;
-      lidarr.enable = if cfg.enableLidarr then true else false;
+      nzbget = mkIf cfg.enableNzbget { # default user: nzbget, default pass: tegbzn6789
+        enable = true;
+        group = "media";
+      };
+      sonarr = mkIf cfg.enableSonarr {
+        enable = true;
+        group = "media";
+      };
+      radarr = mkIf cfg.enableRadarr {
+        enable = true;
+        group = "media";
+      };
+      lidarr = mkIf cfg.enableLidarr {
+        enable = true;
+        group = "media";
+      };
       nginx = mkIf cfg.nginx {
         enable = true;
         recommendedGzipSettings = true;

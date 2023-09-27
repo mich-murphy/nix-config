@@ -63,7 +63,6 @@
   common = {
     tailscale.enable = true;
     acme.enable = true;
-    syncthing.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;
     roon-server.enable = true;
