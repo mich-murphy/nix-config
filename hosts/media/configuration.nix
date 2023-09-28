@@ -72,7 +72,10 @@
     audiobookshelf.enable = true;
     calibre-web.enable = true;
     wallabag.enable = true;
-    arrs.enable = true;
+    arrs = {
+      enable = true;
+      enableKapowarr = false;
+    }; 
   };
 
   services = {
