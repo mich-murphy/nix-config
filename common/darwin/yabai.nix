@@ -79,7 +79,7 @@ in
           # Toggle Window
           cmd - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
           cmd - f : yabai -m window --toggle zoom-fullscreen
-          cmd - q : yabai -m window --close
+          alt - q : yabai -m window --close
           # Toggle Gaps
           cmd - g : yabai -m space --toggle padding; yabai -m space --toggle gap
           # Balance All Windows
