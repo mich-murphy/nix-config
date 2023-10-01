@@ -17,7 +17,7 @@ in
           "/data/media/music"
           "/data/backups/RoonBackups"
         ];
-        repo = "g268tdfo@g268tdfo.repo.borgbase.com:repo";
+        repo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
         encryption = {
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.mediaBorgPass.path}";
@@ -36,7 +36,7 @@ in
           "/data/backups/nextclouddb"
           "/data/nextcloud"
         ];
-        repo = "duqvv98y@duqvv98y.repo.borgbase.com:repo";
+        repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
         encryption = {
           mode = "repokey-blake2";
           passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
