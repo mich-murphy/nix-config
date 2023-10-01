@@ -61,33 +61,40 @@ in
       skhd = {
         enable = true;
         skhdConfig = ''
+          # defines a new mode 'test' with an on_enter command, that captures keypresses
+          :: resize @
+          # from 'default' mode, activate mode 'resize'
+          cmd - r ; resize
+          # from 'resize' mode, activate mode 'default'
+          resize < cmd - r ; default
+          resize < h : yabai -m window --resize left:-50:0; yabai -m window --resize right:-50:0
+          resize < l : yabai -m window --resize left:50:0; yabai -m window --resize right:50:0
+          resize < k : yabai -m window --resize bottom:0:-50; yabai -m window --resize top:0:-50
+          resize < j : yabai -m window --resize bottom:0:50; yabai -m window --resize top:0:50
+          resize < e : yabai -m space --balance
+
           # Applications Shortcuts
-          cmd - return : /Applications/kitty.app/Contents/MacOS/kitty --directory=/Users/mm --single-instance
+          cmd - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
           cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
           # Toggle Window
-          lalt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
-          lalt - f : yabai -m window --toggle zoom-fullscreen
-          lalt + shift - f : yabai -m window --toggle native-fullscreen
-          lalt - q : yabai -m window --close
+          cmd - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+          cmd - f : yabai -m window --toggle zoom-fullscreen
+          cmd - q : yabai -m window --close
           # Toggle Gaps
-          lalt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
-          # Focus Window
-          lalt - k : yabai -m window --focus north
-          lalt - j : yabai -m window --focus south
-          lalt - h : yabai -m window --focus west
-          lalt - l : yabai -m window --focus east
-          # Swap Window
-          shift + lalt - k : yabai -m window --swap north
-          shift + lalt - j : yabai -m window --swap south
-          shift + lalt - h : yabai -m window --swap west
-          shift + lalt - l : yabai -m window --swap east
-          # Resize Window
-          lalt + cmd - h : yabai -m window --resize left:-50:0; yabai -m window --resize right:-50:0
-          lalt + cmd - l : yabai -m window --resize left:50:0; yabai -m window --resize right:50:0
-          lalt + cmd - k : yabai -m window --resize bottom:0:-50; yabai -m window --resize top:0:-50
-          lalt + cmd - j : yabai -m window --resize bottom:0:50; yabai -m window --resize top:0:50
+          cmd - g : yabai -m space --toggle padding; yabai -m space --toggle gap
           # Balance All Windows
-          lalt + cmd - e : yabai -m space --balance
+          cmd - e : yabai -m space --balance
+
+          # Focus Window
+          cmd - k : yabai -m window --focus north || yabai -m display --focus north
+          cmd - j : yabai -m window --focus south || yabai -m display --focus south
+          cmd - h : yabai -m window --focus west || yabai -m display --focus west
+          cmd - l : yabai -m window --focus east || yabai -m display --focus east
+          # Swap Window
+          cmd + shift - k : yabai -m window --swap north || yabai -m window --display north
+          cmd + shift - j : yabai -m window --swap south || yabai -m window --display south
+          cmd + shift - h : yabai -m window --swap west || yabai -m window --display west
+          cmd + shift - l : yabai -m window --swap east || yabai -m window --display east
           # Send to Space
           shift + lctrl - 1 : yabai -m window --space 1
           shift + lctrl - 2 : yabai -m window --space 2

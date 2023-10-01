@@ -57,6 +57,7 @@
       "roon"
       "karabiner-elements"
       "obsidian"
+      "logseq"
       "tailscale"
       "nextcloud"
       "element"
