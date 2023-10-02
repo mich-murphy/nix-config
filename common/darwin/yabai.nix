@@ -77,7 +77,7 @@ in
           cmd - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
           cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
           # Toggle Window
-          cmd - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+          cmd - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
           cmd - f : yabai -m window --toggle zoom-fullscreen
           alt - q : yabai -m window --close
           # Toggle Gaps
