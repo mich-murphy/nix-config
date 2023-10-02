@@ -61,30 +61,27 @@ in
       skhd = {
         enable = true;
         skhdConfig = ''
-          # defines a new mode 'test' with an on_enter command, that captures keypresses
+          # defines a new mode 'resize' with an on_enter command, that captures keypresses
           :: resize @
           # from 'default' mode, activate mode 'resize'
-          cmd - r ; resize
+          cmd + shift - r ; resize
           # from 'resize' mode, activate mode 'default'
           resize < cmd - r ; default
           resize < h : yabai -m window --resize left:-50:0; yabai -m window --resize right:-50:0
           resize < l : yabai -m window --resize left:50:0; yabai -m window --resize right:50:0
           resize < k : yabai -m window --resize bottom:0:-50; yabai -m window --resize top:0:-50
           resize < j : yabai -m window --resize bottom:0:50; yabai -m window --resize top:0:50
+          # Balance All Windows
           resize < e : yabai -m space --balance
-
           # Applications Shortcuts
           cmd - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
           cmd + shift - return : /Applications/Firefox.App/Contents/MacOS/firefox
           # Toggle Window
-          cmd - d : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
-          cmd - f : yabai -m window --toggle zoom-fullscreen
-          alt - q : yabai -m window --close
+          cmd + shift - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+          cmd + shift - f : yabai -m window --toggle zoom-fullscreen
+          cmd + shift - q : yabai -m window --close
           # Toggle Gaps
-          cmd - g : yabai -m space --toggle padding; yabai -m space --toggle gap
-          # Balance All Windows
-          cmd - e : yabai -m space --balance
-
+          cmd + shift - g : yabai -m space --toggle padding; yabai -m space --toggle gap
           # Focus Window
           cmd - k : yabai -m window --focus north || yabai -m display --focus north
           cmd - j : yabai -m window --focus south || yabai -m display --focus south
