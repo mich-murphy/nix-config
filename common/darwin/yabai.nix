@@ -66,7 +66,7 @@ in
           # from 'default' mode, activate mode 'resize'
           cmd + shift - r ; resize
           # from 'resize' mode, activate mode 'default'
-          resize < cmd - r ; default
+          resize < cmd + shift - r ; default
           resize < h : yabai -m window --resize left:-50:0; yabai -m window --resize right:-50:0
           resize < l : yabai -m window --resize left:50:0; yabai -m window --resize right:50:0
           resize < k : yabai -m window --resize bottom:0:-50; yabai -m window --resize top:0:-50
