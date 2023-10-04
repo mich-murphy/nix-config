@@ -3,5 +3,6 @@
 {
   imports = [
     ./yabai.nix
+    ./sketchybar
   ];
 }

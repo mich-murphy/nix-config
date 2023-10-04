@@ -51,6 +51,7 @@
       "firefox"
       "kitty"
       "spaceid"
+      "raycast"
       "1password"
       "stats"
       "roon"
