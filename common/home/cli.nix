@@ -93,7 +93,7 @@ in
           }
         ];
         shellAliases = {
-          ls = "lsd -lah";
+          ls = "eza -la";
           cat = "bat";
           vim = "nvim";
           rg = "batgrep";
@@ -193,31 +193,13 @@ in
           "--preview 'tree -C {} | head -n 10'"
         ];
       };
-      lsd = {
+      eza = {
         enable = true;
-        settings = {
-          classic = false;
-          blocks = [
-            "permission"
-            "user"
-            "size"
-            "date"
-            "name"
-          ];
-          date = "+%d %b %R";
-          icons = {
-            when = "auto";
-            theme = "fancy";
-            separator = " ";
-          };
-          layout = "grid";
-          sorting = {
-            column = "name";
-            reverse = false;
-            dir-grouping = "first";
-          };
-          symlink-arrow = "->";
-        };
+        icons = true;
+        git = true;
+        extraOptions = [
+          "--group-directories-first"
+        ];
       };
       zoxide = {
         enable = true;
