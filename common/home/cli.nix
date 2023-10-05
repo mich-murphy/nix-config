@@ -76,9 +76,6 @@ in
           }
           source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
-          # the fuck config
-          eval $(thefuck --alias)
-
           # direnv config
           eval "$(direnv hook zsh)"
         '';
@@ -250,8 +247,8 @@ in
       ripgrep
       jq
       tree
-      thefuck
       du-dust
+      duf
       grex
       delta
     ];
