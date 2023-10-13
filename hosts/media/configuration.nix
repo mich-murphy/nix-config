@@ -49,14 +49,13 @@
       "ssh/ssh_host_ed25519_key.pub".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key.pub";
     };
     systemPackages = with pkgs; [
-      vim
+      neovim
       tmux
       docker-compose
       lazydocker
       # disk usage tooling
       du-dust
       duf
-      dua
     ];
   };
 
