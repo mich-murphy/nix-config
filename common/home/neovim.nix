@@ -29,6 +29,7 @@ in
         cargo
         nixpkgs-fmt
         nixd
+        fzf
       ];
       extraPython3Packages = py: with py; [
         pip

@@ -6,10 +6,10 @@ let
   cfg = config.common.yabai;
   # nix-prefetch-url --unpack $YOUR_URL
   yabai = pkgs.yabai.overrideAttrs (final: {
-    version = "5.0.9";
+    version = "6.0.0";
     src = builtins.fetchTarball {
-      url ="https://github.com/koekeishiya/yabai/releases/download/v5.0.9/yabai-v5.0.9.tar.gz";
-      sha256 = "17rb1jygs1g0pwl2s3nyslbwnpw809is5ilqxz899agl97gwka37";
+      url ="https://github.com/koekeishiya/yabai/releases/download/v${final.version}/yabai-v${final.version}.tar.gz";
+      sha256 = "1l5zjynjngwvshw4av7mxw96haf3nmmpj3ln7gwhwmrkqib6jx10";
     };
   });
 in
@@ -39,32 +39,29 @@ in
           window_shadow = "float";
           window_gap = 5;
           window_placement = "second_child";
-          # window_border = "on";
-          # window_border_width = 2;
-          # window_border_radius = 11;
-          # window_border_blur = "off";
-          # active_window_border_color = "0xff9d7cd8";
-          # normal_window_border_color = "0xff414868";
           extraConfig = ''
             # RULES
             # Some of these guys are hidden and supper irritating to find. 
             # Use `yabai -m query --windows --space <int>`
             # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
             # sudo yabai --load-sa
-            yabai -m rule --add app='^Finder$' manage=off border=off
-            yabai -m rule --add app='^System Settings$' manage=off border=off
-            yabai -m rule --add app='^App Store$' manage=off border=off
-            yabai -m rule --add app='^Activity Monitor$' manage=off border=off
-            yabai -m rule --add app='^System Information$' manage=off border=off
-            yabai -m rule --add app='^Calculator$' manage=off border=off
-            yabai -m rule --add label="Dictionary" app="^Dictionary$" manage=off border=off
-            yabai -m rule --add label="Software Update" title="Software Update" manage=off border=off
-            yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off border=off
-            yabai -m rule --add title='^(Opening)' manage=off border=off
-            yabai -m rule --add app='Alfred' manage=off border=off
-            yabai -m rule --add app='Stats' manage=off border=off
-            yabai -m rule --add app='1Password' manage=off border=off
-            yabai -m rule --add app='Raycast' manage=off border=off
+            yabai -m rule --add app='^Finder$' manage=off
+            yabai -m rule --add app='^System Settings$' manage=off
+            yabai -m rule --add app='^App Store$' manage=off
+            yabai -m rule --add app='^Activity Monitor$' manage=off
+            yabai -m rule --add app='^System Information$' manage=off
+            yabai -m rule --add app='^Calculator$' manage=off
+            yabai -m rule --add label="Dictionary" app="^Dictionary$" manage=off
+            yabai -m rule --add label="Software Update" title="Software Update" manage=off
+            yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off
+            yabai -m rule --add title='^(Opening)' manage=off
+            yabai -m rule --add app='Stats' manage=off
+            yabai -m rule --add app='1Password' manage=off
+            yabai -m rule --add app='Raycast' manage=off
+            # yabai -m rule --add app='kitty' space=^1
+            # yabai -m rule --add app='Firefox' space=^2
+            # yabai -m rule --add app='Mail' space=3
+            # yabai -m rule --add app='Messages' space=4
           '';
         };
       };
