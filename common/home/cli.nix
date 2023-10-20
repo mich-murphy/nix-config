@@ -107,10 +107,21 @@ in
           gp = "g push";
           gpl = "g pull";
           gb = "g branch";
-          gco = "g checkout";
+          gch = "g checkout";
           gst = "g stash";
           gl = "g log";
           gd = "g diff";
+          # tmux
+          tm = "tmux";
+          tml = "tm list-sessions";
+          tma = "tm attach -t";
+          tmn = "tm new-session -s";
+          tmk = "tm kill-session -t";
+          tmka = "tm kill-session -a";
+          tp = "tmuxp";
+          tpl = "tp load";
+          tpf = "tp freeze";
+          tpls = "tp ls";
           # kitty
           ssh = "kitty +kitten ssh";
           # detect yabai windows in space - make sure to add space no. after alias
@@ -196,7 +207,6 @@ in
       eza = {
         enable = true;
         icons = true;
-        git = true;
         extraOptions = [
           "--group-directories-first"
         ];

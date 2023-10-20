@@ -42,11 +42,9 @@
       cleanup = "zap";
     };
     taps = [
-      # "homebrew/core"
+      "homebrew/services"
     ];
-    brews = [
-      # "gcc"
-    ];
+    brews = [];
     casks = [
       "firefox"
       "kitty"
