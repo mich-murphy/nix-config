@@ -14,6 +14,10 @@
       mediainfo
       statix
     ];
+    file.".hushlogin" = {
+      enable = true; # remove message when entering terminal
+      text = "";
+    };
   };
 
   common = {
