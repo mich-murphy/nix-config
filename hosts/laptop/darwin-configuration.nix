@@ -44,7 +44,10 @@
     taps = [
       "homebrew/services"
     ];
-    brews = [];
+    brews = [
+      "spotifyd"
+      "spotify-tui"
+    ];
     casks = [
       "firefox"
       "kitty"
