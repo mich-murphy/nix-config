@@ -72,6 +72,7 @@
   services.nix-daemon.enable = true;
   security.pam.enableSudoTouchIdAuth = true;
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.hostPlatform = "aarch64-darwin";
 
   nix = {
     package = pkgs.nixUnstable;
