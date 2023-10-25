@@ -56,7 +56,7 @@
       "1password"
       "stats"
       "roon"
-      "karabiner-elements"
+      "hammerspoon"
       "obsidian"
       "zotero"
       "tailscale"
@@ -151,7 +151,7 @@
     };
     keyboard = {
       enableKeyMapping = true; # needed for skhd
-      # remapCapsLockToControl = true;
+      remapCapsLockToControl = true;
     };
     stateVersion = 4;
   };

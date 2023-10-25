@@ -5,10 +5,10 @@ with lib;
 let
   cfg = config.common.yabai;
   # nix-prefetch-url --unpack $YOUR_URL
-  yabai = pkgs.yabai.overrideAttrs (final: {
+  yabai = pkgs.yabai.overrideAttrs (finalAttrs: {
     version = "6.0.0";
     src = builtins.fetchTarball {
-      url ="https://github.com/koekeishiya/yabai/releases/download/v${final.version}/yabai-v${final.version}.tar.gz";
+      url ="https://github.com/koekeishiya/yabai/releases/download/v${finalAttrs.version}/yabai-v${finalAttrs.version}.tar.gz";
       sha256 = "1l5zjynjngwvshw4av7mxw96haf3nmmpj3ln7gwhwmrkqib6jx10";
     };
   });

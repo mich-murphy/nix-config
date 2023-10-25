@@ -15,9 +15,17 @@
       statix
       _1password
     ];
-    file.".hushlogin" = {
-      enable = true; # remove message when entering terminal
-      text = "";
+    file = {
+      # remove message when entering terminal
+      ".hushlogin" = {
+        enable = true;
+        text = "";
+      };
+      ".hammerspoon/init.lua" = {
+        enable = true;
+        source = ./hammerspoon.lua;
+        target = ".hammerspoon/init.lua";
+      };
     };
   };
 
