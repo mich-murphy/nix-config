@@ -21,10 +21,10 @@
         enable = true;
         text = "";
       };
-      ".hammerspoon/init.lua" = {
+      ".hammerspoon" = {
         enable = true;
-        source = ./hammerspoon.lua;
-        target = ".hammerspoon/init.lua";
+        recursive = true;
+        source = ./hammerspoon;
       };
     };
   };
@@ -41,11 +41,6 @@
   };
 
   xdg.configFile = {
-    "karabiner" = {
-      enable = true;
-      recursive = true;
-      source = ./karabiner;
-    };
     "spotifyd/spotifyd.conf" = {
       enable = true;
       target = "spotifyd/spotifyd.conf";
