@@ -1,13 +1,14 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.common.alacritty;
   # fake package - managed by homebrew instead
   fakepkg = name: pkgs.runCommand name {} "mkdir $out";
-in
-{
+in {
   options.common.alacritty = {
     enable = mkEnableOption "Enable Alacritty with personalised settings";
   };
@@ -30,7 +31,7 @@ in
           };
         };
         font = {
-          size = 13.0; 
+          size = 13.0;
           normal = {
             family = "JetBrainsMono Nerd Font";
             style = "Regular";

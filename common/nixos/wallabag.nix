@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.wallabag;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.wallabag;
+in {
   options.common.wallabag = {
     enable = mkEnableOption "Enable Wallabag";
     port = mkOption {
@@ -27,9 +27,9 @@ in
         autoStart = true;
         image = "wallabag/wallabag";
         environment = {
-		  SYMFONY__ENV__DOMAIN_NAME = "https://wallabag.pve.elmurphy.com"; 
+          SYMFONY__ENV__DOMAIN_NAME = "https://wallabag.pve.elmurphy.com";
         };
-        ports = [ "${toString cfg.port}:80" ];
+        ports = ["${toString cfg.port}:80"];
         # https://github.com/wallabag/docker/issues/316#issuecomment-1465048886
         volumes = [
           "/data/appdata/wallabag/data:/var/www/wallabag/data"
@@ -44,7 +44,7 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."wallabag.pve.elmurphy.com"= {
+      virtualHosts."wallabag.pve.elmurphy.com" = {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;

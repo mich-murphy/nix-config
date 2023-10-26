@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.roon-server;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.roon-server;
+in {
   options.common.roon-server = {
     enable = mkEnableOption "Enable Roon Server";
   };
@@ -13,6 +13,6 @@ in
   config = mkIf cfg.enable {
     services.roon-server.enable = true;
 
-    users.users.roon-server.extraGroups = [ "media" ];
+    users.users.roon-server.extraGroups = ["media"];
   };
- }
+}

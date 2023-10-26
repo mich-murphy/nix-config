@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.git;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.git;
+in {
   options.common.git = {
     enable = mkEnableOption "Enable Git with personalised settings";
   };

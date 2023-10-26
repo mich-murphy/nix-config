@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.lf;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.lf;
+in {
   options.common.lf = {
     enable = mkEnableOption "Enable Lf with personalised settings";
   };

@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.syncthing;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.syncthing;
+in {
   options.common.syncthing = {
     enable = mkEnableOption "Enable syncthing with connection to seedbox";
     nginx = mkOption {
@@ -31,25 +31,25 @@ in
             "Music" = {
               id = "mrpfh-btugj";
               path = "/data/media/music";
-              devices = [ "seedbox" ];
+              devices = ["seedbox"];
               ignorePerms = true;
             };
             "Audiobooks" = {
               id = "mqh32-k7ykn";
               path = "/data/media/audiobooks";
-              devices = [ "seedbox" ];
+              devices = ["seedbox"];
               ignorePerms = true;
             };
             "Movies" = {
               id = "naolq-r7zlm";
               path = "/data/media/movies";
-              devices = [ "seedbox" ];
+              devices = ["seedbox"];
               ignorePerms = true;
             };
             "TV" = {
               id = "hhqvi-jv4wy";
               path = "/data/media/tv";
-              devices = [ "seedbox" ];
+              devices = ["seedbox"];
               ignorePerms = true;
             };
           };
@@ -61,7 +61,7 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."syncthing.pve.elmurphy.com"= {
+        virtualHosts."syncthing.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;

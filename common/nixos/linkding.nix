@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.linkding;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.linkding;
+in {
   options.common.linkding = {
     enable = mkEnableOption "Enable Linkding";
     workingDir = mkOption {
@@ -31,7 +31,7 @@ in
       containers."linkding" = {
         autoStart = true;
         image = "sissbruecker/linkding:latest";
-        ports = [ "${toString cfg.port}:9090" ];
+        ports = ["${toString cfg.port}:9090"];
         volumes = [
           "${cfg.workingDir}/data:/etc/linkding/data"
         ];
@@ -44,7 +44,7 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."linkding.pve.elmurphy.com"= {
+      virtualHosts."linkding.pve.elmurphy.com" = {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;

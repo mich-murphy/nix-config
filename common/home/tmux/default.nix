@@ -1,8 +1,10 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.common.tmux;
   catppuccin = pkgs.tmuxPlugins.mkTmuxPlugin {
     pluginName = "catppuccin";
@@ -14,8 +16,7 @@ let
       sha256 = "sha256-4JFuX9clpPr59vnCUm6Oc5IOiIc/v706fJmkaCiY2Hc=";
     };
   };
-in
-{
+in {
   options.common.tmux = {
     enable = mkEnableOption "Enable Tmux with personalised settings";
   };
@@ -62,7 +63,7 @@ in
         unbind -T copy-mode-vi Space;
         unbind -T copy-mode-vi Enter;
         bind -T copy-mode-vi v send-keys -X begin-selection
-        bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xsel --clipboard" 
+        bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xsel --clipboard"
 
         # Allow mouse scrolling
         set -g mouse on

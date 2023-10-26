@@ -1,11 +1,12 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
-  cfg = config.common.openvscode;
-in
 {
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.common.openvscode;
+in {
   options.common.openvscode = {
     enable = mkEnableOption "Enable Open VSCode";
     port = mkOption {

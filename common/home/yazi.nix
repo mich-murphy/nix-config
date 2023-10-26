@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.yazi;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.yazi;
+in {
   options.common.yazi = {
     enable = mkEnableOption "Enable Yazi with personalised settings";
   };
@@ -26,7 +26,10 @@ in
       };
       theme = {
         status = {
-          separator = { opening = ""; closing = ""; };
+          separator = {
+            opening = "";
+            closing = "";
+          };
         };
       };
     };

@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.audiobookshelf;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.audiobookshelf;
+in {
   options.common.audiobookshelf = {
     enable = mkEnableOption "Enable Audiobookshelf";
     workingDir = mkOption {
@@ -35,7 +35,7 @@ in
           AUDIOBOOKSHELF_UID = "99";
           AUDIOBOOKSHELF_GID = "100";
         };
-        ports = [ "${toString cfg.port}:80" ];
+        ports = ["${toString cfg.port}:80"];
         volumes = [
           "/data/media/audiobooks:/audiobooks"
           "/data/media/podcasts:/podcasts"
@@ -51,7 +51,7 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."audiobookshelf.pve.elmurphy.com"= {
+      virtualHosts."audiobookshelf.pve.elmurphy.com" = {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;

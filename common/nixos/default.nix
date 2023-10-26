@@ -1,6 +1,4 @@
-{ ... }:
-
-{
+{...}: {
   imports = [
     ./nextcloud.nix
     ./borgbackup.nix
@@ -19,7 +17,7 @@
     ./roon-server.nix
     ./monitoring.nix
     ./openvscode.nix
-	  ./wallabag.nix
+    ./wallabag.nix
     ./arrs.nix
   ];
 }

@@ -1,15 +1,15 @@
-{ lib, config, pkgs, ... }:
-
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 # NOTE: Neovim config needs to be cloned manually:
 # git clone git@github.com:mich-murphy/neovim.git ~/.config/nvim
 # allows management of neovim outside of nix (for use on any computer)
-
-with lib;
-
-let
+with lib; let
   cfg = config.common.neovim;
-in
-{
+in {
   options.common.neovim = {
     enable = mkEnableOption "Enable neovim with personalised config";
   };
@@ -27,12 +27,13 @@ in
         wget
         lazygit
         cargo
-        nixpkgs-fmt
+        alejandra
         nixd
       ];
-      extraPython3Packages = py: with py; [
-        pip
-      ];
+      extraPython3Packages = py:
+        with py; [
+          pip
+        ];
     };
 
     home.sessionVariables = {

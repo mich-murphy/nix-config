@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.freshrss;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.freshrss;
+in {
   options.common.freshrss = {
     enable = mkEnableOption "Enable FreshRSS";
     hostname = mkOption {
@@ -27,7 +27,10 @@ in
         defaultUser = "mm";
         passwordFile = config.age.secrets.freshrssPass.path;
         baseUrl = "https://${cfg.hostname}";
-        virtualHost = if cfg.nginx then cfg.hostname else null;
+        virtualHost =
+          if cfg.nginx
+          then cfg.hostname
+          else null;
         database = {
           name = "freshrss";
           user = "freshrss";

@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.arrs;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.arrs;
+in {
   options.common.arrs = {
     enable = mkEnableOption "Enable arr services";
     enableNzbget = mkOption {
@@ -55,7 +55,7 @@ in
           AUDIOBOOKSHELF_UID = "99";
           AUDIOBOOKSHELF_GID = "100";
         };
-        ports = [ "5656:5656" ];
+        ports = ["5656:5656"];
         volumes = [
           "kapowarr-db:/app/db"
           "/data/temp/kapowarr:/app/temp_downloads"
@@ -65,8 +65,12 @@ in
       };
     };
     services = {
-      prowlarr.enable = if cfg.enableProwlarr then true else false; # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
-      nzbget = mkIf cfg.enableNzbget { # default user: nzbget, default pass: tegbzn6789
+      prowlarr.enable =
+        if cfg.enableProwlarr
+        then true
+        else false; # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
+      nzbget = mkIf cfg.enableNzbget {
+        # default user: nzbget, default pass: tegbzn6789
         enable = true;
         group = "media";
       };

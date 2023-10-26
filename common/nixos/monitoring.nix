@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.monitoring;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.monitoring;
+in {
   options.common.monitoring = {
     enable = mkEnableOption "Enable monitoring with Grafana, Loki and Prometheus";
     grafana-port = mkOption {
@@ -48,16 +48,18 @@ in
         exporters = {
           node = {
             enable = true;
-            enabledCollectors = [ "systemd" ];
+            enabledCollectors = ["systemd"];
             port = cfg.node-port;
           };
         };
         scrapeConfigs = [
           {
             job_name = "monitoring";
-            static_configs = [{
-              targets = [ "127.0.0.1:${toString cfg.node-port}" ];
-            }];
+            static_configs = [
+              {
+                targets = ["127.0.0.1:${toString cfg.node-port}"];
+              }
+            ];
           }
         ];
       };
@@ -79,4 +81,4 @@ in
       };
     };
   };
- }
+}

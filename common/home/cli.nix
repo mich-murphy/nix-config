@@ -1,11 +1,12 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
-  cfg = config.common.cli;
-in
 {
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.common.cli;
+in {
   options.common.cli = {
     enable = mkEnableOption "Enable personalised command line environment";
   };
@@ -45,9 +46,9 @@ in
           setopt CDABLE_VARS
 
           # history (options unavailable in homemanager)
-          setopt HIST_IGNORE_ALL_DUPS 
-          setopt HIST_FIND_NO_DUPS 
-          setopt HIST_SAVE_NO_DUPS 
+          setopt HIST_IGNORE_ALL_DUPS
+          setopt HIST_FIND_NO_DUPS
+          setopt HIST_SAVE_NO_DUPS
           setopt HIST_VERIFY
 
           # completions

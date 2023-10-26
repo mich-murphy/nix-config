@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.acme;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.acme;
+in {
   options.common.acme = {
     enable = mkEnableOption "Enable Nginx with ACME wildcard certificate";
   };
@@ -26,7 +26,7 @@ in
       };
     };
 
-    users.users.nginx.extraGroups = [ "acme" ];
+    users.users.nginx.extraGroups = ["acme"];
 
     age.secrets.acmeCredentials.file = ../../secrets/acmeCredentials.age;
   };

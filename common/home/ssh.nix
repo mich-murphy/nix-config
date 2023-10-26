@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.ssh;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.ssh;
+in {
   options.common.ssh = {
     enable = mkEnableOption "Enable SSH config with configured hosts";
   };

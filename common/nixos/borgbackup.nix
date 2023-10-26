@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.borgbackup;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.borgbackup;
+in {
   options.common.borgbackup = {
     enable = mkEnableOption "Enable borgbackup for media and Nextcloud to BorgBase";
   };

@@ -1,13 +1,14 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.common.kitty;
   # fake package - managed by homebrew instead
   fakepkg = name: pkgs.runCommand name {} "mkdir $out";
-in
-{
+in {
   options.common.kitty = {
     enable = mkEnableOption "Enable kitty with personalised settings";
   };

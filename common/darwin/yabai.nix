@@ -1,19 +1,21 @@
-{ lib, config, pkgs, user, ... }:
-
-with lib;
-
-let
+{
+  lib,
+  config,
+  pkgs,
+  user,
+  ...
+}:
+with lib; let
   cfg = config.common.yabai;
   # nix-prefetch-url --unpack $YOUR_URL
   yabai = pkgs.yabai.overrideAttrs (finalAttrs: {
     version = "6.0.0";
     src = builtins.fetchTarball {
-      url ="https://github.com/koekeishiya/yabai/releases/download/v${finalAttrs.version}/yabai-v${finalAttrs.version}.tar.gz";
+      url = "https://github.com/koekeishiya/yabai/releases/download/v${finalAttrs.version}/yabai-v${finalAttrs.version}.tar.gz";
       sha256 = "1l5zjynjngwvshw4av7mxw96haf3nmmpj3ln7gwhwmrkqib6jx10";
     };
   });
-in
-{
+in {
   options.common.yabai = {
     enable = mkEnableOption "Enable Yabai MacOS window manager and SKHD hotkey daemon";
   };
@@ -21,7 +23,7 @@ in
   config = mkIf cfg.enable {
     services = {
       yabai = {
-        enable = true; 
+        enable = true;
         package = yabai;
         config = {
           focus_follows_mouse = "off";
@@ -41,7 +43,7 @@ in
           window_placement = "second_child";
           extraConfig = ''
             # RULES
-            # Some of these guys are hidden and supper irritating to find. 
+            # Some of these guys are hidden and supper irritating to find.
             # Use `yabai -m query --windows --space <int>`
             # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
             # sudo yabai --load-sa

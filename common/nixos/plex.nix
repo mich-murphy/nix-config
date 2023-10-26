@@ -1,8 +1,10 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
   cfg = config.common.plex;
   audnexusPlugin = pkgs.stdenv.mkDerivation {
     name = "Audnexus.bundle";
@@ -10,11 +12,10 @@ let
       url = "https://github.com/djdembeck/Audnexus.bundle/archive/refs/tags/v1.1.0.zip";
       sha256 = "sha256-i5ssEe7SFoQHFXvYiB0nG1mQrcA/wgSeYZiyYKDYtuQ=";
     };
-    buildInputs = [ pkgs.unzip ];
+    buildInputs = [pkgs.unzip];
     installPhase = "mkdir -p $out; cp -R * $out/";
   };
-in
-{
+in {
   options.common.plex = {
     enable = mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
     nginx = mkOption {
@@ -28,11 +29,11 @@ in
     services = {
       plex = {
         enable = true;
-        extraPlugins = [ audnexusPlugin ];
+        extraPlugins = [audnexusPlugin];
       };
       tautulli.enable = true;
       nginx = mkIf cfg.nginx {
-        virtualHosts."plex.pve.elmurphy.com"= {
+        virtualHosts."plex.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -41,7 +42,7 @@ in
             proxyWebsockets = true;
           };
         };
-        virtualHosts."tautulli.pve.elmurphy.com"= {
+        virtualHosts."tautulli.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -55,12 +56,12 @@ in
 
     environment = {
       systemPackages = with pkgs; [
-        linux-firmware 
+        linux-firmware
         intel-gpu-tools
         libva-utils
       ];
     };
 
-    users.users.plex.extraGroups = [ "render" "media" ];
+    users.users.plex.extraGroups = ["render" "media"];
   };
 }

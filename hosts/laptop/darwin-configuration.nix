@@ -1,6 +1,8 @@
-{ pkgs, inputs, ... }:
-
 {
+  pkgs,
+  inputs,
+  ...
+}: {
   imports = [
     ../../common/darwin
   ];
@@ -8,8 +10,8 @@
   networking = {
     computerName = "macbook";
     hostName = "macbook";
-    dns = [ "100.100.100.100" "1.1.1.1" "1.0.0.1" ];
-    knownNetworkServices = [ "Wi-Fi" "Thunderbolt Bridge" ];
+    dns = ["100.100.100.100" "1.1.1.1" "1.0.0.1"];
+    knownNetworkServices = ["Wi-Fi" "Thunderbolt Bridge"];
   };
 
   users.users."mm" = {
@@ -30,7 +32,7 @@
     fontDir.enable = true;
     fonts = with pkgs; [
       # https://github.com/NixOS/nixpkgs/blob/nixos-23.05/pkgs/data/fonts/nerdfonts/shas.nix
-      (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+      (nerdfonts.override {fonts = ["JetBrainsMono"];})
     ];
   };
 
@@ -83,7 +85,7 @@
       options = "--delete-older-than 7d";
     };
     settings = {
-      trusted-users = [ "@admin" "mm" ];
+      trusted-users = ["@admin" "mm"];
       auto-optimise-store = true;
       substituters = [
         "https://nix-community.cachix.org"

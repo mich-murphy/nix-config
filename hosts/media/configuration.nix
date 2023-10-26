@@ -1,6 +1,9 @@
-{ config, pkgs, inputs, ... }:
-
 {
+  config,
+  pkgs,
+  inputs,
+  ...
+}: {
   imports = [
     ../../common/nixos
     ./hardware-configuration.nix
@@ -24,7 +27,7 @@
         isNormalUser = true;
         home = "/home/mm";
         hashedPasswordFile = config.age.secrets.userPass.path;
-        extraGroups = [ "wheel" "media" ];
+        extraGroups = ["wheel" "media"];
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN"
         ];
@@ -75,7 +78,7 @@
     arrs = {
       enable = true;
       enableKapowarr = false;
-    }; 
+    };
   };
 
   services = {
@@ -99,10 +102,12 @@
         AuthenticationMethods publickey
       '';
       # default to ed25519 key generation
-      hostKeys = [{
-        path = "/etc/ssh/ssh_host_ed25519_key";
-        type = "ed25519";
-      }];
+      hostKeys = [
+        {
+          path = "/etc/ssh/ssh_host_ed25519_key";
+          type = "ed25519";
+        }
+      ];
     };
   };
 
@@ -129,7 +134,7 @@
     };
     settings = {
       auto-optimise-store = true;
-      allowed-users = [ "@wheel" ];
+      allowed-users = ["@wheel"];
       substituters = [
         "https://nix-community.cachix.org"
       ];

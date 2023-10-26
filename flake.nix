@@ -24,9 +24,9 @@
     impermanence.url = "github:nix-community/impermanence";
   };
 
-  outputs = { 
-    self, 
-    nixpkgs, 
+  outputs = {
+    self,
+    nixpkgs,
     nixpkgs-stable,
     nixpkgs-darwin-stable,
     darwin,
@@ -35,14 +35,14 @@
     agenix,
     deploy-rs,
     impermanence,
-    ... 
-  }@inputs:
-  {
+    ...
+  } @ inputs: {
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
-      specialArgs = { inherit inputs; };
+      specialArgs = {inherit inputs;};
       modules = [
         ./hosts/laptop/darwin-configuration.nix
-        home-manager.darwinModules.home-manager {
+        home-manager.darwinModules.home-manager
+        {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.users.mm = import ./hosts/laptop/home.nix;
@@ -56,7 +56,7 @@
     };
 
     nixosConfigurations.media = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
+      specialArgs = {inherit inputs;};
       modules = [
         ./hosts/media/configuration.nix
         agenix.nixosModules.default
@@ -69,12 +69,12 @@
       profiles.system = {
         user = "root";
         sshUser = "mm";
-        sshOpts = [ "-o" "StrictHostKeyChecking=no" ];
+        sshOpts = ["-o" "StrictHostKeyChecking=no"];
         path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.media;
       };
     };
 
-      # disabled until remote testing added https://github.com/serokell/deploy-rs/issues/167
-      # checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
-    };
-  }
+    # disabled until remote testing added https://github.com/serokell/deploy-rs/issues/167
+    # checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+  };
+}

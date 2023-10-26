@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.uptime-kuma;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.uptime-kuma;
+in {
   options.common.uptime-kuma = {
     enable = mkEnableOption "Enable Uptime Kuma";
     port = mkOption {
@@ -40,7 +40,7 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."uptime-kuma.pve.elmurphy.com"= {
+        virtualHosts."uptime-kuma.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -52,4 +52,4 @@ in
       };
     };
   };
- }
+}

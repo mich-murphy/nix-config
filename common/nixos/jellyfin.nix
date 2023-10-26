@@ -1,11 +1,12 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
-  cfg = config.common.jellyfin;
-in
 {
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.common.jellyfin;
+in {
   options.common.jellyfin = {
     enable = mkEnableOption "Enable Jellyfin with hardware transcoding";
     nginx = mkOption {
@@ -30,7 +31,7 @@ in
     environment = {
       sessionVariables.LIBVA_DRIVER_NAME = "iHD";
       systemPackages = with pkgs; [
-        linux-firmware 
+        linux-firmware
         intel-gpu-tools
         libva-utils
       ];
@@ -47,8 +48,8 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc. 
-        virtualHosts."jellyfin.pve.elmurphy.com"= {
+        clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.
+        virtualHosts."jellyfin.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -56,7 +57,7 @@ in
             proxyPass = "http://127.0.0.1:8096";
             proxyWebsockets = true;
             extraConfig = ''
-              # Disable buffering when the nginx proxy gets very resource heavy upon streaming 
+              # Disable buffering when the nginx proxy gets very resource heavy upon streaming
               proxy_buffering off;
             '';
           };
@@ -64,10 +65,10 @@ in
       };
     };
 
-    users.users.jellyfin.extraGroups = [ "render" "media" ];
+    users.users.jellyfin.extraGroups = ["render" "media"];
 
     environment.persistence."/nix/persist".directories = [
-        "/var/lib/jellyfin"
+      "/var/lib/jellyfin"
     ];
   };
 }

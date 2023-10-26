@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.komga;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.komga;
+in {
   options.common.komga = {
     enable = mkEnableOption "Enable Komga";
     port = mkOption {
@@ -33,7 +33,7 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."komga.pve.elmurphy.com"= {
+        virtualHosts."komga.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -45,6 +45,6 @@ in
       };
     };
 
-    users.users.komga.extraGroups = [ "media" ];
+    users.users.komga.extraGroups = ["media"];
   };
- }
+}

@@ -1,11 +1,12 @@
-{ config, lib, pkgs, ... }:
-
-with lib;
-
-let
-  cfg = config.common.object-storage;
-in 
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.common.object-storage;
+in {
   options.common.object-storage = {
     enable = mkEnableOption "Mounts s3 object storage using s3fs";
     keyPath = mkOption {
@@ -33,7 +34,7 @@ in
   config = mkIf cfg.enable {
     systemd.services.object-storage = {
       description = "Linode object storage s3fs";
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = ["multi-user.target"];
       startLimitIntervalSec = 5;
       serviceConfig = {
         ExecStartPre = [
@@ -50,7 +51,7 @@ in
           ];
         in
           "${pkgs.s3fs}/bin/s3fs ${cfg.bucket} ${cfg.mountPath} -f "
-            + lib.concatMapStringsSep " " (opt: "-o ${opt}") options;
+          + lib.concatMapStringsSep " " (opt: "-o ${opt}") options;
         ExecStopPost = "-${pkgs.fuse-common}/bin/fusermount -u ${cfg.mountPath}";
         KillMode = "process";
         Restart = "on-failure";

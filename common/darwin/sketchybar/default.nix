@@ -1,12 +1,12 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
+{
+  lib,
+  config,
+  ...
+}:
+with lib; let
   cfg = config.common.sketchybar;
   scripts = ./scripts;
-in
-{
+in {
   options.common.sketchybar = {
     enable = mkEnableOption "Enable Sketchybar bar replacement for MacOS";
   };

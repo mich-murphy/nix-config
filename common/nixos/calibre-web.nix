@@ -1,11 +1,11 @@
-{ lib, config, ... }:
-
-with lib;
-
-let
-  cfg = config.common.calibre-web;
-in
 {
+  lib,
+  config,
+  ...
+}:
+with lib; let
+  cfg = config.common.calibre-web;
+in {
   options.common.calibre-web = {
     enable = mkEnableOption "Enable Calibre-Web";
     port = mkOption {
@@ -32,7 +32,7 @@ in
           TZ = "Australia/Melbourne";
           DOCKER_MODS = "linuxserver/mods:universal-calibre";
         };
-        ports = [ "${toString cfg.port}:8083" ];
+        ports = ["${toString cfg.port}:8083"];
         volumes = [
           "/var/lib/calibre-web:/config"
           "/data/media/books:/books"
@@ -46,7 +46,7 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."calibre.pve.elmurphy.com"= {
+      virtualHosts."calibre.pve.elmurphy.com" = {
         enableACME = true;
         addSSL = true;
         acmeRoot = null;

@@ -1,11 +1,12 @@
-{ lib, config, pkgs, ... }:
-
-with lib;
-
-let
-  cfg = config.common.nextcloud;
-in
 {
+  lib,
+  config,
+  pkgs,
+  ...
+}:
+with lib; let
+  cfg = config.common.nextcloud;
+in {
   options.common.nextcloud = {
     enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
     nginx = mkOption {
@@ -42,19 +43,21 @@ in
             timeout = 1.5;
           };
         };
-      };    
+      };
       postgresql = {
         enable = true;
-        ensureDatabases = [ "nextcloud" ];
-        ensureUsers = [{
-          name = "nextcloud";
-          ensurePermissions."DATABASE nextcloud" = "ALL PRIVILEGES";
-        }];
+        ensureDatabases = ["nextcloud"];
+        ensureUsers = [
+          {
+            name = "nextcloud";
+            ensurePermissions."DATABASE nextcloud" = "ALL PRIVILEGES";
+          }
+        ];
       };
       postgresqlBackup = {
         enable = true;
         location = "/data/backups/nextclouddb";
-        databases = [ "nextcloud" ];
+        databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
       };
       redis.servers.nextcloud = {
@@ -73,7 +76,7 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."${config.services.nextcloud.hostName}"= {
+        virtualHosts."${config.services.nextcloud.hostName}" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -96,8 +99,8 @@ in
 
     systemd = {
       services."nextcloud-setup" = {
-        requires = [ "postgresql.service" ];
-        after = [ "postgresql.service" ];
+        requires = ["postgresql.service"];
+        after = ["postgresql.service"];
       };
     };
 
