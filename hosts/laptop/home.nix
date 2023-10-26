@@ -1,5 +1,8 @@
-{ pkgs, user, ... }:
+{ pkgs, ... }:
 
+let
+  user = "mm";
+in 
 {
   imports = [
     ../../common/home

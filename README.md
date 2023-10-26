@@ -36,35 +36,27 @@ Once you have an understanding of Nix/NixOS, the above tools can be configured u
 
 ## Installation
 
-1. Install Nix on the target machine:
+1. Install Nix on the target machine using Determinate Systems installer (enables flakes by default amongst other benefits):
 
 ```bash
-sh <(curl -L https://nixos.org/nix/install)
-```
-2. To enable installation from a Flake we need to enable experimental features for Nix
-
-```bash
-mkdir ~/.config/nix
-echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-3. Some packages aren't yet available for Darwin in Nix - for these we need to configure Homebrew
+2. Some packages aren't yet available for Darwin in Nix - for these we need to configure Homebrew
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew analytics off
 ```
 
-4. Install Git, clone the repository and run the first build of the Flake to make darwin commands available
+3. Install Git, clone the repository and run the first build of the Flake to make darwin commands available
 
 ```bash
 nix-env -iA nixpkgs.git
-git clone https://github.com/mich-murphy/nix-config ~/.config/nix-config
-cd ~/.config/nix-config
-nix build .#darwinConfigurations.macbook.system
-./result/sw/bin/darwin-rebuild switch --flake .#macbook
+git clone https://github.com/mich-murphy/nix-config
+nix run nix-darwin -- switch --flake ~/nix-config
 ```
-5. In future you can rebuild and activate the Flake using the following command
+4. In future you can rebuild and activate the Flake using the following command
 
 ```bash
 darwin-rebuild switch --flake .

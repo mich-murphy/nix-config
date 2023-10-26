@@ -1,5 +1,9 @@
-{ pkgs, user, host, inputs, ... }:
+{ pkgs, inputs, ... }:
 
+let
+  user = "mm";
+  host = "macbook";
+in
 {
   imports = [
     ../../common/darwin
