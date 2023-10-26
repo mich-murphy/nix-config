@@ -231,6 +231,10 @@ in
           vim_keys = true;
         };
       };
+      taskwarrior = {
+        enable = true;
+        colorTheme = "dark-gray-blue-256";
+      };
     };
 
     home.packages = with pkgs; [
@@ -243,6 +247,7 @@ in
       duf
       grex
       delta
+      procs
     ];
   };
 }
