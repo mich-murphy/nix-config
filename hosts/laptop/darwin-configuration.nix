@@ -1,24 +1,20 @@
 { pkgs, inputs, ... }:
 
-let
-  user = "mm";
-  host = "macbook";
-in
 {
   imports = [
     ../../common/darwin
   ];
 
   networking = {
-    computerName = "${host}";
-    hostName = "${host}";
+    computerName = "macbook";
+    hostName = "macbook";
     dns = [ "100.100.100.100" "1.1.1.1" "1.0.0.1" ];
     knownNetworkServices = [ "Wi-Fi" "Thunderbolt Bridge" ];
   };
 
-  users.users."${user}" = {
+  users.users."mm" = {
     shell = pkgs.zsh;
-    home = "/Users/${user}";
+    home = "/Users/mm";
     createHome = true;
   };
 
@@ -87,7 +83,7 @@ in
       options = "--delete-older-than 7d";
     };
     settings = {
-      trusted-users = [ "@admin" "${user}" ];
+      trusted-users = [ "@admin" "mm" ];
       auto-optimise-store = true;
       substituters = [
         "https://nix-community.cachix.org"

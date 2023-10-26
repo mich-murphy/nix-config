@@ -1,16 +1,13 @@
 { pkgs, ... }:
 
-let
-  user = "mm";
-in 
 {
   imports = [
     ../../common/home
   ];
 
   home = {
-    username = "${user}";
-    homeDirectory = "/Users/${user}";
+    username = "mm";
+    homeDirectory = "/Users/mm";
     stateVersion = "22.05";
     packages = with pkgs; [
       sox
