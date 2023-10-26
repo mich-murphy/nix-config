@@ -1,0 +1,13 @@
+{
+  "formatting": { "command": "alejandra" },
+  "options": {
+    "enable": true,
+    "target": {
+      "args": [],
+      "installable": [
+        ".#darwinConfigurations.macbook.options",
+        ".#nixosConfigurations.media.options"
+      ]
+    }
+  }
+}
