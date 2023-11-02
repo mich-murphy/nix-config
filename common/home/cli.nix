@@ -249,6 +249,7 @@ in {
       grex
       delta
       procs
+      gh
     ];
   };
 }

@@ -57,15 +57,12 @@
       "raycast"
       "1password"
       "stats"
-      "roon"
-      "hammerspoon"
       "obsidian"
       "zotero"
       "tailscale"
       "nextcloud"
-      "element"
       "displaylink"
-      "discord"
+      "karabiner-elements"
     ];
   };
 
