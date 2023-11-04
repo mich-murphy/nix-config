@@ -19,5 +19,6 @@
     ./openvscode.nix
     ./wallabag.nix
     ./arrs.nix
+    ./gitea.nix
   ];
 }
