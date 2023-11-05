@@ -12,6 +12,9 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+
     nur.url = "github:nix-community/NUR";
 
     agenix.url = "github:ryantm/agenix";
@@ -31,6 +34,7 @@
     nixpkgs-darwin-stable,
     darwin,
     home-manager,
+    disko,
     nur,
     agenix,
     deploy-rs,
@@ -63,14 +67,35 @@
       ];
     };
 
-    deploy.nodes.media = {
-      hostname = "media";
-      remoteBuild = true;
-      profiles.system = {
-        user = "root";
-        sshUser = "mm";
-        sshOpts = ["-o" "StrictHostKeyChecking=no"];
-        path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.media;
+    nixosConfigurations.storage = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/storage/configuration.nix
+        agenix.nixosModules.default
+        disko.nixosModules.disko
+      ];
+    };
+
+    deploy.nodes = {
+      media = {
+        hostname = "media";
+        remoteBuild = true;
+        profiles.system = {
+          user = "root";
+          sshUser = "mm";
+          sshOpts = ["-o" "StrictHostKeyChecking=no"];
+          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.media;
+        };
+      };
+      storage = {
+        hostname = "storage";
+        remoteBuild = true;
+        profiles.system = {
+          user = "root";
+          sshUser = "mm";
+          sshOpts = ["-o" "StrictHostKeyChecking=no"];
+          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.storage;
+        };
       };
     };
 
