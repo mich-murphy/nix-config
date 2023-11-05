@@ -55,7 +55,7 @@ in {
       postgresqlBackup = {
         enable = true;
         location = "/data/backups/postgresql";
-        databases = ["${config.services.gitea.database.name}"];
+        databases = [config.services.gitea.database.name];
         startAt = "*-*-* 23:15:00";
       };
       nginx = mkIf cfg.nginx {

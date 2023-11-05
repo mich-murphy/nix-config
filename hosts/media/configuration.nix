@@ -75,7 +75,7 @@
     calibre-web.enable = true;
     wallabag.enable = true;
     monitoring.enable = true;
-    gitea.enable = true;
+    # gitea.enable = true;
     arrs = {
       enable = true;
       enableKapowarr = false;
