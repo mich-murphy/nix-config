@@ -51,15 +51,25 @@
       "ssh/ssh_host_ed25519_key".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key";
       "ssh/ssh_host_ed25519_key.pub".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key.pub";
     };
-    systemPackages = with pkgs; [
-      vim
-      tmux
-      docker-compose
-      lazydocker
+    systemPackages = [
+      pkgs.vim
+      pkgs.tmux
+      pkgs.docker-compose
+      pkgs.lazydocker
+      pkgs.cifs-utils
       # disk usage tooling
-      du-dust
-      duf
+      pkgs.du-dust
+      pkgs.duf
     ];
+  };
+
+  fileSystems."/mnt/data" = {
+      device = "//10.77.2.102/data";
+      fsType = "cifs";
+      options = let
+        # this line prevents hanging on network split
+        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+      in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path}"];
   };
 
   common = {
@@ -155,5 +165,6 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
+    sambaPass.file = ../../secrets/sambaPass.age;
   };
 }

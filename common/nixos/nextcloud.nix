@@ -43,6 +43,7 @@ in {
             timeout = 1.5;
           };
         };
+        phpOptions = {"opcache.interned_strings_buffer" = "12";};
       };
       postgresql = {
         enable = true;
