@@ -21,6 +21,13 @@ in {
             "LC_ALL" = "C";
           };
         };
+        "storage" = {
+          hostname = "storage";
+          user = "mm";
+          setEnv = {
+            "LC_ALL" = "C";
+          };
+        };
         "proxmox" = {
           hostname = "proxmox";
           user = "root";

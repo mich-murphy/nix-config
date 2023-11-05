@@ -8,7 +8,6 @@
   imports = [
     (modulesPath + "/installer/scan/not-detected.nix")
     (modulesPath + "/profiles/qemu-guest.nix")
-    inputs.impermanence.nixosModules.impermanence
     ../../common/nixos
     ./disk-config.nix
   ];
@@ -19,7 +18,7 @@
     efiInstallAsRemovable = true;
   };
 
-  networking.hostName = "media";
+  networking.hostName = "storage";
   time.timeZone = "Australia/Melbourne";
   i18n.defaultLocale = "en_US.UTF-8";
   nixpkgs = {
@@ -44,21 +43,6 @@
   };
 
   environment = {
-    persistence."/nix/persist" = {
-      directories = [
-        "/etc/nixos"
-        "/var/log"
-        "/var/lib"
-        "/root/.ssh"
-      ];
-    };
-    etc = {
-      "machine-id".source = "/nix/persist/etc/machine-id";
-      "ssh/ssh_host_rsa_key".source = "/nix/persist/etc/ssh/ssh_host_rsa_key";
-      "ssh/ssh_host_rsa_key.pub".source = "/nix/persist/etc/ssh/ssh_host_rsa_key.pub";
-      "ssh/ssh_host_ed25519_key".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key";
-      "ssh/ssh_host_ed25519_key.pub".source = "/nix/persist/etc/ssh/ssh_host_ed25519_key.pub";
-    };
     systemPackages = with pkgs; [
       neovim
       tmux
@@ -72,6 +56,7 @@
 
   common = {
     roon-server.enable = true;
+    tailscale.enable = true;
   };
 
   services = {

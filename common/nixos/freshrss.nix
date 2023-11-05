@@ -52,9 +52,9 @@ in {
       };
     };
 
-    environment.persistence."/nix/persist".directories = [
-      "/var/lib/freshrss"
-    ];
+    # environment.persistence."/nix/persist".directories = [
+    #   "/var/lib/freshrss"
+    # ];
 
     age.secrets = {
       freshrssPass = {

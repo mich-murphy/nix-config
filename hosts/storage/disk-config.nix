@@ -1,7 +1,7 @@
-{disks ? ["/dev/sda"], ...}: {
+{...}: {
   disko.devices = {
     disk.main = {
-      device = builtins.elemAt disks 0;
+      device = "/dev/sda";
       type = "disk";
       content = {
         type = "gpt";
@@ -28,24 +28,24 @@
               resumeDevice = true; # resume from hiberation from this device
             };
           };
-          nix = {
+          root = {
             size = "100%";
             content = {
               type = "filesystem";
               format = "ext4";
-              mountpoint = "/nix";
+              mountpoint = "/";
             };
           };
         };
       };
     };
-    nodev."/" = {
-      fsType = "tmpfs";
-      mountOptions = [
-        "size=6G"
-        "defaults"
-        "mode=755"
-      ];
-    };
+    # nodev."/" = {
+    #   fsType = "tmpfs";
+    #   mountOptions = [
+    #     "size=6G"
+    #     "defaults"
+    #     "mode=755"
+    #   ];
+    # };
   };
 }
