@@ -65,11 +65,6 @@ in {
         port = 31638;
         bind = "127.0.0.1";
       };
-      # onlyoffice = {
-      #   enable = true;
-      #   hostname = "office.pve.elmurphy.com";
-      #   port = 7333;
-      # };
       nginx = mkIf cfg.nginx {
         enable = true;
         recommendedGzipSettings = true;
@@ -80,20 +75,7 @@ in {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
-          locations."/" = {
-            proxyPass = "http://127.0.0.1:80";
-            proxyWebsockets = true;
-          };
         };
-        # virtualHosts."${config.services.onlyoffice.hostname}"= {
-        #   enableACME = true;
-        #   addSSL = true;
-        #   acmeRoot = null;
-        #   locations."/" = {
-        #     proxyPass = "http://127.0.0.1:7333";
-        #     proxyWebsockets = true;
-        #   };
-        # };
       };
     };
 
