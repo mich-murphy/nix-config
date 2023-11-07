@@ -80,7 +80,8 @@
     roon-server.enable = true;
     komga.enable = true;
     freshrss.enable = true;
-    jellyfin.enable = true;
+    # jellyfin.enable = true;
+    plex.enable = true;
     audiobookshelf.enable = true;
     calibre-web.enable = true;
     wallabag.enable = true;
