@@ -19,12 +19,6 @@ in {
     networking.firewall = {
       trustedInterfaces = ["tailscale0"];
       allowedUDPPorts = [config.services.tailscale.port];
-      extraCommands = ''
-        iptables -A nixos-fw -p tcp --source 10.77.1.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p udp --source 10.77.1.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p tcp --source 10.77.2.0/24 -j nixos-fw-accept
-        iptables -A nixos-fw -p udp --source 10.77.2.0/24 -j nixos-fw-accept
-      '';
     };
   };
 }

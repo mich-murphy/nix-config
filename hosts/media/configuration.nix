@@ -29,7 +29,7 @@
         hashedPasswordFile = config.age.secrets.userPass.path;
         extraGroups = ["wheel" "media"];
         openssh.authorizedKeys.keys = [
-          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMne13aa88i97xAUqU33dk2FNz+w8OIMGi8LH4BCRFaN"
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVyN0R5mTtfcbkmVXjicuvSRotJY4IOuetOgPyG2lg8"
         ];
       };
     };
@@ -77,7 +77,6 @@
     acme.enable = true;
     nextcloud.enable = true;
     borgbackup.enable = true;
-    roon-server.enable = true;
     komga.enable = true;
     freshrss.enable = true;
     plex.enable = true;
