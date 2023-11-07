@@ -9,8 +9,8 @@ with lib; let
   audnexusPlugin = pkgs.stdenv.mkDerivation {
     name = "Audnexus.bundle";
     src = pkgs.fetchurl {
-      url = "https://github.com/djdembeck/Audnexus.bundle/archive/refs/tags/v1.1.0.zip";
-      sha256 = "sha256-i5ssEe7SFoQHFXvYiB0nG1mQrcA/wgSeYZiyYKDYtuQ=";
+      url = "https://github.com/djdembeck/Audnexus.bundle/archive/refs/tags/v1.3.1.zip";
+      sha256 = "";
     };
     buildInputs = [pkgs.unzip];
     installPhase = "mkdir -p $out; cp -R * $out/";
