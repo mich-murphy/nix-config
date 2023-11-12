@@ -18,7 +18,7 @@
     efiInstallAsRemovable = true;
   };
 
-  networking.hostName = "storage";
+  networking.hostName = "services";
   time.timeZone = "Australia/Melbourne";
   i18n.defaultLocale = "en_US.UTF-8";
   nixpkgs = {
@@ -55,7 +55,10 @@
   };
 
   common = {
-    roon-server.enable = true;
+    gitea = {
+      enable = false;
+      nginx = false;
+    };
     tailscale.enable = true;
   };
 

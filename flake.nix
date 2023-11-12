@@ -67,10 +67,10 @@
       ];
     };
 
-    nixosConfigurations.storage = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.services = nixpkgs.lib.nixosSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./hosts/storage/configuration.nix
+        ./hosts/services/configuration.nix
         agenix.nixosModules.default
         disko.nixosModules.disko
       ];
@@ -87,14 +87,14 @@
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.media;
         };
       };
-      storage = {
-        hostname = "storage";
+      services = {
+        hostname = "services";
         remoteBuild = true;
         profiles.system = {
           user = "root";
           sshUser = "mm";
           sshOpts = ["-o" "StrictHostKeyChecking=no"];
-          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.storage;
+          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.services;
         };
       };
     };

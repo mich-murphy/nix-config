@@ -20,5 +20,6 @@
     ./wallabag.nix
     ./arrs.nix
     ./gitea.nix
+    ./nginx.nix
   ];
 }

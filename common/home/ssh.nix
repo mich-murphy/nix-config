@@ -17,13 +17,15 @@ in {
         "media" = {
           hostname = "media";
           user = "mm";
+          serverAliveInterval = 600;
           setEnv = {
             "LC_ALL" = "C";
           };
         };
-        "storage" = {
-          hostname = "storage";
+        "services" = {
+          hostname = "services";
           user = "mm";
+          serverAliveInterval = 600;
           setEnv = {
             "LC_ALL" = "C";
           };
