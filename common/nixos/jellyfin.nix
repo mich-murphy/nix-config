@@ -66,9 +66,5 @@ in {
     };
 
     users.users.jellyfin.extraGroups = ["render" "media"];
-
-    # environment.persistence."/nix/persist".directories = [
-    #   "/var/lib/jellyfin"
-    # ];
   };
 }

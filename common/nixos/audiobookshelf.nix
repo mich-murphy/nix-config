@@ -37,5 +37,7 @@ in {
         };
       };
     };
+
+    users.users.audiobookshelf.extraGroups = ["media"];
   };
 }

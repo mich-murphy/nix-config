@@ -11,7 +11,6 @@
     ./tailscale.nix
     ./jellyfin.nix
     ./acme.nix
-    ./linkding.nix
     ./uptime-kuma.nix
     ./komga.nix
     ./roon-server.nix

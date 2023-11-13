@@ -148,5 +148,17 @@ in {
         };
       };
     };
+
+    users.users = {
+      sonarr = mkIf cfg.enableSonarr {
+        extraGroups = ["media"];
+      };
+      radarr = mkIf cfg.enableRadarr {
+        extraGroups = ["media"];
+      };
+      lidarr = mkIf cfg.enableLidarr {
+        extraGroups = ["media"];
+      };
+    };
   };
 }
