@@ -17,7 +17,6 @@
 
   networking.hostName = "media";
   time.timeZone = "Australia/Melbourne";
-  i18n.defaultLocale = "en_US.UTF-8";
 
   users = {
     groups.media = {};
@@ -64,12 +63,12 @@
   };
 
   fileSystems."/mnt/data" = {
-      device = "//10.77.2.102/data";
-      fsType = "cifs";
-      options = let
-        # this line prevents hanging on network split
-        automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
-      in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path}"];
+    device = "//10.77.2.102/data";
+    fsType = "cifs";
+    options = let
+      # this line prevents hanging on network split
+      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s";
+    in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path}"];
   };
 
   common = {
@@ -90,7 +89,6 @@
   };
 
   services = {
-    xserver.layout = "us";
     qemuGuest.enable = true;
     openssh = {
       enable = true;

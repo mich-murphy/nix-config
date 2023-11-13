@@ -21,25 +21,6 @@ in {
   };
 
   config = mkIf cfg.enable {
-    # virtualisation.oci-containers = {
-    #   backend = "docker";
-    #   containers."calibre-web" = {
-    #     autoStart = true;
-    #     image = "lscr.io/linuxserver/calibre-web:latest";
-    #     environment = {
-    #       PUID = "1000";
-    #       PGID = "1000";
-    #       TZ = "Australia/Melbourne";
-    #       DOCKER_MODS = "linuxserver/mods:universal-calibre";
-    #     };
-    #     ports = ["${toString cfg.port}:8083"];
-    #     volumes = [
-    #       "/var/lib/calibre-web:/config"
-    #       "/data/media/books:/books"
-    #     ];
-    #   };
-    # };
-
     services = {
       calibre-web = {
         enable = true;
