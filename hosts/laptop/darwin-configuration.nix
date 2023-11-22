@@ -63,6 +63,7 @@
       "nextcloud"
       "displaylink"
       "karabiner-elements"
+      "bartender"
     ];
   };
 
