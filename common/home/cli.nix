@@ -30,13 +30,31 @@ in {
           size = 10000;
         };
         autocd = true;
+        oh-my-zsh = {
+          enable = true;
+          plugins = [
+            "git"
+            "tmux"
+            "docker"
+            "python"
+            "pre-commit"
+          ];
+        };
         envExtra = ''
           # fzf
           export FZF_COMPLETION_DIR_COMMANDS="cd pushd rmdir tree ls"
         '';
         initExtra = ''
           export PATH="/opt/homebrew/bin:$PATH"
-          export CC="/opt/homebrew/bin/gcc-13"
+          export LESS="--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT \
+          --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4"
+
+          # limit zcompdump to once daily
+          autoload -Uz compinit
+          for dump in ~/.zcompdump(N.mh+24); do
+            compinit
+          done
+          compinit -C
 
           # navigation
           setopt AUTO_PUSHD
@@ -92,37 +110,25 @@ in {
               sha256 = "1h0vm2dgrmb8i2pvsgis3lshc5b0ad846836m62y8h3rdb3zmpy1";
             };
           }
+          {
+            name = "zsh-you-should-use";
+            file = "you-should-use.plugin.zsh";
+            src = pkgs.fetchFromGitHub {
+              owner = "MichaelAquilina";
+              repo = "zsh-you-should-use";
+              rev = "1f9cb008076d4f2011d5f814dfbcfbece94a99e0";
+              sha256 = "lKs6DhG3x/oRA5AxnRT+odCZFenpS86wPnPqxLonV2E=";
+            };
+          }
         ];
         shellAliases = {
+          # general
           ls = "eza -la";
           cat = "bat";
           vim = "nvim";
           rg = "batgrep";
           man = "batman";
           diff = "batdiff";
-          # git
-          g = "git";
-          gs = "g status";
-          ga = "g add";
-          gc = "g commit";
-          gp = "g push";
-          gpl = "g pull";
-          gb = "g branch";
-          gch = "g checkout";
-          gst = "g stash";
-          gl = "g log";
-          gd = "g diff";
-          # tmux
-          tm = "tmux";
-          tml = "tm list-sessions";
-          tma = "tm attach -t";
-          tmn = "tm new-session -s";
-          tmk = "tm kill-session -t";
-          tmka = "tm kill-session -a";
-          tp = "tmuxp";
-          tpl = "tp load";
-          tpf = "tp freeze";
-          tpls = "tp ls";
           # kitty
           ssh = "kitty +kitten ssh";
           # detect yabai windows in space - make sure to add space no. after alias
