@@ -129,6 +129,10 @@ in {
           rg = "batgrep";
           man = "batman";
           diff = "batdiff";
+          p = "less";
+          # git
+          gswr = "git switch-recent";
+          geu = "git edit-unmerged";
           # kitty
           ssh = "kitty +kitten ssh";
           # detect yabai windows in space - make sure to add space no. after alias
@@ -253,9 +257,7 @@ in {
       du-dust
       duf
       grex
-      delta
       procs
-      gh
     ];
   };
 }
