@@ -1,7 +1,7 @@
 name: "deploy-rs"
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths:
     - 'flake.lock'
     - 'flake.nix'
