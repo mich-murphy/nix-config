@@ -39,6 +39,10 @@ in {
             "python"
             "pre-commit"
           ];
+          extraConfig = ''
+            source ${pkgs.zsh-autopair}/share/zsh/zsh-autopair/autopair.zsh
+            autopair-init
+          '';
         };
         envExtra = ''
           # fzf
@@ -95,32 +99,12 @@ in {
           }
           source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
+          # show alias for future use
+          source ${pkgs.zsh-you-should-use}/share/zsh/plugins/you-should-use/you-should-use.plugin.zsh
+
           # direnv config
           eval "$(direnv hook zsh)"
         '';
-        plugins = [
-          {
-            # https://github.com/hlissner/zsh-autopair
-            name = "zsh-autopair";
-            file = "zsh-autopair.plugin.zsh";
-            src = pkgs.fetchFromGitHub {
-              owner = "hlissner";
-              repo = "zsh-autopair";
-              rev = "396c38a7468458ba29011f2ad4112e4fd35f78e6";
-              sha256 = "1h0vm2dgrmb8i2pvsgis3lshc5b0ad846836m62y8h3rdb3zmpy1";
-            };
-          }
-          {
-            name = "zsh-you-should-use";
-            file = "you-should-use.plugin.zsh";
-            src = pkgs.fetchFromGitHub {
-              owner = "MichaelAquilina";
-              repo = "zsh-you-should-use";
-              rev = "1f9cb008076d4f2011d5f814dfbcfbece94a99e0";
-              sha256 = "lKs6DhG3x/oRA5AxnRT+odCZFenpS86wPnPqxLonV2E=";
-            };
-          }
-        ];
         shellAliases = {
           # general
           ls = "eza -la";
@@ -154,7 +138,18 @@ in {
       bat = {
         enable = true;
         config = {
-          theme = "ansi";
+          theme = "tokyonight";
+        };
+        themes = {
+          tokyonight = {
+            src = (pkgs.fetchFromGitHub {
+              owner = "folke";
+              repo = "tokyonight.nvim";
+              rev = "v2.9.0";
+              sha256 = "NOKzXsY+DLNrykyy2Fr1eiSpYDiBIBNHL/7PPvbgbSo=";
+            } + "/extras/sublime");
+            file = "tokyonight_night.tmTheme";
+          };
         };
         extraPackages = with pkgs.bat-extras; [
           batgrep
