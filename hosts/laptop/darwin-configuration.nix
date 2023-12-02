@@ -64,6 +64,7 @@
       "displaylink"
       "karabiner-elements"
       "bartender"
+      "yubico-yubikey-manager"
     ];
   };
 
