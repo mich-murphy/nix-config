@@ -30,25 +30,25 @@ in {
           folders = {
             "Music" = {
               id = "mrpfh-btugj";
-              path = "/data/media/music";
+              path = "/mnt/data/media/music";
               devices = ["seedbox"];
               ignorePerms = true;
             };
             "Audiobooks" = {
               id = "mqh32-k7ykn";
-              path = "/data/media/audiobooks";
+              path = "/mnt/data/media/audiobooks";
               devices = ["seedbox"];
               ignorePerms = true;
             };
             "Movies" = {
               id = "naolq-r7zlm";
-              path = "/data/media/movies";
+              path = "/mnt/data/media/movies";
               devices = ["seedbox"];
               ignorePerms = true;
             };
             "TV" = {
               id = "hhqvi-jv4wy";
-              path = "/data/media/tv";
+              path = "/mnt/data/media/tv";
               devices = ["seedbox"];
               ignorePerms = true;
             };

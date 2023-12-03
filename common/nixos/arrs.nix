@@ -58,17 +58,18 @@ in {
         ports = ["5656:5656"];
         volumes = [
           "kapowarr-db:/app/db"
-          "/data/temp/kapowarr:/app/temp_downloads"
-          "/data/media/comics:/comics"
-          "/data/media/manga:/manga"
+          "/tmp/kapowarr:/app/temp_downloads"
+          "/mnt/data/media/comics:/comics"
+          "/mnt/data/media/manga:/manga"
         ];
       };
     };
     services = {
+      # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
       prowlarr.enable =
         if cfg.enableProwlarr
         then true
-        else false; # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
+        else false;
       nzbget = mkIf cfg.enableNzbget {
         # default user: nzbget, default pass: tegbzn6789
         enable = true;
@@ -146,18 +147,6 @@ in {
             proxyWebsockets = true;
           };
         };
-      };
-    };
-
-    users.users = {
-      sonarr = mkIf cfg.enableSonarr {
-        extraGroups = ["media"];
-      };
-      radarr = mkIf cfg.enableRadarr {
-        extraGroups = ["media"];
-      };
-      lidarr = mkIf cfg.enableLidarr {
-        extraGroups = ["media"];
       };
     };
   };

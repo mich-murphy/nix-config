@@ -14,8 +14,7 @@ in {
     services.borgbackup.jobs = {
       "media" = {
         paths = [
-          "/data/media/music"
-          "/data/backups/RoonBackups"
+          "/mnt/data/media/music"
         ];
         repo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
         encryption = {

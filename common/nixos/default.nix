@@ -13,9 +13,7 @@
     ./acme.nix
     ./uptime-kuma.nix
     ./komga.nix
-    ./roon-server.nix
     ./monitoring.nix
-    ./openvscode.nix
     ./wallabag.nix
     ./arrs.nix
     ./gitea.nix

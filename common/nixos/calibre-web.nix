@@ -26,7 +26,7 @@ in {
         enable = true;
         listen.ip = "127.0.0.1";
         options = {
-          calibreLibrary = "/data/media/books";
+          calibreLibrary = "/mnt/data/media/books";
           enableBookUploading = true;
         };
       };
