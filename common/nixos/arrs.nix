@@ -33,6 +33,11 @@ in {
       default = true;
       description = "Whether to enable lidarr";
     };
+    enableReadarr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable readarr";
+    };
     enableKapowarr = mkOption {
       type = types.bool;
       default = true;
@@ -87,6 +92,10 @@ in {
         enable = true;
         group = "media";
       };
+      readarr = mkIf cfg.enableReadarr {
+        enable = true;
+        group = "media";
+      };
       nginx = mkIf cfg.nginx {
         enable = true;
         recommendedGzipSettings = true;
@@ -135,6 +144,15 @@ in {
           acmeRoot = null;
           locations."/" = {
             proxyPass = "http://127.0.0.1:8686";
+            proxyWebsockets = true;
+          };
+        };
+        virtualHosts."readarr.pve.elmurphy.com" = mkIf cfg.enableLidarr {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:8787";
             proxyWebsockets = true;
           };
         };
