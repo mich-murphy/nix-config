@@ -48,6 +48,7 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
+        clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.
         virtualHosts."jellyfin.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
@@ -58,9 +59,6 @@ in {
             extraConfig = ''
               # Disable buffering when the nginx proxy gets very resource heavy upon streaming
               proxy_buffering off;
-              # The default (1M) might not be enough for some posters, etc.
-              client_max_body_size 20M;
-            '';
           };
         };
       };

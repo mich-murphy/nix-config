@@ -72,13 +72,11 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
+        clientMaxBodySize = "20m";
         virtualHosts."${config.services.nextcloud.hostName}" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
-          extraConfig = ''
-            client_max_body_size 20M;
-          '';
         };
       };
     };
