@@ -59,6 +59,7 @@ in {
             extraConfig = ''
               # Disable buffering when the nginx proxy gets very resource heavy upon streaming
               proxy_buffering off;
+            ''; 
           };
         };
       };
