@@ -51,7 +51,6 @@ in {
         ensureUsers = [
           {
             name = "nextcloud";
-            # ensurePermissions."DATABASE nextcloud" = "ALL PRIVILEGES";
             ensureDBOwnership = true;
           }
         ];
@@ -77,6 +76,9 @@ in {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
+          extraConfig = ''
+            client_max_body_size 20M;
+          '';
         };
       };
     };
