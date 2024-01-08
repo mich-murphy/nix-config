@@ -32,8 +32,8 @@ in {
         ports = ["${toString cfg.port}:80"];
         # https://github.com/wallabag/docker/issues/316#issuecomment-1465048886
         volumes = [
-          "/data/appdata/wallabag/data:/var/www/wallabag/data"
-          "/data/appdata/wallabag/images:/var/www/wallabag/web/assets/images"
+          "/mnt/data/appdata/wallabag/data:/var/www/wallabag/data"
+          "/mnt/data/appdata/wallabag/images:/var/www/wallabag/web/assets/images"
         ];
       };
     };
