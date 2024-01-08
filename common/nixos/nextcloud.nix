@@ -21,12 +21,16 @@ in {
       nextcloud = {
         enable = true;
         package = pkgs.nextcloud28;
+        extraApps = with config.services.nextcloud.package.packages.apps; {
+          inherit contacts calendar notes tasks;
+        };
         hostName = "nextcloud.pve.elmurphy.com";
         datadir = "/data/nextcloud";
         database.createLocally = true;
         autoUpdateApps.enable = true;
         https = true;
         caching.redis = true;
+        maxUploadSize = "1G";
         config = {
           dbtype = "pgsql";
           dbname = "nextcloud";
@@ -35,7 +39,7 @@ in {
           adminpassFile = config.age.secrets.nextcloudPass.path;
         };
         extraOptions = {
-          defaultPhoneRegion = "AU";
+          default_phone_region = "AU";
           redis = {
             host = "127.0.0.1";
             port = 31638;
@@ -44,9 +48,6 @@ in {
           };
         };
         phpOptions = {
-          upload_max_filesize = mkForce "16G";
-          post_max_size = mkForce "16G";
-          upload_tmp_dir = "/var/tmp/";
           output_buffering = "0";
           "opcache.interned_strings_buffer" = "12";
         };
@@ -82,9 +83,6 @@ in {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
-          # extraConfig = ''
-          #   client_max_body_size 10G;
-          # '';
         };
       };
     };
