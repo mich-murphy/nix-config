@@ -63,7 +63,7 @@ in {
         ports = ["5656:5656"];
         volumes = [
           "kapowarr-db:/app/db"
-          "/tmp/kapowarr:/app/temp_downloads"
+          "/mnt/data/downloads/temp:/app/temp_downloads"
           "/mnt/data/media/comics:/comics"
           "/mnt/data/media/manga:/manga"
         ];
