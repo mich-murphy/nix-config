@@ -35,7 +35,7 @@ in {
         };
         dump = {
           enable = true;
-          backupDir = "/data/backups/gitea";
+          backupDir = "/mnt/data/backups/gitea";
         };
         settings.server = {
           DOMAIN = "${cfg.domain}";
