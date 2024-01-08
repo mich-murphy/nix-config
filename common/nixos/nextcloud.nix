@@ -20,7 +20,7 @@ in {
     services = {
       nextcloud = {
         enable = true;
-        package = pkgs.nextcloud27;
+        package = pkgs.nextcloud28;
         hostName = "nextcloud.pve.elmurphy.com";
         datadir = "/data/nextcloud";
         database.createLocally = true;
@@ -33,9 +33,9 @@ in {
           dbuser = "nextcloud";
           adminuser = "admin";
           adminpassFile = config.age.secrets.nextcloudPass.path;
-          defaultPhoneRegion = "AU";
         };
         extraOptions = {
+          defaultPhoneRegion = "AU";
           redis = {
             host = "127.0.0.1";
             port = 31638;
@@ -43,7 +43,13 @@ in {
             timeout = 1.5;
           };
         };
-        phpOptions = {"opcache.interned_strings_buffer" = "12";};
+        phpOptions = {
+          upload_max_filesize = mkForce "16G";
+          post_max_size = mkForce "16G";
+          upload_tmp_dir = "/var/tmp/";
+          output_buffering = "0";
+          "opcache.interned_strings_buffer" = "12";
+        };
       };
       postgresql = {
         enable = true;
@@ -57,7 +63,7 @@ in {
       };
       postgresqlBackup = {
         enable = true;
-        location = "/data/backups/postgresql";
+        location = "/mnt/data/backups/postgresql";
         databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
       };
@@ -72,11 +78,13 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        clientMaxBodySize = "20m";
         virtualHosts."${config.services.nextcloud.hostName}" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
+          # extraConfig = ''
+          #   client_max_body_size 10G;
+          # '';
         };
       };
     };

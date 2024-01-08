@@ -55,7 +55,7 @@ in {
       };
       postgresqlBackup = {
         enable = true;
-        location = "/data/backups/postgresql";
+        location = "/mnt/data/backups/postgresql";
         databases = [config.services.gitea.database.name];
         startAt = "*-*-* 23:15:00";
       };

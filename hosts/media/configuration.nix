@@ -80,7 +80,6 @@
     komga.enable = true;
     freshrss.enable = true;
     plex.enable = true;
-    calibre-web.enable = true;
     wallabag.enable = true;
     gitea.enable = true;
     arrs = {
