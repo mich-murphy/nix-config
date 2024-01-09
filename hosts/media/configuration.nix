@@ -82,6 +82,7 @@
     plex.enable = true;
     wallabag.enable = true;
     gitea.enable = true;
+    firefox-sync.enable = true;
     arrs = {
       enable = true;
       enableKapowarr = false;
