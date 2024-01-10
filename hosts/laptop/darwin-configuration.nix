@@ -45,6 +45,7 @@
     };
     taps = [
       "homebrew/services"
+      "homebrew/cask-versions"
     ];
     brews = [
       "spotifyd"
@@ -58,7 +59,7 @@
       "1password"
       "stats"
       "obsidian"
-      "zotero"
+      "zotero-beta"
       "tailscale"
       "nextcloud"
       "displaylink"
