@@ -35,7 +35,7 @@ in {
         };
         dump = {
           enable = true;
-          backupDir = "/mnt/data/backups/gitea";
+          backupDir = "/data/backups/gitea";
         };
         settings.server = {
           DOMAIN = "${cfg.domain}";
@@ -55,7 +55,7 @@ in {
       };
       postgresqlBackup = {
         enable = true;
-        location = "/mnt/data/backups/postgresql";
+        location = "/data/backups/postgresql";
         databases = [config.services.gitea.database.name];
         startAt = "*-*-* 23:15:00";
       };

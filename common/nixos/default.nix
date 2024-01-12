@@ -18,5 +18,6 @@
     ./arrs.nix
     ./gitea.nix
     ./nginx.nix
+    ./ytdlp.nix
   ];
 }
