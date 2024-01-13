@@ -31,7 +31,16 @@ in {
         enable = true;
         extraPlugins = [audnexusPlugin];
       };
+      tautulli.enable = true;
       nginx = mkIf cfg.nginx {
+        virtualHosts."tautulli.pve.elmurphy.com" = mkIf config.services.tautulli.enable {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:8181";
+          };
+        };
         virtualHosts."plex.pve.elmurphy.com" = {
           enableACME = true;
           addSSL = true;
