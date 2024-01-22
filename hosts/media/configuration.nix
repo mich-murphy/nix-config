@@ -82,6 +82,7 @@
     plex.enable = true;
     wallabag.enable = true;
     gitea.enable = true;
+    ytdlp.enable = true;
     arrs = {
       enable = true;
       enableKapowarr = false;

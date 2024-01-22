@@ -64,7 +64,7 @@ in {
       };
       postgresqlBackup = {
         enable = true;
-        location = "/mnt/data/backups/postgresql";
+        location = "/data/backups/postgresql";
         databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
       };
