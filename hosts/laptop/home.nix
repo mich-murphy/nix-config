@@ -12,6 +12,8 @@
       mediainfo
       statix
       _1password
+      pipx
+      duckdb
     ];
     file = {
       # remove message when entering terminal
