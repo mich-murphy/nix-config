@@ -18,6 +18,16 @@ with lib; let
 in {
   options.common.plex = {
     enable = mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
+    enableOverseerr = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable Overseerr";
+    };
+    overseerrPort = mkOption {
+      type = types.port;
+      default = 5055;
+      description = "Port for Overseerr to be advertised on";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -26,6 +36,22 @@ in {
   };
 
   config = mkIf cfg.enable {
+    virtualisation.oci-containers = mkIf cfg.enableOverseerr {
+      backend = "docker";
+      containers."overseerr" = {
+        autoStart = true;
+        image = "sctx/overseerr:latest";
+        environment = {
+          LOG_LEVEL = "debug";
+          TZ = "Australia/Melbourne";
+        };
+        ports = ["${toString cfg.overseerrPort}:5055"];
+        volumes = [
+          "/var/lib/overseerr:/app/config"
+        ];
+        extraOptions = ["--network=host"];
+      };
+    };
     services = {
       plex = {
         enable = true;
@@ -33,6 +59,15 @@ in {
       };
       tautulli.enable = true;
       nginx = mkIf cfg.nginx {
+        virtualHosts."overseerr.pve.elmurphy.com" = mkIf cfg.enableOverseerr {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://127.0.0.1:${toString cfg.overseerrPort}";
+            proxyWebsockets = true;
+          };
+        };
         virtualHosts."tautulli.pve.elmurphy.com" = mkIf config.services.tautulli.enable {
           enableACME = true;
           addSSL = true;

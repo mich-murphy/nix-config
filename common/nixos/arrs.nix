@@ -56,10 +56,6 @@ in {
       containers."kapowarr" = {
         autoStart = true;
         image = "mrcas/kapowarr:latest";
-        environment = {
-          AUDIOBOOKSHELF_UID = "99";
-          AUDIOBOOKSHELF_GID = "100";
-        };
         ports = ["5656:5656"];
         volumes = [
           "kapowarr-db:/app/db"

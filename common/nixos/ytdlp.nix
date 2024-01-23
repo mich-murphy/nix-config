@@ -35,8 +35,6 @@ in {
         volumes = [
           "/var/lib/ytdlp-sub:/config"
           "/mnt/data/media/youtube:/tv_shows"
-          # "/mnt/data/media/movies:/movies"
-          # "/mnt/data/media/music:/music"
         ];
       };
     };
