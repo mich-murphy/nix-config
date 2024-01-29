@@ -15,6 +15,19 @@ in {
       "media" = {
         paths = [
           "/mnt/data/media/music"
+          "/var/lib/audiobookshelf"
+          "/var/lib/freshrss"
+          "/var/lib/gitea"
+          "/var/lib/jellyfin"
+          "/var/lib/komga"
+          "/var/lib/lidarr"
+          "/var/lib/nzbget"
+          "/var/lib/prowlarr"
+          "/var/lib/radarr"
+          "/var/lib/readarr"
+          "/var/lib/sonarr"
+          "/var/lib/wallabag"
+          "/var/lib/ytdlp-sub/ytdl-sub-configs"
         ];
         repo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
         encryption = {
@@ -22,7 +35,7 @@ in {
           passCommand = "cat ${config.age.secrets.mediaBorgPass.path}";
         };
         compression = "auto,lzma";
-        startAt = "hourly";
+        startAt = "daily";
         prune.keep = {
           within = "1d";
           daily = 7;
