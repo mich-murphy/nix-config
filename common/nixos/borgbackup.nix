@@ -14,7 +14,6 @@ in {
     services.borgbackup.jobs = {
       "media" = {
         paths = [
-          "/mnt/data/media/music"
           "/var/lib/audiobookshelf"
           "/var/lib/freshrss"
           "/var/lib/gitea"
