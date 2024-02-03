@@ -1,7 +1,7 @@
 name: "macos-build"
 on:
   push:
-    branches: [ main ]
+    branches: [ dev ]
     paths:
     - 'flake.lock'
     - 'flake.nix'
