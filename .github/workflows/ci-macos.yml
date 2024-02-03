@@ -25,4 +25,4 @@ jobs:
       uses: DeterminateSystems/magic-nix-cache-action@main
     - name: Check Build Completes Successfully
       run: |
-        nix run nix-darwin -- switch --flake .
+        nix run nix-darwin -- switch --flake .#macbook
