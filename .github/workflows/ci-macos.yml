@@ -25,5 +25,6 @@ jobs:
       uses: DeterminateSystems/magic-nix-cache-action@main
     - name: Check Build Completes Successfully
       run: |
-        sudo rm -rf /etc/zshenv
+        cp /etc/nix/nix.conf ~/.config/nix/nix.conf
+        sudo rm -rf /etc/zshenv /etc/nix/nix.conf
         nix run nix-darwin -- switch --flake .#macbook
