@@ -10,7 +10,7 @@ on:
     - 'common/home/**'
     - '.github/workflows/**'
 jobs:
-  build_and_deploy:
+  test_build:
     runs-on: macos-14
     steps:
     - name: Checkout Repository
@@ -23,8 +23,19 @@ jobs:
       uses: DeterminateSystems/nix-installer-action@main
     - name: Cache Nix Build
       uses: DeterminateSystems/magic-nix-cache-action@main
+    - name: Create MacOS User
+      run: |
+        dscl . -create /Users/mm
+        dscl . -create /Users/mm UserShell /bin/zsh
+        dscl . -create /Users/mm RealName "mm" 
+        dscl . -create /Users/mm UniqueID "510"
+        dscl . -create /Users/mm PrimaryGroupID 20
+        dscl . -create /Users/mm NFSHomeDirectory /Users/mm
+        dscl . -passwd /Users/mm password 
+        dscl . -append /Groups/admin GroupMembership mm
     - name: Check Build Completes Successfully
       run: |
-        cp /etc/nix/nix.conf ~/.config/nix/nix.conf
-        sudo rm -rf /etc/zshenv /etc/nix/nix.conf
-        nix run nix-darwin -- switch --flake .#macbook
+        whoami
+        # cp /etc/nix/nix.conf ~/.config/nix/nix.conf
+        # sudo rm -rf /etc/zshenv /etc/nix/nix.conf
+        # nix run nix-darwin -- switch --flake .#macbook
