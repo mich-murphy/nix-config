@@ -31,11 +31,10 @@ jobs:
         dscl . -create /Users/mm UniqueID "510"
         dscl . -create /Users/mm PrimaryGroupID 20
         dscl . -create /Users/mm NFSHomeDirectory /Users/mm
-        dscl . -passwd /Users/mm password 
-        dscl . -append /Groups/admin GroupMembership mm
+        # dscl . -passwd /Users/mm password 
     - name: Check Build Completes Successfully
       run: |
         whoami
-        # cp /etc/nix/nix.conf ~/.config/nix/nix.conf
-        # sudo rm -rf /etc/zshenv /etc/nix/nix.conf
-        # nix run nix-darwin -- switch --flake .#macbook
+        cp /etc/nix/nix.conf ~/.config/nix/nix.conf
+        sudo rm -rf /etc/zshenv /etc/nix/nix.conf
+        nix run nix-darwin -- switch --flake .#macbook
