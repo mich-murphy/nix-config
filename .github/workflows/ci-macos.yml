@@ -1,0 +1,35 @@
+name: "test-macos-build"
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+    - 'main'
+    paths:
+    - 'flake.lock'
+    - 'flake.nix'
+    - 'hosts/laptop/**'
+    - 'common/darwin/**'
+    - 'common/home/**'
+    - '.github/workflows/**'
+jobs:
+  test_build:
+    runs-on: macos-14
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Check Nix Flake Inputs
+      uses: DeterminateSystems/flake-checker-action@main
+      with:
+        send-statistics: false
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@main
+    - name: Cache Nix Build
+      uses: DeterminateSystems/magic-nix-cache-action@main
+    - name: Check Successful Build
+      run: |
+        cp /etc/nix/nix.conf ~/.config/nix/nix.conf
+        sudo rm -rf /etc/zshenv /etc/nix/nix.conf
+        sed -i '' -E 's "mm "runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
+        sed -i '' -E 's \/mm \/runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
+        sed -i '' -E 's users\.mm users\.runner g' flake.nix
+        nix run nix-darwin -- switch --flake .#macbook

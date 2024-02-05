@@ -142,12 +142,14 @@ in {
         };
         themes = {
           tokyonight = {
-            src = (pkgs.fetchFromGitHub {
-              owner = "folke";
-              repo = "tokyonight.nvim";
-              rev = "v2.9.0";
-              sha256 = "NOKzXsY+DLNrykyy2Fr1eiSpYDiBIBNHL/7PPvbgbSo=";
-            } + "/extras/sublime");
+            src =
+              pkgs.fetchFromGitHub {
+                owner = "folke";
+                repo = "tokyonight.nvim";
+                rev = "v2.9.0";
+                sha256 = "NOKzXsY+DLNrykyy2Fr1eiSpYDiBIBNHL/7PPvbgbSo=";
+              }
+              + "/extras/sublime";
             file = "tokyonight_night.tmTheme";
           };
         };
@@ -237,6 +239,12 @@ in {
           vim_keys = true;
         };
       };
+      zellij = {
+        enable = true;
+        settings = {
+          theme = "tokyo-night";
+        };
+      };
       taskwarrior = {
         enable = true;
         colorTheme = "dark-gray-blue-256";
@@ -253,6 +261,7 @@ in {
       duf
       grex
       procs
+      act
     ];
   };
 }
