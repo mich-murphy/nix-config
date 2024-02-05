@@ -23,7 +23,7 @@ jobs:
       uses: DeterminateSystems/nix-installer-action@main
     - name: Cache Nix Build
       uses: DeterminateSystems/magic-nix-cache-action@main
-    - name: Check Build Completes Successfully
+    - name: Check Successful Build
       run: |
         cp /etc/nix/nix.conf ~/.config/nix/nix.conf
         sudo rm -rf /etc/zshenv /etc/nix/nix.conf
