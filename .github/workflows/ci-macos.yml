@@ -25,7 +25,7 @@ jobs:
       uses: DeterminateSystems/magic-nix-cache-action@main
     - name: Check Build Completes Successfully
       run: |
-        pwd
+        ls -lah
         cp /etc/nix/nix.conf ~/.config/nix/nix.conf
         sudo rm -rf /etc/zshenv /etc/nix/nix.conf
         sed -i '' -E 's "mm "runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
