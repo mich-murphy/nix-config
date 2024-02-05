@@ -36,6 +36,16 @@
   };
 
   xdg.configFile = {
+    # allow unfree packages via CLI
+    "nixpkgs/config.nix" = {
+      enable = true;
+      target = "nixpkgs/config.nix";
+      text = ''
+        {
+          allowUnfree = true;
+        }
+      '';
+    };
     "karabiner" = {
       enable = true;
       recursive = true;
