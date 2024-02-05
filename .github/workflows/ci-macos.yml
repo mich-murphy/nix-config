@@ -31,4 +31,5 @@ jobs:
         sed -i '' -E 's "mm "runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
         sed -i '' -E 's \/mm \/runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
         sed -i '' -E 's home-managers.users.mm home-manager.users.runner g' flake.nix
+        git add .
         nix run nix-darwin -- switch --flake .#macbook
