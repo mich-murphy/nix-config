@@ -1,7 +1,9 @@
-name: "macos-build"
+name: "test-macos-build"
 on:
-  push:
-    branches: [ dev ]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+    - 'main'
     paths:
     - 'flake.lock'
     - 'flake.nix'
