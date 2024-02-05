@@ -27,6 +27,7 @@ jobs:
       run: |
         sed -i '' -E 's "mm "runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
         sed -i '' -E 's \/mm \/runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
+        sed -i '' -E 's home-managers.users.mm home-manager.users.runner g' flake.nix
     - name: Check Build Completes Successfully
       run: |
         cp /etc/nix/nix.conf ~/.config/nix/nix.conf
