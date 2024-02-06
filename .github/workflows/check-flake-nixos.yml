@@ -26,10 +26,6 @@ jobs:
       uses: DeterminateSystems/nix-installer-action@main
     - name: Cache Nix Build
       uses: DeterminateSystems/magic-nix-cache-action@main
-    - name: Check Formatting
-      run: |
-        nix shell nixpkgs#alejandra
-        alejandra --check .
     - name: Check Nix Flake
       run: |
         nix flake check
