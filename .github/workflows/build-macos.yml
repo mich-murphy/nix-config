@@ -1,4 +1,4 @@
-name: "test-macos-build"
+name: "test-build-macos"
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -10,7 +10,7 @@ on:
     - 'hosts/laptop/**'
     - 'common/darwin/**'
     - 'common/home/**'
-    - '.github/workflows/**'
+    - '.github/workflows/build-macos'
 jobs:
   test_build:
     runs-on: macos-14

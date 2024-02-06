@@ -42,7 +42,6 @@
     ...
   } @ inputs: {
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
-
       specialArgs = {inherit inputs;};
       modules = [
         ./hosts/laptop/darwin-configuration.nix

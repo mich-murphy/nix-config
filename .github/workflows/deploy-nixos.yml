@@ -1,4 +1,4 @@
-name: "deploy-rs"
+name: "deploy-flake"
 on:
   push:
     branches: [ main ]
