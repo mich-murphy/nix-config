@@ -13,7 +13,7 @@ on:
     - 'common/nixos/**'
     - '.github/workflows/build-nixos'
 jobs:
-  test_build:
+  build_nixos:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
