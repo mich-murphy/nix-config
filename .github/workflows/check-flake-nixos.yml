@@ -1,5 +1,5 @@
 # TODO: Confirm build completes successfully within github runner
-name: "test-build-nixos"
+name: "check-flake-nixos"
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
@@ -13,7 +13,7 @@ on:
     - 'common/nixos/**'
     - '.github/workflows/build-nixos'
 jobs:
-  build_nixos:
+  check_flake:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -26,6 +26,6 @@ jobs:
       uses: DeterminateSystems/nix-installer-action@main
     - name: Cache Nix Build
       uses: DeterminateSystems/magic-nix-cache-action@main
-    - name: Deploy Nix Flake
+    - name: Check Nix Flake
       run: |
-        nix build .#media
+        nix flake check
