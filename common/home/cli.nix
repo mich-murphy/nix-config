@@ -243,6 +243,7 @@ in {
         enable = true;
         settings = {
           theme = "tokyo-night";
+          pane_frames = false;
         };
       };
       taskwarrior = {
