@@ -8,7 +8,8 @@ on:
     - 'hosts/media/**'
     - 'secrets/**'
     - 'common/nixos/**'
-    - '.github/workflows/**'
+    - '.github/workflows/build-nixos.yml'
+    - '.github/workflows/deploy-nixos.yml'
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
