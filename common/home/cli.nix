@@ -241,19 +241,6 @@ in {
       };
       zellij = {
         enable = true;
-        # settings = {
-        #   theme = "tokyo-night-dark";
-        #   pane_frames = false;
-        #   keybinds = {
-        #     unbind = "Ctrl t";
-        #     tab = {
-        #       bind = "Ctrl w" // "{ SwitchToMode = Normal; }";
-        #     };
-        #     "shared_except \"tab\" \"locked\"" = {
-        #       bind = "Ctrl w { SwitchToMode = Tab; }";
-        #     };
-        #   };
-        # };
       };
       taskwarrior = {
         enable = true;
