@@ -241,10 +241,19 @@ in {
       };
       zellij = {
         enable = true;
-        settings = {
-          theme = "tokyo-night";
-          pane_frames = false;
-        };
+        # settings = {
+        #   theme = "tokyo-night-dark";
+        #   pane_frames = false;
+        #   keybinds = {
+        #     unbind = "Ctrl t";
+        #     tab = {
+        #       bind = "Ctrl w" // "{ SwitchToMode = Normal; }";
+        #     };
+        #     "shared_except \"tab\" \"locked\"" = {
+        #       bind = "Ctrl w { SwitchToMode = Tab; }";
+        #     };
+        #   };
+        # };
       };
       taskwarrior = {
         enable = true;
@@ -264,5 +273,33 @@ in {
       procs
       act
     ];
+
+
+    xdg.configFile = mkIf config.programs.zellij.enable {
+      "zellij/config.kdl" = {
+        enable = true;
+        target = "zellij/config.kdl";
+        text = ''
+          keybinds {
+            unbind "Ctrl t"
+            unbind "Ctrl h"
+            tab {
+              bind "Ctrl w" { SwitchToMode "Normal"; }
+            }
+            move {
+              bind "Ctrl e" { SwitchToMode "Normal"; }
+            }
+            shared_except "tab" "locked" {
+              bind "Ctrl w" { SwitchToMode "Tab"; }
+            }
+            shared_except "move" "locked" {
+              bind "Ctrl e" { SwitchToMode "Move"; }
+            }
+          }
+          pane_frames false
+          theme "tokyo-night-dark"
+        '';
+      };
+    };
   };
 }
