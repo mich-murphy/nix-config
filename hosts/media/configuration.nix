@@ -80,7 +80,6 @@
     komga.enable = true;
     freshrss.enable = true;
     plex.enable = true;
-    audiobookshelf.enable = true;
     wallabag.enable = true;
     gitea.enable = true;
     ytdlp.enable = true;
