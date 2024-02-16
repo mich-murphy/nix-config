@@ -9,6 +9,11 @@ with lib; let
 in {
   options.common.nextcloud = {
     enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
+    domain = mkOption {
+      type = types.str;
+      default = "nextcloud.pve.elmurphy.com";
+      description = "Hostname for Nextcloud service";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -24,9 +29,10 @@ in {
         extraApps = with config.services.nextcloud.package.packages.apps; {
           inherit contacts calendar notes tasks;
         };
-        hostName = "nextcloud.pve.elmurphy.com";
+        hostName = cfg.domain;
         datadir = "/data/nextcloud";
         database.createLocally = true;
+        appstoreEnable = true;
         autoUpdateApps.enable = true;
         https = true;
         caching.redis = true;
@@ -38,7 +44,7 @@ in {
           adminuser = "admin";
           adminpassFile = config.age.secrets.nextcloudPass.path;
         };
-        extraOptions = {
+        settings = {
           default_phone_region = "AU";
           redis = {
             host = "127.0.0.1";
@@ -79,7 +85,7 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."${config.services.nextcloud.hostName}" = {
+        virtualHosts."${cfg.domain}" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
