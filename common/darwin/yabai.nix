@@ -8,11 +8,11 @@
 with lib; let
   cfg = config.common.yabai;
   # nix-prefetch-url --unpack $YOUR_URL
-  yabai = pkgs.yabai.overrideAttrs (finalAttrs: {
-    version = "6.0.7";
+  yabai = pkgs.yabai.overrideAttrs (finalAttrs: previousAttrs: {
+    version = "6.0.12";
     src = builtins.fetchTarball {
       url = "https://github.com/koekeishiya/yabai/releases/download/v${finalAttrs.version}/yabai-v${finalAttrs.version}.tar.gz";
-      sha256 = "0wc00gx3axn2qaprcc1kvhn05wkpfjyn5j0fnyp8hgm71alc8b4f";
+      sha256 = "17s3gfiwqyllyb5l8ly2q1751nspacfs5a1lqbnbn29jbrb186zs";
     };
   });
 in {
@@ -45,8 +45,6 @@ in {
             # RULES
             # Some of these guys are hidden and supper irritating to find.
             # Use `yabai -m query --windows --space <int>`
-            # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
-            # sudo yabai --load-sa
             yabai -m rule --add app='^Finder$' manage=off
             yabai -m rule --add app='^System Settings$' manage=off
             yabai -m rule --add app='^App Store$' manage=off
@@ -60,11 +58,16 @@ in {
             yabai -m rule --add app='Stats' manage=off
             yabai -m rule --add app='1Password' manage=off
             yabai -m rule --add app='Raycast' manage=off
+            yabai -m config --space 5 layout float
+
+            # SCRIPTING
+            # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
+            # sudo yabai --load-sa
+
             # yabai -m rule --add app='kitty' space=^1
             # yabai -m rule --add app='Firefox' space=^2
             # yabai -m rule --add app='Mail' space=3
             # yabai -m rule --add app='Messages' space=4
-            yabai -m config --space 5 layout float
           '';
         };
       };
@@ -92,10 +95,11 @@ in {
           alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
 
           # Focus Window
-          alt - k : yabai -m window --focus north || yabai -m display --focus north
-          alt - j : yabai -m window --focus south || yabai -m display --focus south
-          alt - h : yabai -m window --focus west || yabai -m display --focus west
-          alt - l : yabai -m window --focus east || yabai -m display --focus east
+          # Removing due to clash with Zellij
+          # alt - k : yabai -m window --focus north || yabai -m display --focus north
+          # alt - j : yabai -m window --focus south || yabai -m display --focus south
+          # alt - h : yabai -m window --focus west || yabai -m display --focus west
+          # alt - l : yabai -m window --focus east || yabai -m display --focus east
 
           # Swap Window
           shift + alt - k : yabai -m window --swap north || yabai -m window --display north

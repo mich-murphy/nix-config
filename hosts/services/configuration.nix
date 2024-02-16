@@ -63,7 +63,7 @@
   };
 
   services = {
-    xserver.layout = "us";
+    xserver.xkb.layout = "us";
     qemuGuest.enable = true;
     openssh = {
       enable = true;

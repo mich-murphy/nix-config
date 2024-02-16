@@ -118,7 +118,7 @@ in {
           gswr = "git switch-recent";
           geu = "git edit-unmerged";
           # kitty
-          ssh = "kitty +kitten ssh";
+          # ssh = "kitty +kitten ssh";
           # detect yabai windows in space - make sure to add space no. after alias
           ybw = "yabai -m query --windows --space";
           # nix
@@ -128,6 +128,7 @@ in {
           nph = "nix profile history --profile /nix/var/nix/profiles/system";
           ndh = "sudo nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 7d";
           ngc = "nix store gc";
+          zl = "zellij";
         };
       };
       direnv = {
@@ -242,10 +243,6 @@ in {
       zellij = {
         enable = true;
       };
-      taskwarrior = {
-        enable = true;
-        colorTheme = "dark-gray-blue-256";
-      };
     };
 
     home.packages = with pkgs; [
@@ -268,19 +265,12 @@ in {
         target = "zellij/config.kdl";
         text = ''
           keybinds {
-            unbind "Ctrl t"
-            unbind "Ctrl h"
-            tab {
-              bind "Ctrl w" { SwitchToMode "Normal"; }
-            }
-            move {
-              bind "Ctrl e" { SwitchToMode "Normal"; }
-            }
-            shared_except "tab" "locked" {
-              bind "Ctrl w" { SwitchToMode "Tab"; }
-            }
-            shared_except "move" "locked" {
-              bind "Ctrl e" { SwitchToMode "Move"; }
+            shared_except {
+              bind "Alt h" { MoveFocusOrTab "Left"; }
+              bind "Alt j" { MoveFocusOrTab "Down"; }
+              bind "Alt k" { MoveFocusOrTab "Up"; }
+              bind "Alt l" { MoveFocusOrTab "Right"; }
+              bind "Alt w" { ToggleFloatingPanes; SwitchToMode "Normal"; }
             }
           }
           pane_frames false
