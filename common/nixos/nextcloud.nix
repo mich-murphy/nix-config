@@ -25,18 +25,19 @@ in {
     services = {
       nextcloud = {
         enable = true;
+        hostName = cfg.domain;
         package = pkgs.nextcloud28;
+        datadir = "/data/nextcloud";
+        database.createLocally = true;
+        configureRedis = true;
+        https = true;
+        maxUploadSize = "1G";
+        # appstoreEnable = true;
+        autoUpdateApps.enable = true;
         extraApps = with config.services.nextcloud.package.packages.apps; {
           inherit contacts calendar notes tasks;
         };
-        hostName = cfg.domain;
-        datadir = "/data/nextcloud";
-        database.createLocally = true;
-        appstoreEnable = true;
-        autoUpdateApps.enable = true;
-        https = true;
-        caching.redis = true;
-        maxUploadSize = "1G";
+        settings.default_phone_region = "AU";
         config = {
           dbtype = "pgsql";
           dbname = "nextcloud";
@@ -44,40 +45,16 @@ in {
           adminuser = "admin";
           adminpassFile = config.age.secrets.nextcloudPass.path;
         };
-        settings = {
-          default_phone_region = "AU";
-          redis = {
-            host = "127.0.0.1";
-            port = 31638;
-            dbindex = 0;
-            timeout = 1.5;
-          };
-        };
         phpOptions = {
           output_buffering = "0";
           "opcache.interned_strings_buffer" = "12";
         };
-      };
-      postgresql = {
-        enable = true;
-        ensureDatabases = ["nextcloud"];
-        ensureUsers = [
-          {
-            name = "nextcloud";
-            ensureDBOwnership = true;
-          }
-        ];
       };
       postgresqlBackup = {
         enable = true;
         location = "/data/backups/postgresql";
         databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
-      };
-      redis.servers.nextcloud = {
-        enable = true;
-        port = 31638;
-        bind = "127.0.0.1";
       };
       nginx = mkIf cfg.nginx {
         enable = true;
@@ -90,13 +67,6 @@ in {
           addSSL = true;
           acmeRoot = null;
         };
-      };
-    };
-
-    systemd = {
-      services."nextcloud-setup" = {
-        requires = ["postgresql.service"];
-        after = ["postgresql.service"];
       };
     };
 
