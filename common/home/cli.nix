@@ -265,12 +265,19 @@ in {
         target = "zellij/config.kdl";
         text = ''
           keybinds {
+            unbind "Ctrl t"
+            tab {
+              bind "Ctrl w" { SwitchToMode "Normal"; }
+            }
             shared_except {
               bind "Alt h" { MoveFocusOrTab "Left"; }
               bind "Alt j" { MoveFocusOrTab "Down"; }
               bind "Alt k" { MoveFocusOrTab "Up"; }
               bind "Alt l" { MoveFocusOrTab "Right"; }
               bind "Alt w" { ToggleFloatingPanes; SwitchToMode "Normal"; }
+            }
+            shared_except "tab" "locked" {
+              bind "Ctrl w" { SwitchToMode "Tab"; }
             }
           }
           pane_frames false
