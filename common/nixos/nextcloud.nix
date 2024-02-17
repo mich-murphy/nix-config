@@ -37,7 +37,10 @@ in {
         extraApps = with config.services.nextcloud.package.packages.apps; {
           inherit contacts calendar notes tasks;
         };
-        settings.default_phone_region = "AU";
+        settings = {
+          default_phone_region = "AU";
+          maintenance_window_start = 2;
+        };
         config = {
           dbtype = "pgsql";
           dbname = "nextcloud";
