@@ -44,7 +44,7 @@ in {
       };
       "nextcloud" = {
         paths = [
-          "/data/backups/postgresql/nextcloud*"
+          "/data/backups/postgresql/nextcloud.sql.gz"
           "/data/nextcloud"
         ];
         repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
