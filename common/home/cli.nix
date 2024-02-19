@@ -255,7 +255,7 @@ in {
       duf
       grex
       procs
-      act
+      ouch
     ];
 
 
