@@ -17,7 +17,6 @@ in {
         "media" = {
           hostname = "media";
           user = "mm";
-          forwardAgent = true;
           serverAliveInterval = 600;
           setEnv = {
             "LC_ALL" = "C";
