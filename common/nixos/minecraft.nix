@@ -16,18 +16,18 @@ in {
       minecraft-server = {
         enable = true;
         eula = true;
+        dataDir = "/data/minecraft";
         declarative = true;
         serverProperties = {
           server-port = 25565;
           gamemode = "survival";
           motd = "NixOS Minecraft Server";
           max-players = 2;
-          enable-rcon = true;
           level-seed = "10292758";
         };
       };
     };
 
-    environment.systemPackages = with pkgs; [fabric-installer];
+    environment.systemPackages = with pkgs; [fabric-installer jdk];
   };
 }
