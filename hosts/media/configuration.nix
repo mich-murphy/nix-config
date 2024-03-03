@@ -84,6 +84,7 @@
     wallabag.enable = true;
     gitea.enable = true;
     ytdlp.enable = true;
+    minecraft.enable = true;
     arrs = {
       enable = true;
       enableKapowarr = false;

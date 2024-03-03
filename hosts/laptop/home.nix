@@ -21,6 +21,11 @@
         enable = true;
         text = "";
       };
+      ".hammerspoon" = {
+        enable = true;
+        recursive = true;
+        source = ./hammerspoon;
+      };
     };
   };
 

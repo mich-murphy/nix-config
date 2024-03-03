@@ -19,5 +19,6 @@
     ./gitea.nix
     ./nginx.nix
     ./ytdlp.nix
+    ./minecraft.nix
   ];
 }
