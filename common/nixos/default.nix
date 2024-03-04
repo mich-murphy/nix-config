@@ -20,5 +20,6 @@
     ./nginx.nix
     ./ytdlp.nix
     ./minecraft.nix
+    ./murmur.nix
   ];
 }

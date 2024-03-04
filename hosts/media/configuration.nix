@@ -85,6 +85,7 @@
     gitea.enable = true;
     ytdlp.enable = true;
     minecraft.enable = true;
+    murmur.enable = true;
     arrs = {
       enable = true;
       enableKapowarr = false;

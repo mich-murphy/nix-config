@@ -16,7 +16,6 @@ in {
       minecraft-server = {
         enable = true;
         eula = true;
-        dataDir = "/data/minecraft";
         declarative = true;
         serverProperties = {
           server-port = 25565;
@@ -27,7 +26,5 @@ in {
         };
       };
     };
-
-    environment.systemPackages = with pkgs; [fabric-installer jdk];
   };
 }

@@ -12,4 +12,5 @@ in {
   "freshrssPass.age".publicKeys = servers;
   "giteaDbPass.age".publicKeys = servers;
   "sambaPass.age".publicKeys = servers;
+  "murmurPass.age".publicKeys = servers;
 }
