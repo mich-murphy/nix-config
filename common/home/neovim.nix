@@ -29,7 +29,6 @@ in {
         cargo
         alejandra
         nixd
-        gnused
       ];
       extraPython3Packages = py:
         with py; [

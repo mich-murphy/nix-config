@@ -50,6 +50,7 @@
     brews = [
       "spotifyd"
       "spotify-tui"
+      "gnu-sed"
     ];
     casks = [
       "firefox"
