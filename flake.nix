@@ -24,6 +24,8 @@
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
 
     impermanence.url = "github:nix-community/impermanence";
+
+    nix-minecraft.url = "github:Infinidoge/nix-minecraft";
   };
 
   outputs = {
@@ -37,6 +39,7 @@
     agenix,
     deploy-rs,
     impermanence,
+    nix-minecraft,
     ...
   } @ inputs: {
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
@@ -62,6 +65,11 @@
       modules = [
         ./hosts/media/configuration.nix
         agenix.nixosModules.default
+        {
+          nixpkgs.overlays = [
+            nix-minecraft.overlay
+          ];
+        }
       ];
     };
 
