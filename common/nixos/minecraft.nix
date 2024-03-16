@@ -29,10 +29,11 @@ in {
           package = pkgs.fabricServers.${serverVersion};
           serverProperties = {
             server-port = 25565;
-            gamemode = "survival";
+            gamemode = "peaceful";
             motd = "NixOS Cobblemon";
             max-players = 2;
             level-seed = "10292758";
+            spawn-monsters = false;
           };
           symlinks = {
             mods = pkgs.linkFarmFromDrvs "mods" (builtins.attrValues {
