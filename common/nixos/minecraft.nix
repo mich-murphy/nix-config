@@ -29,7 +29,9 @@ in {
           package = pkgs.fabricServers.${serverVersion};
           serverProperties = {
             server-port = 25565;
-            gamemode = "peaceful";
+            gamemode = "survival";
+            difficulty = "peaceful";
+            pvp = false;
             motd = "NixOS Cobblemon";
             max-players = 2;
             level-seed = "10292758";
