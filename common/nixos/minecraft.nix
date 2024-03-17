@@ -24,7 +24,7 @@ in {
       minecraft-servers = {
         enable = true;
         eula = true;
-        servers.cobblemon = {
+        servers.pokemon = {
           enable = true;
           package = pkgs.fabricServers.${serverVersion};
           serverProperties = {
@@ -33,8 +33,10 @@ in {
             difficulty = "peaceful";
             pvp = false;
             motd = "NixOS Cobblemon";
+            gamemode = "peaceful";
+            motd = "Pokemon Minecraft";
             max-players = 2;
-            level-seed = "10292758";
+            level-seed = "882427838104948496";
             spawn-monsters = false;
           };
           symlinks = {
@@ -46,6 +48,14 @@ in {
               Cobblemon = pkgs.fetchurl {
                 url = "https://cdn.modrinth.com/data/MdwFAVRL/versions/uWAkNUxZ/Cobblemon-fabric-1.4.1%2B1.20.1.jar";
                 sha512 = "6955c8ad187d727cbfc51761312258600c5480878983cfe710623070c90eb437e419c140ff3c77e5066164876ecfe1e31b87f58f5ef175f0758efcff246b85a8";
+              };
+              Terralith = pkgs.fetchurl {
+                url = "https://cdn.modrinth.com/data/8oi3bsk5/versions/FgvUosFH/Terralith_1.20.4_v2.4.11.jar";
+                sha512 = "b6bd6e71666dd57e1db19fe7cad85a9e0d9a13a9c6fa839c4e9cb149b12cf855f8f1676c4bc4d9647f1ba32a7a4f40d3f7090de3c5ddd569950c408b8cfd9128";
+              };
+              Waystones = pkgs.fetchurl {
+                url = "https://cdn.modrinth.com/data/LOpKHB2A/versions/36jYwMdH/waystones-fabric-1.20-14.1.3.jar";
+                sha512 = "e89524a4ff449b4fcc8c4ee1538e060545d813160de77a700e7bd9ff4f1fb6cdda83828d29a8efdeb34bf12ce628d5ccc56c8e69e5b2ee5daff91462dfd1d929";
               };
             });
           };
