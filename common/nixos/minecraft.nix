@@ -24,7 +24,7 @@ in {
       minecraft-servers = {
         enable = true;
         eula = true;
-        servers.cobblemon = {
+        servers.pokemon = {
           enable = true;
           package = pkgs.fabricServers.${serverVersion};
           serverProperties = {
@@ -32,7 +32,7 @@ in {
             gamemode = "survival";
             difficulty = "peaceful";
             pvp = false;
-            motd = "Cobblemon NixOS";
+            motd = "Cobblemon";
             max-players = 2;
             level-seed = "882427838104948496";
             spawn-monsters = false;
@@ -51,14 +51,6 @@ in {
               Terralith = pkgs.fetchurl {
                 url = "https://cdn.modrinth.com/data/8oi3bsk5/versions/FgvUosFH/Terralith_1.20.4_v2.4.11.jar";
                 sha512 = "b6bd6e71666dd57e1db19fe7cad85a9e0d9a13a9c6fa839c4e9cb149b12cf855f8f1676c4bc4d9647f1ba32a7a4f40d3f7090de3c5ddd569950c408b8cfd9128";
-              };
-              Waystones = pkgs.fetchurl {
-                url = "https://cdn.modrinth.com/data/LOpKHB2A/versions/36jYwMdH/waystones-fabric-1.20-14.1.3.jar";
-                sha512 = "e89524a4ff449b4fcc8c4ee1538e060545d813160de77a700e7bd9ff4f1fb6cdda83828d29a8efdeb34bf12ce628d5ccc56c8e69e5b2ee5daff91462dfd1d929";
-              };
-              Balm = pkgs.fetchurl {
-                url = "https://cdn.modrinth.com/data/MBAkmtvl/versions/v1tAteat/balm-fabric-1.20.1-7.2.2.jar";
-                sha512 = "a1aa70bab410c4fb274591f4bf2fcf69ca5a83fdd4b7682f9e93de79d9f45d6c7ae4452593b34fa59376ed45374dcea38071af7f323b55fb8eb53b4480a98720";
               };
             });
           };
