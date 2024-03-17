@@ -36,6 +36,7 @@ in {
             max-players = 2;
             level-seed = "882427838104948496";
             spawn-monsters = false;
+            enable-command-block = true;
           };
           symlinks = {
             mods = pkgs.linkFarmFromDrvs "mods" (builtins.attrValues {
