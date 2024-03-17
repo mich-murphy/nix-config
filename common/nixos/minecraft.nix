@@ -32,8 +32,6 @@ in {
             gamemode = "survival";
             difficulty = "peaceful";
             pvp = false;
-            motd = "NixOS Cobblemon";
-            gamemode = "peaceful";
             motd = "Pokemon Minecraft";
             max-players = 2;
             level-seed = "882427838104948496";
