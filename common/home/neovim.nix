@@ -28,7 +28,7 @@ in {
         lazygit
         cargo
         alejandra
-        nixd
+        nil
       ];
       extraPython3Packages = py:
         with py; [
