@@ -16,7 +16,7 @@ in {
       zsh = {
         enable = true;
         dotDir = ".config/zsh";
-        enableAutosuggestions = true;
+        autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
         enableCompletion = true;
         historySubstringSearch.enable = true;

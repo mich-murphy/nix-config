@@ -8,12 +8,7 @@
     homeDirectory = "/Users/mm";
     stateVersion = "22.05";
     packages = with pkgs; [
-      sox
-      mediainfo
-      statix
       _1password
-      pipx
-      duckdb
     ];
     file = {
       # remove message when entering terminal

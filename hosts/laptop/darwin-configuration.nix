@@ -67,9 +67,9 @@
       "karabiner-elements"
       "bartender"
       "yubico-yubikey-manager"
-      "nvidia-geforce-now"
       "hammerspoon"
       "utm"
+      "moonlight"
     ];
   };
 
