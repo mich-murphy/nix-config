@@ -25,7 +25,6 @@ in {
           "/var/lib/radarr"
           "/var/lib/readarr"
           "/var/lib/sonarr"
-          "/var/lib/wallabag"
           "/var/lib/ytdlp-sub/ytdl-sub-configs"
         ];
         repo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
