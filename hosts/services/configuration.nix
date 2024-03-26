@@ -8,7 +8,6 @@
   imports = [
     (modulesPath + "/installer/scan/not-detected.nix")
     (modulesPath + "/profiles/qemu-guest.nix")
-    ../../common/nixos
     ./disk-config.nix
   ];
 
@@ -18,7 +17,13 @@
     efiInstallAsRemovable = true;
   };
 
-  networking.hostName = "services";
+  networking = {
+    hostName = "services";
+    firewall = {
+      trustedInterfaces = ["tailscale0"];
+      allowedUDPPorts = [config.services.tailscale.port];
+    };
+  };
   time.timeZone = "Australia/Melbourne";
   i18n.defaultLocale = "en_US.UTF-8";
   nixpkgs = {
@@ -43,24 +48,25 @@
   };
 
   environment = {
-    systemPackages = with pkgs; [
-      neovim
-      tmux
-      docker-compose
-      lazydocker
+    systemPackages = [
+      pkgs.vim
+      pkgs.tmux
+      pkgs.cifs-utils
       # disk usage tooling
-      du-dust
-      duf
+      pkgs.du-dust
+      pkgs.dua
+      pkgs.duf
     ];
   };
 
-  common = {
-    gitea = {
-      enable = false;
-      nginx = false;
-    };
-    tailscale.enable = true;
-  };
+  # fileSystems."/mnt/data" = {
+  #   device = "//10.77.2.102/data";
+  #   fsType = "cifs";
+  #   options = let
+  #     # this line prevents hanging on network split
+  #     automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,dir_mode=0775,file_mode=0775";
+  #   in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path},gid=${toString config.users.groups.media.gid}"];
+  # };
 
   services = {
     xserver.xkb.layout = "us";
@@ -90,15 +96,22 @@
         }
       ];
     };
-  };
-
-  virtualisation = {
-    docker = {
+    deluge = {
       enable = true;
-      autoPrune = {
-        enable = true;
-        dates = "weekly";
+      web.enable = true;
+      declarative = true;
+      config = {
+        download_location = "/srv/torrents/";
+        share_ratio_limit = "2.0";
+        daemon_port = 58846;
+        listen_ports = [6881 6889];
       };
+      authFile = config.age.secrets.delugePass.path;
+      openFirewall = true;
+    };
+    tailscale = {
+      enable = true;
+      useRoutingFeatures = "client";
     };
   };
 
@@ -133,5 +146,6 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
+    delugePass.file = ../../secrets/delugePass.age;
   };
 }
