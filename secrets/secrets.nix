@@ -11,7 +11,7 @@ in {
   "nextcloudBorgPass.age".publicKeys = [media];
   "freshrssPass.age".publicKeys = [media];
   "giteaDbPass.age".publicKeys = [media];
-  "sambaPass.age".publicKeys = [media];
+  "sambaPass.age".publicKeys = servers;
   "murmurPass.age".publicKeys = [media];
   "delugePass.age".publicKeys = [services];
 }

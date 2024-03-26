@@ -43,6 +43,11 @@ in {
       default = true;
       description = "Whether to enable kapowarr";
     };
+    enableDelugeHost = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to forward proxy to Deluge host";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -158,6 +163,15 @@ in {
           acmeRoot = null;
           locations."/" = {
             proxyPass = "http://127.0.0.1:5656";
+            proxyWebsockets = true;
+          };
+        };
+        virtualHosts."deluge.pve.elmurphy.com" = mkIf cfg.enableDelugeHost {
+          enableACME = true;
+          addSSL = true;
+          acmeRoot = null;
+          locations."/" = {
+            proxyPass = "http://100.69.115.120:8112";
             proxyWebsockets = true;
           };
         };

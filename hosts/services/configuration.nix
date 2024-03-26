@@ -32,14 +32,13 @@
   };
 
   users = {
-    groups.media = {};
     mutableUsers = false;
     users = {
       mm = {
         isNormalUser = true;
         home = "/home/mm";
         hashedPasswordFile = config.age.secrets.userPass.path;
-        extraGroups = ["wheel" "media"];
+        extraGroups = ["wheel"];
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVyN0R5mTtfcbkmVXjicuvSRotJY4IOuetOgPyG2lg8"
         ];
@@ -59,14 +58,14 @@
     ];
   };
 
-  # fileSystems."/mnt/data" = {
-  #   device = "//10.77.2.102/data";
-  #   fsType = "cifs";
-  #   options = let
-  #     # this line prevents hanging on network split
-  #     automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,dir_mode=0775,file_mode=0775";
-  #   in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path},gid=${toString config.users.groups.media.gid}"];
-  # };
+  fileSystems."/mnt/torrents" = {
+    device = "//10.77.2.102/data/downloads/torrents";
+    fsType = "cifs";
+    options = let
+      # this line prevents hanging on network split
+      automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,dir_mode=0775,file_mode=0775";
+    in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path},uid=${toString config.users.users.deluge.uid},gid=${toString config.users.groups.deluge.gid}"];
+  };
 
   services = {
     xserver.xkb.layout = "us";
@@ -101,10 +100,21 @@
       web.enable = true;
       declarative = true;
       config = {
-        download_location = "/srv/torrents/";
-        share_ratio_limit = "2.0";
-        daemon_port = 58846;
-        listen_ports = [6881 6889];
+        download_location = "/mnt/torrents";
+        move_completed = false;
+        torrentfiles_location = "/srv/torrents/watch";
+        random_port = false;
+        max_connections_global = 50;
+        max_upload_slots_global = -1;
+        max_active_seeding = -1;
+        max_active_downloading = -1;
+        max_active_limit = -1;
+        share_ratio_limit = -1;
+        seed_time_ratio_limit = -1;
+        seed_time_limit = -1;
+        enabled_plugins = ["AutoAdd" "Label"];
+        listen_ports = [25565 25565];
+        outgoing_interface = 25565;
       };
       authFile = config.age.secrets.delugePass.path;
       openFirewall = true;
@@ -146,6 +156,10 @@
 
   age.secrets = {
     userPass.file = ../../secrets/userPass.age;
-    delugePass.file = ../../secrets/delugePass.age;
+    sambaPass.file = ../../secrets/sambaPass.age;
+    delugePass = {
+      file = ../../secrets/delugePass.age;
+      owner = "deluge";
+    };
   };
 }

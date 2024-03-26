@@ -70,6 +70,7 @@
       "hammerspoon"
       "utm"
       "moonlight"
+      "logitech-options"
     ];
   };
 
