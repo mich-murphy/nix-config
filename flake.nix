@@ -45,7 +45,10 @@
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./hosts/laptop/darwin-configuration.nix
+        ./hosts/laptop/configuration.nix
+        ./hosts/laptop/system.nix
+        ./hosts/laptop/apps.nix
+        ./hosts/laptop/user.nix
         home-manager.darwinModules.home-manager
         {
           home-manager.useGlobalPkgs = true;

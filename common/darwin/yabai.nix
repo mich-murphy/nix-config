@@ -2,14 +2,16 @@
   lib,
   config,
   pkgs,
-  user,
   ...
 }:
 with lib; let
   cfg = config.common.yabai;
-  # nix-prefetch-url --unpack $YOUR_URL
+
+  # override yabai version with latest available
+  # find sha256 has using: nix-prefetch-url --unpack $YOUR_URL
+  # alternatively deploy with: sha256 = ""; replace with provided hash
   yabai = pkgs.yabai.overrideAttrs (finalAttrs: previousAttrs: {
-    version = "7.0.3";
+    version = "7.0.3"; # https://github.com/koekeishiya/yabai/releases
     src = builtins.fetchTarball {
       url = "https://github.com/koekeishiya/yabai/releases/download/v${finalAttrs.version}/yabai-v${finalAttrs.version}.tar.gz";
       sha256 = "0y34kklrsjgzp03v4dq0s7na7m9kvxfc7bzydz3idv7phj3a87i6";
@@ -17,15 +19,17 @@ with lib; let
   });
 in {
   options.common.yabai = {
-    enable = mkEnableOption "Enable Yabai MacOS window manager and SKHD hotkey daemon";
+    enable = mkEnableOption "Enable Yabai MacOS window manager";
   };
 
   config = mkIf cfg.enable {
     services = {
       yabai = {
         enable = true;
+        # install override package
         package = yabai;
         config = {
+          # reference: https://github.com/koekeishiya/yabai/wiki/Configuration#configuration-file
           focus_follows_mouse = "off";
           mouse_follows_focus = "off";
           mouse_modifier = "fn";
@@ -42,9 +46,8 @@ in {
           window_gap = 5;
           window_placement = "second_child";
           extraConfig = ''
-            # RULES
-            # Some of these guys are hidden and supper irritating to find.
-            # Use `yabai -m query --windows --space <int>`
+            # rules
+            # to identify windows use: yabai -m query --windows --space <int>
             yabai -m rule --add app='^Finder$' manage=off
             yabai -m rule --add app='^System Settings$' manage=off
             yabai -m rule --add app='^App Store$' manage=off
@@ -60,10 +63,12 @@ in {
             yabai -m rule --add app='Raycast' manage=off
             yabai -m config --space 5 layout float
 
-            # SCRIPTING
+            # enable scripting additions
             # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
             # sudo yabai --load-sa
 
+            # run applications on specified space
+            # requires scripting additions active
             # yabai -m rule --add app='kitty' space=^1
             # yabai -m rule --add app='Firefox' space=^2
             # yabai -m rule --add app='Mail' space=3
@@ -71,52 +76,9 @@ in {
           '';
         };
       };
-      skhd = {
-        enable = true;
-        skhdConfig = ''
-          # defines a new mode 'resize' with an on_enter command, that captures keypresses
-          :: resize @
-          alt - r ; resize
-          resize < alt - r ; default
-          resize < h : yabai -m window --resize left:-50:0; yabai -m window --resize right:-50:0
-          resize < l : yabai -m window --resize left:50:0; yabai -m window --resize right:50:0
-          resize < k : yabai -m window --resize bottom:0:-50; yabai -m window --resize top:0:-50
-          resize < j : yabai -m window --resize bottom:0:50; yabai -m window --resize top:0:50
-          resize < o : yabai -m space --rotate 90
-          resize < e : yabai -m space --balance
-
-          # Applications Shortcuts
-          alt - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
-          shift + alt - return : /Applications/Firefox.App/Contents/MacOS/firefox
-          # Toggle Window
-          alt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
-          alt - f : yabai -m window --toggle zoom-fullscreen
-          alt - q : yabai -m window --close
-          alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
-
-          # Focus Window
-          # Removing due to clash with Zellij
-          # alt - k : yabai -m window --focus north || yabai -m display --focus north
-          # alt - j : yabai -m window --focus south || yabai -m display --focus south
-          # alt - h : yabai -m window --focus west || yabai -m display --focus west
-          # alt - l : yabai -m window --focus east || yabai -m display --focus east
-
-          # Swap Window
-          shift + alt - k : yabai -m window --swap north || yabai -m window --display north
-          shift + alt - j : yabai -m window --swap south || yabai -m window --display south
-          shift + alt - h : yabai -m window --swap west || yabai -m window --display west
-          shift + alt - l : yabai -m window --swap east || yabai -m window --display east
-
-          # Send to Space
-          shift + ctrl - 1 : yabai -m window --space 1 --focus
-          shift + ctrl - 2 : yabai -m window --space 2 --focus
-          shift + ctrl - 3 : yabai -m window --space 3 --focus
-          shift + ctrl - 4 : yabai -m window --space 4 --focus
-          shift + ctrl - 5 : yabai -m window --space 5 --focus
-        '';
-      };
     };
 
+    # install yabai scripting additions
     # environment.etc."sudoers.d/yabai".text = ''
     #   ${user} ALL = (root) NOPASSWD: ${pkgs.yabai}/bin/yabai --load-sa
     # '';
