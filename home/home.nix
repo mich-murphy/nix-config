@@ -1,6 +1,6 @@
 {pkgs, ...}: {
   imports = [
-    ../../common/home
+    ../common/home
   ];
 
   home = {

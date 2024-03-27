@@ -45,15 +45,12 @@
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./hosts/laptop/configuration.nix
-        ./hosts/laptop/system.nix
-        ./hosts/laptop/apps.nix
-        ./hosts/laptop/user.nix
+        ./hosts/laptop/default.nix
         home-manager.darwinModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-          home-manager.users.mm = import ./hosts/laptop/home.nix;
+          home-manager.users.mm = import ./home/home.nix;
         }
         {
           nixpkgs.overlays = [

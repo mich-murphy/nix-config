@@ -6,6 +6,12 @@
   # nix configuration
   # reference: https://daiderd.com/nix-darwin/manual/index.html#sec-options
 
+  imports = [
+    ./system.nix
+    ./apps.nix
+    ./user.nix
+  ];
+
   # create /etc/zshrc which loads nix-darwin environment
   # required if you want to use darwin default shel (zsh)
   programs.zsh.enable = true;
