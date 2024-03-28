@@ -61,7 +61,6 @@
       "yubico-yubikey-manager" # manage yubikey
       "hammerspoon"
       "utm" # manage virtual machines
-      "moonlight" # game streaming
       "logitech-options" # management of mouse
     ];
   };
