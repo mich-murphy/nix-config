@@ -7,7 +7,7 @@ on:
     - 'flake.nix'
     - 'hosts/media/**'
     - 'secrets/**'
-    - 'common/nixos/**'
+    - 'nixos/**'
     - '.github/workflows/build-nixos.yml'
     - '.github/workflows/deploy-nixos.yml'
 jobs:

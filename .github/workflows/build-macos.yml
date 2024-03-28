@@ -1,15 +1,13 @@
 name: "test-build-macos"
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-    branches:
-    - 'main'
+  push:
+    branches: [ main ]
     paths:
     - 'flake.lock'
     - 'flake.nix'
     - 'hosts/laptop/**'
-    - 'common/darwin/**'
-    - 'common/home/**'
+    - 'darwin/**'
+    - 'home/**'
     - '.github/workflows/build-macos'
 jobs:
   build_macos:
@@ -29,7 +27,7 @@ jobs:
       run: |
         cp /etc/nix/nix.conf ~/.config/nix/nix.conf
         sudo rm -rf /etc/zshenv /etc/nix/nix.conf
-        sed -i '' -E 's "mm "runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
-        sed -i '' -E 's \/mm \/runner g' hosts/laptop/darwin-configuration.nix hosts/laptop/home.nix
+        sed -i '' -E 's "mm "runner g' hosts/laptop/users.nix home/home.nix
+        sed -i '' -E 's \/mm \/runner g' hosts/laptop/users.nix home/home.nix
         sed -i '' -E 's users\.mm users\.runner g' flake.nix
         nix run nix-darwin -- switch --flake .#macbook
