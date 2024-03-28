@@ -165,6 +165,9 @@ in {
         enableZshIntegration = true;
         settings = {
           scan_timeout = 10;
+          git_status = {
+            deleted = "";
+          };
         };
       };
       fzf = {
@@ -257,7 +260,6 @@ in {
       procs
       ouch
     ];
-
 
     xdg.configFile = mkIf config.programs.zellij.enable {
       "zellij/config.kdl" = {
