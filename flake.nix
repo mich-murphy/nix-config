@@ -45,7 +45,7 @@
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./hosts/laptop/default.nix
+        ./hosts/laptop
         home-manager.darwinModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
@@ -63,7 +63,7 @@
     nixosConfigurations.media = nixpkgs.lib.nixosSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./hosts/media/configuration.nix
+        ./hosts/media
         agenix.nixosModules.default
         {
           nixpkgs.overlays = [

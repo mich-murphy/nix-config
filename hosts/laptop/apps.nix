@@ -11,24 +11,24 @@
     skhd.enable = true;
   };
 
-  environment = {
-    systemPackages = with pkgs; [
-      git
-      curl
-      xcode-install
-    ];
-  };
+  environment.systemPackages = [
+    pkgs.git
+    pkgs.curl
+    pkgs.xcode-install
+  ];
 
   fonts = {
     fontDir.enable = true;
-    fonts = with pkgs; [
-      material-design-icons
-      font-awesome
+    fonts = [
+      pkgs.material-design-icons
+      pkgs.font-awesome
       # https://github.com/NixOS/nixpkgs/blob/nixos-23.05/pkgs/data/fonts/nerdfonts/shas.nix
-      (nerdfonts.override {fonts = [
-        "NerdFontsSymbolsOnly"
-        "JetBrainsMono"
-      ];}) # install nerd font
+      (pkgs.nerdfonts.override {
+        fonts = [
+          "NerdFontsSymbolsOnly"
+          "JetBrainsMono"
+        ];
+      }) # install nerd font
     ];
   };
 
