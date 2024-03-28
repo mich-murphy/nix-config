@@ -2,7 +2,7 @@
   # system applications
 
   imports = [
-    ../../common/nixos
+    ../../nixos/modules
   ];
 
   common = {

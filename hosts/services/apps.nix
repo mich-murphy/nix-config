@@ -6,7 +6,7 @@
   # system applications
 
   imports = [
-    ../../common/nixos # import common modules
+    ../../nixos/modules
   ];
 
   common.tailscale.enable = true;

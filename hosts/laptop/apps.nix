@@ -3,7 +3,7 @@
   # nix-darwin options documentation: https://daiderd.com/nix-darwin/manual/index.html#sec-options
 
   imports = [
-    ../../common/darwin
+    ../../darwin/modules
   ];
 
   common = {
