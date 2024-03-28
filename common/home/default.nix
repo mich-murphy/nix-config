@@ -8,7 +8,6 @@
     ./git.nix
     ./cli.nix
     ./ssh.nix
-    ./lf.nix
     ./yazi.nix
   ];
 }

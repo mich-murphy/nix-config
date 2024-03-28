@@ -147,8 +147,8 @@ in {
               pkgs.fetchFromGitHub {
                 owner = "folke";
                 repo = "tokyonight.nvim";
-                rev = "v2.9.0";
-                sha256 = "NOKzXsY+DLNrykyy2Fr1eiSpYDiBIBNHL/7PPvbgbSo=";
+                rev = "v3.0.1";
+                sha256 = "sha256-QKqCsPxUyTur/zOUZdiT1cOMSotmTsnOl/3Sn2/NlUI=";
               }
               + "/extras/sublime";
             file = "tokyonight_night.tmTheme";

@@ -22,8 +22,13 @@
   fonts = {
     fontDir.enable = true;
     fonts = with pkgs; [
+      material-design-icons
+      font-awesome
       # https://github.com/NixOS/nixpkgs/blob/nixos-23.05/pkgs/data/fonts/nerdfonts/shas.nix
-      (nerdfonts.override {fonts = ["JetBrainsMono"];}) # install nerd font
+      (nerdfonts.override {fonts = [
+        "NerdFontsSymbolsOnly"
+        "JetBrainsMono"
+      ];}) # install nerd font
     ];
   };
 
