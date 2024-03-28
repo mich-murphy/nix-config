@@ -6,7 +6,7 @@
   # nixos system configuration
 
   imports = [
-    ./hardware-configuration.nix
+    ./disks.nix
     inputs.impermanence.nixosModules.impermanence
   ];
 
