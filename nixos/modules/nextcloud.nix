@@ -14,6 +14,11 @@ in {
       default = "nextcloud.pve.elmurphy.com";
       description = "Hostname for Nextcloud service";
     };
+    borgbackup = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether to enable borgbackup for Nextcloud";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -59,6 +64,27 @@ in {
         databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
       };
+      borgbackup.jobs = mkIf cfg.borgbackup {
+        "nextcloud" = {
+          paths = [
+            config.services.postgresqlBackup.location
+            config.services.nextcloud.datadir
+          ];
+          repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
+          encryption = {
+            mode = "repokey-blake2";
+            passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
+          };
+          compression = "auto,lzma";
+          startAt = "daily";
+          prune.keep = {
+            within = "1d";
+            daily = 7;
+            weekly = 4;
+            monthly = -1;
+          };
+        };
+      };
       nginx = mkIf cfg.nginx {
         enable = true;
         recommendedGzipSettings = true;
@@ -74,6 +100,7 @@ in {
     };
 
     age.secrets = {
+      nextcloudBorgPass.file = ../../secrets/nextcloudBorgPass.age;
       nextcloudPass = {
         file = ../../secrets/nextcloudPass.age;
         owner = "nextcloud";

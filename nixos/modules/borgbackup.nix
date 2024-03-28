@@ -41,30 +41,8 @@ in {
           monthly = -1;
         };
       };
-      "nextcloud" = {
-        paths = [
-          "/data/backups/postgresql/nextcloud.sql.gz"
-          "/data/nextcloud"
-        ];
-        repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
-        encryption = {
-          mode = "repokey-blake2";
-          passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
-        };
-        # preHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --on";
-        # postHook = "/run/current-system/sw/bin/nextcloud-occ maintenance:mode --off";
-        compression = "auto,lzma";
-        startAt = "daily";
-        prune.keep = {
-          within = "1d";
-          daily = 7;
-          weekly = 4;
-          monthly = -1;
-        };
-      };
     };
 
     age.secrets.mediaBorgPass.file = ../../secrets/mediaBorgPass.age;
-    age.secrets.nextcloudBorgPass.file = ../../secrets/nextcloudBorgPass.age;
   };
 }

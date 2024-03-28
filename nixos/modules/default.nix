@@ -13,7 +13,6 @@
     ./komga.nix
     ./arrs.nix
     ./gitea.nix
-    ./nginx.nix
     ./ytdlp.nix
     ./minecraft.nix
     ./murmur.nix

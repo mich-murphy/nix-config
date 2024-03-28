@@ -1,14 +1,15 @@
 name: "test-build-macos"
 on:
-  push:
-    branches: [ main ]
-    paths:
-    - 'flake.lock'
-    - 'flake.nix'
-    - 'hosts/laptop/**'
-    - 'darwin/**'
-    - 'home/**'
-    - '.github/workflows/build-macos'
+  workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #   - 'flake.lock'
+  #   - 'flake.nix'
+  #   - 'hosts/laptop/**'
+  #   - 'darwin/**'
+  #   - 'home/**'
+  #   - '.github/workflows/build-macos'
 jobs:
   build_macos:
     runs-on: macos-14
