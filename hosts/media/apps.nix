@@ -36,6 +36,8 @@
     pkgs.duf
   ];
 
+  services.qemuGuest.enable = true; # used for hypervisor operations
+
   virtualisation = {
     docker = {
       enable = true; # use docker for virtualisation

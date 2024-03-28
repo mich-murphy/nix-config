@@ -76,7 +76,7 @@
     nixosConfigurations.services = nixpkgs.lib.nixosSystem {
       specialArgs = {inherit inputs;};
       modules = [
-        ./hosts/services/configuration.nix
+        ./hosts/services
         agenix.nixosModules.default
         disko.nixosModules.disko
       ];

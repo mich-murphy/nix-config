@@ -4,23 +4,19 @@
   ...
 }: {
   # nix configuration
-  # reference: https://daiderd.com/nix-darwin/manual/index.html#sec-options
+  # reference: https://nixos.org/manual/nix/stable/command-ref/conf-file.html#name
 
   imports = [
     ./apps.nix
+    ./disks.nix
+    ./security.nix
     ./system.nix
     ./user.nix
   ];
 
-  # create /etc/zshrc which loads nix-darwin environment
-  # required if you want to use darwin default shel (zsh)
-  programs.zsh.enable = true;
-
-  services.nix-daemon.enable = true; # auto upgrade nix package and daemon service
-
   nixpkgs = {
     config.allowUnfree = true; # allow unfree packages
-    hostPlatform = "aarch64-darwin";
+    hostPlatform = "x86_64-linux";
   };
 
   nix = {
@@ -29,12 +25,11 @@
     # weekly garbage collection to minimise disk usage
     gc = {
       automatic = true;
-      interval.Day = 7;
       options = "--delete-older-than 7d";
     };
     settings = {
-      trusted-users = ["@admin" "mm"];
       auto-optimise-store = true;
+      allowed-users = ["@wheel"];
       builders-use-substitutes = true; # allow remote builders to use their own cache
       # set additional cache with keys
       substituters = [
@@ -51,5 +46,5 @@
     '';
   };
 
-  system.stateVersion = 4;
+  system.stateVersion = "23.11";
 }

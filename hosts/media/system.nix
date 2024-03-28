@@ -3,6 +3,8 @@
   inputs,
   ...
 }: {
+  # nixos system configuration
+
   imports = [
     ./hardware-configuration.nix
     inputs.impermanence.nixosModules.impermanence
