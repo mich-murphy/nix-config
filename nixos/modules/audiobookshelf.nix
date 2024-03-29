@@ -8,6 +8,16 @@ with lib; let
 in {
   options.common.audiobookshelf = {
     enable = mkEnableOption "Enable Audiobookshelf";
+    domain = mkOption {
+      type = types.str;
+      default = "audiobookshelf.pve.elmurphy.com";
+      description = "Domain for Audiobookshelf to be made available";
+    };
+    host = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "IP address of Audiobookshelf host";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
@@ -26,12 +36,12 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."audiobookshelf.pve.elmurphy.com" = {
+        virtualHosts.${cfg.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString config.services.audiobookshelf.port}";
+            proxyPass = "http://${cfg.host}:${toString config.services.audiobookshelf.port}";
             proxyWebsockets = true;
           };
         };

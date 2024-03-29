@@ -9,7 +9,25 @@
     tailscale.enable = true;
     acme.enable = true;
     nextcloud.enable = true;
-    borgbackup.enable = true;
+    borgbackup = {
+      enable = true;
+      name = "media";
+      borgRepo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
+      backupPaths = [
+        "/var/lib/audiobookshelf"
+        "/var/lib/freshrss"
+        "/var/lib/gitea"
+        "/var/lib/jellyfin"
+        "/var/lib/komga"
+        "/var/lib/lidarr"
+        "/var/lib/nzbget"
+        "/var/lib/prowlarr"
+        "/var/lib/radarr"
+        "/var/lib/readarr"
+        "/var/lib/sonarr"
+        "/var/lib/ytdlp-sub/ytdl-sub-configs"
+      ];
+    };
     komga.enable = true;
     freshrss.enable = true;
     plex.enable = true;
