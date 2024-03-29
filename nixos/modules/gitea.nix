@@ -11,17 +11,34 @@ in {
     port = mkOption {
       type = types.port;
       default = 3001;
-      description = "Port for Gitea to be advertised on";
+      description = "Port for Gitea";
     };
-    domain = mkOption {
+    hostname = mkOption {
       type = types.str;
       default = "git.pve.elmurphy.com";
-      description = "Domain for Gitea to be advertised on";
+      description = "Hostname for Gitea";
+    };
+    backupDir = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Gitea backup path";
+      example = "/data/backups/gitea";
+    };
+    postgresBackupDir = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = "Gitea Postgres DB backup path";
+      example = "/data/backups/postgresql";
+    };
+    hostAddress = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "IP address of Gitea host";
     };
     nginx = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to enable nginx reverse proxy with SSL";
+      description = "Enable nginx reverse proxy with SSL";
     };
   };
 
@@ -34,12 +51,15 @@ in {
           passwordFile = config.age.secrets.giteaDbPass.path;
         };
         dump = {
-          enable = true;
-          backupDir = "/data/backups/gitea";
+          enable =
+            if cfg.backupDir != null
+            then true
+            else false;
+          backupDir = cfg.backupDir;
         };
         settings.server = {
-          DOMAIN = "${cfg.domain}";
-          ROOT_URL = "https://${cfg.domain}/";
+          DOMAIN = "${cfg.hostname}";
+          ROOT_URL = "https://${cfg.hostname}/";
           HTTP_PORT = cfg.port;
         };
       };
@@ -48,14 +68,16 @@ in {
         ensureUsers = [
           {
             name = config.services.gitea.database.user;
-            # ensurePermissions."DATABASE ${config.services.gitea.database.name}" = "ALL PRIVILEGES";
             ensureDBOwnership = true;
           }
         ];
       };
       postgresqlBackup = {
-        enable = true;
-        location = "/data/backups/postgresql";
+        enable =
+          if cfg.postgresBackupDir != null
+          then true
+          else false;
+        location = cfg.postgresBackupDir;
         databases = [config.services.gitea.database.name];
         startAt = "*-*-* 23:15:00";
       };
@@ -65,12 +87,12 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."${cfg.domain}" = {
+        virtualHosts."${cfg.hostname}" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           };
         };
       };

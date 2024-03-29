@@ -8,12 +8,12 @@ with lib; let
 in {
   options.common.audiobookshelf = {
     enable = mkEnableOption "Enable Audiobookshelf";
-    domain = mkOption {
+    hostname = mkOption {
       type = types.str;
       default = "audiobookshelf.pve.elmurphy.com";
-      description = "Domain for Audiobookshelf to be made available";
+      description = "Hostname for Audiobookshelf";
     };
-    host = mkOption {
+    hostAddress = mkOption {
       type = types.str;
       default = "127.0.0.1";
       description = "IP address of Audiobookshelf host";
@@ -21,7 +21,7 @@ in {
     nginx = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to enable nginx reverse proxy with SSL";
+      description = "Enable nginx reverse proxy with SSL";
     };
   };
 
@@ -36,12 +36,12 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts.${cfg.domain} = {
+        virtualHosts.${cfg.hostname} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://${cfg.host}:${toString config.services.audiobookshelf.port}";
+            proxyPass = "http://${cfg.hostAddress}:${toString config.services.audiobookshelf.port}";
             proxyWebsockets = true;
           };
         };

@@ -32,7 +32,11 @@
     freshrss.enable = true;
     plex.enable = true;
     audiobookshelf.enable = true;
-    gitea.enable = true;
+    gitea = {
+      enable = true;
+      backupDir = "/data/backups/gitea";
+      postgresBackupDir = "/data/backups/postgresql";
+    };
     ytdlp.enable = true;
     minecraft.enable = true;
     murmur.enable = true;

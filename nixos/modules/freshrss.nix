@@ -8,15 +8,20 @@ with lib; let
 in {
   options.common.freshrss = {
     enable = mkEnableOption "Enable FreshRSS";
+    defaultUser = mkOption {
+      type = types.str;
+      default = "mm";
+      description = "Default user for FreshRSS login";
+    };
     hostname = mkOption {
       type = types.str;
       default = "freshrss.pve.elmurphy.com";
-      description = "Hostname to expose freshrss on";
+      description = "Hostname for FreshRSS";
     };
     nginx = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to enable nginx reverse proxy with SSL";
+      description = "Enable nginx reverse proxy with SSL";
     };
   };
 
@@ -24,7 +29,7 @@ in {
     services = {
       freshrss = {
         enable = true;
-        defaultUser = "mm";
+        defaultUser = cfg.defaultUser;
         passwordFile = config.age.secrets.freshrssPass.path;
         baseUrl = "https://${cfg.hostname}";
         virtualHost =
