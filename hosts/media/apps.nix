@@ -11,7 +11,6 @@
     nextcloud.enable = true;
     borgbackup = {
       enable = true;
-      name = "media";
       borgRepo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
       backupPaths = [
         "/var/lib/audiobookshelf"
@@ -30,7 +29,12 @@
     };
     komga.enable = true;
     freshrss.enable = true;
-    plex.enable = true;
+    plex = {
+      enable = true;
+      enableAudnexus = true;
+      enableTautulli = true;
+      enableOverseerr = true;
+    };
     audiobookshelf.enable = true;
     gitea = {
       enable = true;

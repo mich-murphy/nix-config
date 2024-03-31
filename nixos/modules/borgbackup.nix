@@ -10,6 +10,7 @@ in {
     enable = mkEnableOption "Enable borgbackup for media and Nextcloud to BorgBase";
     name = mkOption {
       type = types.str;
+      default = config.networking.hostName;
       description = "Name of Borgbackup job for reference by Systemd";
       example = "media";
     };

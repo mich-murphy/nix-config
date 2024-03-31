@@ -8,15 +8,25 @@ with lib; let
 in {
   options.common.komga = {
     enable = mkEnableOption "Enable Komga";
+    hostname = mkOption {
+      type = types.str;
+      default = "komga.pve.elmurphy.com";
+      description = "Hostname for Komga";
+    };
+    hostAddress = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "IP address of Komga host";
+    };
     port = mkOption {
       type = types.port;
       default = 6080;
-      description = "Port for Komga to be advertised on";
+      description = "Port for Komga";
     };
     nginx = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to enable nginx reverse proxy with SSL";
+      description = "Enable nginx reverse proxy with SSL";
     };
   };
 
@@ -24,7 +34,7 @@ in {
     services = {
       komga = {
         enable = true;
-        inherit (cfg) port;
+        port = cfg.port;
         openFirewall = true;
       };
       nginx = mkIf cfg.nginx {
@@ -33,12 +43,12 @@ in {
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts."komga.pve.elmurphy.com" = {
+        virtualHosts.${cfg.hostname} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.port}";
+            proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
             proxyWebsockets = true;
           };
         };

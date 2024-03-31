@@ -8,16 +8,6 @@ with lib; let
 in {
   options.common.gitea = {
     enable = mkEnableOption "Enable Gitea";
-    port = mkOption {
-      type = types.port;
-      default = 3001;
-      description = "Port for Gitea";
-    };
-    hostname = mkOption {
-      type = types.str;
-      default = "git.pve.elmurphy.com";
-      description = "Hostname for Gitea";
-    };
     backupDir = mkOption {
       type = types.nullOr types.path;
       default = null;
@@ -30,10 +20,20 @@ in {
       description = "Gitea Postgres DB backup path";
       example = "/data/backups/postgresql";
     };
+    hostname = mkOption {
+      type = types.str;
+      default = "git.pve.elmurphy.com";
+      description = "Hostname for Gitea";
+    };
     hostAddress = mkOption {
       type = types.str;
       default = "127.0.0.1";
       description = "IP address of Gitea host";
+    };
+    port = mkOption {
+      type = types.port;
+      default = 3001;
+      description = "Port for Gitea";
     };
     nginx = mkOption {
       type = types.bool;

@@ -6,6 +6,7 @@
 }:
 with lib; let
   cfg = config.common.plex;
+  # enable plugin for audiobook metadata
   audnexusPlugin = pkgs.stdenv.mkDerivation {
     name = "Audnexus.bundle";
     src = pkgs.fetchurl {
@@ -18,20 +19,55 @@ with lib; let
 in {
   options.common.plex = {
     enable = mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
+    enableAudnexus = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Enable audiobook metadata plugin";
+    };
+    enableTautulli = mkOption {
+      type = types.bool;
+      default = false;
+      description = "Enable Tautulli";
+    };
+    tautulliHostname = mkOption {
+      type = types.str;
+      default = "tautulli.pve.elmurphy.com";
+      description = "Hostname for Tautulli";
+    };
+    tautulliHostAddress = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "IP address for Tautulli host";
+    };
     enableOverseerr = mkOption {
       type = types.bool;
-      default = true;
-      description = "Whether to enable Overseerr";
+      default = false;
+      description = "Enable Overseerr";
+    };
+    overseerrHostname = mkOption {
+      type = types.str;
+      default = "overseerr.pve.elmurphy.com";
+      description = "Hostname for Tautulli";
+    };
+    overseerrHostAddress = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "IP address for Overseer host";
     };
     overseerrPort = mkOption {
       type = types.port;
       default = 5055;
-      description = "Port for Overseerr to be advertised on";
+      description = "Port for Overseerr";
+    };
+    hostname = mkOption {
+      type = types.str;
+      default = "plex.pve.elmurphy.com";
+      description = "Hostname for Plex";
     };
     nginx = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to enable nginx reverse proxy with SSL";
+      description = "Enable nginx reverse proxy with SSL";
     };
   };
 
@@ -55,45 +91,51 @@ in {
     services = {
       plex = {
         enable = true;
-        extraPlugins = [audnexusPlugin];
+        extraPlugins =
+          if cfg.enableAudnexus
+          then [audnexusPlugin]
+          else [];
       };
-      tautulli.enable = true;
+      tautulli.enable =
+        if cfg.enableTautulli
+        then true
+        else false;
       nginx = mkIf cfg.nginx {
-        virtualHosts."overseerr.pve.elmurphy.com" = mkIf cfg.enableOverseerr {
+        virtualHosts.${cfg.overseerrHostname} = mkIf cfg.enableOverseerr {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:${toString cfg.overseerrPort}";
+            proxyPass = "http://${cfg.overseerrHostAddress}:${toString cfg.overseerrPort}";
             proxyWebsockets = true;
           };
         };
-        virtualHosts."tautulli.pve.elmurphy.com" = mkIf config.services.tautulli.enable {
+        virtualHosts.${cfg.tautulliHostname} = mkIf config.services.tautulli.enable {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:8181";
+            proxyPass = "http://${cfg.tautulliHostAddress}:8181";
           };
         };
-        virtualHosts."plex.pve.elmurphy.com" = {
+        virtualHosts.${cfg.hostname} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           extraConfig = ''
-            #Some players don't reopen a socket and playback stops totally instead of resuming after an extended pause
+            # some players don't reopen a socket and playback stops totally instead of resuming after an extended pause
             send_timeout 100m;
 
-            # Why this is important: https://blog.cloudflare.com/ocsp-stapling-how-cloudflare-just-made-ssl-30/
+            # why this is important: https://blog.cloudflare.com/ocsp-stapling-how-cloudflare-just-made-ssl-30/
             ssl_stapling on;
             ssl_stapling_verify on;
 
             ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
             ssl_prefer_server_ciphers on;
-            #Intentionally not hardened for security for player support and encryption video streams has a lot of overhead with something like AES-256-GCM-SHA384.
+            # intentionally not hardened for security for player support and encryption video streams has a lot of overhead with something like AES-256-GCM-SHA384.
             ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:ECDHE-RSA-DES-CBC3-SHA:ECDHE-ECDSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
 
-            # Forward real ip and host to Plex
+            # forward real ip and host to Plex
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
@@ -101,7 +143,7 @@ in {
             proxy_set_header Referer $server_addr;
             proxy_set_header Origin $server_addr;
 
-            # Plex has A LOT of javascript, xml and html. This helps a lot, but if it causes playback issues with devices turn it off.
+            # plex has A LOT of javascript, xml and html. this helps a lot, but if it causes playback issues with devices turn it off.
             gzip on;
             gzip_vary on;
             gzip_min_length 1000;
@@ -109,11 +151,11 @@ in {
             gzip_types text/plain text/css text/xml application/xml text/javascript application/x-javascript image/svg+xml;
             gzip_disable "MSIE [1-6]\.";
 
-            # Nginx default client_max_body_size is 1MB, which breaks Camera Upload feature from the phones.
-            # Increasing the limit fixes the issue. Anyhow, if 4K videos are expected to be uploaded, the size might need to be increased even more
+            # nginx default client_max_body_size is 1MB, which breaks camera upload feature from the phones.
+            # increasing the limit fixes the issue. Anyhow, if 4K videos are expected to be uploaded, the size might need to be increased even more
             client_max_body_size 100M;
 
-            # Plex headers
+            # plex headers
             proxy_set_header X-Plex-Client-Identifier $http_x_plex_client_identifier;
             proxy_set_header X-Plex-Device $http_x_plex_device;
             proxy_set_header X-Plex-Device-Name $http_x_plex_device_name;
@@ -127,17 +169,17 @@ in {
             proxy_set_header X-Plex-Device-Vendor $http_x_plex_device_vendor;
             proxy_set_header X-Plex-Model $http_x_plex_model;
 
-            # Websockets
+            # websockets
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
 
-            # Buffering off send to the client as soon as the data is received from Plex.
+            # buffering off send to the client as soon as the data is received from Plex.
             proxy_redirect off;
             proxy_buffering off;
           '';
           locations."/" = {
-            proxyPass = "http://plex.pve.elmurphy.com:32400";
+            proxyPass = "http://${cfg.hostname}:32400";
           };
         };
       };

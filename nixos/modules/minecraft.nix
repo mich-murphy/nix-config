@@ -8,7 +8,6 @@
 with lib; let
   cfg = config.common.minecraft;
   mcVersion = "1.20.1";
-  # fabricVersion = "0.15.7";
   serverVersion = lib.replaceStrings ["."] ["_"] "fabric-${mcVersion}";
 in {
   imports = [

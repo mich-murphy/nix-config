@@ -9,31 +9,47 @@ with lib; let
 in {
   options.common.jellyfin = {
     enable = mkEnableOption "Enable Jellyfin with hardware transcoding";
+    hostname = mkOption {
+      type = types.str;
+      default = "jellyfin.pve.elmurphy.com";
+      description = "Hostname for Jellyfin";
+    };
+    hostAddress = mkOption {
+      type = types.str;
+      default = "127.0.0.1";
+      description = "IP address of Jellyfin host";
+    };
     nginx = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to enable nginx reverse proxy with SSL";
+      description = "Enable nginx reverse proxy with SSL";
     };
   };
+
+  # intel transcoding specification
+  # https://www.intel.com/content/www/us/en/docs/onevpl/developer-reference-media-intel-hardware/1-0/overview.html
+
+  # jellyfin documentation
+  # https://jellyfin.org/docs/general/administration/hardware-acceleration/intel
+
+  # arch wiki documentation
+  # https://wiki.archlinux.org/title/Hardware_video_acceleration#Verification
 
   config = mkIf cfg.enable {
     hardware.opengl = {
       enable = true;
-      extraPackages = with pkgs; [
-        intel-media-driver
-        vaapiIntel
-        vaapiVdpau
-        libvdpau-va-gl
-        intel-compute-runtime
+      extraPackages = [
+        pkgs.intel-media-driver
+        pkgs.intel-compute-runtime # opencl filter support (hardware tonemapping and subtitle burn-in)
       ];
     };
 
     environment = {
-      sessionVariables.LIBVA_DRIVER_NAME = "iHD";
-      systemPackages = with pkgs; [
-        linux-firmware
-        intel-gpu-tools
-        libva-utils
+      sessionVariables.LIBVA_DRIVER_NAME = "iHD"; # force intel-media-driver
+      systemPackages = [
+        pkgs.linux-firmware # needed for intel graphics support on skylake or newer
+        pkgs.intel-gpu-tools # intel_gpu_top allows monitoring of gpu
+        pkgs.libva-utils # vainfo allows verification of va-api info
       ];
     };
 
@@ -49,12 +65,13 @@ in {
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
         clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.
-        virtualHosts."jellyfin.pve.elmurphy.com" = {
+        virtualHosts.${cfg.hostname} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:8096";
+            # https://jellyfin.org/docs/general/networking/#port-bindings
+            proxyPass = "http://${cfg.hostAddress}:8096";
             proxyWebsockets = true;
             extraConfig = ''
               # Disable buffering when the nginx proxy gets very resource heavy upon streaming
@@ -65,6 +82,6 @@ in {
       };
     };
 
-    users.users.jellyfin.extraGroups = ["render" "media"];
+    users.users.jellyfin.extraGroups = ["render" "media"]; # allow access to internal gpu
   };
 }
