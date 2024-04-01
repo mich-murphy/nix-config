@@ -28,9 +28,7 @@ in {
       type = with types; nullOr (coercedTo str singleton (listOf str));
       default = null;
       description = "List of backup filepaths";
-      example = [
-        "/var/lib"
-      ];
+      example = ["/var/lib"];
     };
   };
 

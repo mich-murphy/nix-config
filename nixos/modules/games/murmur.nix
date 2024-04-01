@@ -37,6 +37,6 @@ in {
       };
     };
 
-    age.secrets.murmurPass.file = ../../secrets/murmurPass.age;
+    age.secrets.murmurPass.file = ../../../secrets/murmurPass.age;
   };
 }

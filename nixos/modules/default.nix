@@ -2,19 +2,22 @@
   imports = [
     ./nextcloud.nix
     ./borgbackup.nix
-    ./syncthing.nix
-    ./plex.nix
     ./freshrss.nix
-    ./audiobookshelf.nix
     ./tailscale.nix
-    ./jellyfin.nix
     ./acme.nix
-    ./uptime-kuma.nix
-    ./komga.nix
-    ./arrs.nix
     ./gitea.nix
-    ./ytdlp.nix
-    ./minecraft.nix
-    ./murmur.nix
+    ./media/plex.nix
+    ./media/audiobookshelf.nix
+    ./media/jellyfin.nix
+    ./media/komga.nix
+    ./media/ytdlp.nix
+    ./games/murmur.nix
+    ./games/minecraft.nix
+    ./downloads/sabnzdb.nix
+    ./downloads/lidarr.nix
+    ./downloads/radarr.nix
+    ./downloads/sonarr.nix
+    ./downloads/readarr.nix
+    ./downloads/prowlarr.nix
   ];
 }

@@ -20,10 +20,10 @@ in {
       description = "Gitea Postgres DB backup path";
       example = "/data/backups/postgresql";
     };
-    hostname = mkOption {
+    domain = mkOption {
       type = types.str;
       default = "git.pve.elmurphy.com";
-      description = "Hostname for Gitea";
+      description = "Domain for Gitea";
     };
     hostAddress = mkOption {
       type = types.str;
@@ -43,6 +43,13 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
+
     services = {
       gitea = {
         enable = true;
@@ -58,8 +65,8 @@ in {
           backupDir = cfg.backupDir;
         };
         settings.server = {
-          DOMAIN = "${cfg.hostname}";
-          ROOT_URL = "https://${cfg.hostname}/";
+          DOMAIN = "${cfg.domain}";
+          ROOT_URL = "https://${cfg.domain}/";
           HTTP_PORT = cfg.port;
         };
       };
@@ -82,12 +89,7 @@ in {
         startAt = "*-*-* 23:15:00";
       };
       nginx = mkIf cfg.nginx {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        virtualHosts."${cfg.hostname}" = {
+        virtualHosts."${cfg.domain}" = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;

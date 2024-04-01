@@ -13,10 +13,10 @@ in {
       default = "mm";
       description = "Default user for FreshRSS login";
     };
-    hostname = mkOption {
+    domain = mkOption {
       type = types.str;
       default = "freshrss.pve.elmurphy.com";
-      description = "Hostname for FreshRSS";
+      description = "Domain for FreshRSS";
     };
     nginx = mkOption {
       type = types.bool;
@@ -26,15 +26,22 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
+
     services = {
       freshrss = {
         enable = true;
         defaultUser = cfg.defaultUser;
         passwordFile = config.age.secrets.freshrssPass.path;
-        baseUrl = "https://${cfg.hostname}";
+        baseUrl = "https://${cfg.domain}";
         virtualHost =
           if cfg.nginx
-          then cfg.hostname
+          then cfg.domain
           else null;
         database = {
           name = "freshrss";
@@ -44,12 +51,7 @@ in {
       };
       # creation of cert potentially problematic - deactivate nginx option to provision
       nginx = mkIf cfg.nginx {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        virtualHosts.${cfg.hostname} = {
+        virtualHosts.${cfg.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;

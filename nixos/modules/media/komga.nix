@@ -8,10 +8,16 @@ with lib; let
 in {
   options.common.komga = {
     enable = mkEnableOption "Enable Komga";
-    hostname = mkOption {
+    extraGroups = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = "Additional groups for komga user";
+      example = ["media"];
+    };
+    domain = mkOption {
       type = types.str;
       default = "komga.pve.elmurphy.com";
-      description = "Hostname for Komga";
+      description = "Domain for Komga";
     };
     hostAddress = mkOption {
       type = types.str;
@@ -31,6 +37,13 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
+
     services = {
       komga = {
         enable = true;
@@ -38,12 +51,7 @@ in {
         openFirewall = true;
       };
       nginx = mkIf cfg.nginx {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        virtualHosts.${cfg.hostname} = {
+        virtualHosts.${cfg.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -55,6 +63,6 @@ in {
       };
     };
 
-    users.users.komga.extraGroups = ["media"];
+    users.users.komga.extraGroups = cfg.extraGroups;
   };
 }

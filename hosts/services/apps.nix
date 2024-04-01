@@ -9,7 +9,9 @@
     ../../nixos/modules
   ];
 
-  common.tailscale.enable = true;
+  common = {
+    tailscale.enable = true;
+  };
 
   environment = {
     systemPackages = [
@@ -25,6 +27,7 @@
 
   services = {
     qemuGuest.enable = true; # used for hypervisor operations
+    sabnzbd.enable = true;
     deluge = {
       enable = true;
       web.enable = true; # enable web ui

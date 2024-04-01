@@ -19,6 +19,12 @@ with lib; let
 in {
   options.common.plex = {
     enable = mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
+    extraGroups = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = "Additional groups for plex user";
+      example = ["media"];
+    };
     enableAudnexus = mkOption {
       type = types.bool;
       default = false;
@@ -29,10 +35,10 @@ in {
       default = false;
       description = "Enable Tautulli";
     };
-    tautulliHostname = mkOption {
+    tautulliDomain = mkOption {
       type = types.str;
       default = "tautulli.pve.elmurphy.com";
-      description = "Hostname for Tautulli";
+      description = "Domain for Tautulli";
     };
     tautulliHostAddress = mkOption {
       type = types.str;
@@ -44,10 +50,10 @@ in {
       default = false;
       description = "Enable Overseerr";
     };
-    overseerrHostname = mkOption {
+    overseerrDomain = mkOption {
       type = types.str;
       default = "overseerr.pve.elmurphy.com";
-      description = "Hostname for Tautulli";
+      description = "Domain for Tautulli";
     };
     overseerrHostAddress = mkOption {
       type = types.str;
@@ -59,10 +65,10 @@ in {
       default = 5055;
       description = "Port for Overseerr";
     };
-    hostname = mkOption {
+    domain = mkOption {
       type = types.str;
       default = "plex.pve.elmurphy.com";
-      description = "Hostname for Plex";
+      description = "Domain for Plex";
     };
     nginx = mkOption {
       type = types.bool;
@@ -72,6 +78,13 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
+
     virtualisation.oci-containers = mkIf cfg.enableOverseerr {
       backend = "docker";
       containers."overseerr" = {
@@ -101,7 +114,7 @@ in {
         then true
         else false;
       nginx = mkIf cfg.nginx {
-        virtualHosts.${cfg.overseerrHostname} = mkIf cfg.enableOverseerr {
+        virtualHosts.${cfg.overseerrDomain} = mkIf cfg.enableOverseerr {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -110,7 +123,7 @@ in {
             proxyWebsockets = true;
           };
         };
-        virtualHosts.${cfg.tautulliHostname} = mkIf config.services.tautulli.enable {
+        virtualHosts.${cfg.tautulliDomain} = mkIf config.services.tautulli.enable {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -118,7 +131,7 @@ in {
             proxyPass = "http://${cfg.tautulliHostAddress}:8181";
           };
         };
-        virtualHosts.${cfg.hostname} = {
+        virtualHosts.${cfg.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -179,12 +192,12 @@ in {
             proxy_buffering off;
           '';
           locations."/" = {
-            proxyPass = "http://${cfg.hostname}:32400";
+            proxyPass = "http://${cfg.domain}:32400";
           };
         };
       };
     };
 
-    users.users.plex.extraGroups = ["media"];
+    users.users.plex.extraGroups = cfg.extraGroups;
   };
 }

@@ -9,10 +9,16 @@ with lib; let
 in {
   options.common.jellyfin = {
     enable = mkEnableOption "Enable Jellyfin with hardware transcoding";
-    hostname = mkOption {
+    extraGroups = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = "Additional groups for jellyfin user";
+      example = ["media"];
+    };
+    domain = mkOption {
       type = types.str;
       default = "jellyfin.pve.elmurphy.com";
-      description = "Hostname for Jellyfin";
+      description = "Domain for Jellyfin";
     };
     hostAddress = mkOption {
       type = types.str;
@@ -36,6 +42,13 @@ in {
   # https://wiki.archlinux.org/title/Hardware_video_acceleration#Verification
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
+
     hardware.opengl = {
       enable = true;
       extraPackages = [
@@ -59,13 +72,8 @@ in {
         openFirewall = true;
       };
       nginx = mkIf cfg.nginx {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
         clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.
-        virtualHosts.${cfg.hostname} = {
+        virtualHosts.${cfg.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -82,6 +90,6 @@ in {
       };
     };
 
-    users.users.jellyfin.extraGroups = ["render" "media"]; # allow access to internal gpu
+    users.users.jellyfin.extraGroups = cfg.extraGroups ++ ["render"]; # allow access to internal gpu
   };
 }

@@ -38,6 +38,8 @@ in {
             enable-command-block = true;
           };
           symlinks = {
+            # fetch mods from modrinth
+            # hash identified: nix run github:Infinidoge/nix-minecraft#nix-modrinth-prefetch -- <version-id>
             mods = pkgs.linkFarmFromDrvs "mods" (builtins.attrValues {
               FabricApi = pkgs.fetchurl {
                 url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/YG53rBmj/fabric-api-0.92.0%2B1.20.1.jar";

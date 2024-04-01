@@ -8,10 +8,16 @@ with lib; let
 in {
   options.common.audiobookshelf = {
     enable = mkEnableOption "Enable Audiobookshelf";
-    hostname = mkOption {
+    extraGroups = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = "Additional groups for audiobookshelf user";
+      example = ["media"];
+    };
+    domain = mkOption {
       type = types.str;
       default = "audiobookshelf.pve.elmurphy.com";
-      description = "Hostname for Audiobookshelf";
+      description = "Domain for Audiobookshelf";
     };
     hostAddress = mkOption {
       type = types.str;
@@ -26,17 +32,18 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
     services = {
       audiobookshelf = {
         enable = true;
       };
       nginx = mkIf cfg.nginx {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        virtualHosts.${cfg.hostname} = {
+        virtualHosts.${cfg.domain} = {
           enableACME = true;
           addSSL = true;
           acmeRoot = null;
@@ -48,6 +55,6 @@ in {
       };
     };
 
-    users.users.audiobookshelf.extraGroups = ["media"];
+    users.users.audiobookshelf.extraGroups = cfg.extraGroups;
   };
 }

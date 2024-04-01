@@ -9,15 +9,28 @@ with lib; let
 in {
   options.common.nextcloud = {
     enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
+    dataDir = mkOption {
+      type = types.str;
+      description = "Directory for storing Nextcloud data";
+      example = "/data/nextcloud";
+    };
+    postgresqlBackupDir = mkOption {
+      type = types.str;
+      description = "Directory for storing Nextcloud DB dump";
+      example = "/data/backups/postgresql";
+    };
     domain = mkOption {
       type = types.str;
       default = "nextcloud.pve.elmurphy.com";
-      description = "Hostname for Nextcloud service";
+      description = "Domain for Nextcloud service";
     };
-    borgbackup = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Whether to enable borgbackup for Nextcloud";
+    borgbackup = {
+      enable = mkEnableOption "Enable borgbackup for Nextcloud";
+      repo = mkOption {
+        type = types.str;
+        description = "Borgbackup repository";
+        example = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
+      };
     };
     nginx = mkOption {
       type = types.bool;
@@ -27,12 +40,19 @@ in {
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = cfg.nginx -> config.services.nginx.enable == true;
+        message = "Nginx needs to be enabled";
+      }
+    ];
+
     services = {
       nextcloud = {
         enable = true;
         hostName = cfg.domain;
         package = pkgs.nextcloud28;
-        datadir = "/data/nextcloud";
+        datadir = cfg.dataDir;
         database.createLocally = true;
         configureRedis = true;
         https = true;
@@ -60,17 +80,17 @@ in {
       };
       postgresqlBackup = {
         enable = true;
-        location = "/data/backups/postgresql";
+        location = cfg.postgresqlBackupDir;
         databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
       };
-      borgbackup.jobs = mkIf cfg.borgbackup {
+      borgbackup.jobs = mkIf cfg.borgbackup.enable {
         "nextcloud" = {
           paths = [
             config.services.postgresqlBackup.location
             config.services.nextcloud.datadir
           ];
-          repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
+          repo = cfg.borgbackup.repo;
           encryption = {
             mode = "repokey-blake2";
             passCommand = "cat ${config.age.secrets.nextcloudBorgPass.path}";
@@ -86,11 +106,6 @@ in {
         };
       };
       nginx = mkIf cfg.nginx {
-        enable = true;
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
         virtualHosts."${cfg.domain}" = {
           enableACME = true;
           addSSL = true;
