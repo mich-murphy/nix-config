@@ -16,7 +16,6 @@ in {
   config = mkIf cfg.enable {
     programs.firefox = {
       enable = true;
-      # fake package - managed by homebrew instead
       package = fakepkg "firefox";
       profiles."mm" = {
         isDefault = true;
@@ -31,8 +30,10 @@ in {
           new-tab-override
         ];
         settings = {
+          # enable loading of custom userchrome
           "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
         };
+        # load customised theme css
         userChrome = builtins.readFile ./userChrome.css;
       };
     };

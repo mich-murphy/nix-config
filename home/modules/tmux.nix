@@ -32,7 +32,6 @@ in {
       newSession = false;
       prefix = "C-a";
       terminal = "screen-256color";
-      tmuxp.enable = true;
       plugins = with pkgs; [
         tmuxPlugins.tmux-fzf
         tmuxPlugins.vim-tmux-navigator
@@ -72,7 +71,5 @@ in {
         set-option -g status-position top
       '';
     };
-
-    home.file.".tmuxp/tmuxp.yaml".source = ./tmuxp.yaml;
   };
 }

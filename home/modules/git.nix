@@ -108,6 +108,7 @@ in {
           line-numbers-zero-style = "#3b4261";
         };
       };
+      # specify diff application for file types
       attributes = [
         "*.bash diff=bash"
         "*.c diff=cpp"

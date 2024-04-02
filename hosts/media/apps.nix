@@ -32,6 +32,7 @@
         "/var/lib/radarr"
         "/var/lib/readarr"
         "/var/lib/sonarr"
+        "/var/lib/sabnzbd"
         "/var/lib/ytdlp-sub/ytdl-sub-configs"
       ];
     };

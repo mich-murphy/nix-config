@@ -1,13 +1,16 @@
 {...}: {
   imports = [
-    ./tmux
-    ./firefox
-    ./neovim.nix
+    ./cli
+    ./hammerspoon
+    ./karabiner
     ./alacritty.nix
-    ./kitty.nix
+    ./firefox
     ./git.nix
-    ./cli.nix
+    ./kitty.nix
+    ./neovim.nix
+    ./spotifyd.nix
     ./ssh.nix
+    ./tmux.nix
     ./yazi.nix
   ];
 }
