@@ -57,7 +57,7 @@
       backupDir = "/data/backups/gitea";
       postgresBackupDir = "/data/backups/postgresql";
     };
-    ytdlp = {
+    pinchflat = {
       enable = true;
       mediaDir = "/mnt/data/media/youtube";
     };
