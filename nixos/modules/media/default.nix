@@ -5,5 +5,6 @@
     ./komga.nix
     ./plex.nix
     ./ytdlp.nix
+    ./pinchflat.nix
   ];
 }
