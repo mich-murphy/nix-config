@@ -56,7 +56,7 @@ in {
       backend = "docker";
       containers."pinchflat" = {
         autoStart = true;
-        image = "keglin/pinchflat:latest"; 
+        image = "ghcr.io/kieraneglin/pinchflat:latest"; 
         ports = ["${toString cfg.port}:8945"];
         volumes = [
           "${cfg.dataDir}:/config"
