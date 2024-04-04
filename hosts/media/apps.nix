@@ -27,13 +27,12 @@
         "/var/lib/jellyfin"
         "/var/lib/komga"
         "/var/lib/lidarr"
-        "/var/lib/nzbget"
         "/var/lib/prowlarr"
         "/var/lib/radarr"
         "/var/lib/readarr"
         "/var/lib/sonarr"
         "/var/lib/sabnzbd"
-        "/var/lib/ytdlp-sub/ytdl-sub-configs"
+        "/var/lib/pinchflat"
       ];
     };
     komga = {
