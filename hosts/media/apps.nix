@@ -47,6 +47,10 @@
       enableTautulli = true;
       enableOverseerr = true;
     };
+    jellyfin = {
+      enable = true;
+      extraGroups = ["media"];
+    };
     audiobookshelf = {
       enable = true;
       extraGroups = ["media"];
@@ -90,13 +94,15 @@
   environment.systemPackages = [
     pkgs.vim
     pkgs.tmux
-    pkgs.docker-compose
     pkgs.lazydocker
     pkgs.cifs-utils # used for samba
     # disk usage tooling
     pkgs.du-dust
     pkgs.dua
     pkgs.duf
+    # stress testing
+    pkgs.s-tui
+    pkgs.stress-ng
   ];
 
   services = {

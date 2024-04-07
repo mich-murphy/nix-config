@@ -6,7 +6,27 @@
 
   system = {
     checks.verifyNixPath = false; # run NIX_PATH validation checks
+    activationScripts.postUserActivation.text = ''
+      # Following line should allow us to avoid a logout/login cycle
+      /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+    '';
     defaults = {
+      CustomUserPreferences = {
+        "com.apple.AdLib" = {
+          allowApplePersonalizedAdvertising = false;
+        };
+        "com.apple.desktopservices" = {
+          # Avoid creating .DS_Store files on network or USB volumes
+          DSDontWriteNetworkStores = true;
+          DSDontWriteUSBStores = true;
+        };
+        "com.apple.SoftwareUpdate" = {
+          AutomaticCheckEnabled = true;
+          ScheduleFrequency = 1; # Check for software updates daily, not just once per week
+          AutomaticDownload = 1; # Download newly available updates in background
+          CriticalUpdateInstall = 1; # Install System data files & security updates
+        };
+      };
       dock = {
         autohide = true;
         autohide-delay = 0.1; # configure autohide timing
