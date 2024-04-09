@@ -3,6 +3,7 @@
     ./cli
     ./hammerspoon
     ./karabiner
+    # ./stylix
     ./alacritty.nix
     ./firefox
     ./git.nix

@@ -25,6 +25,8 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
+    # stylix.url = "github:danth/stylix";
+
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
   };
 
@@ -39,6 +41,7 @@
     agenix,
     deploy-rs,
     impermanence,
+    # stylix,
     nix-minecraft,
     ...
   } @ inputs: {
@@ -47,6 +50,7 @@
       modules = [
         ./hosts/laptop
         home-manager.darwinModules.home-manager
+        # stylix.darwinModules.stylix
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
