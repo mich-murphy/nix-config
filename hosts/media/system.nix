@@ -42,7 +42,7 @@
     options = let
       # this line prevents hanging on network split
       automount_opts = "x-systemd.automount,noauto,x-systemd.idle-timeout=60,x-systemd.device-timeout=5s,x-systemd.mount-timeout=5s,dir_mode=0775,file_mode=0775";
-    in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path},gid=${toString config.users.groups.media.gid}"];
+    in ["${automount_opts},credentials=${config.age.secrets.sambaPass.path},uid=1000,gid=${toString config.users.groups.media.gid}"];
   };
 
   # agenix managed samba secret
