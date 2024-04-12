@@ -86,6 +86,15 @@
       ];
     };
 
+    nixosConfigurations.ai = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/ai
+        agenix.nixosModules.default
+        disko.nixosModules.disko
+      ];
+    };
+
     deploy.nodes = {
       media = {
         hostname = "media";
@@ -105,6 +114,16 @@
           sshUser = "mm";
           sshOpts = ["-o" "StrictHostKeyChecking=no"];
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.services;
+        };
+      };
+      ai = {
+        hostname = "ai";
+        remoteBuild = true;
+        profiles.system = {
+          user = "root";
+          sshUser = "mm";
+          sshOpts = ["-o" "StrictHostKeyChecking=no"];
+          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.ai;
         };
       };
     };
