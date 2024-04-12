@@ -47,10 +47,6 @@
       enableTautulli = true;
       enableOverseerr = true;
     };
-    jellyfin = {
-      enable = true;
-      extraGroups = ["media"];
-    };
     audiobookshelf = {
       enable = true;
       extraGroups = ["media"];
