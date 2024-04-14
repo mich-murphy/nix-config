@@ -15,6 +15,7 @@
     pkgs.git
     pkgs.curl
     pkgs.xcode-install
+    pkgs.deploy-rs
   ];
 
   fonts = {
@@ -62,6 +63,7 @@
       "hammerspoon"
       "utm" # manage virtual machines
       "logitech-options" # management of mouse
+      "plexamp"
     ];
   };
 }

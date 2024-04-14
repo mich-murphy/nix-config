@@ -8,6 +8,11 @@ with lib; let
 in {
   options.common.tailscale = {
     enable = mkEnableOption "Enable Tailscale";
+    limitNetworkInterfaces = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Only accept traffix via the Tailscale interface";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -17,7 +22,10 @@ in {
     };
 
     networking.firewall = {
-      trustedInterfaces = ["tailscale0"];
+      trustedInterfaces =
+        if cfg.limitNetworkInterfaces
+        then ["tailscale0"]
+        else [];
       allowedUDPPorts = [config.services.tailscale.port];
     };
   };

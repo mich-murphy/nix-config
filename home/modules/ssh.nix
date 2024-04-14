@@ -30,6 +30,14 @@ in {
             "LC_ALL" = "C";
           };
         };
+        "ai" = {
+          hostname = "ai";
+          user = "mm";
+          serverAliveInterval = 600;
+          setEnv = {
+            "LC_ALL" = "C";
+          };
+        };
         "proxmox" = {
           hostname = "proxmox";
           user = "root";

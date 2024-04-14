@@ -103,14 +103,33 @@
 
   services = {
     qemuGuest.enable = true; # used for hypervisor operations
-    # reverse proxy for deluge
-    nginx.virtualHosts."deluge.pve.elmurphy.com" = {
-      enableACME = true;
-      addSSL = true;
-      acmeRoot = null;
-      locations."/" = {
-        proxyPass = "http://100.69.115.120:8112";
-        proxyWebsockets = true;
+    nginx = { # reverse proxy to other services
+      virtualHosts."deluge.pve.elmurphy.com" = {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://100.69.115.120:8112";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."ollama.pve.elmurphy.com" = {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://100.90.189.72:8080";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."invokeai.pve.elmurphy.com" = {
+        enableACME = true;
+        addSSL = true;
+        acmeRoot = null;
+        locations."/" = {
+          proxyPass = "http://100.90.189.72:9090";
+          proxyWebsockets = true;
+        };
       };
     };
   };

@@ -25,9 +25,9 @@
 
     impermanence.url = "github:nix-community/impermanence";
 
-    # stylix.url = "github:danth/stylix";
-
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
+
+    nixified-ai.url = "github:nixified-ai/flake";
   };
 
   outputs = {
@@ -41,8 +41,8 @@
     agenix,
     deploy-rs,
     impermanence,
-    # stylix,
     nix-minecraft,
+    nixified-ai,
     ...
   } @ inputs: {
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
@@ -50,7 +50,6 @@
       modules = [
         ./hosts/laptop
         home-manager.darwinModules.home-manager
-        # stylix.darwinModules.stylix
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
@@ -92,6 +91,7 @@
         ./hosts/ai
         agenix.nixosModules.default
         disko.nixosModules.disko
+        nixified-ai.nixosModules.invokeai-nvidia
       ];
     };
 
