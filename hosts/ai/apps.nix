@@ -11,7 +11,7 @@
     systemPackages = [
       pkgs.vim
       pkgs.git
-      pkgs.nvtopPackages.full # gpu utilisation metrics
+      pkgs.nvtopPackages.nvidia # gpu utilisation metrics
       pkgs.glib # invokeai dependency
     ];
   };
