@@ -11,6 +11,7 @@
     systemPackages = [
       pkgs.vim
       pkgs.git
+      pkgs.sunshine
       pkgs.nvtopPackages.nvidia # gpu utilisation metrics
       pkgs.glib # invokeai dependency
     ];
@@ -23,6 +24,17 @@
       acceleration = "cuda";
     };
     # invokeai.enable = true; # deploy .#ai -- --impure to handle broken python injector
+    xserver = {
+      enable = true;
+      displayManager = {
+        gdm.enable = true;
+        gnome.enable = true;
+        autologin = {
+          enable = true;
+          user = "mm";
+        }; 
+      }; 
+    };
   };
 
   virtualisation = {
