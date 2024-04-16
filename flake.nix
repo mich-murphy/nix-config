@@ -26,8 +26,6 @@
     impermanence.url = "github:nix-community/impermanence";
 
     nix-minecraft.url = "github:Infinidoge/nix-minecraft";
-
-    nixified-ai.url = "github:nixified-ai/flake";
   };
 
   outputs = {
@@ -42,7 +40,6 @@
     deploy-rs,
     impermanence,
     nix-minecraft,
-    nixified-ai,
     ...
   } @ inputs: {
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
@@ -85,16 +82,6 @@
       ];
     };
 
-    nixosConfigurations.ai = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs;};
-      modules = [
-        ./hosts/ai
-        agenix.nixosModules.default
-        disko.nixosModules.disko
-        nixified-ai.nixosModules.invokeai-nvidia
-      ];
-    };
-
     deploy.nodes = {
       media = {
         hostname = "media";
@@ -114,16 +101,6 @@
           sshUser = "mm";
           sshOpts = ["-o" "StrictHostKeyChecking=no"];
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.services;
-        };
-      };
-      ai = {
-        hostname = "ai";
-        remoteBuild = true;
-        profiles.system = {
-          user = "root";
-          sshUser = "mm";
-          sshOpts = ["-o" "StrictHostKeyChecking=no"];
-          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.ai;
         };
       };
     };

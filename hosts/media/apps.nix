@@ -118,7 +118,7 @@
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://100.90.189.72:8080";
+          proxyPass = "http://100.68.54.58:8080";
           proxyWebsockets = true;
         };
       };
@@ -127,7 +127,7 @@
         addSSL = true;
         acmeRoot = null;
         locations."/" = {
-          proxyPass = "http://100.90.189.72:9090";
+          proxyPass = "http://100.68.54.58:9090";
           proxyWebsockets = true;
         };
       };

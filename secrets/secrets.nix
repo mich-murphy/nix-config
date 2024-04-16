@@ -1,10 +1,9 @@
 let
   media = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVyN0R5mTtfcbkmVXjicuvSRotJY4IOuetOgPyG2lg8";
   services = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOt6E5Phwiv2S2yed58vOBzsyeQJ/ZhiBDAA8j+gGyq7";
-  ai = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFrFYoyn/h8hYJaDdwW7jELwXpn1sIWd+TKUwRz4x7nP";
   servers = [media services];
 in {
-  "userPass.age".publicKeys = servers ++ [ai];
+  "userPass.age".publicKeys = servers;
   "nextcloudPass.age".publicKeys = [media];
   "acmeCredentials.age".publicKeys = [media];
   "objectStorage.age".publicKeys = [media];
