@@ -71,6 +71,7 @@ in {
         };
       };
       postgresql = {
+        enable = true;
         ensureDatabases = [config.services.gitea.user];
         ensureUsers = [
           {

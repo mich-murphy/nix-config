@@ -7,6 +7,7 @@
     ./borgbackup.nix
     ./freshrss.nix
     ./gitea.nix
+    ./matrix.nix
     ./nextcloud.nix
     ./tailscale.nix
   ];
