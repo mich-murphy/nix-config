@@ -60,7 +60,9 @@ in {
             }
           ];
           app_service_config_files = [
-            # configuration details https://nixos.wiki/wiki/Matrix#mautrix-telegram
+            # configuration details
+            # https://github.com/NixOS/nixpkgs/pull/253196/commits/9e0457115e7eb3f106b9ea60ab3ca92daed5b03f
+            # https://nixos.wiki/wiki/Matrix#mautrix-telegram
             "/var/lib/mautrix-whatsapp/whatsapp-registration.yaml"
           ];
           extraConfigFiles = [
@@ -71,7 +73,8 @@ in {
       mautrix-whatsapp = {
         enable = true;
         settings = {
-          # option documentation https://github.com/mautrix/whatsapp/blob/main/example-config.yaml
+          # option documentation
+          # https://github.com/mautrix/whatsapp/blob/main/example-config.yaml
           appservice = {
             database = {
               type = "postgres";
