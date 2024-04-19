@@ -15,5 +15,4 @@ in {
   "murmurPass.age".publicKeys = [media];
   "delugePass.age".publicKeys = [services];
   "matrixSharedSecret.age".publicKeys = [media];
-  "mautrixWhatsappSecret.age".publicKeys = [media];
 }

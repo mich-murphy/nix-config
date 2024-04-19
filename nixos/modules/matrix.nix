@@ -96,7 +96,6 @@ in {
             mute_bridging = true;
           };
         };
-        environmentFile = config.age.secrets.mautrixWhatsappSecret.path;
       };
       postgresql = {
         enable = true;
@@ -135,10 +134,6 @@ in {
     age.secrets.matrixSharedSecret = {
       file = ../../secrets/matrixSharedSecret.age;
       owner = "matrix-synapse";
-    };
-    age.secrets.mautrixWhatsappSecret = {
-      file = ../../secrets/mautrixWhatsappSecret.age;
-      owner = "mautrix-whatsapp";
     };
   };
 }
