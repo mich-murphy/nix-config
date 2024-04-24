@@ -108,9 +108,6 @@ in {
         ls = "eza -la";
         cat = "bat";
         vim = "nvim";
-        rg = "batgrep";
-        man = "batman";
-        diff = "batdiff";
         p = "less";
         # git
         gswr = "git switch-recent";

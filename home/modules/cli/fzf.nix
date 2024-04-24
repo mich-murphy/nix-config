@@ -15,8 +15,7 @@ in {
       enable = true;
       enableZshIntegration = true;
       tmux.enableShellIntegration = true;
-      defaultCommand = ''rg --files --hidden --glob "!.git"'';
-      fileWidgetCommand = "$FZF_DEFAULT_COMMAND";
+      fileWidgetCommand = ''rg --files --hidden --glob "!.git"'';
       colors = {
         "bg+" = "#1a1b26";
         fg = "#a9b1d6";

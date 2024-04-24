@@ -64,6 +64,7 @@
       "utm" # manage virtual machines
       "logitech-options" # management of mouse
       "plexamp"
+      "moonlight"
     ];
   };
 }

@@ -46,11 +46,6 @@ in {
             file = "tokyonight_night.tmTheme";
           };
         };
-        extraPackages = with pkgs.bat-extras; [
-          batgrep
-          batdiff
-          batman
-        ];
       };
       starship = {
         enable = true;
