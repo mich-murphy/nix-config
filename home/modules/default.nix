@@ -11,7 +11,6 @@
     ./neovim.nix
     ./spotifyd.nix
     ./ssh.nix
-    ./tmux.nix
     ./yazi.nix
   ];
 }
