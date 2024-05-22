@@ -72,6 +72,7 @@ in {
           "${cfg.completeDir}:/downloads"
           "${cfg.incompleteDir}:/incomplete-downloads"
         ];
+        extraOptions = ["--dns=1.1.1.1" "--dns=1.0.0.1"];
       };
     };
 

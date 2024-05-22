@@ -60,7 +60,6 @@
       enable = true;
       mediaDir = "/mnt/data/media/youtube";
     };
-    matrix.enable = true;
     minecraft.enable = true;
     murmur.enable = true;
     sabnzbd = {

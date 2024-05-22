@@ -1,5 +1,4 @@
 {
-  pkgs,
   inputs,
   ...
 }: {
@@ -19,7 +18,6 @@
   };
 
   nix = {
-    package = pkgs.nixUnstable; # nix package instance to use in system
     registry.nixpkgs.flake = inputs.nixpkgs; # system wide flake registry
     # weekly garbage collection to minimise disk usage
     gc = {

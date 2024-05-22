@@ -51,7 +51,7 @@ in {
       nextcloud = {
         enable = true;
         hostName = cfg.domain;
-        package = pkgs.nextcloud28;
+        package = pkgs.nextcloud29;
         datadir = cfg.dataDir;
         database.createLocally = true;
         configureRedis = true;
@@ -60,7 +60,7 @@ in {
         # appstoreEnable = true;
         autoUpdateApps.enable = true;
         extraApps = with config.services.nextcloud.package.packages.apps; {
-          inherit contacts calendar notes tasks;
+          inherit contacts calendar notes; # tasks incompatible with v29
         };
         settings = {
           default_phone_region = "AU";

@@ -8,7 +8,7 @@ with lib; let
   cfg = config.common.tmux;
   catppuccin = pkgs.tmuxPlugins.mkTmuxPlugin {
     pluginName = "catppuccin";
-    version = "unstable-2023-09-11";
+    # version = "unstable-2023-09-11";
     src = pkgs.fetchFromGitHub {
       owner = "catppuccin";
       repo = "tmux";
