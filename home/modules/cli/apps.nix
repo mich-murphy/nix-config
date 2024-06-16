@@ -3,15 +3,14 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.apps;
 in {
   options.common.apps = {
-    enable = mkEnableOption "Enable personalised CLI utils";
+    enable = lib.mkEnableOption "Enable personalised CLI utils";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     home.packages = with pkgs; [
       fd
       sd

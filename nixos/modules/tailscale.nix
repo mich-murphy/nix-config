@@ -2,20 +2,19 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.tailscale;
 in {
   options.common.tailscale = {
-    enable = mkEnableOption "Enable Tailscale";
-    limitNetworkInterfaces = mkOption {
-      type = types.bool;
+    enable = lib.mkEnableOption "Enable Tailscale";
+    limitNetworkInterfaces = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Only accept traffix via the Tailscale interface";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services.tailscale = {
       enable = true;
       useRoutingFeatures = "client";

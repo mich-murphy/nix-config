@@ -2,15 +2,14 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.yazi;
 in {
   options.common.yazi = {
-    enable = mkEnableOption "Enable Yazi with personalised settings";
+    enable = lib.mkEnableOption "Enable Yazi with personalised settings";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.yazi = {
       enable = true;
       enableZshIntegration = true;

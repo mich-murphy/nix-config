@@ -5,14 +5,14 @@
   ...
 }:
 # reference: https://danth.github.io/stylix/options/hm.html
-with lib; let
+let
   cfg = config.common.stylix;
 in {
   options.common.stylix = {
-    enable = mkEnableOption "Enable Stylix to theme system";
+    enable = lib.mkEnableOption "Enable Stylix to theme system";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     stylix = {
       image = ../../home/modules/stylix/wallpaper.jpg; # from host path
       polarity = "dark";

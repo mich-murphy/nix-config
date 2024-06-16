@@ -3,15 +3,14 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.zsh;
 in {
   options.common.zsh = {
-    enable = mkEnableOption "Enable personalised zshrc";
+    enable = lib.mkEnableOption "Enable personalised zshrc";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.zsh = {
       enable = true;
       dotDir = ".config/zsh";

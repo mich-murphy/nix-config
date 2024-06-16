@@ -3,8 +3,7 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.plex;
   # enable plugin for audiobook metadata
   audnexusPlugin = pkgs.stdenv.mkDerivation {
@@ -18,66 +17,66 @@ with lib; let
   };
 in {
   options.common.plex = {
-    enable = mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
-    extraGroups = mkOption {
-      type = types.listOf types.str;
+    enable = lib.mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
+    extraGroups = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [];
       description = "Additional groups for plex user";
       example = ["media"];
     };
-    enableAudnexus = mkOption {
-      type = types.bool;
+    enableAudnexus = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       description = "Enable audiobook metadata plugin";
     };
-    enableTautulli = mkOption {
-      type = types.bool;
+    enableTautulli = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       description = "Enable Tautulli";
     };
-    tautulliDomain = mkOption {
-      type = types.str;
+    tautulliDomain = lib.mkOption {
+      type = lib.types.str;
       default = "tautulli.pve.elmurphy.com";
       description = "Domain for Tautulli";
     };
-    tautulliHostAddress = mkOption {
-      type = types.str;
+    tautulliHostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address for Tautulli host";
     };
-    enableOverseerr = mkOption {
-      type = types.bool;
+    enableOverseerr = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       description = "Enable Overseerr";
     };
-    overseerrDomain = mkOption {
-      type = types.str;
+    overseerrDomain = lib.mkOption {
+      type = lib.types.str;
       default = "overseerr.pve.elmurphy.com";
       description = "Domain for Tautulli";
     };
-    overseerrHostAddress = mkOption {
-      type = types.str;
+    overseerrHostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address for Overseer host";
     };
-    overseerrPort = mkOption {
-      type = types.port;
+    overseerrPort = lib.mkOption {
+      type = lib.types.port;
       default = 5055;
       description = "Port for Overseerr";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "plex.pve.elmurphy.com";
       description = "Domain for Plex";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -85,7 +84,7 @@ in {
       }
     ];
 
-    virtualisation.oci-containers = mkIf cfg.enableOverseerr {
+    virtualisation.oci-containers = lib.mkIf cfg.enableOverseerr {
       backend = "docker";
       containers."overseerr" = {
         autoStart = true;
@@ -113,8 +112,8 @@ in {
         if cfg.enableTautulli
         then true
         else false;
-      nginx = mkIf cfg.nginx {
-        virtualHosts.${cfg.overseerrDomain} = mkIf cfg.enableOverseerr {
+      nginx = lib.mkIf cfg.nginx {
+        virtualHosts.${cfg.overseerrDomain} = lib.mkIf cfg.enableOverseerr {
           forceSSL = true;
           useACMEHost = "elmurphy.com";
           locations."/" = {
@@ -122,7 +121,7 @@ in {
             proxyWebsockets = true;
           };
         };
-        virtualHosts.${cfg.tautulliDomain} = mkIf config.services.tautulli.enable {
+        virtualHosts.${cfg.tautulliDomain} = lib.mkIf config.services.tautulli.enable {
           forceSSL = true;
           useACMEHost = "elmurphy.com";
           locations."/" = {

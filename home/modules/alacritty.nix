@@ -3,17 +3,16 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.alacritty;
   # fake package - managed by homebrew instead
   fakepkg = name: pkgs.runCommand name {} "mkdir $out";
 in {
   options.common.alacritty = {
-    enable = mkEnableOption "Enable Alacritty with personalised settings";
+    enable = lib.mkEnableOption "Enable Alacritty with personalised settings";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.alacritty = {
       enable = true;
       package = fakepkg "alacritty";

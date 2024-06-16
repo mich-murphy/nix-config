@@ -2,15 +2,14 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.skhd;
 in {
   options.common.skhd = {
-    enable = mkEnableOption "Enable SKHD hotkey daemon";
+    enable = lib.mkEnableOption "Enable SKHD hotkey daemon";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services = {
       skhd = {
         enable = true;

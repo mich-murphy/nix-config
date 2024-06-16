@@ -3,17 +3,16 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.kitty;
   # fake package - managed by homebrew instead
   fakepkg = name: pkgs.runCommand name {} "mkdir $out";
 in {
   options.common.kitty = {
-    enable = mkEnableOption "Enable kitty with personalised settings";
+    enable = lib.mkEnableOption "Enable kitty with personalised settings";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.kitty = {
       enable = true;
       package = fakepkg "kitty";

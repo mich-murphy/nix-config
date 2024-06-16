@@ -2,30 +2,29 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.murmur;
 in {
   options.common.murmur = {
-    enable = mkEnableOption "Enable Murmur Server for Mumble";
-    serverName = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Murmur Server for Mumble";
+    serverName = lib.mkOption {
+      type = lib.types.str;
       default = "J&E Gaming";
       description = "Mumble server name";
     };
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 64738;
       description = "Port for Murmur";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services = {
       murmur = {
         enable = true;

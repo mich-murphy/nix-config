@@ -2,15 +2,14 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.hammerspoon;
 in {
   options.common.hammerspoon = {
-    enable = mkEnableOption "Add hammerspoon configuration to home directory";
+    enable = lib.mkEnableOption "Add hammerspoon configuration to home directory";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     home.file.".hammerspoon" = {
       enable = true;
       recursive = true;

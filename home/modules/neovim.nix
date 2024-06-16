@@ -7,14 +7,14 @@
 # NOTE: Neovim config needs to be cloned manually:
 # git clone git@github.com:mich-murphy/neovim.git ~/.config/nvim
 # allows management of neovim outside of nix (for use on any computer)
-with lib; let
+let
   cfg = config.common.neovim;
 in {
   options.common.neovim = {
-    enable = mkEnableOption "Enable neovim with personalised config";
+    enable = lib.mkEnableOption "Enable neovim with personalised config";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.neovim = {
       enable = true;
       package = pkgs.neovim-unwrapped;
@@ -28,7 +28,6 @@ in {
         lazygit
         cargo
         alejandra
-        nil
         nixd
       ];
       extraPython3Packages = py:

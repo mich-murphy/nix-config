@@ -2,15 +2,14 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.spotifyd;
 in {
   options.common.spotifyd = {
-    enable = mkEnableOption "Add Spotifyd configuration for .config/";
+    enable = lib.mkEnableOption "Add Spotifyd configuration for .config/";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     xdg.configFile."spotifyd/spotifyd.conf" = {
       enable = true;
       target = "spotifyd/spotifyd.conf";

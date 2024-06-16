@@ -3,15 +3,14 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.git;
 in {
   options.common.git = {
-    enable = mkEnableOption "Enable Git with personalised settings";
+    enable = lib.mkEnableOption "Enable Git with personalised settings";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.git = {
       enable = true;
       userName = "mich-murphy";

@@ -3,8 +3,7 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.yabai;
 
   # override yabai version with latest available
@@ -19,10 +18,10 @@ with lib; let
   });
 in {
   options.common.yabai = {
-    enable = mkEnableOption "Enable Yabai MacOS window manager";
+    enable = lib.mkEnableOption "Enable Yabai MacOS window manager";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services = {
       yabai = {
         enable = true;

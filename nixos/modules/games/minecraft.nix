@@ -4,8 +4,7 @@
   pkgs,
   inputs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.minecraft;
   mcVersion = "1.20.1";
   serverVersion = lib.replaceStrings ["."] ["_"] "fabric-${mcVersion}";
@@ -15,10 +14,10 @@ in {
   ];
 
   options.common.minecraft = {
-    enable = mkEnableOption "Enable Minecraft Server";
+    enable = lib.mkEnableOption "Enable Minecraft Server";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services = {
       minecraft-servers = {
         enable = true;

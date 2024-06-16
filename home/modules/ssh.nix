@@ -2,15 +2,14 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.ssh;
 in {
   options.common.ssh = {
-    enable = mkEnableOption "Enable SSH config with configured hosts";
+    enable = lib.mkEnableOption "Enable SSH config with configured hosts";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.ssh = {
       enable = true;
       matchBlocks = {

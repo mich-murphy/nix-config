@@ -3,17 +3,16 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.firefox;
   # fake package - managed by homebrew instead
   fakepkg = name: pkgs.runCommand name {} "mkdir $out";
 in {
   options.common.firefox = {
-    enable = mkEnableOption "Enable Firefox with custom settings and userChrome.css";
+    enable = lib.mkEnableOption "Enable Firefox with custom settings and userChrome.css";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.firefox = {
       enable = true;
       package = fakepkg "firefox";

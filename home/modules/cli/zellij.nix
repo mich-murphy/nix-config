@@ -2,19 +2,18 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.zellij;
 in {
   options.common.zellij = {
-    enable = mkEnableOption "Enable Zellij with personalised configuration";
+    enable = lib.mkEnableOption "Enable Zellij with personalised configuration";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.zellij.enable = true;
 
     # add zellij configuration to .config/
-    xdg.configFile = mkIf config.programs.zellij.enable {
+    xdg.configFile = lib.mkIf config.programs.zellij.enable {
       "zellij/config.kdl" = {
         enable = true;
         target = "zellij/config.kdl";

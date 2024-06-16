@@ -2,37 +2,36 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.borgbackup;
 in {
   options.common.borgbackup = {
-    enable = mkEnableOption "Enable borgbackup for media and Nextcloud to BorgBase";
-    name = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable borgbackup for media and Nextcloud to BorgBase";
+    name = lib.mkOption {
+      type = lib.types.str;
       default = config.networking.hostName;
       description = "Name of Borgbackup job for reference by Systemd";
       example = "media";
     };
-    borgRepo = mkOption {
-      type = types.str;
+    borgRepo = lib.mkOption {
+      type = lib.types.str;
       description = "SSH URL of Borg repository";
       example = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
     };
-    backupFrequency = mkOption {
-      type = types.enum ["daily" "weekly" "monthly" "yearly"];
+    backupFrequency = lib.mkOption {
+      type = lib.types.enum ["daily" "weekly" "monthly" "yearly"];
       default = "daily";
       description = "Frequency for files and folders to be backed up";
     };
-    backupPaths = mkOption {
-      type = with types; nullOr (coercedTo str singleton (listOf str));
+    backupPaths = lib.mkOption {
+      type = lib.types.nullOr (lib.types.coercedTo lib.types.str lib.singleton (lib.types.listOf lib.types.str));
       default = null;
       description = "List of backup filepaths";
       example = ["/var/lib"];
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services.borgbackup.jobs.${cfg.name} = {
       paths = cfg.backupPaths;
       repo = cfg.borgRepo;

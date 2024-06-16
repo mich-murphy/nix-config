@@ -2,41 +2,40 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.komga;
 in {
   options.common.komga = {
-    enable = mkEnableOption "Enable Komga";
-    extraGroups = mkOption {
-      type = types.listOf types.str;
+    enable = lib.mkEnableOption "Enable Komga";
+    extraGroups = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [];
       description = "Additional groups for komga user";
       example = ["media"];
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "komga.pve.elmurphy.com";
       description = "Domain for Komga";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address of Komga host";
     };
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 6080;
       description = "Port for Komga";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -50,7 +49,7 @@ in {
         port = cfg.port;
         openFirewall = true;
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
           useACMEHost = "elmurphy.com";

@@ -2,15 +2,14 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.fzf;
 in {
   options.common.fzf = {
-    enable = mkEnableOption "Enable personalised FZF configuration";
+    enable = lib.mkEnableOption "Enable personalised FZF configuration";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     programs.fzf = {
       enable = true;
       enableZshIntegration = true;
