@@ -3,44 +3,44 @@
   config,
   ...
 }:
-with lib; let
+let
   cfg = config.common.pinchflat;
 in {
   options.common.pinchflat = {
-    enable = mkEnableOption "Enable Pinchflat";
-    dataDir = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Pinchflat";
+    dataDir = lib.mkOption {
+      type = lib.types.str;
       default = "/var/lib/pinchflat";
       description = "Path to Pinchflat config";
     };
-    mediaDir = mkOption {
-      type = types.str;
+    mediaDir = lib.mkOption {
+      type = lib.types.str;
       description = "Path to media";
       example = "/mnt/data/media/youtube";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "pinchflat.pve.elmurphy.com";
       description = "Domain for Pinchflat";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address for Pinchflat host";
     };
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 8945;
       description = "Port for Pinchflat";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -56,7 +56,7 @@ in {
       backend = "docker";
       containers."pinchflat" = {
         autoStart = true;
-        image = "ghcr.io/kieraneglin/pinchflat:latest"; 
+        image = "ghcr.io/kieraneglin/pinchflat:latest";
         ports = ["${toString cfg.port}:8945"];
         volumes = [
           "${cfg.dataDir}:/config"
@@ -64,14 +64,16 @@ in {
         ];
       };
     };
-    services.nginx = mkIf cfg.nginx {
+    services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Ssl on;
+          '';
         };
       };
     };

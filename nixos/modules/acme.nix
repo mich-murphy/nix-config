@@ -2,30 +2,29 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.acme;
 in {
   options.common.acme = {
-    enable = mkEnableOption "Enable Nginx with ACME wildcard certificate";
-    email = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Nginx with ACME wildcard certificate";
+    email = lib.mkOption {
+      type = lib.types.str;
       default = "acme@elmurphy.com";
       description = "Email address to use for ACME registration";
     };
-    dnsProvider = mkOption {
-      type = types.str;
+    dnsProvider = lib.mkOption {
+      type = lib.types.str;
       default = "cloudflare";
       description = "DNS provider used for ACME certificate";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "elmurphy.com";
       description = "Domain for certificate to be generated";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     services.nginx = {
       enable = true;
       recommendedGzipSettings = true;
@@ -43,7 +42,11 @@ in {
         credentialsFile = config.age.secrets.acmeCredentials.path;
       };
       certs.${cfg.domain} = {
-        domain = "*." + cfg.domain;
+        # domain = "*." + cfg.domain;
+        extraDomainNames = [
+          "*.elmurphy.com"
+          "*.pve.elmurphy.com"
+        ];
       };
     };
 

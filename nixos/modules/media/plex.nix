@@ -115,26 +115,23 @@ in {
         else false;
       nginx = mkIf cfg.nginx {
         virtualHosts.${cfg.overseerrDomain} = mkIf cfg.enableOverseerr {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.overseerrHostAddress}:${toString cfg.overseerrPort}";
             proxyWebsockets = true;
           };
         };
         virtualHosts.${cfg.tautulliDomain} = mkIf config.services.tautulli.enable {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.tautulliHostAddress}:8181";
           };
         };
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           extraConfig = ''
             # some players don't reopen a socket and playback stops totally instead of resuming after an extended pause
             send_timeout 100m;

@@ -112,8 +112,6 @@ in {
         # git
         gswr = "git switch-recent";
         geu = "git edit-unmerged";
-        # kitty
-        ssh = "kitty +kitten ssh";
         # detect yabai windows in space - make sure to add space no. after alias
         ybw = "yabai -m query --windows --space";
         # nix

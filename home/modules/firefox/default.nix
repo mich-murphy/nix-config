@@ -28,6 +28,7 @@ in {
           skip-redirect
           onepassword-password-manager
           new-tab-override
+          omnivore
         ];
         settings = {
           # enable loading of custom userchrome

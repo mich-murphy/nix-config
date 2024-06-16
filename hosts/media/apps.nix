@@ -45,7 +45,6 @@
       extraGroups = ["media"];
       enableAudnexus = true;
       enableTautulli = true;
-      enableOverseerr = true;
     };
     audiobookshelf = {
       enable = true;
@@ -105,29 +104,10 @@
     qemuGuest.enable = true; # used for hypervisor operations
     nginx = { # reverse proxy to other services
       virtualHosts."deluge.pve.elmurphy.com" = {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://100.69.115.120:8112";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."ollama.pve.elmurphy.com" = {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://100.68.54.58:8080";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."invokeai.pve.elmurphy.com" = {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
-        locations."/" = {
-          proxyPass = "http://100.68.54.58:9090";
           proxyWebsockets = true;
         };
       };
