@@ -2,30 +2,29 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.freshrss;
 in {
   options.common.freshrss = {
-    enable = mkEnableOption "Enable FreshRSS";
-    defaultUser = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable FreshRSS";
+    defaultUser = lib.mkOption {
+      type = lib.types.str;
       default = "mm";
       description = "Default user for FreshRSS login";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "freshrss.pve.elmurphy.com";
       description = "Domain for FreshRSS";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -50,11 +49,10 @@ in {
         };
       };
       # creation of cert potentially problematic - deactivate nginx option to provision
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
         };
       };
     };

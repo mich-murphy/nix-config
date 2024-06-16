@@ -2,36 +2,35 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.lidarr;
 in {
   options.common.lidarr = {
-    enable = mkEnableOption "Enable Lidarr";
-    group = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Lidarr";
+    group = lib.mkOption {
+      type = lib.types.str;
       default = "lidarr";
       description = "Group for lidarr user";
       example = "media";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "lidarr.pve.elmurphy.com";
       description = "Domain for Lidarr";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP for Lidarr host";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -44,11 +43,10 @@ in {
         enable = true;
         group = cfg.group;
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:8686";
             proxyWebsockets = true;

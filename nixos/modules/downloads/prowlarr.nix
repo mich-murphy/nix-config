@@ -2,30 +2,29 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.prowlarr;
 in {
   options.common.prowlarr = {
-    enable = mkEnableOption "Enable Prowlarr";
-    domain = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Prowlarr";
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "prowlarr.pve.elmurphy.com";
       description = "Domain for Prowlarr";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP for Prowlarr host";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -36,11 +35,10 @@ in {
     services = {
       # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
       prowlarr.enable = true;
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:9696";
             proxyWebsockets = true;

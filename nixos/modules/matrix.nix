@@ -118,9 +118,8 @@ in {
       };
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://127.0.0.1:${toString cfg.port}";
           };

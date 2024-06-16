@@ -3,35 +3,35 @@
   config,
   ...
 }:
-with lib; let
+let
   cfg = config.common.radarr;
 in {
   options.common.radarr = {
-    enable = mkEnableOption "Enable Radarr";
-    group = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Radarr";
+    group = lib.mkOption {
+      type = lib.types.str;
       default = "radarr";
       description = "Group for radarr user";
       example = "media";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "radarr.pve.elmurphy.com";
       description = "Domain for radarr";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP for Radarr host";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -44,11 +44,10 @@ in {
         enable = true;
         group = cfg.group;
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:7878";
             proxyWebsockets = true;

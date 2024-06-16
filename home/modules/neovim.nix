@@ -29,6 +29,7 @@ in {
         cargo
         alejandra
         nil
+        nixd
       ];
       extraPython3Packages = py:
         with py; [

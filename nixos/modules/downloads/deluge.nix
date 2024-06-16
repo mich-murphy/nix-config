@@ -2,50 +2,49 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.deluge;
 in {
   options.common.deluge = {
-    enable = mkEnableOption "Enable Deluge";
-    downloadDir = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Deluge";
+    downloadDir = lib.mkOption {
+      type = lib.types.str;
       description = "Path to Deluge downloads";
       example = "/mnt/torrents";
     };
-    torrentDir = mkOption {
-      type = types.str;
+    torrentDir = lib.mkOption {
+      type = lib.types.str;
       description = "Path to Deluge torrent watch directory";
       example = "/srv/torrents/watch";
     };
-    enableSamba = mkOption {
-      type = types.bool;
+    enableSamba = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable Samba mount for Deluge user";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "deluge.pve.elmurphy.com";
       description = "Domain for Deluge";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP for Deluge host";
     };
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 8112;
       description = "Port for Deluge";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -78,11 +77,10 @@ in {
         authFile = config.age.secrets.delugePass.path;
         openFirewall = true; # open firewall ports for seeding
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
             proxyWebsockets = true;
@@ -92,7 +90,7 @@ in {
     };
 
     # mount shared samba drive as deluge user and group
-    fileSystems.${cfg.downloadDir} = mkIf cfg.enableSamba {
+    fileSystems.${cfg.downloadDir} = lib.mkIf cfg.enableSamba {
       device = "//10.77.2.102/data/downloads/torrents";
       fsType = "cifs";
       options = let

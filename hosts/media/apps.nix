@@ -59,8 +59,6 @@
       enable = true;
       mediaDir = "/mnt/data/media/youtube";
     };
-    minecraft.enable = true;
-    murmur.enable = true;
     sabnzbd = {
       enable = true;
       completeDir = "/mnt/data/downloads/nzb/complete";

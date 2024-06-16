@@ -2,47 +2,46 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.gitea;
 in {
   options.common.gitea = {
-    enable = mkEnableOption "Enable Gitea";
-    backupDir = mkOption {
-      type = types.nullOr types.path;
+    enable = lib.mkEnableOption "Enable Gitea";
+    backupDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
       default = null;
       description = "Gitea backup path";
       example = "/data/backups/gitea";
     };
-    postgresBackupDir = mkOption {
-      type = types.nullOr types.path;
+    postgresBackupDir = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
       default = null;
       description = "Gitea Postgres DB backup path";
       example = "/data/backups/postgresql";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "git.pve.elmurphy.com";
       description = "Domain for Gitea";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address of Gitea host";
     };
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 3001;
       description = "Port for Gitea";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -89,11 +88,10 @@ in {
         databases = [config.services.gitea.database.name];
         startAt = "*-*-* 23:15:00";
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           };

@@ -3,49 +3,49 @@
   config,
   ...
 }:
-with lib; let
+let
   cfg = config.common.sabnzbd;
 in {
   options.common.sabnzbd = {
-    enable = mkEnableOption "Enable Sabdnzbd";
-    dataDir = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Sabdnzbd";
+    dataDir = lib.mkOption {
+      type = lib.types.str;
       default = "/var/lib/sabnzbd";
       description = "Path to Sabnzbd config";
     };
-    completeDir = mkOption {
-      type = types.str;
+    completeDir = lib.mkOption {
+      type = lib.types.str;
       description = "Path to Sabnzbd complete downloads";
       example = "/mnt/data/downloads/nzb/complete";
     };
-    incompleteDir = mkOption {
-      type = types.str;
+    incompleteDir = lib.mkOption {
+      type = lib.types.str;
       description = "Path to Sabnzbd incomplete downloads";
       example = "/mnt/data/downloads/nzb/incomplete";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "sabnzbd.pve.elmurphy.com";
       description = "Domain for Sabnzbd";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP for Sabnzbd host";
     };
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 8080;
       description = "Port for Sabnzbd";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -76,11 +76,10 @@ in {
       };
     };
 
-    services.nginx = mkIf cfg.nginx {
+    services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
-        enableACME = true;
-        addSSL = true;
-        acmeRoot = null;
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;

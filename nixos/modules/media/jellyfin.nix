@@ -3,30 +3,29 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.jellyfin;
 in {
   options.common.jellyfin = {
-    enable = mkEnableOption "Enable Jellyfin with hardware transcoding";
-    extraGroups = mkOption {
-      type = types.listOf types.str;
+    enable = lib.mkEnableOption "Enable Jellyfin with hardware transcoding";
+    extraGroups = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [];
       description = "Additional groups for jellyfin user";
       example = ["media"];
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "jellyfin.pve.elmurphy.com";
       description = "Domain for Jellyfin";
     };
-    hostAddress = mkOption {
-      type = types.str;
+    hostAddress = lib.mkOption {
+      type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address of Jellyfin host";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Enable nginx reverse proxy with SSL";
     };
@@ -41,7 +40,7 @@ in {
   # arch wiki documentation
   # https://wiki.archlinux.org/title/Hardware_video_acceleration#Verification
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -71,12 +70,11 @@ in {
         enable = true;
         openFirewall = true;
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.
         virtualHosts.${cfg.domain} = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
           locations."/" = {
             # https://jellyfin.org/docs/general/networking/#port-bindings
             proxyPass = "http://${cfg.hostAddress}:8096";

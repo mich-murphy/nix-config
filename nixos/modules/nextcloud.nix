@@ -3,43 +3,42 @@
   config,
   pkgs,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.nextcloud;
 in {
   options.common.nextcloud = {
-    enable = mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
-    dataDir = mkOption {
-      type = types.str;
+    enable = lib.mkEnableOption "Enable Nextcloud with Postgres DB and Redis caching";
+    dataDir = lib.mkOption {
+      type = lib.types.str;
       description = "Directory for storing Nextcloud data";
       example = "/data/nextcloud";
     };
-    postgresqlBackupDir = mkOption {
-      type = types.str;
+    postgresqlBackupDir = lib.mkOption {
+      type = lib.types.str;
       description = "Directory for storing Nextcloud DB dump";
       example = "/data/backups/postgresql";
     };
-    domain = mkOption {
-      type = types.str;
+    domain = lib.mkOption {
+      type = lib.types.str;
       default = "nextcloud.pve.elmurphy.com";
       description = "Domain for Nextcloud service";
     };
     borgbackup = {
-      enable = mkEnableOption "Enable borgbackup for Nextcloud";
-      repo = mkOption {
-        type = types.str;
+      enable = lib.mkEnableOption "Enable borgbackup for Nextcloud";
+      repo = lib.mkOption {
+        type = lib.types.str;
         description = "Borgbackup repository";
         example = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
       };
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Whether to enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
@@ -84,7 +83,7 @@ in {
         databases = ["nextcloud"];
         startAt = "*-*-* 23:15:00";
       };
-      borgbackup.jobs = mkIf cfg.borgbackup.enable {
+      borgbackup.jobs = lib.mkIf cfg.borgbackup.enable {
         "nextcloud" = {
           paths = [
             config.services.postgresqlBackup.location
@@ -105,11 +104,10 @@ in {
           };
         };
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
-          enableACME = true;
-          addSSL = true;
-          acmeRoot = null;
+          forceSSL = true;
+          useACMEHost = "elmurphy.com";
         };
       };
     };
