@@ -2,8 +2,7 @@
   lib,
   config,
   ...
-}:
-let
+}: let
   cfg = config.common.pinchflat;
 in {
   options.common.pinchflat = {
@@ -62,6 +61,7 @@ in {
           "${cfg.dataDir}:/config"
           "${cfg.mediaDir}:/downloads"
         ];
+        extraOptions = ["--dns=1.1.1.1" "--dns=1.0.0.1"];
       };
     };
     services.nginx = lib.mkIf cfg.nginx {

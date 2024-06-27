@@ -1,7 +1,4 @@
-{
-  inputs,
-  ...
-}: {
+{inputs, ...}: {
   # nix configuration
   # reference: https://nixos.org/manual/nix/stable/command-ref/conf-file.html#name
 

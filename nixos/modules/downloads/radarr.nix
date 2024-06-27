@@ -2,8 +2,7 @@
   lib,
   config,
   ...
-}:
-let
+}: let
   cfg = config.common.radarr;
 in {
   options.common.radarr = {

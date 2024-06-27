@@ -2,8 +2,7 @@
   lib,
   config,
   ...
-}:
-let
+}: let
   cfg = config.common.sabnzbd;
 in {
   options.common.sabnzbd = {

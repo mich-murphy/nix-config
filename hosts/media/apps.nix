@@ -100,7 +100,8 @@
 
   services = {
     qemuGuest.enable = true; # used for hypervisor operations
-    nginx = { # reverse proxy to other services
+    nginx = {
+      # reverse proxy to other services
       virtualHosts."deluge.pve.elmurphy.com" = {
         forceSSL = true;
         useACMEHost = "elmurphy.com";

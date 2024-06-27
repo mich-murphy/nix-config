@@ -1,7 +1,4 @@
-{
-  inputs,
-  ...
-}: {
+{inputs, ...}: {
   # nix configuration
   # reference: https://daiderd.com/nix-darwin/manual/index.html#sec-options
 
