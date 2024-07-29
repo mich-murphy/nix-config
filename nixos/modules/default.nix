@@ -6,7 +6,7 @@
     ./acme.nix
     ./borgbackup.nix
     ./freshrss.nix
-    ./gitea.nix
+    ./forgejo.nix
     ./matrix.nix
     ./nextcloud.nix
     ./tailscale.nix

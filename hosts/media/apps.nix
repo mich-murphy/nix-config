@@ -23,7 +23,7 @@
       backupPaths = [
         "/var/lib/audiobookshelf"
         "/var/lib/freshrss"
-        "/var/lib/gitea"
+        "/var/lib/forgejo"
         "/var/lib/jellyfin"
         "/var/lib/komga"
         "/var/lib/lidarr"
@@ -50,10 +50,9 @@
       enable = true;
       extraGroups = ["media"];
     };
-    gitea = {
+    forgejo = {
       enable = true;
-      backupDir = "/data/backups/gitea";
-      postgresBackupDir = "/data/backups/postgresql";
+      backupDir = "/data/backups/forgejo";
     };
     pinchflat = {
       enable = true;
