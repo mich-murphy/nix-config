@@ -56,7 +56,7 @@
       "yubico-yubikey-manager" # manage yubikey
       "hammerspoon"
       "utm" # manage virtual machines
-      "logitech-options" # management of mouse
+      "steermouse" # management of mouse
       "plexamp"
       "moonlight"
     ];
