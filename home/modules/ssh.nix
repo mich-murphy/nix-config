@@ -13,6 +13,12 @@ in {
     programs.ssh = {
       enable = true;
       matchBlocks = {
+        # configure 1password ssh agent
+        "*" = {
+          extraOptions = {
+            "IdentityAgent" = ''"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'';
+          };
+        };
         "media" = {
           hostname = "media";
           user = "mm";
@@ -29,25 +35,12 @@ in {
             "LC_ALL" = "C";
           };
         };
-        "ai" = {
-          hostname = "ai";
-          user = "mm";
-          serverAliveInterval = 600;
-          setEnv = {
-            "LC_ALL" = "C";
-          };
-        };
         "proxmox" = {
           hostname = "proxmox";
           user = "root";
           setEnv = {
             "LC_ALL" = "C";
           };
-        };
-        "seedhost" = {
-          hostname = "mole.seedhost.eu";
-          user = "mm";
-          identityFile = "~/.ssh/seedhost";
         };
       };
     };
