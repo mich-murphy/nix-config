@@ -33,12 +33,9 @@
     # homebrew repositories to tap
     taps = [
       "homebrew/services"
-      "homebrew/cask-versions"
     ];
     # homebrew formulae to install
     brews = [
-      "spotifyd" # lightweight spotify daemon
-      "spotify-tui"
       "gnu-sed" # neovim requirement
     ];
     # homebrew casks for install
@@ -50,7 +47,7 @@
       "1password"
       "stats" # show system stats in menu bar
       "obsidian"
-      "zotero-beta" # pdf reading and higlights
+      "zotero@beta" # pdf reading and higlights
       "tailscale"
       "nextcloud"
       "displaylink" # enable connection of lenovo dock

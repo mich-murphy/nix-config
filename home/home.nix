@@ -31,12 +31,11 @@
   # configure common home-manager modules
   common = {
     neovim.enable = true;
-    firefox.enable = true;
+    # firefox.enable = true;
     kitty.enable = true;
     git.enable = true;
     ssh.enable = true;
     yazi.enable = true;
-    spotifyd.enable = true;
     hammerspoon.enable = true;
     karabiner.enable = true;
     # cli

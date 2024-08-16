@@ -20,6 +20,7 @@ in {
         isDefault = true;
         search = {
           default = "DuckDuckGo";
+          privateDefault = "DuckDuckGo";
           force = true;
         };
         extensions = with pkgs.nur.repos.rycee.firefox-addons; [
@@ -30,11 +31,39 @@ in {
           omnivore
         ];
         settings = {
+          "browser.startup.homepage" = "https://mich-murphy.github.io/startpage-bento/";
+          "extensions.pocket.enabled" = false;
           # enable loading of custom userchrome
           "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
+          "layers.acceleration.force-enabled" = true;
+          "gfx.webrender.all" = true;
+          "svg.context-properties.content.enabled" = true;
         };
         # load customised theme css
         userChrome = builtins.readFile ./userChrome.css;
+        userContent = ''
+          /*
+          ┌─┐┬┌┬┐┌─┐┬  ┌─┐
+          └─┐││││├─┘│  ├┤
+          └─┘┴┴ ┴┴  ┴─┘└─┘
+          ┌─┐┌─┐─┐ ┬
+          ├┤ │ │┌┴┬┘
+          └  └─┘┴ └─
+
+          by Miguel Avila
+
+          */
+
+          :root {
+            scrollbar-width: none !important;
+          }
+
+          @-moz-document url(about:privatebrowsing) {
+            :root {
+              scrollbar-width: none !important;
+            }
+          }
+        '';
       };
     };
   };

@@ -5,17 +5,6 @@
   ...
 }: let
   cfg = config.common.yabai;
-
-  # override yabai version with latest available
-  # find sha256 has using: nix-prefetch-url --unpack $YOUR_URL
-  # alternatively deploy with: sha256 = ""; replace with provided hash
-  yabai = pkgs.yabai.overrideAttrs (finalAttrs: previousAttrs: {
-    version = "7.0.3"; # https://github.com/koekeishiya/yabai/releases
-    src = builtins.fetchTarball {
-      url = "https://github.com/koekeishiya/yabai/releases/download/v${finalAttrs.version}/yabai-v${finalAttrs.version}.tar.gz";
-      sha256 = "0y34kklrsjgzp03v4dq0s7na7m9kvxfc7bzydz3idv7phj3a87i6";
-    };
-  });
 in {
   options.common.yabai = {
     enable = lib.mkEnableOption "Enable Yabai MacOS window manager";
@@ -25,8 +14,6 @@ in {
     services = {
       yabai = {
         enable = true;
-        # install override package
-        package = yabai;
         config = {
           # reference: https://github.com/koekeishiya/yabai/wiki/Configuration#configuration-file
           focus_follows_mouse = "off";
