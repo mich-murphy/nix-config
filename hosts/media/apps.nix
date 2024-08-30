@@ -99,6 +99,7 @@
     pkgs.stress-ng
   ];
 
+  # system monitoring reporting to central beszel host
   virtualisation.oci-containers = {
     backend = "docker";
     containers."beszel-agent" = {
@@ -126,6 +127,15 @@
         useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://100.69.115.120:8112";
+          proxyWebsockets = true;
+        };
+      };
+      # open-webui access to ollama
+      virtualHosts."ollama.pve.elmurphy.com" = {
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
+        locations."/" = {
+          proxyPass = "http://100.94.130.71:3000";
           proxyWebsockets = true;
         };
       };
