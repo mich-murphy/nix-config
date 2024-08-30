@@ -81,6 +81,8 @@
       enable = true;
       group = "media";
     };
+    minecraft.enable = true;
+    beszel.enable = true;
   };
 
   environment.systemPackages = [
@@ -96,6 +98,24 @@
     pkgs.s-tui
     pkgs.stress-ng
   ];
+
+  virtualisation.oci-containers = {
+    backend = "docker";
+    containers."beszel-agent" = {
+      autoStart = true;
+      image = "henrygd/beszel-agent:latest";
+      environment = {
+        PORT = "45876";
+        KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHCNAXin8BC5BkM5Ei2D/q8lydKu+qZ6OwKYcENpU8lp";
+        FILESYSTEM = "/dev/sda2"; # set to the correct filesystem for disk I/O stats
+      };
+      volumes = [
+        "/var/run/docker.sock:/var/run/docker.sock:ro"
+      ];
+      # allow access to clients on vpn
+      extraOptions = ["--network=host"];
+    };
+  };
 
   services = {
     qemuGuest.enable = true; # used for hypervisor operations

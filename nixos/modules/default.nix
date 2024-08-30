@@ -10,5 +10,6 @@
     ./matrix.nix
     ./nextcloud.nix
     ./tailscale.nix
+    ./beszel.nix
   ];
 }
