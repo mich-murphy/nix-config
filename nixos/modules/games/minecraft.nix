@@ -6,7 +6,7 @@
   ...
 }: let
   cfg = config.common.minecraft;
-  mcVersion = "1.20.1";
+  mcVersion = "1.21.1";
   serverVersion = lib.replaceStrings ["."] ["_"] "fabric-${mcVersion}";
 in {
   imports = [
@@ -22,7 +22,7 @@ in {
       minecraft-servers = {
         enable = true;
         eula = true;
-        servers.pokemon = {
+        servers.j-world = {
           enable = true;
           package = pkgs.fabricServers.${serverVersion};
           serverProperties = {
@@ -41,12 +41,12 @@ in {
             # hash identified: nix run github:Infinidoge/nix-minecraft#nix-modrinth-prefetch -- <version-id>
             mods = pkgs.linkFarmFromDrvs "mods" (builtins.attrValues {
               FabricApi = pkgs.fetchurl {
-                url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/YG53rBmj/fabric-api-0.92.0%2B1.20.1.jar";
-                sha512 = "53ce4cb2bb5579cef37154c928837731f3ae0a3821dd2fb4c4401d22d411f8605855e8854a03e65ea4f949dfa0e500ac1661a2e69219883770c6099b0b28e4fa";
+                url = "https://cdn.modrinth.com/data/P7dR8mSH/versions/gQS3JbZO/fabric-api-0.103.0%2B1.21.1.jar";
+                sha512 = "085e985d3000afb0d0d799fdf83f7f084dd240e9852ccb4d94ad13fc3d3fad90b00b02dcc493e3c38a66ae4757389582eccf89238569bacae638b9ffd9885ebc";
               };
               Terralith = pkgs.fetchurl {
-                url = "https://cdn.modrinth.com/data/8oi3bsk5/versions/FgvUosFH/Terralith_1.20.4_v2.4.11.jar";
-                sha512 = "b6bd6e71666dd57e1db19fe7cad85a9e0d9a13a9c6fa839c4e9cb149b12cf855f8f1676c4bc4d9647f1ba32a7a4f40d3f7090de3c5ddd569950c408b8cfd9128";
+                url = "https://cdn.modrinth.com/data/8oi3bsk5/versions/Mm6TmSwo/Terralith_1.21_v2.5.4.jar";
+                sha512 = "d49f8a854a6ec8f49323986bbbffc061d62f2a85b91bc9ed442158c00551a66dcf8883b8151cfd732de8d6ba1006d0d94e6e456f15510eb32aacfd38da1095e1";
               };
             });
           };
