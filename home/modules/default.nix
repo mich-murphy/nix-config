@@ -5,7 +5,7 @@
     ./karabiner
     # ./stylix
     ./alacritty.nix
-    ./firefox
+    ./firefox.nix
     ./git.nix
     ./kitty.nix
     ./neovim.nix
