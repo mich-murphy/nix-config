@@ -40,7 +40,7 @@
     ];
     # homebrew casks for install
     casks = [
-      "firefox"
+      "firefox@nightly"
       "kitty"
       "spaceid" # identify current spaces in menu bar
       "raycast" # launcher
