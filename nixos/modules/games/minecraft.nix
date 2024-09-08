@@ -22,6 +22,20 @@ in {
       minecraft-servers = {
         enable = true;
         eula = true;
+        servers.dragons = {
+          enable = true;
+          package = pkgs.minecraftServers.vanilla-1_20_1;
+          serverProperties = {
+            server-port = 25570;
+            gamemode = "creative";
+            difficulty = "easy";
+            pvp = false;
+            motd = "Dragons";
+            max-players = 2;
+            spawn-monsters = false;
+            enable-command-block = true;
+          };
+        };
         servers.j-world = {
           enable = true;
           package = pkgs.fabricServers.${serverVersion};
@@ -32,7 +46,7 @@ in {
             pvp = false;
             motd = "J's World";
             max-players = 2;
-            level-seed = "882427838104948496";
+            level-seed = "5488656216511509290";
             spawn-monsters = false;
             enable-command-block = true;
           };
