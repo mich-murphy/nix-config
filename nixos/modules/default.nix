@@ -11,5 +11,6 @@
     ./nextcloud.nix
     ./tailscale.nix
     ./beszel.nix
+    ./it-tools.nix
   ];
 }
