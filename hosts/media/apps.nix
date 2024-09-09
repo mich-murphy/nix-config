@@ -82,6 +82,7 @@
       group = "media";
     };
     minecraft.enable = true;
+    murmur.enable = true;
     beszel.enable = true;
   };
 
