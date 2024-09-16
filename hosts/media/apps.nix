@@ -137,7 +137,7 @@
         forceSSL = true;
         useACMEHost = "elmurphy.com";
         locations."/" = {
-          proxyPass = "http://100.94.130.71:3000";
+          proxyPass = "http://100.94.130.71:8080";
           proxyWebsockets = true;
         };
       };
