@@ -19,9 +19,11 @@
     };
     borgbackup = {
       enable = true;
-      borgRepo = "ssh://g268tdfo@g268tdfo.repo.borgbase.com/./repo";
+      name = "backup";
+      borgRepo = "ssh://hu6gjtw9@hu6gjtw9.repo.borgbase.com/./repo";
       backupPaths = [
         "/var/lib/audiobookshelf"
+        "/var/lib/beszel"
         "/var/lib/freshrss"
         "/var/lib/forgejo"
         "/var/lib/jellyfin"
