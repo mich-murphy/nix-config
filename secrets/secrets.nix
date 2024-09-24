@@ -15,4 +15,5 @@ in {
   "murmurPass.age".publicKeys = [media];
   "delugePass.age".publicKeys = [services];
   "matrixSharedSecret.age".publicKeys = [media];
+  "immichBorgPass.age".publicKeys = [media];
 }

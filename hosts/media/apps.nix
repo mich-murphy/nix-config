@@ -17,6 +17,13 @@
         repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
       };
     };
+    immich = {
+      enable = true;
+      borgbackup = {
+        enable = true;
+        repo = "ssh://c34r51k4@c34r51k4.repo.borgbase.com/./repo";
+      };
+    };
     borgbackup = {
       enable = true;
       name = "backup";

@@ -12,5 +12,6 @@
     ./tailscale.nix
     ./beszel.nix
     ./it-tools.nix
+    ./immich.nix
   ];
 }
