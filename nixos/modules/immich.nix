@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }: let
   cfg = config.common.immich;
@@ -27,7 +28,7 @@ in {
     };
     port = lib.mkOption {
       type = lib.types.port;
-      default = 3201;
+      default = 3001;
       description = "Port for Immich";
     };
     nginx = lib.mkOption {
@@ -49,7 +50,6 @@ in {
       immich = {
         enable = true;
         mediaLocation = "/mnt/data/photos";
-        # secretsFile = config.age.secrets.immichPass.path;
         host = cfg.hostAddress;
         port = cfg.port;
       };
@@ -77,6 +77,27 @@ in {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
           useACMEHost = "elmurphy.com";
+          extraConfig = ''
+            # allow large file uploads
+            client_max_body_size 50000M;
+
+            # Set headers
+            proxy_set_header Host              $server_addr;
+            proxy_set_header X-Real-IP         $remote_addr;
+            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # enable websockets: http://nginx.org/en/docs/http/websocket.html
+            # proxy_http_version 1.1;
+            # proxy_set_header   Upgrade    $http_upgrade;
+            # proxy_set_header   Connection "upgrade";
+            # proxy_redirect     off;
+
+            # set timeout
+            proxy_read_timeout 600s;
+            proxy_send_timeout 600s;
+            send_timeout       600s;
+          '';
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           };
@@ -84,12 +105,17 @@ in {
       };
     };
 
-    age.secrets = {
-      immichBorgPass.file = ../../secrets/immichBorgPass.age;
-      # immichPass = {
-      #   file = ../../secrets/immichPass.age;
-      #   owner = "immich";
-      # };
+    hardware.graphics = {
+      enable = true;
+      extraPackages = [pkgs.intel-media-driver];
     };
+
+    environment.sessionVariables = {
+      LIBVA_DRIVER_NAME = "iHD";
+    };
+
+    users.users.immich.extraGroups = ["video" "render" "media"];
+
+    age.secrets.immichBorgPass.file = ../../secrets/immichBorgPass.age;
   };
 }

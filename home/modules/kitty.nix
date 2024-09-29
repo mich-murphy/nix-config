@@ -20,7 +20,7 @@ in {
         name = "JetBrainsMono Nerd Font";
         size = 13;
       };
-      theme = "Tokyo Night";
+      themeFile = "tokyo_night_night";
       settings = {
         disable_ligatures = "never";
         enable_audio_bell = "no";
