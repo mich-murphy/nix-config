@@ -13,5 +13,6 @@
     ./beszel.nix
     ./it-tools.nix
     ./immich.nix
+    ./actual.nix
   ];
 }

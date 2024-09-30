@@ -17,6 +17,7 @@
         repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
       };
     };
+    actual.enable = true;
     immich = {
       enable = true;
       borgbackup = {

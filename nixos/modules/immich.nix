@@ -23,7 +23,7 @@ in {
     };
     hostAddress = lib.mkOption {
       type = lib.types.str;
-      default = "0.0.0.0";
+      default = "127.0.0.1";
       description = "IP address of Immich host";
     };
     port = lib.mkOption {
@@ -49,9 +49,12 @@ in {
     services = {
       immich = {
         enable = true;
-        mediaLocation = "/mnt/data/photos";
+        mediaLocation = "/data/photos";
         host = cfg.hostAddress;
         port = cfg.port;
+        environment = {
+          PUBLIC_IMMICH_SERVER_URL = "http://${cfg.hostAddress}:${toString cfg.port}";
+        };
       };
       borgbackup.jobs = lib.mkIf cfg.borgbackup.enable {
         "photos" = {
@@ -88,10 +91,10 @@ in {
             proxy_set_header X-Forwarded-Proto $scheme;
 
             # enable websockets: http://nginx.org/en/docs/http/websocket.html
-            # proxy_http_version 1.1;
-            # proxy_set_header   Upgrade    $http_upgrade;
-            # proxy_set_header   Connection "upgrade";
-            # proxy_redirect     off;
+            proxy_http_version 1.1;
+            proxy_set_header   Upgrade    $http_upgrade;
+            proxy_set_header   Connection "upgrade";
+            proxy_redirect     off;
 
             # set timeout
             proxy_read_timeout 600s;
@@ -100,6 +103,7 @@ in {
           '';
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
+            proxyWebsockets = true;
           };
         };
       };
