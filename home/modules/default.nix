@@ -8,6 +8,7 @@
     ./firefox.nix
     ./git.nix
     ./kitty.nix
+    ./wezterm.nix
     ./neovim.nix
     ./ssh.nix
     ./yazi.nix

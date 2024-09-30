@@ -41,7 +41,7 @@
     # homebrew casks for install
     casks = [
       "firefox@nightly"
-      "kitty"
+      "wezterm"
       "spaceid" # identify current spaces in menu bar
       "raycast" # launcher
       "1password"

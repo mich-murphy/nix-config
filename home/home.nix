@@ -32,7 +32,7 @@
   common = {
     neovim.enable = true;
     # firefox.enable = true;
-    kitty.enable = true;
+    wezterm.enable = true;
     git.enable = true;
     ssh.enable = true;
     yazi.enable = true;

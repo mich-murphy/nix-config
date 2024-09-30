@@ -26,7 +26,8 @@ in {
           resize < e : yabai -m space --balance
 
           # Applications Shortcuts
-          alt - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
+          # alt - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
+          alt - return : /Applications/WezTerm.app/Contents/MacOS/wezterm start --always-new-process zsh
           shift + alt - return : '/Applications/Firefox Nightly.App/Contents/MacOS/firefox'
 
           # Toggle Window
