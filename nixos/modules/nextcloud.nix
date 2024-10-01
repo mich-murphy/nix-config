@@ -57,9 +57,6 @@ in {
         https = true;
         maxUploadSize = "1G";
         autoUpdateApps.enable = true;
-        extraApps = with config.services.nextcloud.package.packages.apps; {
-          inherit contacts calendar notes; # tasks incompatible with v29
-        };
         appstoreEnable = true;
         settings = {
           default_phone_region = "AU";
