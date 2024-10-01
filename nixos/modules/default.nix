@@ -14,5 +14,6 @@
     ./it-tools.nix
     ./immich.nix
     ./actual.nix
+    ./watchtower.nix
   ];
 }

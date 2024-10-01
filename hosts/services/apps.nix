@@ -13,6 +13,7 @@
       downloadDir = "/mnt/torrents";
       torrentDir = "/srv/torrents/watch";
     };
+    watchtower.enable = true;
   };
 
   environment = {

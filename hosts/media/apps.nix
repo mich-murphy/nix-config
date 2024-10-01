@@ -95,6 +95,7 @@
     minecraft.enable = true;
     murmur.enable = true;
     beszel.enable = true;
+    watchtower.enable = true;
   };
 
   environment.systemPackages = [
