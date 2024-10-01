@@ -52,11 +52,9 @@
       "nextcloud"
       "displaylink" # enable connection of lenovo dock
       "karabiner-elements"
-      "bartender"
       "yubico-yubikey-manager" # manage yubikey
       "hammerspoon"
       "utm" # manage virtual machines
-      "steermouse" # management of mouse
       "plexamp"
       "moonlight"
     ];
