@@ -17,8 +17,10 @@ function usbDeviceCallback(data)
 	if data["productID"] == 4136 then
 		if data["eventType"] == "added" then
 			hs.appfinder.appFromName("Karabiner-Elements"):kill9()
+      hs.application.open("DisplayLink Manager",5)
 		elseif data["eventType"] == "removed" then
-      hs.application.open("Karabiner-Elements",5):hide()
+      hs.application.open("Karabiner-Elements",5, true):hide()
+			hs.appfinder.appFromName("DisplayLink Manager"):kill9()
 		end
 	end
 end
