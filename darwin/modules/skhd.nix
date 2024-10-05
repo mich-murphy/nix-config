@@ -37,11 +37,10 @@ in {
           alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
 
           # Focus Window
-          # Removing due to clash with Zellij
-          # alt - k : yabai -m window --focus north || yabai -m display --focus north
-          # alt - j : yabai -m window --focus south || yabai -m display --focus south
-          # alt - h : yabai -m window --focus west || yabai -m display --focus west
-          # alt - l : yabai -m window --focus east || yabai -m display --focus east
+          alt - k : yabai -m window --focus north || yabai -m display --focus north
+          alt - j : yabai -m window --focus south || yabai -m display --focus south
+          alt - h : yabai -m window --focus west || yabai -m display --focus west
+          alt - l : yabai -m window --focus east || yabai -m display --focus east
 
           # Swap Window
           shift + alt - k : yabai -m window --swap north || yabai -m window --display north

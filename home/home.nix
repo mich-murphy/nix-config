@@ -31,7 +31,6 @@
   # configure common home-manager modules
   common = {
     neovim.enable = true;
-    # firefox.enable = true;
     wezterm.enable = true;
     git.enable = true;
     ssh.enable = true;
@@ -41,7 +40,6 @@
     # cli
     apps.enable = true;
     fzf.enable = true;
-    zellij.enable = true;
     zsh.enable = true;
   };
 
