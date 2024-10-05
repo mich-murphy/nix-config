@@ -152,6 +152,14 @@
           proxyWebsockets = true;
         };
       };
+      virtualHosts."fileflows.pve.elmurphy.com" = {
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
+        locations."/" = {
+          proxyPass = "http://100.94.130.71:19200";
+          proxyWebsockets = true;
+        };
+      };
     };
   };
 
