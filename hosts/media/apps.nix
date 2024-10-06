@@ -50,6 +50,10 @@
       extraGroups = ["media"];
     };
     freshrss.enable = true;
+    jellyfin = {
+      enable = true;
+      extraGroups = ["media"];
+    }; 
     plex = {
       enable = true;
       extraGroups = ["media"];
