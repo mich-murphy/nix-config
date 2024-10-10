@@ -56,6 +56,14 @@ in {
           { key = "[", mods = "LEADER", action = wezterm.action.ActivateCopyMode },
           { key = "w", mods = "LEADER", action = wezterm.action.ShowTabNavigator },
           {
+            key = 'L',
+            mods = 'CTRL|SHIFT',
+            action = wezterm.action.Multiple {
+              wezterm.action.ClearScrollback 'ScrollbackAndViewport',
+              wezterm.action.SendKey { key = 'L', mods = 'CTRL' },
+            },
+          },
+          {
             key = ",",
             mods = "LEADER",
             action = wezterm.action.PromptInputLine({
@@ -104,7 +112,7 @@ in {
         config.switch_to_last_active_tab_when_closing_tab = true
 
         -- General
-        config.color_scheme = 'tokyonight_night'
+        config.color_scheme = 'Tokyo Night'
         config.font = wezterm.font 'JetBrains Mono'
         config.font_size = 13.0
         config.use_dead_keys = false
