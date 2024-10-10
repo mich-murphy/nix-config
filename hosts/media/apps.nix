@@ -17,7 +17,6 @@
         repo = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
       };
     };
-    actual.enable = true;
     immich = {
       enable = true;
       borgbackup = {
@@ -94,7 +93,10 @@
     ittools.enable = true;
     minecraft.enable = true;
     murmur.enable = true;
-    beszel.enable = true;
+    beszel = {
+      enable = true;
+      agent.enable = true;
+    };
     watchtower.enable = true;
   };
 
@@ -102,6 +104,7 @@
     pkgs.vim
     pkgs.tmux
     pkgs.lazydocker
+    pkgs.wezterm
     pkgs.cifs-utils # used for samba
     # disk usage tooling
     pkgs.du-dust
@@ -111,25 +114,6 @@
     pkgs.s-tui
     pkgs.stress-ng
   ];
-
-  # system monitoring reporting to central beszel host
-  virtualisation.oci-containers = {
-    backend = "docker";
-    containers."beszel-agent" = {
-      autoStart = true;
-      image = "henrygd/beszel-agent:latest";
-      environment = {
-        PORT = "45876";
-        KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHCNAXin8BC5BkM5Ei2D/q8lydKu+qZ6OwKYcENpU8lp";
-        FILESYSTEM = "/dev/sda2"; # set to the correct filesystem for disk I/O stats
-      };
-      volumes = [
-        "/var/run/docker.sock:/var/run/docker.sock:ro"
-      ];
-      # allow access to clients on vpn
-      extraOptions = ["--network=host"];
-    };
-  };
 
   services = {
     qemuGuest.enable = true; # used for hypervisor operations
