@@ -15,5 +15,6 @@
     ./immich.nix
     ./actual.nix
     ./watchtower.nix
+    ./searxng.nix
   ];
 }
