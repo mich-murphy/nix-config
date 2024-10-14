@@ -91,8 +91,8 @@
       group = "media";
     };
     ittools.enable = true;
-    minecraft.enable = true;
-    murmur.enable = true;
+    # minecraft.enable = true;
+    # murmur.enable = true;
     beszel = {
       enable = true;
       agent.enable = true;
