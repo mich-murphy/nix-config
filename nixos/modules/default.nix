@@ -16,5 +16,6 @@
     ./actual.nix
     ./watchtower.nix
     ./searxng.nix
+    ./gitlab.nix
   ];
 }

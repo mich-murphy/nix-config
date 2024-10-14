@@ -16,4 +16,10 @@ in {
   "delugePass.age".publicKeys = [services];
   "matrixSharedSecret.age".publicKeys = [media];
   "immichBorgPass.age".publicKeys = [media];
+  "gitlabPass.age".publicKeys = [media];
+  "gitlabDbPass.age".publicKeys = [media];
+  "gitlabDbFile.age".publicKeys = [media];
+  "gitlabJwsFile.age".publicKeys = [media];
+  "gitlabOtpFile.age".publicKeys = [media];
+  "gitlabSecretFile.age".publicKeys = [media];
 }

@@ -99,6 +99,7 @@
     };
     watchtower.enable = true;
     searxng.enable = true;
+    gitlab.enable = true;
   };
 
   environment.systemPackages = [
