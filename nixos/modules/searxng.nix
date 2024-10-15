@@ -1,4 +1,3 @@
-# Auto-generated using compose2nix v0.3.1-pre.
 {
   config,
   lib,
@@ -51,14 +50,11 @@ in {
             "searxng_valkey-data2:/data:rw"
           ];
           cmd = ["valkey-server" "--save" "30" "1" "--loglevel" "warning"];
-          log-driver = "journald";
           extraOptions = [
             "--cap-add=DAC_OVERRIDE"
             "--cap-add=SETGID"
             "--cap-add=SETUID"
             "--cap-drop=ALL" # comment out for first run
-            "--network-alias=redis"
-            "--network=searxng_searxng"
           ];
         };
         "searxng" = {
@@ -74,14 +70,11 @@ in {
           ports = [
             "${toString cfg.port}:8080/tcp"
           ];
-          log-driver = "journald";
           extraOptions = [
             "--cap-add=CHOWN"
             "--cap-add=SETGID"
             "--cap-add=SETUID"
             "--cap-drop=ALL" # comment out for first run
-            "--network-alias=searxng"
-            "--network=searxng_searxng"
             "--dns=1.1.1.1"
             "--dns=1.0.0.1"
           ];
