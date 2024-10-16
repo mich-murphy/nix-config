@@ -19,5 +19,6 @@
     ./gitlab.nix
     ./n8n.nix
     ./stirling-pdf.nix
+    ./smokeping.nix
   ];
 }

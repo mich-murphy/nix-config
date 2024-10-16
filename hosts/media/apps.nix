@@ -101,6 +101,7 @@
     searxng.enable = true;
     n8n.enable = true;
     stirling-pdf.enable = true;
+    smokeping.enable = true;
   };
 
   environment.systemPackages = [
