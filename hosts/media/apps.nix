@@ -99,6 +99,8 @@
     };
     watchtower.enable = true;
     searxng.enable = true;
+    n8n.enable = true;
+    stirling-pdf.enable = true;
   };
 
   environment.systemPackages = [
