@@ -24,7 +24,7 @@ in {
     };
     port = lib.mkOption {
       type = lib.types.port;
-      default = 9002;
+      default = 9050;
       description = "Port for Searxng";
     };
     nginx = lib.mkOption {

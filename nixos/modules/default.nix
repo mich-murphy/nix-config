@@ -20,5 +20,6 @@
     ./n8n.nix
     ./stirling-pdf.nix
     ./smokeping.nix
+    ./grafana.nix
   ];
 }
