@@ -105,9 +105,6 @@ in {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
             proxyWebsockets = true;
           };
-          extraConfig = ''
-            client_max_body_size 512M;
-          '';
         };
       };
     };
