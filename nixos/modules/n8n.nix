@@ -48,6 +48,7 @@ in {
           useACMEHost = "elmurphy.com";
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
+            proxyWebsockets = true;
           };
         };
       };
