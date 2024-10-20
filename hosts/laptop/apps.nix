@@ -57,6 +57,7 @@
       "utm" # manage virtual machines
       "plexamp"
       "moonlight"
+      "jordanbaird-ice" # menu bar manager
     ];
   };
 }

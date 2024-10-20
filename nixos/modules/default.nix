@@ -16,5 +16,10 @@
     ./actual.nix
     ./watchtower.nix
     ./searxng.nix
+    ./gitlab.nix
+    ./n8n.nix
+    ./stirling-pdf.nix
+    ./smokeping.nix
+    ./grafana.nix
   ];
 }
