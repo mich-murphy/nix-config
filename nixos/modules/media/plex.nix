@@ -10,7 +10,7 @@
     name = "Audnexus.bundle";
     src = pkgs.fetchurl {
       url = "https://github.com/djdembeck/Audnexus.bundle/archive/refs/tags/v1.3.2.zip";
-      sha256 = "";
+      sha256 = "sha256-cQs/nPoxuTh4yB7gwTjh+wr2kIbev8txsh3PBYFVK04=";
     };
     buildInputs = [pkgs.unzip];
     installPhase = "mkdir -p $out; cp -R * $out/";
