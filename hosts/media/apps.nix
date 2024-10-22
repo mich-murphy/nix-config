@@ -154,6 +154,7 @@
         useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://100.94.130.71:5001";
+          proxyWebsockets = true;
         };
       };
     };
