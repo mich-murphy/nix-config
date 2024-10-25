@@ -120,6 +120,6 @@ in {
 
     users.users.immich.extraGroups = ["video" "render" "media"];
 
-    age.secrets.immichBorgPass.file = ../../secrets/immichBorgPass.age;
+    age.secrets.immichBorgPass.file = ../../../secrets/immichBorgPass.age;
   };
 }

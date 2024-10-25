@@ -188,9 +188,9 @@ in {
     };
 
     age.secrets = {
-      nextcloudBorgPass.file = ../../secrets/nextcloudBorgPass.age;
+      nextcloudBorgPass.file = ../../../secrets/nextcloudBorgPass.age;
       nextcloudPass = {
-        file = ../../secrets/nextcloudPass.age;
+        file = ../../../secrets/nextcloudPass.age;
         owner = "nextcloud";
       };
     };

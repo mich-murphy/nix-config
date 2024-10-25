@@ -5,5 +5,8 @@
     ./komga.nix
     ./plex.nix
     ./pinchflat.nix
+    ./suwayomi-server.nix
+    ./immich.nix
+    ./nextcloud.nix
   ];
 }
