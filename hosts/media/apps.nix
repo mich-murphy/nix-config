@@ -102,7 +102,6 @@
     n8n.enable = true;
     smokeping.enable = true;
     grafana.enable = true;
-    suwayomi-server.enable = true;
   };
 
   environment.systemPackages = [
