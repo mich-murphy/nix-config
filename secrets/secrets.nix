@@ -22,4 +22,5 @@ in {
   "gitlabJwsFile.age".publicKeys = [media];
   "gitlabOtpFile.age".publicKeys = [media];
   "gitlabSecretFile.age".publicKeys = [media];
+  "netdataClaimToken.age".publicKeys = servers;
 }

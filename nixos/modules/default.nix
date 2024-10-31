@@ -3,6 +3,7 @@
     ./downloads
     ./games
     ./media
+    ./monitoring
     ./acme.nix
     ./borgbackup.nix
     ./freshrss.nix
@@ -18,6 +19,5 @@
     ./n8n.nix
     ./stirling-pdf.nix
     ./smokeping.nix
-    ./grafana.nix
   ];
 }
