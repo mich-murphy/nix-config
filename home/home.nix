@@ -8,7 +8,7 @@
     homeDirectory = "/Users/mm";
     stateVersion = "22.05";
     packages = with pkgs; [
-      _1password
+      _1password-cli
     ];
     # remove message when entering terminal if macos
     file.".hushlogin" = {
