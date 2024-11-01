@@ -95,6 +95,7 @@
     searxng.enable = true;
     n8n.enable = true;
     smokeping.enable = true;
+    grafana.enable = true;
     netdata.enable = true;
   };
 
