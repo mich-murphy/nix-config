@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.beszel;
 in {
+  imports = [
+    ./borgbackup.nix
+  ];
+
   options.common.beszel = {
     enable = lib.mkEnableOption "Enable Beszel";
     agent = {
@@ -59,6 +63,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [cfg.dataDir];
 
     virtualisation.oci-containers = {
       backend = "docker";

@@ -23,4 +23,5 @@ in {
   "gitlabOtpFile.age".publicKeys = [media];
   "gitlabSecretFile.age".publicKeys = [media];
   "netdataClaimToken.age".publicKeys = servers;
+  "gitBorgPass.age".publicKeys = [media];
 }

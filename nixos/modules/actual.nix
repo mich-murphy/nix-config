@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.actual;
 in {
+  imports = [
+    ./borgbackup.nix
+  ];
+
   options.common.actual = {
     enable = lib.mkEnableOption "Enable Actual";
     dataDir = lib.mkOption {
@@ -41,6 +45,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [cfg.dataDir];
 
     virtualisation.oci-containers = {
       backend = "docker";

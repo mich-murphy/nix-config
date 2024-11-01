@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.audiobookshelf;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.audiobookshelf = {
     enable = lib.mkEnableOption "Enable Audiobookshelf";
     extraGroups = lib.mkOption {
@@ -37,6 +41,12 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = let
+      dataDir = "/var/lib/" + config.services.audiobookshelf.dataDir;
+    in
+      lib.mkIf config.common.borgbackup.enable [dataDir];
+
     services = {
       audiobookshelf = {
         enable = true;

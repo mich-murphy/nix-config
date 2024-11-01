@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.komga;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.komga = {
     enable = lib.mkEnableOption "Enable Komga";
     extraGroups = lib.mkOption {
@@ -42,6 +46,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.komga.stateDir];
 
     services = {
       komga = {

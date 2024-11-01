@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.lidarr;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.lidarr = {
     enable = lib.mkEnableOption "Enable Lidarr";
     group = lib.mkOption {
@@ -37,6 +41,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.lidarr.dataDir];
 
     services = {
       lidarr = {

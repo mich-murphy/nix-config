@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.searxng;
 in {
+  imports = [
+    ./borgbackup.nix
+  ];
+
   options.common.searxng = {
     enable = lib.mkEnableOption "Enable Searxng";
     dataDir = lib.mkOption {
@@ -40,6 +44,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [cfg.dataDir];
 
     virtualisation.oci-containers = {
       backend = "docker";

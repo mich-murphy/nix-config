@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.sabnzbd;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.sabnzbd = {
     enable = lib.mkEnableOption "Enable Sabdnzbd";
     dataDir = lib.mkOption {
@@ -51,6 +55,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [cfg.dataDir];
 
     # initial setup is done via http://<docker host ip>:<mapped http port>
     # user and password must be specified before custom domain works

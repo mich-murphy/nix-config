@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.matrix;
 in {
+  imports = [
+    ./borgbackup.nix
+  ];
+
   options.common.matrix = {
     enable = lib.mkEnableOption "Enable Matrix Synapse server";
     domain = lib.mkOption {
@@ -31,6 +35,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.matrix-synapse.dataDir];
 
     services = {
       # Manual intervent is needed for db (see note above postgresql) and user creation

@@ -6,6 +6,10 @@
 }: let
   cfg = config.common.jellyfin;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.jellyfin = {
     enable = lib.mkEnableOption "Enable Jellyfin with hardware transcoding";
     extraGroups = lib.mkOption {
@@ -65,9 +69,12 @@ in {
       ];
     };
 
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.jellyfin.dataDir];
+
     services = {
       jellyfin = {
         enable = true;
+        logDir = "/var/log/jellyfin";
         openFirewall = true;
       };
       nginx = lib.mkIf cfg.nginx {

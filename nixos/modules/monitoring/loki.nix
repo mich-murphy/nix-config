@@ -2,30 +2,35 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.loki;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.loki = {
-    enable = mkEnableOption "Enable log capture with Loki and Promtail";
+    enable = lib.mkEnableOption "Enable log capture with Loki and Promtail";
     hostAddress = lib.mkOption {
       type = lib.types.str;
       default = "127.0.0.1";
       description = "IP address of host";
     };
-    lokiPort = mkOption {
-      type = types.port;
+    lokiPort = lib.mkOption {
+      type = lib.types.port;
       default = 9003;
       description = "Port for Loki to be advertised on";
     };
-    promtailPort = mkOption {
-      type = types.port;
+    promtailPort = lib.mkOption {
+      type = lib.types.port;
       default = 9004;
       description = "Port for Promtail to be advertised on";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.loki.dataDir];
+
     services = {
       loki = {
         enable = true;

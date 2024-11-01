@@ -28,6 +28,14 @@ in {
       default = 3201;
       description = "Port for forgejo";
     };
+    borgbackup = {
+      enable = lib.mkEnableOption "Enable borgbackup for forgejo";
+      repo = lib.mkOption {
+        type = lib.types.str;
+        description = "Borgbackup repository";
+        example = "ssh://duqvv98y@duqvv98y.repo.borgbase.com/./repo";
+      };
+    };
     nginx = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -64,6 +72,27 @@ in {
           service.DISABLE_REGISTRATION = true;
         };
       };
+      borgbackup.jobs = lib.mkIf cfg.borgbackup.enable {
+        "git" = {
+          paths = [
+            config.services.forgejo.dump.backupDir
+            config.services.forgejo.stateDir
+          ];
+          repo = cfg.borgbackup.repo;
+          encryption = {
+            mode = "repokey-blake2";
+            passCommand = "cat ${config.age.secrets.gitBorgPass.path}";
+          };
+          compression = "auto,lzma";
+          startAt = "daily";
+          prune.keep = {
+            within = "1d";
+            daily = 7;
+            weekly = 4;
+            monthly = -1;
+          };
+        };
+      };
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
@@ -77,5 +106,7 @@ in {
         };
       };
     };
+
+    age.secrets.gitBorgPass.file = ../../secrets/gitBorgPass.age;
   };
 }

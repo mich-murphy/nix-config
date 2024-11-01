@@ -16,6 +16,10 @@
     installPhase = "mkdir -p $out; cp -R * $out/";
   };
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.plex = {
     enable = lib.mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
     extraGroups = lib.mkOption {
@@ -44,26 +48,6 @@ in {
       default = "127.0.0.1";
       description = "IP address for Tautulli host";
     };
-    enableOverseerr = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Enable Overseerr";
-    };
-    overseerrDomain = lib.mkOption {
-      type = lib.types.str;
-      default = "overseerr.pve.elmurphy.com";
-      description = "Domain for Tautulli";
-    };
-    overseerrHostAddress = lib.mkOption {
-      type = lib.types.str;
-      default = "127.0.0.1";
-      description = "IP address for Overseer host";
-    };
-    overseerrPort = lib.mkOption {
-      type = lib.types.port;
-      default = 5055;
-      description = "Port for Overseerr";
-    };
     domain = lib.mkOption {
       type = lib.types.str;
       default = "plex.pve.elmurphy.com";
@@ -84,22 +68,8 @@ in {
       }
     ];
 
-    virtualisation.oci-containers = lib.mkIf cfg.enableOverseerr {
-      backend = "docker";
-      containers."overseerr" = {
-        autoStart = true;
-        image = "sctx/overseerr:latest";
-        environment = {
-          LOG_LEVEL = "debug";
-          TZ = "Australia/Melbourne";
-        };
-        ports = ["${toString cfg.overseerrPort}:5055"];
-        volumes = [
-          "/var/lib/overseerr:/app/config"
-        ];
-        extraOptions = ["--network=host"];
-      };
-    };
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.plex.dataDir];
+
     services = {
       plex = {
         enable = true;
@@ -113,14 +83,6 @@ in {
         then true
         else false;
       nginx = lib.mkIf cfg.nginx {
-        virtualHosts.${cfg.overseerrDomain} = lib.mkIf cfg.enableOverseerr {
-          forceSSL = true;
-          useACMEHost = "elmurphy.com";
-          locations."/" = {
-            proxyPass = "http://${cfg.overseerrHostAddress}:${toString cfg.overseerrPort}";
-            proxyWebsockets = true;
-          };
-        };
         virtualHosts.${cfg.tautulliDomain} = lib.mkIf config.services.tautulli.enable {
           forceSSL = true;
           useACMEHost = "elmurphy.com";

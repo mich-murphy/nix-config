@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.readarr;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.readarr = {
     enable = lib.mkEnableOption "Enable Readarr";
     group = lib.mkOption {
@@ -37,6 +41,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.readarr.dataDir];
 
     services = {
       readarr = {

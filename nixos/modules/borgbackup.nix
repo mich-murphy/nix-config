@@ -6,7 +6,7 @@
   cfg = config.common.borgbackup;
 in {
   options.common.borgbackup = {
-    enable = lib.mkEnableOption "Enable borgbackup for media and Nextcloud to BorgBase";
+    enable = lib.mkEnableOption "Enable borgbackup for specified filepaths";
     name = lib.mkOption {
       type = lib.types.str;
       default = config.networking.hostName;

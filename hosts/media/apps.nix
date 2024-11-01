@@ -28,21 +28,6 @@
       enable = true;
       name = "backup";
       borgRepo = "ssh://hu6gjtw9@hu6gjtw9.repo.borgbase.com/./repo";
-      backupPaths = [
-        "/var/lib/audiobookshelf"
-        "/var/lib/beszel"
-        "/var/lib/freshrss"
-        "/var/lib/forgejo"
-        "/var/lib/jellyfin"
-        "/var/lib/komga"
-        "/var/lib/lidarr"
-        "/var/lib/prowlarr"
-        "/var/lib/radarr"
-        "/var/lib/readarr"
-        "/var/lib/sonarr"
-        "/var/lib/sabnzbd"
-        "/var/lib/pinchflat"
-      ];
     };
     komga = {
       enable = true;
@@ -62,6 +47,10 @@
     forgejo = {
       enable = true;
       backupDir = "/data/backups/forgejo";
+      borgbackup = {
+        enable = true;
+        repo = "ssh://t43ihzxk@t43ihzxk.repo.borgbase.com/./repo";
+      };
     };
     pinchflat = {
       enable = true;
@@ -95,7 +84,6 @@
     searxng.enable = true;
     n8n.enable = true;
     smokeping.enable = true;
-    grafana.enable = true;
     netdata.enable = true;
   };
 

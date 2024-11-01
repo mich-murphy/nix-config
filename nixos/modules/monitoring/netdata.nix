@@ -23,6 +23,8 @@ in {
       };
     };
 
+    environment.systemPackages = [pkgs.lm_sensors];
+
     age.secrets.netdataClaimToken.file = ../../../secrets/netdataClaimToken.age;
   };
 }

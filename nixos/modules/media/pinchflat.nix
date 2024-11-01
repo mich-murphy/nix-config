@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.pinchflat;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.pinchflat = {
     enable = lib.mkEnableOption "Enable Pinchflat";
     dataDir = lib.mkOption {
@@ -50,6 +54,8 @@ in {
         message = "Specify a path for media";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [cfg.dataDir];
 
     virtualisation.oci-containers = {
       backend = "docker";

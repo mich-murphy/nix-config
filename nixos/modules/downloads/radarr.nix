@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.radarr;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.radarr = {
     enable = lib.mkEnableOption "Enable Radarr";
     group = lib.mkOption {
@@ -37,6 +41,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.radarr.dataDir];
 
     services = {
       radarr = {

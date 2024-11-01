@@ -2,12 +2,15 @@
   lib,
   config,
   ...
-}:
-with lib; let
+}: let
   cfg = config.common.grafana;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.grafana = {
-    enable = mkEnableOption "Enable monitoring with Grafana, Loki and Prometheus";
+    enable = lib.mkEnableOption "Enable monitoring with Grafana and Prometheus";
     domain = lib.mkOption {
       type = lib.types.str;
       default = "grafana.pve.elmurphy.com";
@@ -18,35 +21,37 @@ in {
       default = "127.0.0.1";
       description = "IP address of host";
     };
-    grafanaPort = mkOption {
-      type = types.port;
+    grafanaPort = lib.mkOption {
+      type = lib.types.port;
       default = 2342;
       description = "Port for Grafana to be advertised on";
     };
-    prometheusPort = mkOption {
-      type = types.port;
+    prometheusPort = lib.mkOption {
+      type = lib.types.port;
       default = 9001;
       description = "Port for Prometheus to be advertised on";
     };
-    prometheusNodePort = mkOption {
-      type = types.port;
+    prometheusNodePort = lib.mkOption {
+      type = lib.ypes.port;
       default = 9002;
       description = "Port for Prometheus node to be advertised on";
     };
-    nginx = mkOption {
-      type = types.bool;
+    nginx = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Whether to enable nginx reverse proxy with SSL";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     assertions = [
       {
         assertion = cfg.nginx -> config.services.nginx.enable == true;
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.grafana.dataDir];
 
     services = {
       grafana = {
@@ -80,7 +85,7 @@ in {
           }
         ];
       };
-      nginx = mkIf cfg.nginx {
+      nginx = lib.mkIf cfg.nginx {
         virtualHosts.${config.services.grafana.settings.server.domain} = {
           forceSSL = true;
           useACMEHost = "elmurphy.com";

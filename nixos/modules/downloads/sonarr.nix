@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.sonarr;
 in {
+  imports = [
+    ../borgbackup.nix
+  ];
+
   options.common.sonarr = {
     enable = lib.mkEnableOption "Enable Sonarr";
     group = lib.mkOption {
@@ -37,6 +41,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.sonarr.dataDir];
 
     services = {
       sonarr = {

@@ -5,6 +5,10 @@
 }: let
   cfg = config.common.gitlab;
 in {
+  imports = [
+    ./borgbackup.nix
+  ];
+
   options.common.gitlab = {
     enable = lib.mkEnableOption "Enable gitlab";
     dataDir = lib.mkOption {
@@ -37,6 +41,8 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
+
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [cfg.dataDir];
 
     services = {
       gitlab = {
