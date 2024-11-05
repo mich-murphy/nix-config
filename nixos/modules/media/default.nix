@@ -7,5 +7,6 @@
     ./pinchflat.nix
     ./immich.nix
     ./nextcloud.nix
+    ./roon-server.nix
   ];
 }

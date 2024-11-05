@@ -79,6 +79,10 @@
       enable = true;
       group = "media";
     };
+    roon-server = {
+      enable = true;
+      extraGroups = ["media"];
+    };
     ittools.enable = true;
     watchtower.enable = true;
     searxng.enable = true;
@@ -136,6 +140,14 @@
         useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://100.94.130.71:5001";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."invokeai.pve.elmurphy.com" = {
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
+        locations."/" = {
+          proxyPass = "http://100.94.130.71:3050";
           proxyWebsockets = true;
         };
       };
