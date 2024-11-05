@@ -79,16 +79,11 @@
       enable = true;
       group = "media";
     };
-    roon-server = {
-      enable = true;
-      extraGroups = ["media"];
-    };
     ittools.enable = true;
     watchtower.enable = true;
     searxng.enable = true;
     n8n.enable = true;
     smokeping.enable = true;
-    netdata.enable = true;
   };
 
   environment.systemPackages = [
