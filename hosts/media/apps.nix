@@ -82,7 +82,6 @@
     ittools.enable = true;
     watchtower.enable = true;
     searxng.enable = true;
-    n8n.enable = true;
     smokeping.enable = true;
   };
 

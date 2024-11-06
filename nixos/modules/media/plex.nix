@@ -75,10 +75,10 @@ in {
         enable = true;
         # version reference: https://www.plex.tv/en-au/media-server-downloads/?cat=computer&plat=linux
         package = pkgs.plex.overrideAttrs (finalAttrs: previousAttrs: {
-          version = "1.41.1.9057-af5eaea7a";
+          version = "1.41.2.9134-3391644e0";
           src = builtins.fetchurl {
             url = "https://downloads.plex.tv/plex-media-server-new/${finalAttrs.version}/debian/plexmediaserver_${finalAttrs.version}_amd64.deb";
-            sha256 = "151a8pcmjiqyz2j8ac8skzxfk3nq4psjcf9pm6kxbqpf8zpqp0q3";
+            sha256 = "03cljw1p5p6nrrmascnz2r8mllmdx1nw3d59vgs7hyyiimsja6qs";
           };
         });
         extraPlugins =
