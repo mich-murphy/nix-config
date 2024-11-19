@@ -16,6 +16,7 @@
   };
 
   nix = {
+    optimise.automatic = true;
     registry.nixpkgs.flake = inputs.nixpkgs; # system wide flake registry
     # weekly garbage collection to minimise disk usage
     gc = {
@@ -23,7 +24,6 @@
       options = "--delete-older-than 7d";
     };
     settings = {
-      auto-optimise-store = true;
       allowed-users = ["@wheel"];
       builders-use-substitutes = true; # allow remote builders to use their own cache
       # set additional cache with keys

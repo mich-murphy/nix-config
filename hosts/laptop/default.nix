@@ -22,6 +22,7 @@
   nix = {
     # NOTE: commented this line due to build failure - registry.nixpkgs defined in multiple locations
     # registry.nixpkgs.flake = inputs.nixpkgs; # system wide flake registry
+    optimise.automatic = true;
     # weekly garbage collection to minimise disk usage
     gc = {
       automatic = true;
@@ -30,7 +31,6 @@
     };
     settings = {
       trusted-users = ["@admin" "mm"];
-      auto-optimise-store = true;
       builders-use-substitutes = true; # allow remote builders to use their own cache
       # set additional cache with keys
       substituters = [
