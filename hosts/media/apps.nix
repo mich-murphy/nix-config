@@ -83,6 +83,8 @@
     watchtower.enable = true;
     searxng.enable = true;
     smokeping.enable = true;
+    rss-bridge.enable = true;
+    mealie.enable = true;
   };
 
   environment.systemPackages = [

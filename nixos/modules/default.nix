@@ -19,5 +19,7 @@
     ./n8n.nix
     ./stirling-pdf.nix
     ./smokeping.nix
+    ./rss-bridge.nix
+    ./mealie.nix
   ];
 }
