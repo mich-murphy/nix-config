@@ -52,11 +52,11 @@ in {
       }
     ];
 
-    hardware.opengl = {
+    hardware.graphics = {
       enable = true;
       extraPackages = [
         pkgs.intel-media-driver
-        pkgs.intel-compute-runtime # opencl filter support (hardware tonemapping and subtitle burn-in)
+        pkgs.intel-compute-runtime # opengl filter support (hardware tonemapping and subtitle burn-in)
       ];
     };
 
