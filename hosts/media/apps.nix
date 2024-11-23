@@ -77,7 +77,6 @@
     };
     lidarr = {
       enable = true;
-      group = "media";
     };
     readarr = {
       enable = true;
@@ -90,7 +89,7 @@
   };
 
   environment.systemPackages = [
-    pkgs.vim
+    pkgs.neovim
     pkgs.tmux
     pkgs.lazydocker
     pkgs.wezterm
