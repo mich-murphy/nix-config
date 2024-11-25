@@ -52,11 +52,14 @@ in {
       }
     ];
 
+    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.jellyfin.dataDir];
+
     hardware.graphics = {
       enable = true;
       extraPackages = [
         pkgs.intel-media-driver
         pkgs.intel-compute-runtime # opengl filter support (hardware tonemapping and subtitle burn-in)
+        pkgs.vpl-gpu-rt # QSV on intel 11th gen and newer
       ];
     };
 
@@ -69,13 +72,10 @@ in {
       ];
     };
 
-    common.borgbackup.backupPaths = lib.mkIf config.common.borgbackup.enable [config.services.jellyfin.dataDir];
-
     services = {
       jellyfin = {
         enable = true;
         logDir = "/var/log/jellyfin";
-        openFirewall = true;
       };
       nginx = lib.mkIf cfg.nginx {
         clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.

@@ -8,9 +8,12 @@
   ];
 
   # specify boot device and enable efi boot
-  boot.loader.grub = {
-    devices = ["/dev/sda"];
-    efiSupport = true;
-    efiInstallAsRemovable = true;
+  boot = {
+    growPartition = true; # enable growing of root partition on boot
+    loader.grub = {
+      devices = ["/dev/sda"];
+      efiSupport = true;
+      efiInstallAsRemovable = true;
+    };
   };
 }

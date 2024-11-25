@@ -10,9 +10,12 @@
     inputs.impermanence.nixosModules.impermanence
   ];
 
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/sda"; # specify boot device
+  boot = {
+    growPartition = true; # enable growing of root partition on boot
+    loader.grub = {
+      enable = true;
+      device = "/dev/sda"; # specify boot device
+    };
   };
 
   environment = {
