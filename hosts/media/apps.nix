@@ -40,10 +40,6 @@
       enableAudnexus = true;
       enableTautulli = true;
     };
-    jellyfin = {
-      enable = true;
-      extraGroups = ["media"];
-    };
     audiobookshelf = {
       enable = true;
       extraGroups = ["media"];
