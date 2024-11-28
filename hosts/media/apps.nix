@@ -73,6 +73,7 @@
     };
     lidarr = {
       enable = true;
+      group = "media";
     };
     readarr = {
       enable = true;

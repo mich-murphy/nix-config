@@ -1,6 +1,6 @@
 {...}: {
   imports = [
-    ./minecraft.nix
+    # ./minecraft.nix
     ./murmur.nix
   ];
 }
