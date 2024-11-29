@@ -13,7 +13,6 @@
       downloadDir = "/mnt/torrents";
       torrentDir = "/srv/torrents/watch";
     };
-    netdata.enable = true;
   };
 
   environment = {
