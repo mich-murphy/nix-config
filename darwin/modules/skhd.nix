@@ -28,7 +28,7 @@ in {
           # Applications Shortcuts
           # alt - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
           alt - return : /Applications/WezTerm.app/Contents/MacOS/wezterm start --always-new-process
-          shift + alt - return : '/Applications/Firefox Nightly.App/Contents/MacOS/firefox'
+          shift + alt - return : '/Applications/Firefox.App/Contents/MacOS/firefox'
 
           # Toggle Window
           alt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2

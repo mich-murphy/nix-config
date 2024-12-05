@@ -35,7 +35,6 @@
     git.enable = true;
     ssh.enable = true;
     yazi.enable = true;
-    hammerspoon.enable = true;
     karabiner.enable = true;
     # cli
     apps.enable = true;

@@ -1,7 +1,8 @@
 let
   media = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVyN0R5mTtfcbkmVXjicuvSRotJY4IOuetOgPyG2lg8";
   services = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOt6E5Phwiv2S2yed58vOBzsyeQJ/ZhiBDAA8j+gGyq7";
-  servers = [media services];
+  downloads = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGz3BlJy2XlBL2M+oDzETkN/8nvH4y382HOlRP6/y7ZW";
+  servers = [media services downloads];
 in {
   "userPass.age".publicKeys = servers;
   "nextcloudPass.age".publicKeys = [media];
@@ -24,4 +25,5 @@ in {
   "gitlabSecretFile.age".publicKeys = [media];
   "netdataClaimToken.age".publicKeys = servers;
   "gitBorgPass.age".publicKeys = [media];
+  "tailscaleAuthKey.age".publicKeys = servers;
 }

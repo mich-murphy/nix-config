@@ -41,6 +41,7 @@
     # homebrew casks for install
     casks = [
       "firefox@nightly"
+      "firefox"
       "wezterm"
       "spaceid" # identify current spaces in menu bar
       "raycast" # launcher
@@ -53,7 +54,6 @@
       "displaylink" # enable connection of lenovo dock
       "karabiner-elements"
       "yubico-yubikey-manager" # manage yubikey
-      "hammerspoon"
       "utm" # manage virtual machines
       "plexamp"
       "moonlight"

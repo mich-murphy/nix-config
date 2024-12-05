@@ -81,6 +81,14 @@
       ];
     };
 
+    nixosConfigurations.downloads = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/downloads
+        agenix.nixosModules.default
+      ];
+    };
+
     deploy.nodes = {
       media = {
         hostname = "media";
@@ -100,6 +108,16 @@
           sshUser = "mm";
           sshOpts = ["-o" "StrictHostKeyChecking=no"];
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.services;
+        };
+      };
+      downloads = {
+        hostname = "10.77.2.101";
+        remoteBuild = true;
+        profiles.system = {
+          user = "root";
+          sshUser = "mm";
+          sshOpts = ["-o" "StrictHostKeyChecking=no"];
+          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.downloads;
         };
       };
     };
