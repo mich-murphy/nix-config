@@ -19,8 +19,7 @@
   ];
 
   fonts.packages = [
-    # https://github.com/NixOS/nixpkgs/blob/nixos-23.05/pkgs/data/fonts/nerdfonts/shas.nix
-    (pkgs.nerdfonts.override {fonts = ["JetBrainsMono"];}) # install nerd font
+    pkgs.nerd-fonts.jetbrains-mono
   ];
 
   homebrew = {

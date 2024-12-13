@@ -53,7 +53,7 @@
         }
         {
           nixpkgs.overlays = [
-            nur.overlay
+            nur.overlays.default
           ];
         }
       ];
