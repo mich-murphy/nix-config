@@ -11,7 +11,7 @@
         isNormalUser = true;
         home = "/home/mm";
         hashedPasswordFile = config.age.secrets.userPass.path;
-        extraGroups = ["wheel"];
+        extraGroups = ["wheel" "deluge"];
         openssh.authorizedKeys.keys = [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEVyN0R5mTtfcbkmVXjicuvSRotJY4IOuetOgPyG2lg8"
         ];
