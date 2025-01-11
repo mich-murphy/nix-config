@@ -13,6 +13,7 @@
       downloadDir = "/mnt/torrents";
       torrentDir = "/srv/torrents/watch";
     };
+    beszel.enable = true;
   };
 
   environment = {

@@ -37,13 +37,6 @@ in {
       # https://wiki.servarr.com/prowlarr/faq#help-i-have-locked-myself-out
       prowlarr = {
         enable = true;
-        package = pkgs.prowlarr.overrideAttrs (finalAttrs: previousAttrs: {
-          version = "1.27.0.4852";
-          src = builtins.fetchurl {
-            url = "https://github.com/Prowlarr/Prowlarr/releases/download/v${finalAttrs.version}/Prowlarr.master.${finalAttrs.version}.linux-core-x64.tar.gz";
-            sha256 = "0n15zw9z51dwh91b6kqfni481pzbvg697g29i7kpzdmb5gaz0mdl";
-          };
-        });
       };
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {

@@ -52,7 +52,7 @@ in {
     services = {
       komga = {
         enable = true;
-        port = cfg.port;
+        settings.server.port = cfg.port;
         openFirewall = true;
       };
       nginx = lib.mkIf cfg.nginx {

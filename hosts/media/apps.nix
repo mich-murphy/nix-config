@@ -83,6 +83,10 @@
     watchtower.enable = true;
     searxng.enable = true;
     smokeping.enable = true;
+    beszel = {
+      enable = true;
+      hub.enable = true;
+    };
   };
 
   environment.systemPackages = [
@@ -142,6 +146,14 @@
         useACMEHost = "elmurphy.com";
         locations."/" = {
           proxyPass = "http://100.94.130.71:3050";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."lurker.pve.elmurphy.com" = {
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
+        locations."/" = {
+          proxyPass = "http://100.94.130.71:3035";
           proxyWebsockets = true;
         };
       };
