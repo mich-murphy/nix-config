@@ -157,6 +157,22 @@
           proxyWebsockets = true;
         };
       };
+      virtualHosts."hoarder.pve.elmurphy.com" = {
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
+        locations."/" = {
+          proxyPass = "http://100.94.130.71:3010";
+          proxyWebsockets = true;
+        };
+      };
+      virtualHosts."readeck.pve.elmurphy.com" = {
+        forceSSL = true;
+        useACMEHost = "elmurphy.com";
+        locations."/" = {
+          proxyPass = "http://100.94.130.71:3060";
+          proxyWebsockets = true;
+        };
+      };
     };
   };
 
