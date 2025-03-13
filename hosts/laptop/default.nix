@@ -12,8 +12,6 @@
   # required if you want to use darwin default shel (zsh)
   programs.zsh.enable = true;
 
-  services.nix-daemon.enable = true; # auto upgrade nix package and daemon service
-
   nixpkgs = {
     config.allowUnfree = true; # allow unfree packages
     hostPlatform = "aarch64-darwin";

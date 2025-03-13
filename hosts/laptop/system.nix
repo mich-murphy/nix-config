@@ -2,7 +2,7 @@
   # macos system configuration
   # nix-darwin options documentation: https://daiderd.com/nix-darwin/manual/index.html#sec-options
 
-  security.pam.enableSudoTouchIdAuth = true; # use touchid for sudo authentication
+  security.pam.services.sudo_local.touchIdAuth = true; # use touchid for sudo authentication
 
   system = {
     checks.verifyNixPath = false; # run NIX_PATH validation checks

@@ -32,6 +32,7 @@
     # homebrew repositories to tap
     taps = [
       "homebrew/services"
+      "hashicorp/tap"
     ];
     # homebrew formulae to install
     brews = [
@@ -39,7 +40,6 @@
     ];
     # homebrew casks for install
     casks = [
-      "firefox@nightly"
       "firefox"
       "wezterm"
       "spaceid" # identify current spaces in menu bar
@@ -57,6 +57,9 @@
       "plexamp"
       "moonlight"
       "jordanbaird-ice" # menu bar manager
+      "dash" # documentation
+      "hashicorp-vagrant" # vm provisioning
+      "vlc"
     ];
   };
 }

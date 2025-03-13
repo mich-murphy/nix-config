@@ -50,7 +50,7 @@ in {
       nextcloud = {
         enable = true;
         hostName = cfg.domain;
-        package = pkgs.nextcloud30;
+        package = pkgs.nextcloud31;
         datadir = cfg.dataDir;
         database.createLocally = true;
         configureRedis = true;
