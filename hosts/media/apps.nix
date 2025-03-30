@@ -133,7 +133,7 @@
           proxyWebsockets = true;
         };
       };
-      virtualHosts."docker.pve.elmurphy.com" = {
+      virtualHosts."dockge.pve.elmurphy.com" = {
         forceSSL = true;
         useACMEHost = "elmurphy.com";
         locations."/" = {
@@ -141,20 +141,17 @@
           proxyWebsockets = true;
         };
       };
-      virtualHosts."invokeai.pve.elmurphy.com" = {
+      virtualHosts."pocketid.pve.elmurphy.com" = {
         forceSSL = true;
         useACMEHost = "elmurphy.com";
         locations."/" = {
-          proxyPass = "http://100.94.130.71:3050";
+          proxyPass = "http://10.77.2.207:80";
           proxyWebsockets = true;
-        };
-      };
-      virtualHosts."lurker.pve.elmurphy.com" = {
-        forceSSL = true;
-        useACMEHost = "elmurphy.com";
-        locations."/" = {
-          proxyPass = "http://100.94.130.71:3035";
-          proxyWebsockets = true;
+          extraConfig = ''
+            proxy_busy_buffers_size   512k;
+            proxy_buffers   4 512k;
+            proxy_buffer_size   256k;
+          '';
         };
       };
     };
