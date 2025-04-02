@@ -37,7 +37,6 @@
     plex = {
       enable = true;
       extraGroups = ["media"];
-      enableAudnexus = true;
       enableTautulli = true;
     };
     audiobookshelf = {
@@ -86,6 +85,11 @@
     beszel = {
       enable = true;
       hub.enable = true;
+    };
+    paperless = {
+      enable = true;
+      mediaDir = "/mnt/data/documents";
+      extraGroups = ["media"];
     };
   };
 

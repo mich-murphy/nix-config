@@ -21,5 +21,6 @@
     ./smokeping.nix
     ./rss-bridge.nix
     ./mealie.nix
+    ./paperless.nix
   ];
 }

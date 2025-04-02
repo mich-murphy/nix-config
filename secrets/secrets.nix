@@ -26,4 +26,5 @@ in {
   "netdataClaimToken.age".publicKeys = servers;
   "gitBorgPass.age".publicKeys = [media];
   "tailscaleAuthKey.age".publicKeys = servers;
+  "paperlessPass.age".publicKeys = [media];
 }
