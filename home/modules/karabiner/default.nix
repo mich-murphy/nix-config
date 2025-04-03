@@ -14,6 +14,7 @@ in {
       enable = true;
       recursive = true;
       source = ./config;
+      force = true;
     };
   };
 }
