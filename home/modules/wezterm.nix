@@ -31,6 +31,15 @@ in {
         local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
         local config = wezterm.config_builder()
 
+        config.unix_domains = {
+          {
+            name = "dev",
+          },
+        }
+        
+        -- Connect to unix_domain specified above at startup
+        config.default_gui_startup_args = { 'connect', 'dev' }
+
         -- Show which key table is active in the status area
         wezterm.on("update-right-status", function(window, pane)
           local name = window:active_key_table()

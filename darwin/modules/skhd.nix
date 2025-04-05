@@ -27,7 +27,7 @@ in {
 
           # Applications Shortcuts
           # alt - return : /Applications/kitty.app/Contents/MacOS/kitty --single-instance -d ~
-          alt - return : /Applications/WezTerm.app/Contents/MacOS/wezterm start --always-new-process
+          alt - return : /Applications/WezTerm.app/Contents/MacOS/wezterm
           shift + alt - return : '/Applications/Firefox.App/Contents/MacOS/firefox'
 
           # Toggle Window
