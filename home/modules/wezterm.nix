@@ -63,6 +63,7 @@ in {
           { key = "-", mods = "LEADER", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
           { key = "z", mods = "LEADER", action = wezterm.action.TogglePaneZoomState },
           { key = "[", mods = "LEADER", action = wezterm.action.ActivateCopyMode },
+          { key = " ", mods = "LEADER", action = wezterm.action.QuickSelect },
           { key = "w", mods = "LEADER", action = wezterm.action.ShowTabNavigator },
           {
             key = 'L',
