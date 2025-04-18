@@ -18,15 +18,11 @@
   };
 
   nix = {
+    # disabling nix-darwin management in place of Determinate
+    enable = false;
     # NOTE: commented this line due to build failure - registry.nixpkgs defined in multiple locations
     # registry.nixpkgs.flake = inputs.nixpkgs; # system wide flake registry
-    optimise.automatic = true;
     # weekly garbage collection to minimise disk usage
-    gc = {
-      automatic = true;
-      interval.Day = 7;
-      options = "--delete-older-than 7d";
-    };
     settings = {
       trusted-users = ["@admin" "mm"];
       builders-use-substitutes = true; # allow remote builders to use their own cache
