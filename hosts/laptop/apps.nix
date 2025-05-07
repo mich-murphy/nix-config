@@ -16,6 +16,8 @@
     pkgs.curl
     pkgs.xcode-install
     pkgs.deploy-rs
+    pkgs.tmux
+    pkgs.nmap
   ];
 
   fonts.packages = [
@@ -55,8 +57,7 @@
       "utm" # manage virtual machines
       "plexamp"
       "jordanbaird-ice" # menu bar manager
-      "dash" # documentation
-      "vlc"
+      "rancher"
     ];
   };
 }
