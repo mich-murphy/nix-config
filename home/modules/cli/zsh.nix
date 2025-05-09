@@ -99,6 +99,9 @@ in {
         # show alias for future use
         source ${pkgs.zsh-you-should-use}/share/zsh/plugins/you-should-use/you-should-use.plugin.zsh
 
+        # kubernetes allow completions with k alias
+        complete -o default -F __start_kubectl k
+
         # direnv config
         eval "$(direnv hook zsh)"
       '';
@@ -121,6 +124,9 @@ in {
         ndh = "sudo nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 7d";
         ngc = "nix store gc";
         zl = "zellij";
+        # kubernetes
+        k = "kubectl";
+
       };
     };
   };

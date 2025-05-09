@@ -18,6 +18,8 @@
     pkgs.deploy-rs
     pkgs.tmux
     pkgs.nmap
+    pkgs.kubectl
+    pkgs.k9s
   ];
 
   fonts.packages = [
