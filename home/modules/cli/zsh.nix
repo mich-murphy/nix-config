@@ -45,8 +45,9 @@ in {
         # fzf
         export FZF_COMPLETION_DIR_COMMANDS="cd pushd rmdir tree ls"
       '';
-      initExtra = ''
-        export PATH="/opt/homebrew/bin:$PATH"
+      initContent = ''
+        # .rd/bin used for rancher desktop
+        export PATH="/Users/mm/.rd/bin:/opt/homebrew/bin:$PATH"
         export LESS="--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT \
         --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4"
 
@@ -98,9 +99,6 @@ in {
 
         # show alias for future use
         source ${pkgs.zsh-you-should-use}/share/zsh/plugins/you-should-use/you-should-use.plugin.zsh
-
-        # kubernetes allow completions with k alias
-        complete -o default -F __start_kubectl k
 
         # direnv config
         eval "$(direnv hook zsh)"

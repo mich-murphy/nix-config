@@ -20,6 +20,7 @@
     pkgs.nmap
     pkgs.kubectl
     pkgs.k9s
+    pkgs.kubernetes-helm
   ];
 
   fonts.packages = [
@@ -60,6 +61,7 @@
       "plexamp"
       "jordanbaird-ice" # menu bar manager
       "rancher"
+      "nextcloud"
     ];
   };
 }
