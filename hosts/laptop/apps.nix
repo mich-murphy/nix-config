@@ -42,6 +42,7 @@
     # homebrew formulae to install
     brews = [
       "gnu-sed" # neovim requirement
+      "siderolabs/tap/talosctl"
     ];
     # homebrew casks for install
     casks = [
