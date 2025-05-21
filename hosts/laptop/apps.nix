@@ -20,7 +20,7 @@
     pkgs.nmap
     pkgs.kubectl
     pkgs.k9s
-    pkgs.kubernetes-helm
+    pkgs._1password-cli
   ];
 
   fonts.packages = [
