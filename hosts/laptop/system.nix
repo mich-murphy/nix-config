@@ -5,11 +5,8 @@
   security.pam.services.sudo_local.touchIdAuth = true; # use touchid for sudo authentication
 
   system = {
+    primaryUser = "mm";
     checks.verifyNixPath = false; # run NIX_PATH validation checks
-    activationScripts.postUserActivation.text = ''
-      # Following line should allow us to avoid a logout/login cycle
-      /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
-    '';
     defaults = {
       CustomUserPreferences = {
         "com.apple.AdLib" = {

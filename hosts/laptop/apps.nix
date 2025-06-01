@@ -21,6 +21,7 @@
     pkgs.kubectl
     pkgs.k9s
     pkgs._1password-cli
+    pkgs.gh
   ];
 
   fonts.packages = [
