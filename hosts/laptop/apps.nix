@@ -22,6 +22,7 @@
     pkgs.k9s
     pkgs._1password-cli
     pkgs.gh
+    pkgs.kubectx
   ];
 
   fonts.packages = [
@@ -44,6 +45,7 @@
     brews = [
       "gnu-sed" # neovim requirement
       "siderolabs/tap/talosctl"
+      "fluxcd/tap/flux"
     ];
     # homebrew casks for install
     casks = [
