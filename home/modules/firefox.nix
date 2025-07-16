@@ -27,7 +27,6 @@ in {
           ublock-origin
           onepassword-password-manager
           new-tab-override
-          omnivore
         ];
         settings = {
           "browser.startup.homepage" = "https://mich-murphy.github.io/startpage-bento/";
