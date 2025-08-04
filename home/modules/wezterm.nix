@@ -145,7 +145,7 @@ in {
 
         -- General
         config.color_scheme = 'carbonfox'
-        config.font = wezterm.font 'JetBrains Mono'
+        config.font = wezterm.font 'Berkeley Mono'
         config.font_size = 13.0
         config.use_dead_keys = false
         config.window_decorations = "RESIZE"
