@@ -93,7 +93,7 @@ in {
           line-numbers = true;
           navigate = true;
           side-by-side = true;
-          syntax-theme = "tokyonight";
+          syntax-theme = "carbonfox";
           minus-style = "syntax '#37222c'";
           minus-non-emph-style = "syntax '#37222c'";
           minus-emph-style = "syntax '#713137'";
