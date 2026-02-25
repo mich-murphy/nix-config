@@ -57,10 +57,6 @@ in {
           src = pkgs.fishPlugins.autopair-fish.src;
         }
         {
-          name = "done";
-          src = pkgs.fishPlugins.done.src;
-        }
-        {
           name = "sponge";
           src = pkgs.fishPlugins.sponge.src;
         }
@@ -70,11 +66,5 @@ in {
         }
       ];
     };
-
-    # enable fish integration for tools configured in other modules
-    programs.direnv.enableFishIntegration = true;
-    programs.starship.enableFishIntegration = true;
-    programs.zoxide.enableFishIntegration = true;
-    programs.fzf.enableFishIntegration = true;
   };
 }
