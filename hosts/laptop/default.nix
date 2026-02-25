@@ -9,8 +9,9 @@
   ];
 
   # create /etc/zshrc which loads nix-darwin environment
-  # required if you want to use darwin default shel (zsh)
+  # required if you want to use darwin default shell (zsh)
   programs.zsh.enable = true;
+  programs.fish.enable = true;
 
   nixpkgs = {
     config.allowUnfree = true; # allow unfree packages

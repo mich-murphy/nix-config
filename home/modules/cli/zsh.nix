@@ -13,7 +13,7 @@ in {
   config = lib.mkIf cfg.enable {
     programs.zsh = {
       enable = true;
-      dotDir = config.xdg.configHome + "/zsh";
+      dotDir = "${config.xdg.configHome}/zsh";
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
       enableCompletion = true;
@@ -47,7 +47,7 @@ in {
       '';
       initContent = ''
         # .rd/bin used for rancher desktop
-        export PATH="/Users/mm/.rd/bin:/opt/homebrew/bin:$PATH"
+        export PATH="${config.home.homeDirectory}/.rd/bin:/opt/homebrew/bin:$PATH"
         export LESS="--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT \
         --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4"
 

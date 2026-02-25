@@ -42,13 +42,13 @@ in {
 
           local nix_tab, pane, window = mux.spawn_window({
             workspace = "develop",
-            cwd = "/Users/mm/dev/nix-config/",
+            cwd = "${config.home.homeDirectory}/dev/nix-config/",
             args = args,
           })
           nix_tab:set_title("nix")
 
           local dev_tab, dev_pane = window:spawn_tab({
-            cwd = "/Users/mm/dev/",
+            cwd = "${config.home.homeDirectory}/dev/",
           })
           dev_tab:set_title("dev")
 

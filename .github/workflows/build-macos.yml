@@ -28,7 +28,7 @@ jobs:
       run: |
         cp /etc/nix/nix.conf ~/.config/nix/nix.conf
         sudo rm -rf /etc/zshenv /etc/nix/nix.conf
-        sed -i '' -E 's "mm "runner g' hosts/laptop/users.nix home/home.nix
-        sed -i '' -E 's \/mm \/runner g' hosts/laptop/users.nix home/home.nix
+        sed -i '' -E 's "mm "runner g' hosts/laptop/user.nix home/home.nix
+        sed -i '' -E 's \/mm \/runner g' hosts/laptop/user.nix home/home.nix
         sed -i '' -E 's users\.mm users\.runner g' flake.nix
         nix run nix-darwin -- switch --flake .#macbook

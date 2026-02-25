@@ -38,7 +38,7 @@ in {
               pkgs.fetchFromGitHub {
                 owner = "EdenEast";
                 repo = "nightfox.nvim";
-                rev = "main";
+                rev = "ba47d4b4c5ec308718641ba7402c143836f35aa9";
                 sha256 = "sha256-HoZEwncrUnypWxyB+XR0UQDv+tNu1/NbvimxYGb7qu8=";
               }
               + "/extra/carbonfox";

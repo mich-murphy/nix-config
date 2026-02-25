@@ -21,9 +21,8 @@ in {
       vimAlias = true;
       defaultEditor = true;
       withPython3 = true;
-      withNodeJs = true;
+      withNodeJs = false;
       extraPackages = with pkgs; [
-        nodePackages.npm
         wget
         lazygit
         cargo

@@ -11,7 +11,7 @@
 
   # define user
   users.users."mm" = {
-    shell = pkgs.zsh; # default user shell
+    shell = pkgs.fish; # default user shell
     home = "/Users/mm";
     createHome = true; # create home directory structure
   };

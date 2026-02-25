@@ -15,14 +15,9 @@
     pkgs.git
     pkgs.curl
     pkgs.xcode-install
-    pkgs.deploy-rs
     pkgs.tmux
     pkgs.nmap
-    pkgs.kubectl
-    pkgs.k9s
     pkgs._1password-cli
-    pkgs.gh
-    pkgs.kubectx
   ];
 
   fonts.packages = [
@@ -38,14 +33,11 @@
     };
     # homebrew repositories to tap
     taps = [
-      "homebrew/services"
       "hashicorp/tap"
     ];
     # homebrew formulae to install
     brews = [
       "gnu-sed" # neovim requirement
-      "siderolabs/tap/talosctl"
-      "fluxcd/tap/flux"
     ];
     # homebrew casks for install
     casks = [
@@ -57,15 +49,15 @@
       "stats" # show system stats in menu bar
       "obsidian"
       "zotero@beta" # pdf reading and higlights
-      "tailscale"
+      "tailscale-app"
       "displaylink" # enable connection of lenovo dock
       "karabiner-elements"
       "yubico-yubikey-manager" # manage yubikey
       "utm" # manage virtual machines
-      "plexamp"
       "jordanbaird-ice" # menu bar manager
-      "rancher"
-      "nextcloud"
+      "owncloud"
+      "ungoogled-chromium"
+      "iina"
     ];
   };
 }

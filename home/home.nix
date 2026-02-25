@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{...}: {
   imports = [
     ./modules
   ];
@@ -7,9 +7,6 @@
     username = "mm";
     homeDirectory = "/Users/mm";
     stateVersion = "22.05";
-    packages = with pkgs; [
-      _1password-cli
-    ];
     # remove message when entering terminal if macos
     file.".hushlogin" = {
       enable = true;
@@ -38,6 +35,7 @@
     karabiner.enable = true;
     # cli
     apps.enable = true;
+    fish.enable = true;
     fzf.enable = true;
     zsh.enable = true;
   };
