@@ -32,7 +32,7 @@ in {
       description = "Port for Prometheus to be advertised on";
     };
     prometheusNodePort = lib.mkOption {
-      type = lib.ypes.port;
+      type = lib.types.port;
       default = 9002;
       description = "Port for Prometheus node to be advertised on";
     };

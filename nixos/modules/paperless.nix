@@ -14,7 +14,7 @@ in {
     extraGroups = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "Additional groups for plex user";
+      description = "Additional groups for paperless user";
       example = ["media"];
     };
     mediaDir = lib.mkOption {
@@ -30,12 +30,12 @@ in {
     hostAddress = lib.mkOption {
       type = lib.types.str;
       default = "127.0.0.1";
-      description = "IP address for IT-Tools host";
+      description = "IP address for Paperless host";
     };
     port = lib.mkOption {
       type = lib.types.port;
       default = 28981;
-      description = "Port for Pinchflat";
+      description = "Port for Paperless";
     };
     nginx = lib.mkOption {
       type = lib.types.bool;
