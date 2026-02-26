@@ -54,9 +54,11 @@ in {
 
             # run applications on specified space
             # requires scripting additions active
-            # yabai -m rule --add app='kitty' space=^1
-            # yabai -m rule --add app='Firefox' space=^2
+            # yabai -m rule --add app='WezTerm' space=^1
+            # yabai -m rule --add app='Cursor' space=^1
+            # yabai -m rule --add app='Google Chrome' space=^2
             # yabai -m rule --add app='Mail' space=3
+            # yabai -m rule --add app='Slack' space=3
             # yabai -m rule --add app='Messages' space=4
           '';
         };
