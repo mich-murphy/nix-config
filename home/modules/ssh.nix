@@ -24,7 +24,9 @@ in {
           hostname = "proxmox";
           user = "root";
           setEnv = {
-            "LC_ALL" = "C";
+            "LC_CTYPE" = "C";
+            "LC_COLLATE" = "C";
+            "LANG" = "C";
           };
         };
       };
