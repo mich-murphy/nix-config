@@ -41,7 +41,6 @@
     ];
     # homebrew casks for install
     casks = [
-      "firefox"
       "wezterm"
       "spaceid" # identify current spaces in menu bar
       "raycast" # launcher
@@ -56,8 +55,10 @@
       "utm" # manage virtual machines
       "jordanbaird-ice" # menu bar manager
       "owncloud"
-      "ungoogled-chromium"
+      "google-chrome"
       "iina"
+      "cursor"
+      "slack"
     ];
   };
 }
