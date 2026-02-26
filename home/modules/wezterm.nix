@@ -31,37 +31,6 @@ in {
         local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
         local config = wezterm.config_builder()
 
-        wezterm.on("gui-startup", function(cmd)
-          local mux = wezterm.mux
-
-          -- allow commands passed via `wezterm start --` to be used
-          local args = {}
-          if cmd then
-            args = cmd.args
-          end
-
-          local nix_tab, pane, window = mux.spawn_window({
-            workspace = "develop",
-            cwd = "${config.home.homeDirectory}/dev/nix-config/",
-            args = args,
-          })
-          nix_tab:set_title("nix")
-
-          local dev_tab, dev_pane = window:spawn_tab({
-            cwd = "${config.home.homeDirectory}/dev/",
-          })
-          dev_tab:set_title("dev")
-
-          --[[
-          local terminal_pane = dev_pane:split({
-            direction = "Right",
-            size = 0.3,
-          })
-          ]]
-
-          mux.set_active_workspace("develop")
-        end)
-
         -- Show which key table is active in the status area
         wezterm.on("update-right-status", function(window, pane)
           local name = window:active_key_table()
