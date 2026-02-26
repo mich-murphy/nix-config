@@ -59,6 +59,12 @@
       "iina"
       "cursor"
       "slack"
+      "microsoft-excel"
+      "microsoft-powerpoint"
+      "microsoft-word"
     ];
+    masApps = {
+      "Supernote Partner" = 1494992020;
+    };
   };
 }
