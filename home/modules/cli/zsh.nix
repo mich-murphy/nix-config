@@ -48,8 +48,6 @@ in {
       initContent = ''
         # .rd/bin used for rancher desktop
         export PATH="${config.home.homeDirectory}/.rd/bin:/opt/homebrew/bin:$PATH"
-        export LESS="--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT \
-        --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4"
 
         # limit zcompdump to once daily
         autoload -Uz compinit
@@ -92,7 +90,7 @@ in {
         # zsh-vi-mode config
         function zvm_config() {
           ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
-          ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
+          ZVM_INSERT_MODE_CURSOR=$ZVM_CURSOR_LINE
           ZVM_VI_SURROUND_BINDKEY=s-prefix
         }
         source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
@@ -124,7 +122,6 @@ in {
         zl = "zellij";
         # kubernetes
         k = "kubectl";
-
       };
     };
   };

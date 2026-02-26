@@ -25,6 +25,7 @@ in {
       direnv = {
         enable = true;
         enableZshIntegration = true;
+        enableFishIntegration = true;
         nix-direnv.enable = true;
       };
       bat = {
@@ -49,6 +50,7 @@ in {
       starship = {
         enable = true;
         enableZshIntegration = true;
+        enableFishIntegration = true;
         settings = {
           scan_timeout = 10;
           git_status = {
@@ -66,6 +68,7 @@ in {
       zoxide = {
         enable = true;
         enableZshIntegration = true;
+        enableFishIntegration = true;
       };
       tealdeer = {
         enable = true;

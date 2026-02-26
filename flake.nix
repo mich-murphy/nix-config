@@ -9,10 +9,16 @@
   };
 
   outputs = {
+    nixpkgs,
     darwin,
     home-manager,
     ...
-  } @ inputs: {
+  } @ inputs: let
+    system = "aarch64-darwin";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
+    formatter.${system} = pkgs.alejandra;
+
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
       specialArgs = {inherit inputs;};
       modules = [

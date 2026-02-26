@@ -25,7 +25,6 @@ in {
         set -g fish_cursor_replace_one underscore
         set -g fish_cursor_visual block
 
-        set -gx LESS "--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4"
         set -gx FZF_COMPLETION_DIR_COMMANDS "cd pushd rmdir tree ls"
 
         # TokyoNight Night theme
@@ -50,6 +49,12 @@ in {
         set -g fish_pager_color_description 565f89
         set -g fish_pager_color_selected_background --background=283457
       '';
+
+      shellAbbrs = {
+        ls = "eza -la";
+        cat = "bat";
+        vim = "nvim";
+      };
 
       plugins = [
         {

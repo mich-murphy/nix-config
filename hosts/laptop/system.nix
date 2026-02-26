@@ -4,6 +4,19 @@
 
   security.pam.services.sudo_local.touchIdAuth = true; # use touchid for sudo authentication
 
+  networking.applicationFirewall = {
+    enable = true;
+    allowSigned = true;
+    allowSignedApp = true;
+    enableStealthMode = true;
+  };
+
+  system.activationScripts.postActivation.text = ''
+    killall Dock || true
+    killall Finder || true
+    killall SystemUIServer || true
+  '';
+
   system = {
     primaryUser = "mm";
     checks.verifyNixPath = false; # run NIX_PATH validation checks
@@ -72,6 +85,16 @@
         NSDocumentSaveNewDocumentsToCloud = false; # disable automatic saving of documents to iCloud
         NSNavPanelExpandedStateForSaveMode = true; # expand save panel options by default
         NSNavPanelExpandedStateForSaveMode2 = true;
+      };
+      menuExtraClock = {
+        Show24Hour = true;
+        ShowDate = 1; # always show date
+        ShowDayOfWeek = true;
+        ShowSeconds = false;
+      };
+      spaces.spans-displays = false; # separate spaces per display
+      WindowManager = {
+        EnableStandardClickToShowDesktop = false; # disable click wallpaper to show desktop
       };
       LaunchServices.LSQuarantine = false; # disables "Are you sure?" for new apps
     };

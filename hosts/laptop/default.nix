@@ -42,5 +42,23 @@
     '';
   };
 
+  environment.variables = {
+    LESS = "--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4";
+  };
+
+  launchd.agents.nix-gc = {
+    serviceConfig = {
+      ProgramArguments = ["/nix/var/nix/profiles/default/bin/nix" "store" "gc" "--min-free" "10G"];
+      StartCalendarInterval = [
+        {
+          Weekday = 7;
+          Hour = 9;
+        }
+      ]; # run weekly on Sunday at 9am
+      StandardOutPath = "/tmp/nix-gc.log";
+      StandardErrorPath = "/tmp/nix-gc.log";
+    };
+  };
+
   system.stateVersion = 4;
 }
