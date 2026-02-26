@@ -98,18 +98,16 @@
     pkgs.tmux
     pkgs.lazydocker
     pkgs.wezterm
-    pkgs.cifs-utils # used for samba
-    # disk usage tooling
+    pkgs.cifs-utils
     pkgs.du-dust
     pkgs.dua
     pkgs.duf
-    # stress testing
     pkgs.s-tui
     pkgs.stress-ng
   ];
 
   services = {
-    qemuGuest.enable = true; # used for hypervisor operations
+    qemuGuest.enable = true;
     nginx = {
       # reverse proxy to other services
       virtualHosts."deluge.pve.elmurphy.com" = {
