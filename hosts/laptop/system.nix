@@ -100,7 +100,6 @@
     };
     keyboard = {
       enableKeyMapping = true; # needed for skhd
-      remapCapsLockToControl = true;
     };
   };
 }
