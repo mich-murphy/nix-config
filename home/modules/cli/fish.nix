@@ -52,7 +52,7 @@ in {
         set -g fish_pager_color_selected_background --background=283457
       '';
 
-      shellAbbrs = {
+      shellAliases = {
         ls = "eza -la";
         cat = "bat";
         vim = "nvim";

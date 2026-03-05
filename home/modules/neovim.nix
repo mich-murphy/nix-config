@@ -28,6 +28,8 @@ in {
         cargo
         alejandra
         nixd
+        nodejs
+        go
       ];
       extraPython3Packages = py:
         with py; [

@@ -57,11 +57,12 @@
       "owncloud"
       "google-chrome"
       "iina"
-      "cursor"
+      "claude-code"
       "slack"
       "microsoft-excel"
       "microsoft-powerpoint"
       "microsoft-word"
+      "microsoft-teams"
     ];
     masApps = {
       "Supernote Partner" = 1494992020;
