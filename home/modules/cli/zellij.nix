@@ -13,10 +13,9 @@ in {
     programs.zellij.enable = true;
 
     # add zellij configuration to .config/
-    xdg.configFile = lib.mkIf config.programs.zellij.enable {
+    xdg.configFile = {
       "zellij/config.kdl" = {
         enable = true;
-        target = "zellij/config.kdl";
         text = ''
           keybinds {
             unbind "Ctrl t"

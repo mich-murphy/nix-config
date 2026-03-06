@@ -102,10 +102,6 @@ in {
         eval "$(direnv hook zsh)"
       '';
       shellAliases = {
-        # general
-        ls = "eza -la";
-        cat = "bat";
-        vim = "nvim";
         p = "less";
         # git
         gswr = "git switch-recent";

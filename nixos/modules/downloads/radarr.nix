@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.radarr;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.radarr = {
     enable = lib.mkEnableOption "Enable Radarr";
     group = lib.mkOption {
@@ -52,7 +48,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:7878";
             proxyWebsockets = true;

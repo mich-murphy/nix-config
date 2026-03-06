@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.grafana;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.grafana = {
     enable = lib.mkEnableOption "Enable monitoring with Grafana and Prometheus";
     domain = lib.mkOption {
@@ -88,15 +84,15 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${config.services.grafana.settings.server.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.grafanaPort}";
             proxyWebsockets = true;
           };
         };
-        virtualHosts."prometheus.pve.elmurphy.com" = {
+        virtualHosts."prometheus.pve.${config.common.acme.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.prometheusPort}";
             proxyWebsockets = true;

@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.komga;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.komga = {
     enable = lib.mkEnableOption "Enable Komga";
     extraGroups = lib.mkOption {
@@ -53,12 +49,12 @@ in {
       komga = {
         enable = true;
         settings.server.port = cfg.port;
-        openFirewall = true;
+        openFirewall = false;
       };
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
             proxyWebsockets = true;

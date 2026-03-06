@@ -46,28 +46,14 @@ in {
             yabai -m rule --add app='Stats' manage=off
             yabai -m rule --add app='1Password' manage=off
             yabai -m rule --add app='Raycast' manage=off
+            yabai -m rule --add app='^Archive Utility$' manage=off
+            yabai -m rule --add app='^Preview$' manage=off
+            yabai -m rule --add app='^UTM$' manage=off
+            yabai -m rule --add app='^YubiKey Manager$' manage=off
             yabai -m config --space 5 layout float
-
-            # enable scripting additions
-            # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
-            # sudo yabai --load-sa
-
-            # run applications on specified space
-            # requires scripting additions active
-            # yabai -m rule --add app='WezTerm' space=^1
-            # yabai -m rule --add app='Cursor' space=^1
-            # yabai -m rule --add app='Google Chrome' space=^2
-            # yabai -m rule --add app='Mail' space=3
-            # yabai -m rule --add app='Slack' space=3
-            # yabai -m rule --add app='Messages' space=4
           '';
         };
       };
     };
-
-    # install yabai scripting additions
-    # environment.etc."sudoers.d/yabai".text = ''
-    #   ${user} ALL = (root) NOPASSWD: ${pkgs.yabai}/bin/yabai --load-sa
-    # '';
   };
 }

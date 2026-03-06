@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  pkgs,
+  config,
+  ...
+}: {
   # system applications
 
   imports = [
@@ -79,7 +83,6 @@
       group = "media";
     };
     ittools.enable = true;
-    watchtower.enable = true;
     searxng.enable = true;
     smokeping.enable = true;
     beszel = {
@@ -110,42 +113,42 @@
     qemuGuest.enable = true;
     nginx = {
       # reverse proxy to other services
-      virtualHosts."deluge.pve.elmurphy.com" = {
+      virtualHosts."deluge.pve.${config.common.acme.domain}" = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://100.69.115.120:8112";
           proxyWebsockets = true;
         };
       };
       # open-webui access to ollama
-      virtualHosts."ollama.pve.elmurphy.com" = {
+      virtualHosts."ollama.pve.${config.common.acme.domain}" = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://100.94.130.71:8080";
           proxyWebsockets = true;
         };
       };
-      virtualHosts."fileflows.pve.elmurphy.com" = {
+      virtualHosts."fileflows.pve.${config.common.acme.domain}" = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://100.94.130.71:19200";
           proxyWebsockets = true;
         };
       };
-      virtualHosts."dockge.pve.elmurphy.com" = {
+      virtualHosts."dockge.pve.${config.common.acme.domain}" = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://100.94.130.71:5001";
           proxyWebsockets = true;
         };
       };
-      virtualHosts."pocketid.pve.elmurphy.com" = {
+      virtualHosts."pocketid.pve.${config.common.acme.domain}" = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://10.77.2.207:80";
           proxyWebsockets = true;

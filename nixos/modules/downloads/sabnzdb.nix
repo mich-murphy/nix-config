@@ -5,12 +5,8 @@
 }: let
   cfg = config.common.sabnzbd;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.sabnzbd = {
-    enable = lib.mkEnableOption "Enable Sabdnzbd";
+    enable = lib.mkEnableOption "Enable Sabnzbd";
     dataDir = lib.mkOption {
       type = lib.types.str;
       default = "/var/lib/sabnzbd";
@@ -65,7 +61,7 @@ in {
       backend = "docker";
       containers."sabnzbd" = {
         autoStart = true;
-        image = "lscr.io/linuxserver/sabnzbd:latest";
+        image = "lscr.io/linuxserver/sabnzbd:4.5.5";
         environment = {
           PUID = "1000";
           PGID = "985";
@@ -84,7 +80,7 @@ in {
     services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;

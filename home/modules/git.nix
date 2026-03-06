@@ -60,7 +60,7 @@ in {
           branch.sort = "-committerdate";
           interactive.singleKey = true;
           rerere.enabled = true;
-          help.autoCorrect = true;
+          help.autoCorrect = "prompt";
           color = {
             "branch" = {
               current = "yellow reverse";

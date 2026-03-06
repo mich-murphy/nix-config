@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.pinchflat;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.pinchflat = {
     enable = lib.mkEnableOption "Enable Pinchflat";
     dataDir = lib.mkOption {
@@ -61,7 +57,7 @@ in {
       backend = "docker";
       containers."pinchflat" = {
         autoStart = true;
-        image = "ghcr.io/kieraneglin/pinchflat:latest";
+        image = "ghcr.io/kieraneglin/pinchflat:v2025.9.26";
         ports = ["${toString cfg.port}:8945"];
         volumes = [
           "${cfg.dataDir}:/config"
@@ -73,7 +69,7 @@ in {
     services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;

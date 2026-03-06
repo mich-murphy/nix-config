@@ -47,6 +47,10 @@ in {
           shift + alt - h : yabai -m window --swap west || yabai -m window --display west
           shift + alt - l : yabai -m window --swap east || yabai -m window --display east
 
+          # Move window between displays
+          shift + alt - n : yabai -m window --display next --focus
+          shift + alt - p : yabai -m window --display prev --focus
+
           # Send to Space
           shift + ctrl - 1 : yabai -m window --space 1 --focus
           shift + ctrl - 2 : yabai -m window --space 2 --focus

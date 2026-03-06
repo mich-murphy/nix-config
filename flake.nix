@@ -22,6 +22,13 @@
     darwinConfigurations.macbook = darwin.lib.darwinSystem {
       specialArgs = {inherit inputs;};
       modules = [
+        {
+          nixpkgs.overlays = [
+            (final: prev: {
+              fakepkg = name: final.runCommand name {} "mkdir $out";
+            })
+          ];
+        }
         ./hosts/laptop
         home-manager.darwinModules.home-manager
         {

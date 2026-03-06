@@ -56,15 +56,12 @@ in {
         enable = true;
         database.type = "postgres";
         dump = {
-          enable =
-            if cfg.backupDir != null
-            then true
-            else false;
+          enable = cfg.backupDir != null;
           backupDir = cfg.backupDir;
         };
         settings = {
           server = {
-            DOMAIN = "${cfg.domain}";
+            DOMAIN = cfg.domain;
             ROOT_URL = "https://${cfg.domain}/";
             HTTP_PORT = cfg.port;
           };
@@ -96,7 +93,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           extraConfig = ''
             client_max_body_size 512M;
           '';

@@ -5,8 +5,6 @@
   ...
 }: let
   cfg = config.common.kitty;
-  # fake package - managed by homebrew instead
-  fakepkg = name: pkgs.runCommand name {} "mkdir $out";
 in {
   options.common.kitty = {
     enable = lib.mkEnableOption "Enable kitty with personalised settings";
@@ -15,7 +13,7 @@ in {
   config = lib.mkIf cfg.enable {
     programs.kitty = {
       enable = true;
-      package = fakepkg "kitty";
+      package = pkgs.fakepkg "kitty";
       font = {
         name = "JetBrainsMono Nerd Font";
         size = 13;

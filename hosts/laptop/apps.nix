@@ -18,6 +18,7 @@
     pkgs.tmux
     pkgs.nmap
     pkgs._1password-cli
+    pkgs.gnused
   ];
 
   fonts.packages = [
@@ -34,10 +35,6 @@
     # homebrew repositories to tap
     taps = [
       "hashicorp/tap"
-    ];
-    # homebrew formulae to install
-    brews = [
-      "gnu-sed" # neovim requirement
     ];
     # homebrew casks for install
     casks = [

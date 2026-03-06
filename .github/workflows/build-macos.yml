@@ -17,13 +17,13 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
     - name: Check Nix Flake Inputs
-      uses: DeterminateSystems/flake-checker-action@main
+      uses: DeterminateSystems/flake-checker-action@v1
       with:
         send-statistics: false
     - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@main
+      uses: DeterminateSystems/nix-installer-action@v1
     - name: Cache Nix Build
-      uses: DeterminateSystems/magic-nix-cache-action@main
+      uses: DeterminateSystems/magic-nix-cache-action@v1
     - name: Check Successful Build
       run: |
         cp /etc/nix/nix.conf ~/.config/nix/nix.conf

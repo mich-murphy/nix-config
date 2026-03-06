@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.sonarr;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.sonarr = {
     enable = lib.mkEnableOption "Enable Sonarr";
     group = lib.mkOption {
@@ -52,7 +48,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:8989";
             proxyWebsockets = true;
@@ -61,6 +57,7 @@ in {
       };
     };
 
+    # ACCEPTED RISK: EOL .NET 6 required by Sonarr — review when Sonarr migrates to .NET 8+
     # https://github.com/NixOS/nixpkgs/issues/360592#issuecomment-2513490613
     nixpkgs.config.permittedInsecurePackages = [
       "aspnetcore-runtime-6.0.36"

@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.freshrss;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.freshrss = {
     enable = lib.mkEnableOption "Enable FreshRSS";
     defaultUser = lib.mkOption {
@@ -58,7 +54,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
         };
       };
     };

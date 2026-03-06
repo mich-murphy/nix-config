@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.audiobookshelf;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.audiobookshelf = {
     enable = lib.mkEnableOption "Enable Audiobookshelf";
     extraGroups = lib.mkOption {
@@ -54,7 +50,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString config.services.audiobookshelf.port}";
             proxyWebsockets = true;

@@ -1,7 +1,7 @@
 {
-  pkgs,
   lib,
   config,
+  pkgs,
   ...
 }: let
   cfg = config.common.smokeping;
@@ -37,15 +37,6 @@ in {
         message = "Nginx needs to be enabled";
       }
     ];
-
-    security.wrappers = {
-      dig = {
-        setuid = true;
-        owner = "root";
-        group = "root";
-        source = "${pkgs.dig}/bin/dig";
-      };
-    };
 
     services = {
       smokeping = {
@@ -141,7 +132,7 @@ in {
         ];
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           };

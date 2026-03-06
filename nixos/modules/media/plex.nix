@@ -16,10 +16,6 @@
     installPhase = "mkdir -p $out; cp -R * $out/";
   };
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.plex = {
     enable = lib.mkEnableOption "Enable Plex with Audnexus plugin for audiobooks";
     extraGroups = lib.mkOption {
@@ -73,26 +69,20 @@ in {
     services = {
       plex = {
         enable = true;
-        extraPlugins =
-          if cfg.enableAudnexus
-          then [audnexusPlugin]
-          else [];
+        extraPlugins = lib.optional cfg.enableAudnexus audnexusPlugin;
       };
-      tautulli.enable =
-        if cfg.enableTautulli
-        then true
-        else false;
+      tautulli.enable = cfg.enableTautulli;
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.tautulliDomain} = lib.mkIf config.services.tautulli.enable {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.tautulliHostAddress}:8181";
           };
         };
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           extraConfig = ''
             # some players don't reopen a socket and playback stops totally instead of resuming after an extended pause
             send_timeout 100m;

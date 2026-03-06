@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.beszel;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.beszel = {
     enable = lib.mkEnableOption "Enable Beszel agent on host";
     port = lib.mkOption {
@@ -62,18 +58,17 @@ in {
       containers = {
         "beszel-hub" = lib.mkIf cfg.hub.enable {
           autoStart = true;
-          image = "henrygd/beszel:latest";
+          image = "henrygd/beszel:0.18.4";
           ports = ["${toString cfg.hub.port}:8090"];
           volumes = [
             "${cfg.hub.dataDir}:/beszel_data"
           ];
-          # allow access to clients on vpn
-          extraOptions = ["--network=host"];
         };
         # system monitoring reporting to central beszel host
         "beszel-agent" = {
           autoStart = true;
-          image = "henrygd/beszel-agent:latest";
+          image = "henrygd/beszel-agent:0.18.4";
+          ports = ["${toString cfg.port}:${toString cfg.port}"];
           environment = {
             PORT = toString cfg.port;
             KEY = cfg.key;
@@ -82,8 +77,6 @@ in {
           volumes = [
             "/var/run/docker.sock:/var/run/docker.sock:ro"
           ];
-          # allow access to clients on vpn
-          extraOptions = ["--network=host"];
         };
       };
     };
@@ -91,7 +84,7 @@ in {
     services.nginx = lib.mkIf cfg.hub.nginx {
       virtualHosts.${cfg.hub.domain} = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://${cfg.hub.hostAddress}:${toString cfg.hub.port}";
           proxyWebsockets = true;

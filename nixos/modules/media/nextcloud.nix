@@ -106,11 +106,11 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
         };
-        virtualHosts."office.pve.elmurphy.com" = {
+        virtualHosts."office.pve.${config.common.acme.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           # Reference: https://sdk.collaboraonline.com/docs/installation/Proxy_settings.html#reverse-proxy-settings-in-nginx-config-ssl-termination
           locations = {
             # static files
@@ -177,13 +177,13 @@ in {
     virtualisation.oci-containers = {
       backend = "docker";
       containers.collabora = {
-        image = "collabora/code:latest";
+        image = "collabora/code:25.04.8.1.1";
         ports = ["9980:9980"];
         environment = {
-          domain = "office.pve.elmurphy.com";
+          domain = "office.pve.${config.common.acme.domain}";
           extra_params = "--o:ssl.enable=false --o:ssl.termination=true";
         };
-        extraOptions = ["--cap-add" "MKNOD" "--network=host"];
+        extraOptions = ["--cap-add" "MKNOD"];
       };
     };
 

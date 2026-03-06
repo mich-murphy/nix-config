@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.lidarr;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.lidarr = {
     enable = lib.mkEnableOption "Enable Lidarr";
     group = lib.mkOption {
@@ -52,7 +48,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:8686";
             proxyWebsockets = true;

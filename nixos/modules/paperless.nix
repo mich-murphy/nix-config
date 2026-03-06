@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.paperless;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.paperless = {
     enable = lib.mkEnableOption "Enable paperless";
     extraGroups = lib.mkOption {
@@ -80,7 +76,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
             proxyWebsockets = true;

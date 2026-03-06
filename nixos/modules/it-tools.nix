@@ -41,7 +41,7 @@ in {
       backend = "docker";
       containers."ittools" = {
         autoStart = true;
-        image = "corentinth/it-tools:latest";
+        image = "corentinth/it-tools:2024.10.22-7ca5933";
         ports = ["${toString cfg.port}:80"];
         extraOptions = ["--dns=1.1.1.1" "--dns=1.0.0.1"];
       };
@@ -49,7 +49,7 @@ in {
     services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;

@@ -5,8 +5,6 @@
   ...
 }: let
   cfg = config.common.wezterm;
-  # fake package - managed by homebrew instead
-  fakepkg = name: pkgs.runCommand name {} "mkdir $out";
 in {
   options.common.wezterm = {
     enable = lib.mkEnableOption "Enable Wezterm with personalised settings";
@@ -26,7 +24,7 @@ in {
     programs.wezterm = {
       enable = true;
       enableZshIntegration = false;
-      package = fakepkg "wezterm";
+      package = pkgs.fakepkg "wezterm";
       extraConfig = ''
         local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
         local config = wezterm.config_builder()
@@ -117,6 +115,8 @@ in {
         config.font = wezterm.font 'Berkeley Mono'
         config.font_size = 13.0
         config.use_dead_keys = false
+        config.send_composed_key_when_left_alt_is_pressed = false
+        config.send_composed_key_when_right_alt_is_pressed = false
         config.window_decorations = "RESIZE"
         config.adjust_window_size_when_changing_font_size = false
         config.window_close_confirmation = 'NeverPrompt'

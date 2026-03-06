@@ -23,4 +23,5 @@ in {
   "gitBorgPass.age".publicKeys = [media];
   "tailscaleAuthKey.age".publicKeys = [media];
   "paperlessPass.age".publicKeys = [media];
+  "delugePass.age".publicKeys = [media];
 }

@@ -47,7 +47,7 @@
               {
                 "conditions": [
                   {
-                    "name": "_spacefn_mode",
+                    "name": "spacefn_mode",
                     "type": "variable_if",
                     "value": 0
                   }

@@ -42,10 +42,9 @@ in {
         credentialsFile = config.age.secrets.acmeCredentials.path;
       };
       certs.${cfg.domain} = {
-        # domain = "*." + cfg.domain;
         extraDomainNames = [
-          "*.elmurphy.com"
-          "*.pve.elmurphy.com"
+          "*.${cfg.domain}"
+          "*.pve.${cfg.domain}"
         ];
       };
     };

@@ -7,6 +7,10 @@
     username = "mm";
     homeDirectory = "/Users/mm";
     stateVersion = "22.05";
+    shellAliases = {
+      ls = "eza -la";
+      cat = "bat";
+    };
     # remove message when entering terminal if macos
     file.".hushlogin" = {
       enable = true;
@@ -17,7 +21,6 @@
   # allow unfree packages via cli
   xdg.configFile."nixpkgs/config.nix" = {
     enable = true;
-    target = "nixpkgs/config.nix";
     text = ''
       {
         allowUnfree = true;

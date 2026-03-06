@@ -13,14 +13,12 @@
     ./beszel.nix
     ./it-tools.nix
     ./actual.nix
-    ./watchtower.nix
     ./searxng.nix
     ./gitlab.nix
     ./n8n.nix
     ./stirling-pdf.nix
     ./smokeping.nix
     ./rss-bridge.nix
-    ./mealie.nix
     ./paperless.nix
   ];
 }

@@ -1,14 +1,10 @@
 {
-  config,
   lib,
+  config,
   ...
 }: let
   cfg = config.common.searxng;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.searxng = {
     enable = lib.mkEnableOption "Enable Searxng";
     dataDir = lib.mkOption {
@@ -64,7 +60,7 @@ in {
           ];
         };
         "searxng" = {
-          image = "docker.io/searxng/searxng:latest";
+          image = "docker.io/searxng/searxng:2026.3.3-b5c1c2804";
           environment = {
             "SEARXNG_BASE_URL" = "https://${cfg.domain}/";
             "UWSGI_THREADS" = "4";
@@ -91,7 +87,7 @@ in {
     services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;

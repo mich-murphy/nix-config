@@ -6,10 +6,6 @@
 }: let
   cfg = config.common.jellyfin;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.jellyfin = {
     enable = lib.mkEnableOption "Enable Jellyfin with hardware transcoding";
     extraGroups = lib.mkOption {
@@ -81,7 +77,7 @@ in {
         clientMaxBodySize = "20m"; # The default (1M) might not be enough for some posters, etc.
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             # https://jellyfin.org/docs/general/networking/#port-bindings
             proxyPass = "http://${cfg.hostAddress}:8096";

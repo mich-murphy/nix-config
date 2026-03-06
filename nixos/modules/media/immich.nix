@@ -79,10 +79,10 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           extraConfig = ''
             # allow large file uploads
-            client_max_body_size 50000M;
+            client_max_body_size 5000M;
 
             # Set headers
             proxy_set_header Host              $server_addr;

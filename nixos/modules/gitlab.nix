@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.gitlab;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.gitlab = {
     enable = lib.mkEnableOption "Enable gitlab";
     dataDir = lib.mkOption {
@@ -67,7 +63,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://unix:/run/gitlab/gitlab-workhorse.socket";
           };

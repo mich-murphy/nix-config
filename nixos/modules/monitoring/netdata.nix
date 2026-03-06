@@ -1,7 +1,7 @@
 {
   lib,
-  pkgs,
   config,
+  pkgs,
   ...
 }: let
   cfg = config.common.netdata;

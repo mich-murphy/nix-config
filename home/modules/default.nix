@@ -1,7 +1,6 @@
 {...}: {
   imports = [
     ./cli
-    ./hammerspoon
     ./karabiner
     ./alacritty.nix
     ./git.nix

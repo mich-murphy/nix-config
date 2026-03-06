@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.matrix;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.matrix = {
     enable = lib.mkEnableOption "Enable Matrix Synapse server";
     domain = lib.mkOption {
@@ -19,7 +15,7 @@ in {
     port = lib.mkOption {
       type = lib.types.port;
       default = 8448;
-      description = "Port for Gitea";
+      description = "Port for Matrix Synapse";
     };
     nginx = lib.mkOption {
       type = lib.types.bool;
@@ -44,7 +40,7 @@ in {
       matrix-synapse = {
         enable = true;
         settings = {
-          server_name = "elmurphy.com";
+          server_name = config.common.acme.domain;
           public_baseurl = "https://${cfg.domain}";
           listeners = [
             {
@@ -94,7 +90,7 @@ in {
               require = true;
             };
             permissions = {
-              "@mm:elmurphy.com" = "admin";
+              "@mm:${config.common.acme.domain}" = "admin";
             };
             history_sync = {
               request_full_sync = true;
@@ -125,7 +121,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts."${cfg.domain}" = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
           locations."/" = {
             proxyPass = "http://127.0.0.1:${toString cfg.port}";
           };

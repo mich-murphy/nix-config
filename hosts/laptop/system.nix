@@ -22,6 +22,13 @@
     checks.verifyNixPath = false; # run NIX_PATH validation checks
     defaults = {
       CustomUserPreferences = {
+        "com.apple.BluetoothAudioAgent" = {
+          "Apple Bitpool Min (editable)" = 40;
+        };
+        "com.apple.screensaver" = {
+          askForPassword = 1;
+          askForPasswordDelay = 0;
+        };
         "com.apple.AdLib" = {
           allowApplePersonalizedAdvertising = false;
         };
@@ -57,6 +64,8 @@
         QuitMenuItem = true; # enable quit menu item
         ShowPathbar = true; # show filpaths
         _FXShowPosixPathInTitle = true; # show full filepath in titlebar
+        _FXSortFoldersFirst = true;
+        FXDefaultSearchScope = "SCcf";
       };
       loginwindow = {
         DisableConsoleAccess = true; # disable console access from login window
@@ -64,6 +73,8 @@
       };
       screencapture = {
         location = "~/Pictures"; # screenshot path
+        type = "png";
+        disable-shadow = true;
       };
       trackpad = {
         FirstClickThreshold = 0; # force feedback level

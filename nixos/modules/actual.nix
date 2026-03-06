@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.actual;
 in {
-  imports = [
-    ./borgbackup.nix
-  ];
-
   options.common.actual = {
     enable = lib.mkEnableOption "Enable Actual";
     dataDir = lib.mkOption {
@@ -52,7 +48,7 @@ in {
       backend = "docker";
       containers."actual" = {
         autoStart = true;
-        image = "actualbudget/actual-server:latest";
+        image = "actualbudget/actual-server:26.3.0";
         ports = ["${toString cfg.port}:5006"];
         volumes = [
           "${cfg.dataDir}:/data"
@@ -63,7 +59,7 @@ in {
     services.nginx = lib.mkIf cfg.nginx {
       virtualHosts.${cfg.domain} = {
         forceSSL = true;
-        useACMEHost = "elmurphy.com";
+        useACMEHost = config.common.acme.domain;
         locations."/" = {
           proxyPass = "http://${cfg.hostAddress}:${toString cfg.port}";
           proxyWebsockets = true;

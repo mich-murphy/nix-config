@@ -33,7 +33,7 @@ in {
         virtualHost = cfg.domain;
         # Reference: https://github.com/RSS-Bridge/rss-bridge/blob/master/config.default.ini.php
         config = {
-          system.enabled_bridges = ["*"];
+          system.enabled_bridges = ["YoutubeBridge" "RedditBridge"];
           error = {
             output = "http";
             report_limit = 5;
@@ -46,7 +46,7 @@ in {
       nginx = lib.mkIf cfg.nginx {
         virtualHosts.${cfg.domain} = {
           forceSSL = true;
-          useACMEHost = "elmurphy.com";
+          useACMEHost = config.common.acme.domain;
         };
       };
     };

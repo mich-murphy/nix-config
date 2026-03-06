@@ -5,10 +5,6 @@
 }: let
   cfg = config.common.loki;
 in {
-  imports = [
-    ../borgbackup.nix
-  ];
-
   options.common.loki = {
     enable = lib.mkEnableOption "Enable log capture with Loki and Promtail";
     hostAddress = lib.mkOption {
@@ -35,7 +31,7 @@ in {
       loki = {
         enable = true;
         configuration = {
-          auth_enabled = false;
+          auth_enabled = true;
           server.http_listen_port = cfg.lokiPort;
           common = {
             ring = {
@@ -43,7 +39,7 @@ in {
               kvstore.store = "inmemory";
             };
             replication_factor = 1;
-            path_prefix = "/tmp/loki";
+            path_prefix = "/var/lib/loki";
           };
           schema_config = {
             configs = [
@@ -86,7 +82,7 @@ in {
             grpc_listen_port = 0;
           };
           positions = {
-            filename = "/tmp/positions.yaml";
+            filename = "/var/lib/promtail/positions.yaml";
           };
           clients = [
             {
