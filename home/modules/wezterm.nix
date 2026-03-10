@@ -45,7 +45,7 @@ in {
           { key = "k", mods = "CTRL", action = wezterm.action.ActivatePaneDirection("Up") },
           { key = "l", mods = "CTRL", action = wezterm.action.ActivatePaneDirection("Right") },
           { key = "c", mods = "LEADER", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
-          { key = "x", mods = "LEADER", action = wezterm.action.CloseCurrentPane({confirm = true }) },
+          { key = "x", mods = "LEADER", action = wezterm.action.CloseCurrentPane({confirm = false }) },
           { key = "p", mods = "LEADER", action = wezterm.action.ActivateTabRelative(-1) },
           { key = "n", mods = "LEADER", action = wezterm.action.ActivateTabRelative(1) },
           { key = "|", mods = "LEADER", action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }) },

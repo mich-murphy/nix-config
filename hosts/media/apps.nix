@@ -82,7 +82,6 @@
       enable = true;
       group = "media";
     };
-    ittools.enable = true;
     searxng.enable = true;
     smokeping.enable = true;
     beszel = {
@@ -100,7 +99,6 @@
     pkgs.neovim
     pkgs.tmux
     pkgs.lazydocker
-    pkgs.wezterm
     pkgs.cifs-utils
     pkgs.du-dust
     pkgs.dua
@@ -119,44 +117,6 @@
         locations."/" = {
           proxyPass = "http://100.69.115.120:8112";
           proxyWebsockets = true;
-        };
-      };
-      # open-webui access to ollama
-      virtualHosts."ollama.pve.${config.common.acme.domain}" = {
-        forceSSL = true;
-        useACMEHost = config.common.acme.domain;
-        locations."/" = {
-          proxyPass = "http://100.94.130.71:8080";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."fileflows.pve.${config.common.acme.domain}" = {
-        forceSSL = true;
-        useACMEHost = config.common.acme.domain;
-        locations."/" = {
-          proxyPass = "http://100.94.130.71:19200";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."dockge.pve.${config.common.acme.domain}" = {
-        forceSSL = true;
-        useACMEHost = config.common.acme.domain;
-        locations."/" = {
-          proxyPass = "http://100.94.130.71:5001";
-          proxyWebsockets = true;
-        };
-      };
-      virtualHosts."pocketid.pve.${config.common.acme.domain}" = {
-        forceSSL = true;
-        useACMEHost = config.common.acme.domain;
-        locations."/" = {
-          proxyPass = "http://10.77.2.207:80";
-          proxyWebsockets = true;
-          extraConfig = ''
-            proxy_busy_buffers_size   512k;
-            proxy_buffers   4 512k;
-            proxy_buffer_size   256k;
-          '';
         };
       };
     };

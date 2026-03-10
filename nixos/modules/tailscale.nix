@@ -15,7 +15,7 @@ in {
     limitNetworkInterfaces = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Only accept traffix via the Tailscale interface";
+      description = "Only accept traffic via the Tailscale interface";
     };
   };
 
