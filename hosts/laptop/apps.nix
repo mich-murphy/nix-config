@@ -52,6 +52,7 @@
       "utm" # manage virtual machines
       "jordanbaird-ice" # menu bar manager
       "owncloud"
+      "firefox"
       "google-chrome"
       "iina"
       "claude-code"
