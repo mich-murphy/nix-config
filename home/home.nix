@@ -215,8 +215,8 @@
         FILLED=$((PCT * BAR_WIDTH / 100))
         EMPTY=$((BAR_WIDTH - FILLED))
         BAR=""
-        [ "$FILLED" -gt 0 ] && BAR=$(printf "%''${FILLED}s" | tr ' ' '▓')
-        [ "$EMPTY" -gt 0 ] && BAR="''${BAR}$(printf "%''${EMPTY}s" | tr ' ' '░')"
+        for ((i=0; i<FILLED; i++)); do BAR="''${BAR}▓"; done
+        for ((i=0; i<EMPTY; i++)); do BAR="''${BAR}░"; done
 
         # Color the bar based on usage
         if [ "$PCT" -ge 80 ]; then
