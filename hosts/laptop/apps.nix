@@ -56,6 +56,7 @@
       "google-chrome"
       "iina"
       "claude-code"
+      "codex"
       "slack"
       "microsoft-excel"
       "microsoft-powerpoint"

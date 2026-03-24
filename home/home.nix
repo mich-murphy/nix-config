@@ -32,7 +32,17 @@
   common = {
     neovim.enable = true;
     wezterm.enable = true;
-    git.enable = true;
+    git = {
+      enable = true;
+      workProfiles = [
+        {
+          name = "michaelmbc";
+          email = "michaelmbc@users.noreply.github.com";
+          directory = "~/work/";
+          sshKey = "~/.ssh/github_bc";
+        }
+      ];
+    };
     ssh.enable = true;
     yazi.enable = true;
     karabiner.enable = true;
@@ -238,6 +248,7 @@
     zsh.enable = true;
   };
 
+  programs.swaylock.enable = false;
   manual.manpages.enable = false;
   programs.home-manager.enable = true;
 }

@@ -8,6 +8,36 @@
 in {
   options.common.git = {
     enable = lib.mkEnableOption "Enable Git with personalised settings";
+    workProfiles = lib.mkOption {
+      type = lib.types.listOf (lib.types.submodule {
+        options = {
+          name = lib.mkOption {
+            type = lib.types.str;
+            description = "Git user.name for this profile";
+          };
+          email = lib.mkOption {
+            type = lib.types.str;
+            description = "Git user.email for this profile";
+          };
+          directory = lib.mkOption {
+            type = lib.types.strMatching ".*/";
+            description = "Directory prefix to match (must end with /)";
+          };
+          signingKey = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Optional signing key for this profile";
+          };
+          sshKey = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Optional SSH private key path for this profile";
+          };
+        };
+      });
+      default = [];
+      description = "Additional Git identity profiles matched by directory";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -36,6 +66,28 @@ in {
       };
       git = {
         enable = true;
+        includes =
+          builtins.map (profile: {
+            condition = "gitdir:${profile.directory}";
+            contents =
+              {
+                user =
+                  {
+                    name = profile.name;
+                    email = profile.email;
+                  }
+                  // lib.optionalAttrs (profile.signingKey != null) {
+                    signingKey = profile.signingKey;
+                  };
+              }
+              // lib.optionalAttrs (profile.sshKey != null) {
+                core.sshCommand = "ssh -i ${profile.sshKey}";
+              };
+          })
+          cfg.workProfiles;
+        signing = {
+          format = null;
+        };
         settings = {
           user = {
             name = "mich-murphy";
