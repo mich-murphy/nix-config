@@ -1,3 +1,5 @@
 result
 $XDG_STATE_HOME
 .DS_Store
+*settings.local.json
+.claude

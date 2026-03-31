@@ -108,6 +108,11 @@ Use `lib.mkOption` with explicit `type` and `description` for any option beyond 
 - **Check git state first.** Before starting work, review `git status` and `git diff` to understand any uncommitted changes that could be affected.
 - **One concern at a time.** When multiple files need changes, make and verify them incrementally rather than editing everything at once.
 
+### Nix expressions
+
+- **Prefer simple solutions.** Do not add complex patterns like `allowUnfreePredicate`, unnecessary abstractions, or over-engineered expressions unless explicitly asked. Keep Nix expressions minimal and readable.
+- **`git add` before `nix build`.** After creating new files in a flake project, run `git add` on them before building — untracked files are invisible to Nix's flake evaluation.
+
 ### Common pitfalls
 
 - Do not use bare `with pkgs;` in module `options` blocks — only in `config` bodies where the scope is clear.

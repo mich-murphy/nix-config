@@ -71,27 +71,9 @@ in {
                   type = "command";
                   command = "if [[ \"$CLAUDE_TOOL_ARG_FILE_PATH\" == *.nix ]]; then nix fmt 2>/dev/null; fi";
                 }
-              ];
-            }
-          ];
-          Stop = [
-            {
-              matcher = "";
-              hooks = [
                 {
                   type = "command";
-                  command = "osascript -e 'display notification \"Claude Code has finished generating bullshit slop\" with title \"Claude Code\"'";
-                }
-              ];
-            }
-          ];
-          StopFailure = [
-            {
-              matcher = "";
-              hooks = [
-                {
-                  type = "command";
-                  command = "osascript -e 'display notification \"Claude Code has fucked up again\" with title \"Claude Code\"'";
+                  command = "if [[ \"$CLAUDE_TOOL_ARG_FILE_PATH\" == *.tf ]] || [[ \"$CLAUDE_TOOL_ARG_FILE_PATH\" == *.tfvars ]]; then tofu fmt \"$CLAUDE_TOOL_ARG_FILE_PATH\" 2>/dev/null; fi";
                 }
               ];
             }
