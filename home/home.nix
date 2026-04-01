@@ -46,7 +46,7 @@
     ssh.enable = true;
     yazi.enable = true;
     karabiner.enable = true;
-    claude.enable = true;
+
     # cli
     apps.enable = true;
     fish.enable = true;

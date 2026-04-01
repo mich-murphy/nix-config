@@ -9,6 +9,5 @@
     ./neovim.nix
     ./ssh.nix
     ./yazi.nix
-    ./claude
   ];
 }
