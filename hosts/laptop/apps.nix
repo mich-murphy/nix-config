@@ -64,6 +64,9 @@
       "microsoft-teams"
       "datagrip"
     ];
+    brews = [
+      "pi-coding-agent"
+    ];
     masApps = {
       "Microsoft Remote Desktop" = 1295203466;
       "Supernote Partner" = 1494992020;
