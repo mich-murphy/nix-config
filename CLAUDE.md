@@ -14,6 +14,15 @@ darwin-rebuild switch --flake .
 # Format all Nix files (alejandra)
 nix fmt
 
+# Format specific files
+nix fmt -- file1.nix file2.nix
+
+# Lint all Markdown files
+npx markdownlint-cli2 "**/*.md"
+
+# Lint and auto-fix Markdown files
+npx markdownlint-cli2 --fix "**/*.md"
+
 # Update all flake inputs to latest
 nix flake update
 
@@ -26,11 +35,11 @@ nix run nix-darwin -- switch --flake ~/nix-config
 
 ## Architecture
 
-This is a **Nix flake** for configuring a macOS M2 MacBook Air (aarch64-darwin). It composes three layers:
+This repository contains an active **Nix flake** for configuring a macOS M2 MacBook Air (aarch64-darwin) plus archived NixOS/media configuration. The active system uses two layers, plus an archive for future reference:
 
 1. **nix-darwin** (`darwin/`, `hosts/laptop/`) — macOS system-level settings, Homebrew packages, fonts, and system environment
 2. **home-manager** (`home/`) — user-level dotfiles and application configuration via the `common` module namespace
-3. **Secrets** (`secrets/`) — `agenix`-managed `.age` encrypted secrets, currently scoped to a separate NixOS media host
+3. **Archive** (`archive/`) — archived NixOS/media host configuration and `agenix` secrets retained for future reference, not part of the active flake outputs
 
 ### Directory Structure
 
@@ -42,12 +51,15 @@ This is a **Nix flake** for configuring a macOS M2 MacBook Air (aarch64-darwin).
   - `cli/` — fish, zsh, fzf, zellij, apps (CLI tools)
   - `karabiner/`, `hammerspoon/` — macOS keyboard/automation
   - Individual files: git, neovim, wezterm, ssh, yazi, kitty, alacritty, firefox
-- `nixos/modules/` — NixOS service modules for the media server host (not active in current flake outputs)
-- `secrets/secrets.nix` — agenix secret declarations keyed to the media host's SSH public key
+- `archive/README.md` — archive scope and reactivation notes
+- `archive/hosts/media/` — archived media host configuration
+- `archive/nixos/` — archived NixOS modules retained for future reference
+- `archive/secrets/` — archived agenix secret declarations and encrypted secret files for the media host
 
 ### Module Pattern
 
 All reusable modules use a consistent `common.<name>.enable = true/false` option pattern. To add a new home-manager module:
+
 1. Create `home/modules/<name>.nix` defining `options.common.<name>.enable` and `config = mkIf cfg.enable { ... }`
 2. Import it in `home/modules/default.nix`
 3. Enable it in `home/home.nix`
@@ -96,6 +108,7 @@ Use `lib.mkOption` with explicit `type` and `description` for any option beyond 
 ### Formatting and commits
 
 - Always run `nix fmt` before committing — alejandra is the formatter.
+- Always run `npx markdownlint-cli2 "**/*.md"` before committing changes to Markdown files. Config is in `.markdownlint-cli2.yaml`.
 - Commit messages follow **Conventional Commits**: `fix(scope): message` or `feat(scope): message` (match the style in the git log).
 - Run `darwin-rebuild build --flake .` before `darwin-rebuild switch --flake .` to catch errors without changing the running system.
 
