@@ -38,7 +38,7 @@
         {
           name = "michaelmbc";
           email = "michaelmbc@users.noreply.github.com";
-          directory = "~/work/";
+          directory = "~/businesscraft/";
           sshKey = "~/.ssh/github_bc";
         }
       ];
