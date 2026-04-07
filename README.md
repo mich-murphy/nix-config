@@ -1,9 +1,17 @@
-[![deploy-flake](https://github.com/mich-murphy/nix-config/actions/workflows/deploy-nixos.yml/badge.svg?branch=main)](https://github.com/mich-murphy/nix-config/actions/workflows/deploy-nixos.yml)
+[![build-macos](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml)
 
 # Nix-Darwin Configuration Flake
 
 ![screenshot](./assets/screenshot.png)
 ![screenshot-browser](./assets/screenshot-2.png)
+
+## Repository Scope
+
+The active flake currently exposes only `darwinConfigurations.macbook` for the
+macOS laptop configuration.
+
+The former media/NixOS system has been archived under `archive/` for future
+reference and is not part of the active flake outputs.
 
 ## Contents
 
@@ -46,33 +54,33 @@ using the following references:
 1. Install Nix on the target machine using Determinate Systems installer
    (enables flakes by default amongst other benefits):
 
-```bash
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
-| sh -s -- install
-```
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
+   | sh -s -- install
+   ```
 
 2. Some packages aren't yet available for Darwin in Nix - for these we need to
    configure Homebrew
 
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew analytics off
-```
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   brew analytics off
+   ```
 
 3. Install Git, clone the repository and run the first build of the Flake to
    make darwin commands available
 
-```bash
-nix-env -iA nixpkgs.git
-git clone https://github.com/mich-murphy/nix-config
-nix run nix-darwin -- switch --flake ~/nix-config
-```
+   ```bash
+   nix-env -iA nixpkgs.git
+   git clone https://github.com/mich-murphy/nix-config
+   nix run nix-darwin -- switch --flake ~/nix-config
+   ```
 
 4. In future you can rebuild and activate the Flake using the following command
 
-```bash
-darwin-rebuild switch --flake .
-```
+   ```bash
+   darwin-rebuild switch --flake .
+   ```
 
 ## Understanding Nix
 
@@ -84,9 +92,11 @@ There are several components that are referred to regarding Nix:
    allows for installation of applications and dependencies
 3. NixOS is an operating system, which is entirely configured using the Nix language.
 
-The above configuration is for a Macbook Air M2 running MacOS, which does not
-currently have a stable version of NixOS available. All configuration is created
-by using the Nix package manager, with some additional options provided by Nix-Darwin.
+The active configuration in this flake is for a Macbook Air M2 running MacOS.
+The former media/NixOS configuration is retained under `archive/` for future
+reference and is not built by the current flake outputs. All active
+configuration is created by using the Nix package manager, with some additional
+options provided by Nix-Darwin.
 
 For further information regarding Nix refer to the below resources:
 
