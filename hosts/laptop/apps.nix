@@ -35,6 +35,7 @@
     # homebrew repositories to tap
     taps = [
       "hashicorp/tap"
+      "atlassian/homebrew-acli"
     ];
     # homebrew casks for install
     casks = [
@@ -63,6 +64,7 @@
       "microsoft-word"
       "microsoft-teams"
       "datagrip"
+      "acli"
     ];
     brews = [
       "pi-coding-agent"
