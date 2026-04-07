@@ -16,10 +16,7 @@
   } @ inputs: let
     system = "aarch64-darwin";
     pkgs = nixpkgs.legacyPackages.${system};
-  in {
-    formatter.${system} = pkgs.alejandra;
-
-    darwinConfigurations.macbook = darwin.lib.darwinSystem {
+    darwinConfig = darwin.lib.darwinSystem {
       specialArgs = {inherit inputs;};
       modules = [
         {
@@ -38,6 +35,21 @@
           home-manager.backupFileExtension = "backup";
         }
       ];
+    };
+  in {
+    formatter.${system} = pkgs.writeShellApplication {
+      name = "nix-config-fmt";
+      runtimeInputs = [pkgs.alejandra];
+      text = ''
+        exec alejandra "''${@:-.}"
+      '';
+    };
+
+    darwinConfigurations.macbook = darwinConfig;
+
+    checks.${system} = {
+      macbook-system = darwinConfig.config.system.build.toplevel;
+      macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
     };
   };
 }
