@@ -64,9 +64,9 @@
       "microsoft-word"
       "microsoft-teams"
       "datagrip"
-      "acli"
     ];
     brews = [
+      "atlassian/acli/acli"
       "pi-coding-agent"
     ];
     masApps = {
