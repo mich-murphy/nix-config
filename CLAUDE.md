@@ -1,134 +1,64 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Nix flake configuring a macOS M2 MacBook Air (aarch64-darwin) via nix-darwin + home-manager.
 
-## Build Commands
+## Project map
 
-```bash
-# Validate the build without activating (dry run — do this before switch)
-darwin-rebuild build --flake .
-
-# Rebuild and activate
-darwin-rebuild switch --flake .
-
-# Format all Nix files (alejandra)
-nix fmt
-
-# Format specific files
-nix fmt -- file1.nix file2.nix
-
-# Lint all Markdown files
-npx markdownlint-cli2 "**/*.md"
-
-# Lint and auto-fix Markdown files
-npx markdownlint-cli2 --fix "**/*.md"
-
-# Update all flake inputs to latest
-nix flake update
-
-# Update a single input (e.g. nixpkgs only)
-nix flake update nixpkgs
-
-# First-time bootstrap (before darwin-rebuild is available)
-nix run nix-darwin -- switch --flake ~/nix-config
-```
-
-## Architecture
-
-This repository contains an active **Nix flake** for configuring a macOS M2 MacBook Air (aarch64-darwin) plus archived NixOS/media configuration. The active system uses two layers, plus an archive for future reference:
-
-1. **nix-darwin** (`darwin/`, `hosts/laptop/`) — macOS system-level settings, Homebrew packages, fonts, and system environment
-2. **home-manager** (`home/`) — user-level dotfiles and application configuration via the `common` module namespace
-3. **Archive** (`archive/`) — archived NixOS/media host configuration and `agenix` secrets retained for future reference, not part of the active flake outputs
-
-### Directory Structure
-
-- `flake.nix` — entry point; defines inputs (nixpkgs-unstable, nix-darwin, home-manager) and a single `darwinConfigurations.macbook` output
-- `hosts/laptop/` — host-specific config split into `default.nix` (nix settings, GC), `system.nix` (macOS defaults), `apps.nix` (system packages + Homebrew), `user.nix` (user account)
-- `darwin/modules/` — reusable darwin modules: `yabai.nix` (tiling WM), `skhd.nix` (hotkeys); exposed via `common.yabai` / `common.skhd` options
+- `flake.nix` — entry point; nixpkgs-unstable, nix-darwin, home-manager inputs; single `darwinConfigurations.macbook` output
+- `hosts/laptop/` — `default.nix` (nix settings, GC), `system.nix` (macOS defaults), `apps.nix` (system packages + Homebrew), `user.nix` (user account)
+- `darwin/modules/` — reusable darwin modules: `yabai.nix`, `skhd.nix`; exposed via `common.yabai` / `common.skhd`
 - `home/home.nix` — home-manager root; enables modules via `common.*` options
-- `home/modules/` — home-manager modules, each following the `common.<name>.enable` pattern:
-  - `cli/` — fish, zsh, fzf, zellij, apps (CLI tools)
-  - `karabiner/`, `hammerspoon/` — macOS keyboard/automation
-  - Individual files: git, neovim, wezterm, ssh, yazi, kitty, alacritty, firefox
-- `archive/README.md` — archive scope and reactivation notes
-- `archive/hosts/media/` — archived media host configuration
-- `archive/nixos/` — archived NixOS modules retained for future reference
-- `archive/secrets/` — archived agenix secret declarations and encrypted secret files for the media host
+- `home/modules/` — home-manager modules (`common.<name>.enable` pattern): `cli/`, `karabiner/`, `hammerspoon/`, git, neovim, wezterm, ssh, yazi, kitty, alacritty, firefox
+- `archive/` — archived NixOS/media host config and agenix secrets; not part of active flake outputs
 
-### Module Pattern
+<important if="you need to run commands to build, test, lint, format, or update">
 
-All reusable modules use a consistent `common.<name>.enable = true/false` option pattern. To add a new home-manager module:
+| Command | What it does |
+| --- | --- |
+| `darwin-rebuild build --flake .` | Validate build without activating (dry run) |
+| `darwin-rebuild switch --flake .` | Rebuild and activate |
+| `nix fmt` | Format all Nix files (alejandra) |
+| `nix fmt -- file1.nix file2.nix` | Format specific files |
+| `npx markdownlint-cli2 "**/*.md"` | Lint all Markdown files |
+| `npx markdownlint-cli2 --fix "**/*.md"` | Lint and auto-fix Markdown files |
+| `nix flake update` | Update all flake inputs |
+| `nix flake update nixpkgs` | Update a single input |
+| `nix run nix-darwin -- switch --flake ~/nix-config` | First-time bootstrap |
 
-1. Create `home/modules/<name>.nix` defining `options.common.<name>.enable` and `config = mkIf cfg.enable { ... }`
+</important>
+
+<important if="you are creating a new module or adding a new option">
+All modules use `common.<name>.enable` pattern. See `home/modules/git.nix` for the canonical example.
+To add a new home-manager module:
+1. Create `home/modules/<name>.nix` with `options.common.<name>.enable` and `config = mkIf cfg.enable { ... }`
 2. Import it in `home/modules/default.nix`
 3. Enable it in `home/home.nix`
-
 Darwin modules follow the same pattern under `darwin/modules/` and are imported via `hosts/laptop/apps.nix`.
+</important>
 
-### Key Decisions
+<important if="you are adding, removing, or modifying packages">
+- **Prefer Nix** (`environment.systemPackages` or `home.packages`) for CLI tools and anything in nixpkgs for Darwin
+- **Use Homebrew casks** only for GUI macOS apps unavailable or broken in nixpkgs
+- **Use Homebrew formulae** only as a last resort when a package is missing in nixpkgs for `aarch64-darwin`
+- When adding a Homebrew cask, check if a Nix package exists first (`nix search nixpkgs <name>`)
+- **Beware Homebrew zap:** `cleanup = "zap"` is enabled — removing a cask or formula line will **uninstall** that application on next `switch`. Always confirm with the user before removing any Homebrew entry.
+</important>
 
-- Nix management is disabled (`nix.enable = false`) in favor of the **Determinate Systems** Nix installer
-- nixpkgs follows `nixpkgs-unstable`
-- Homebrew is managed declaratively via nix-darwin; `cleanup = "zap"` removes any casks/formulae not listed in config
-- Unfree packages are allowed both at the nixpkgs level and via home-manager's xdg config
+<important if="you are modifying Nix expressions or module options">
+- Do not use bare `with pkgs;` in module `options` blocks — only in `config` bodies
+- Do not duplicate settings across nix-darwin (`hosts/laptop/`) and home-manager (`home/`) — system-level in nix-darwin, user-level in home-manager
+- Do not set `nix.*` options that conflict with Determinate Systems management (e.g. avoid `nix.enable = true`)
+- Keep Nix expressions minimal — no `allowUnfreePredicate`, unnecessary abstractions, or over-engineering unless asked
+</important>
 
-## Nix Conventions
+<important if="you are creating new files in this flake">
+Run `git add` on new files before `nix build` — untracked files are invisible to flake evaluation.
+</important>
 
-### Module structure
+<important if="you are editing or creating Markdown files">
+Run `npx markdownlint-cli2 "**/*.md"` before committing. Config is in `.markdownlint-cli2.yaml`.
+</important>
 
-Every module follows this skeleton exactly:
-
-```nix
-{ lib, config, pkgs, ... }:
-let
-  cfg = config.common.<name>;
-in {
-  options.common.<name> = {
-    enable = lib.mkEnableOption "<description>";
-    # additional options use lib.mkOption with explicit type and description
-  };
-
-  config = lib.mkIf cfg.enable {
-    # configuration body
-  };
-}
-```
-
-Always bind `cfg = config.common.<name>` at the top of the `let` block; never inline `config.common.<name>` in the body.
-
-Use `lib.mkOption` with explicit `type` and `description` for any option beyond `enable`. Prefer specific types (`lib.types.str`, `lib.types.listOf lib.types.str`, `lib.types.attrsOf`) over `lib.types.anything`.
-
-### Homebrew vs Nix packages
-
-- **Prefer Nix** (`environment.systemPackages` or `home.packages`) for CLI tools and anything available in nixpkgs for Darwin.
-- **Use Homebrew casks** only for GUI macOS apps unavailable or broken in nixpkgs.
-- **Use Homebrew formulae** only as a last resort when a package is missing or non-functional in nixpkgs for `aarch64-darwin`.
-
-### Formatting and commits
-
-- Always run `nix fmt` before committing — alejandra is the formatter.
-- Always run `npx markdownlint-cli2 "**/*.md"` before committing changes to Markdown files. Config is in `.markdownlint-cli2.yaml`.
-- Commit messages follow **Conventional Commits**: `fix(scope): message` or `feat(scope): message` (match the style in the git log).
-- Run `darwin-rebuild build --flake .` before `darwin-rebuild switch --flake .` to catch errors without changing the running system.
-
-### Change discipline
-
-- **Read before editing.** Always read and understand a file before modifying it. Never propose changes to code you have not seen.
-- **Minimal changes only.** Make only the changes the user requested. Do not refactor surrounding code, add comments, or "improve" unrelated sections.
-- **Build-verify every change.** Run `darwin-rebuild build --flake .` after every edit. Do not run `switch` until the build succeeds and the user approves.
-- **Beware Homebrew zap.** Because `cleanup = "zap"` is enabled, removing a cask or formula line will **uninstall** that application on the next `switch`. Always confirm with the user before removing any Homebrew entry.
-- **Check git state first.** Before starting work, review `git status` and `git diff` to understand any uncommitted changes that could be affected.
-- **One concern at a time.** When multiple files need changes, make and verify them incrementally rather than editing everything at once.
-
-### Nix expressions
-
-- **Prefer simple solutions.** Do not add complex patterns like `allowUnfreePredicate`, unnecessary abstractions, or over-engineered expressions unless explicitly asked. Keep Nix expressions minimal and readable.
-- **`git add` before `nix build`.** After creating new files in a flake project, run `git add` on them before building — untracked files are invisible to Nix's flake evaluation.
-
-### Common pitfalls
-
-- Do not use bare `with pkgs;` in module `options` blocks — only in `config` bodies where the scope is clear.
-- Do not duplicate settings across nix-darwin (`hosts/laptop/`) and home-manager (`home/`) layers; system-level config belongs in nix-darwin, user-level config belongs in home-manager.
-- When adding a Homebrew cask, check if a Nix package exists first (`nix search nixpkgs <name>`).
-- Do not set `nix.*` options that conflict with Determinate Systems management (e.g. avoid re-enabling `nix.enable = true`).
+<important if="you are making changes across multiple files">
+Make and verify changes incrementally — one concern at a time. Run `darwin-rebuild build --flake .` after each edit.
+</important>
