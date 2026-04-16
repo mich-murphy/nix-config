@@ -120,7 +120,7 @@ in {
         config.window_decorations = "RESIZE"
         config.adjust_window_size_when_changing_font_size = false
         config.window_close_confirmation = 'NeverPrompt'
-        config.enable_kitty_keyboard = true
+        config.enable_kitty_keyboard = false
 
         smart_splits.apply_to_config(config, {
           direction_keys = { "h", "j", "k", "l" },
