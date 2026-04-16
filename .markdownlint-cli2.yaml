@@ -1,5 +1,0 @@
-config:
-  line-length: false
-  first-line-heading: false
-  ol-prefix:
-    style: ordered

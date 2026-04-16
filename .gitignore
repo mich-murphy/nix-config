@@ -3,3 +3,4 @@ $XDG_STATE_HOME
 .DS_Store
 *settings.local.json
 .claude
+.markdownlint-cli2.yaml
