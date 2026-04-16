@@ -19,6 +19,7 @@
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
+    pkgs.just
   ];
 
   fonts.packages = [
@@ -41,7 +42,6 @@
     casks = [
       "wezterm"
       "spaceid" # identify current spaces in menu bar
-      "raycast" # launcher
       "1password"
       "stats" # show system stats in menu bar
       "obsidian"
@@ -64,6 +64,8 @@
       "microsoft-word"
       "microsoft-teams"
       "datagrip"
+      "docker"
+      "sol" # launcher
     ];
     brews = [
       "atlassian/acli/acli"

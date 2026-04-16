@@ -52,6 +52,12 @@ in {
         set -g fish_pager_color_selected_background --background=283457
       '';
 
+      completions = {
+        just = builtins.readFile (pkgs.runCommandLocal "just-fish-completions" {} ''
+          ${pkgs.just}/bin/just --completions fish > $out
+        '');
+      };
+
       plugins = [
         {
           name = "autopair";
