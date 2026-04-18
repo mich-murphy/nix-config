@@ -20,8 +20,10 @@ in {
       package = pkgs.neovim-unwrapped;
       vimAlias = true;
       defaultEditor = true;
-      withPython3 = true;
+      withPython3 = false;
       withNodeJs = false;
+      withRuby = false;
+      initLua = ''require("config.lazy")'';
       extraPackages = with pkgs; [
         wget
         lazygit
@@ -30,11 +32,12 @@ in {
         nixd
         nodejs
         go
+        tree-sitter
+        imagemagick
+        ghostscript
+        tectonic
+        mermaid-cli
       ];
-      extraPython3Packages = py:
-        with py; [
-          pip
-        ];
     };
 
     home.sessionVariables = {
