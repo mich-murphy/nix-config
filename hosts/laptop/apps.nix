@@ -56,7 +56,7 @@
       "firefox"
       "google-chrome"
       "iina"
-      "claude-code"
+      "claude-code@latest"
       "codex"
       "slack"
       "microsoft-excel"
@@ -64,11 +64,10 @@
       "microsoft-word"
       "microsoft-teams"
       "datagrip"
-      "docker"
+      "docker-desktop"
       "sol" # launcher
     ];
     brews = [
-      "atlassian/acli/acli"
       "pi-coding-agent"
     ];
     masApps = {
