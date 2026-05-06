@@ -66,6 +66,7 @@
       "datagrip"
       "docker-desktop"
       "sol" # launcher
+      "font-0xproto-nerd-font"
     ];
     brews = [
       "pi-coding-agent"
