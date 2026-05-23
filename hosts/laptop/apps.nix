@@ -16,6 +16,7 @@
     pkgs.curl
     pkgs.xcode-install
     pkgs.tmux
+    pkgs.mosh
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
