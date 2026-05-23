@@ -30,29 +30,29 @@ in {
           window_shadow = "float";
           window_gap = 5;
           window_placement = "second_child";
-          extraConfig = ''
-            # rules
-            # to identify windows use: yabai -m query --windows --space <int>
-            yabai -m rule --add app='^Finder$' manage=off
-            yabai -m rule --add app='^System Settings$' manage=off
-            yabai -m rule --add app='^App Store$' manage=off
-            yabai -m rule --add app='^Activity Monitor$' manage=off
-            yabai -m rule --add app='^System Information$' manage=off
-            yabai -m rule --add app='^Calculator$' manage=off
-            yabai -m rule --add label="Dictionary" app="^Dictionary$" manage=off
-            yabai -m rule --add label="Software Update" title="Software Update" manage=off
-            yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off
-            yabai -m rule --add title='^(Opening)' manage=off
-            yabai -m rule --add app='Stats' manage=off
-            yabai -m rule --add app='1Password' manage=off
-            yabai -m rule --add app='Raycast' manage=off
-            yabai -m rule --add app='^Archive Utility$' manage=off
-            yabai -m rule --add app='^Preview$' manage=off
-            yabai -m rule --add app='^UTM$' manage=off
-            yabai -m rule --add app='^YubiKey Manager$' manage=off
-            yabai -m config --space 5 layout float
-          '';
         };
+        extraConfig = ''
+          # rules
+          # to identify windows use: yabai -m query --windows --space <int>
+          yabai -m rule --add app='^Finder$' manage=off
+          yabai -m rule --add app='^System Settings$' manage=off
+          yabai -m rule --add app='^App Store$' manage=off
+          yabai -m rule --add app='^Activity Monitor$' manage=off
+          yabai -m rule --add app='^System Information$' manage=off
+          yabai -m rule --add app='^Calculator$' manage=off
+          yabai -m rule --add label="Dictionary" app="^Dictionary$" manage=off
+          yabai -m rule --add label="Software Update" title="Software Update" manage=off
+          yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off
+          yabai -m rule --add title='^(Opening)' manage=off
+          yabai -m rule --add app='Stats' manage=off
+          yabai -m rule --add app='1Password' manage=off
+          yabai -m rule --add app='Raycast' manage=off
+          yabai -m rule --add app='^Archive Utility$' manage=off
+          yabai -m rule --add app='^Preview$' manage=off
+          yabai -m rule --add app='^UTM$' manage=off
+          yabai -m rule --add app='^YubiKey Manager$' manage=off
+          yabai -m config --space 5 layout float
+        '';
       };
     };
   };
