@@ -7,6 +7,8 @@
     username = "mm";
     homeDirectory = "/Users/mm";
     stateVersion = "22.05";
+    # HM master labels 26.05 while tracking nixpkgs-unstable (26.11); skew is benign.
+    enableNixpkgsReleaseCheck = false;
     shellAliases = {
       ls = "eza -la";
       cat = "bat";

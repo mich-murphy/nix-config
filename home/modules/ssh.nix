@@ -13,21 +13,19 @@ in {
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
-      matchBlocks = {
+      settings = {
         # configure 1password ssh agent
         "*" = {
-          extraOptions = {
-            "IdentityAgent" = ''"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'';
-            "HashKnownHosts" = "yes";
-          };
+          IdentityAgent = ''"~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"'';
+          HashKnownHosts = true;
         };
         "proxmox" = {
-          hostname = "proxmox";
-          user = "root";
-          setEnv = {
-            "LC_CTYPE" = "C";
-            "LC_COLLATE" = "C";
-            "LANG" = "C";
+          HostName = "proxmox";
+          User = "root";
+          SetEnv = {
+            LC_CTYPE = "C";
+            LC_COLLATE = "C";
+            LANG = "C";
           };
         };
       };
