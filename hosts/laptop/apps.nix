@@ -21,6 +21,8 @@
     pkgs._1password-cli
     pkgs.gnused
     pkgs.just
+    pkgs.acli
+    pkgs.jira-cli-go
   ];
 
   fonts.packages = [
@@ -33,6 +35,7 @@
       autoUpdate = true; # update homebrew and formulae on nix-darwin-rebuild
       upgrade = true; # upgrade during nix-darwin-rebuild
       cleanup = "zap"; # uninstall all formulae and casks not listed in brewfile
+      extraFlags = ["--force-cleanup"];
     };
     # homebrew repositories to tap
     taps = [
@@ -68,6 +71,7 @@
       "docker-desktop"
       "sol" # launcher
       "font-0xproto-nerd-font"
+      "winbox"
     ];
     brews = [
       "pi-coding-agent"
@@ -75,6 +79,7 @@
     masApps = {
       "Microsoft Remote Desktop" = 1295203466;
       "Supernote Partner" = 1494992020;
+      "Azure VPN Client" = 1553936137;
     };
   };
 }
