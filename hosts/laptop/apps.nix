@@ -14,6 +14,7 @@
   environment.systemPackages = [
     pkgs.git
     pkgs.curl
+    pkgs.python3
     pkgs.xcode-install
     pkgs.tmux
     pkgs.mosh

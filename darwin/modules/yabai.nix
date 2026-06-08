@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }: let
   cfg = config.common.yabai;
@@ -13,6 +14,9 @@ in {
     services = {
       yabai = {
         enable = true;
+        package = pkgs.yabai.overrideAttrs (_old: {
+          enableParallelBuilding = false;
+        });
         config = {
           # reference: https://github.com/koekeishiya/yabai/wiki/Configuration#configuration-file
           focus_follows_mouse = "off";
