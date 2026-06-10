@@ -8,7 +8,7 @@ Nix flake configuring a macOS M2 MacBook Air (aarch64-darwin) via nix-darwin + h
 - `hosts/laptop/` — `default.nix` (nix settings, GC), `system.nix` (macOS defaults), `apps.nix` (system packages + Homebrew), `user.nix` (user account)
 - `darwin/modules/` — reusable darwin modules: `yabai.nix`, `skhd.nix`; exposed via `common.yabai` / `common.skhd`
 - `home/home.nix` — home-manager root; enables modules via `common.*` options
-- `home/modules/` — home-manager modules (`common.<name>.enable` pattern): `cli/`, `karabiner/`, `hammerspoon/`, git, neovim, wezterm, ssh, yazi, kitty, alacritty, firefox
+- `home/modules/` — home-manager modules (`common.<name>.enable` pattern): `cli/`, `karabiner/`, git, neovim, wezterm, ssh, yazi
 - `archive/` — archived NixOS/media host config and agenix secrets; not part of active flake outputs
 
 <important if="you need to run commands to build, test, lint, format, or update">

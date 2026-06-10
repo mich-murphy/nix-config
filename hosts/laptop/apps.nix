@@ -28,21 +28,18 @@
 
   fonts.packages = [
     pkgs.nerd-fonts.jetbrains-mono
+    pkgs.nerd-fonts._0xproto
   ];
 
   homebrew = {
     enable = true;
     onActivation = {
-      autoUpdate = true; # update homebrew and formulae on nix-darwin-rebuild
-      upgrade = true; # upgrade during nix-darwin-rebuild
+      # update/upgrade manually with `brew upgrade` — keeps rebuilds fast and deterministic
+      autoUpdate = false;
+      upgrade = false;
       cleanup = "zap"; # uninstall all formulae and casks not listed in brewfile
       extraFlags = ["--force-cleanup"];
     };
-    # homebrew repositories to tap
-    taps = [
-      "hashicorp/tap"
-      "atlassian/homebrew-acli"
-    ];
     # homebrew casks for install
     casks = [
       "wezterm"
@@ -71,7 +68,6 @@
       "datagrip"
       "docker-desktop"
       "sol" # launcher
-      "font-0xproto-nerd-font"
       "winbox"
     ];
     brews = [

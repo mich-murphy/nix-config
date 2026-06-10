@@ -25,15 +25,23 @@
     LESS = "--chop-long-lines --HILITE-UNREAD --ignore-case --incsearch --jump-target=4 --LONG-PROMPT --no-init --quit-if-one-screen --RAW-CONTROL-CHARS --use-color --window=4";
   };
 
-  launchd.agents.nix-gc = {
+  # nix-darwin's nix.gc.* launchd integration requires nix.enable = true, but
+  # this host leaves Nix managed by the Determinate installer.
+  # Runs as a daemon (root) so it can prune system profile generations,
+  # which are GC roots — without this, gc reclaims almost nothing.
+  launchd.daemons.nix-gc = {
     serviceConfig = {
-      ProgramArguments = ["/nix/var/nix/profiles/default/bin/nix" "store" "gc" "--min-free" "10G"];
+      ProgramArguments = [
+        "/bin/sh"
+        "-lc"
+        "/nix/var/nix/profiles/default/bin/nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 14d && exec /nix/var/nix/profiles/default/bin/nix store gc"
+      ];
       StartCalendarInterval = [
         {
           Weekday = 7;
           Hour = 9;
         }
-      ]; # run weekly on Sunday at 9am
+      ];
       StandardOutPath = "/tmp/nix-gc.log";
       StandardErrorPath = "/tmp/nix-gc.log";
     };

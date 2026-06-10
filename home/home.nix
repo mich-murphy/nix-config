@@ -56,7 +56,6 @@
     zsh.enable = true;
   };
 
-  programs.swaylock.enable = false;
   manual.manpages.enable = false;
   programs.home-manager.enable = true;
 }

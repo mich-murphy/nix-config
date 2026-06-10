@@ -49,13 +49,6 @@ in {
         # .rd/bin used for rancher desktop
         export PATH="${config.home.homeDirectory}/.rd/bin:/opt/homebrew/bin:$PATH"
 
-        # limit zcompdump to once daily
-        autoload -Uz compinit
-        for dump in ~/.zcompdump(N.mh+24); do
-          compinit
-        done
-        compinit -C
-
         # navigation
         setopt AUTO_PUSHD
         setopt PUSHD_IGNORE_DUPS
@@ -97,9 +90,6 @@ in {
 
         # show alias for future use
         source ${pkgs.zsh-you-should-use}/share/zsh/plugins/you-should-use/you-should-use.plugin.zsh
-
-        # direnv config
-        eval "$(direnv hook zsh)"
       '';
       shellAliases = {
         p = "less";
@@ -110,8 +100,6 @@ in {
         ybw = "yabai -m query --windows --space";
         # nix
         db = "darwin-rebuild switch --flake";
-        dp = "nix run github:serokell/deploy-rs";
-        agn = "nix run github:ryantm/agenix --";
         nph = "nix profile history --profile /nix/var/nix/profiles/system";
         ndh = "sudo nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 7d";
         ngc = "nix store gc";
