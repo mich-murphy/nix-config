@@ -23,7 +23,6 @@
     pkgs.gnused
     pkgs.just
     pkgs.acli
-    pkgs.jira-cli-go
   ];
 
   fonts.packages = [
