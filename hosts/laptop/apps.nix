@@ -49,7 +49,6 @@
       "obsidian"
       "zotero@beta" # pdf reading and higlights
       "tailscale-app"
-      "displaylink" # enable connection of lenovo dock
       "karabiner-elements"
       "yubico-yubikey-manager" # manage yubikey
       "utm" # manage virtual machines
