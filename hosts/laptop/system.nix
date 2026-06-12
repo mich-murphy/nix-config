@@ -2,7 +2,10 @@
   # macos system configuration
   # nix-darwin options documentation: https://daiderd.com/nix-darwin/manual/index.html#sec-options
 
-  security.pam.services.sudo_local.touchIdAuth = true; # use touchid for sudo authentication
+  security.pam.services.sudo_local = {
+    touchIdAuth = true; # use touchid for sudo authentication
+    reattach = true; # make touchid sudo work inside tmux/zellij
+  };
 
   networking.applicationFirewall = {
     enable = true;
@@ -17,6 +20,13 @@
     killall SystemUIServer || true
   '';
 
+  # pin power management via pmset; nix-darwin's power.sleep.* uses systemsetup,
+  # which can't set AC (-c) and battery (-b) values independently
+  system.activationScripts.extraActivation.text = ''
+    pmset -c sleep 1 displaysleep 10 disksleep 10
+    pmset -b sleep 1 displaysleep 2 disksleep 10
+  '';
+
   system = {
     primaryUser = "mm";
     checks.verifyNixPath = false; # run NIX_PATH validation checks
@@ -24,10 +34,6 @@
       CustomUserPreferences = {
         "com.apple.BluetoothAudioAgent" = {
           "Apple Bitpool Min (editable)" = 40;
-        };
-        "com.apple.screensaver" = {
-          askForPassword = 1;
-          askForPasswordDelay = 0;
         };
         "com.apple.AdLib" = {
           allowApplePersonalizedAdvertising = false;
@@ -54,6 +60,7 @@
         mineffect = "scale"; # minimise animation
         tilesize = 48; # size of dock icons
         show-recents = false; # disable recent apps
+        wvous-br-corner = 1; # disable bottom-right hot corner (macOS defaults it to quick note)
       };
       finder = {
         AppleShowAllExtensions = true; # show all file extensions

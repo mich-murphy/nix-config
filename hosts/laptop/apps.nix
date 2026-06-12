@@ -12,7 +12,6 @@
   };
 
   environment.systemPackages = [
-    pkgs.git
     pkgs.curl
     pkgs.python3
     pkgs.xcode-install
@@ -68,11 +67,17 @@
       "sol" # launcher
       "winbox"
     ];
+    # raw Brewfile line: nix-darwin's cask args schema lacks `adopt`, needed
+    # because the app pre-dates cask management and brew refuses to overwrite it
+    extraConfig = ''
+      cask "qmk-toolbox", args: { adopt: true }
+    '';
     brews = [
       "pi-coding-agent"
+      "mas" # required for masApps below to actually install
     ];
     masApps = {
-      "Microsoft Remote Desktop" = 1295203466;
+      "Windows App" = 1295203466; # formerly Microsoft Remote Desktop
       "Supernote Partner" = 1494992020;
       "Azure VPN Client" = 1553936137;
     };

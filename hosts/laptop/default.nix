@@ -47,5 +47,25 @@
     };
   };
 
+  # user profiles (home-manager generations) are GC roots the root daemon can't
+  # prune; wipe them an hour before it runs so its `nix store gc` can reclaim them
+  launchd.user.agents.nix-gc-user = {
+    serviceConfig = {
+      ProgramArguments = [
+        "/bin/sh"
+        "-lc"
+        "for p in $HOME/.local/state/nix/profiles/*; do case $p in *-link) continue;; esac; /nix/var/nix/profiles/default/bin/nix profile wipe-history --profile \"$p\" --older-than 14d; done"
+      ];
+      StartCalendarInterval = [
+        {
+          Weekday = 7;
+          Hour = 8;
+        }
+      ];
+      StandardOutPath = "/tmp/nix-gc-user.log";
+      StandardErrorPath = "/tmp/nix-gc-user.log";
+    };
+  };
+
   system.stateVersion = 4;
 }

@@ -46,11 +46,9 @@ in {
           yabai -m rule --add app='^Calculator$' manage=off
           yabai -m rule --add label="Dictionary" app="^Dictionary$" manage=off
           yabai -m rule --add label="Software Update" title="Software Update" manage=off
-          yabai -m rule --add app="DisplayLinkUserAgent" title=".*" manage=off
           yabai -m rule --add title='^(Opening)' manage=off
           yabai -m rule --add app='Stats' manage=off
           yabai -m rule --add app='1Password' manage=off
-          yabai -m rule --add app='Raycast' manage=off
           yabai -m rule --add app='^Archive Utility$' manage=off
           yabai -m rule --add app='^Preview$' manage=off
           yabai -m rule --add app='^UTM$' manage=off
