@@ -64,6 +64,7 @@
       "microsoft-teams"
       "datagrip"
       "docker-desktop"
+      "displaylink"
       "sol" # launcher
       "winbox"
     ];
@@ -73,7 +74,6 @@
       cask "qmk-toolbox", args: { adopt: true }
     '';
     brews = [
-      "pi-coding-agent"
       "mas" # required for masApps below to actually install
     ];
     masApps = {
