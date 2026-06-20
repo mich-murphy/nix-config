@@ -67,6 +67,7 @@
       "displaylink"
       "sol" # launcher
       "winbox"
+      "xcodes-app" # install/manage full Xcode with hardware-key auth support
     ];
     # raw Brewfile line: nix-darwin's cask args schema lacks `adopt`, needed
     # because the app pre-dates cask management and brew refuses to overwrite it
@@ -75,6 +76,7 @@
     '';
     brews = [
       "mas" # required for masApps below to actually install
+      "xcodes" # CLI for installing/selecting Xcode versions
     ];
     masApps = {
       "Windows App" = 1295203466; # formerly Microsoft Remote Desktop
