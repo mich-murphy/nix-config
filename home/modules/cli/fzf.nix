@@ -14,7 +14,7 @@ in {
       enable = true;
       enableZshIntegration = true;
       tmux.enableShellIntegration = true;
-      fileWidgetCommand = ''rg --files --hidden --glob "!.git"'';
+      fileWidget.command = ''rg --files --hidden --glob "!.git"'';
       colors = {
         "bg+" = "#1a1b26";
         fg = "#a9b1d6";
@@ -38,7 +38,7 @@ in {
         "--pointer ▶"
         "--marker ⇒"
       ];
-      fileWidgetOptions = [
+      fileWidget.options = [
         "--height 60%"
         "--border none"
         "--no-scrollbar"
@@ -51,7 +51,7 @@ in {
         "--preview 'bat --color=always {}'"
         "--preview-window '~2',border-none"
       ];
-      changeDirWidgetOptions = [
+      changeDirWidget.options = [
         "--preview 'tree -C {} | head -n 10'"
       ];
     };

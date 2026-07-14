@@ -72,6 +72,7 @@ in {
       };
       tealdeer = {
         enable = true;
+        enableAutoUpdates = false;
         settings = {
           display = {
             compact = true;

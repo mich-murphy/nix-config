@@ -14,6 +14,7 @@
   environment.systemPackages = [
     pkgs.curl
     pkgs.python3
+    pkgs.uv
     pkgs.xcode-install
     pkgs.tmux
     pkgs.mosh
@@ -22,6 +23,9 @@
     pkgs.gnused
     pkgs.just
     pkgs.acli
+    pkgs.azure-cli
+    pkgs.doctl
+    pkgs.dust
   ];
 
   fonts.packages = [
@@ -68,6 +72,7 @@
       "sol" # launcher
       "winbox"
       "xcodes-app" # install/manage full Xcode with hardware-key auth support
+      "linearmouse"
     ];
     # raw Brewfile line: nix-darwin's cask args schema lacks `adopt`, needed
     # because the app pre-dates cask management and brew refuses to overwrite it
@@ -79,6 +84,7 @@
       "xcodes" # CLI for installing/selecting Xcode versions
     ];
     masApps = {
+      "Xcode" = 497799835;
       "Windows App" = 1295203466; # formerly Microsoft Remote Desktop
       "Supernote Partner" = 1494992020;
       "Azure VPN Client" = 1553936137;
