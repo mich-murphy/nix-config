@@ -4,7 +4,7 @@
 
   security.pam.services.sudo_local = {
     touchIdAuth = true; # use touchid for sudo authentication
-    reattach = true; # make touchid sudo work inside tmux/zellij
+    reattach = true; # make touchid sudo work inside terminal multiplexers
   };
 
   networking.applicationFirewall = {

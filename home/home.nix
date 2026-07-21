@@ -33,21 +33,10 @@
     '';
   };
 
-  # Ghostty local app config. WezTerm remains the Nix-managed terminal; this
-  # mirrors the relevant WezTerm UX for testing the local Ghostty build.
-  xdg.configFile."ghostty/config".text = ''
-    font-family = Berkeley Mono
-    font-size = 13
-    theme = Carbonfox
-    window-decoration = false
-    macos-titlebar-style = transparent
-    window-theme = dark
-
-    keybind = ctrl+a>[=copy_mode_enter
-  '';
-
   # configure common home-manager modules
   common = {
+    ghostty.enable = true;
+    herdr.enable = true;
     neovim.enable = true;
     wezterm.enable = true;
     git = {

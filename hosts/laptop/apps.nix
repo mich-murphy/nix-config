@@ -63,6 +63,7 @@ in {
     };
     # homebrew casks for install
     casks = [
+      "ghostty"
       "wezterm"
       "whichspace" # identify and switch spaces from the menu bar
       "1password"
@@ -94,6 +95,7 @@ in {
       "logi-options+"
     ];
     brews = [
+      "hunk" # terminal diff viewer
       "mas" # required for masApps below to actually install
       "mole" # macOS cleanup and maintenance CLI
       "xcodes" # CLI for installing/selecting Xcode versions

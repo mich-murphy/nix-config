@@ -26,7 +26,7 @@ in {
           resize < e : yabai -m space --balance
 
           # Applications Shortcuts
-          alt - return : /Applications/WezTerm.app/Contents/MacOS/wezterm start --always-new-process
+          cmd - return : open -na Ghostty
           shift + alt - return : '/Applications/Google Chrome.App/Contents/MacOS/Google Chrome'
 
           # Toggle Window

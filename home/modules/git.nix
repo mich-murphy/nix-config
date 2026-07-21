@@ -41,29 +41,11 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    xdg.configFile."hunk/config.toml".text = ''
+      theme = "tokyo-night"
+    '';
+
     programs = {
-      delta = {
-        enable = true;
-        enableGitIntegration = true;
-        options = {
-          hyperlinks = true;
-          line-numbers = true;
-          navigate = true;
-          side-by-side = true;
-          syntax-theme = "carbonfox";
-          minus-style = "syntax '#37222c'";
-          minus-non-emph-style = "syntax '#37222c'";
-          minus-emph-style = "syntax '#713137'";
-          minus-empty-line-marker-style = "syntax '#37222c'";
-          line-numbers-minus-style = "#b2555b";
-          plus-style = "syntax '#20303b'";
-          plus-non-emph-style = "syntax '#20303b'";
-          plus-emph-style = "syntax '#2c5a66'";
-          plus-empty-line-marker-style = "syntax '#20303b'";
-          line-numbers-plus-style = "#266d6a";
-          line-numbers-zero-style = "#3b4261";
-        };
-      };
       git = {
         enable = true;
         includes =
@@ -93,6 +75,7 @@ in {
             name = "mich-murphy";
             email = "github@elmurphy.com";
           };
+          core.pager = "hunk pager";
           alias = {
             switch-recent = "!git branch --sort=-committerdate --format='%(refname:short)' | fzf --preview='git log --date=relative --color main..{}' | xargs git switch";
             rm-merged = "!git branch --format '%(refname:short) %(upstream:track)' | awk '$2 == \"[gone]\" { print $1 }' | xargs -r git branch -D";

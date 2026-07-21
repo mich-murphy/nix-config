@@ -31,20 +31,8 @@ in {
       bat = {
         enable = true;
         config = {
-          theme = "carbonfox";
-        };
-        themes = {
-          carbonfox = {
-            src =
-              pkgs.fetchFromGitHub {
-                owner = "EdenEast";
-                repo = "nightfox.nvim";
-                rev = "ba47d4b4c5ec308718641ba7402c143836f35aa9";
-                sha256 = "sha256-HoZEwncrUnypWxyB+XR0UQDv+tNu1/NbvimxYGb7qu8=";
-              }
-              + "/extra/carbonfox";
-            file = "carbonfox.tmTheme";
-          };
+          # Use the terminal palette so bat follows Tokyo Night without a custom theme asset.
+          theme = "ansi";
         };
       };
       starship = {

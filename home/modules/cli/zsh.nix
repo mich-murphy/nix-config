@@ -103,7 +103,6 @@ in {
         nph = "nix profile history --profile /nix/var/nix/profiles/system";
         ndh = "sudo nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 7d";
         ngc = "nix store gc";
-        zl = "zellij";
         # kubernetes
         k = "kubectl";
       };
