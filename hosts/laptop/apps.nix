@@ -1,4 +1,20 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  plannotator = pkgs.stdenvNoCC.mkDerivation {
+    pname = "plannotator";
+    version = "0.24.1";
+    src = pkgs.fetchurl {
+      url = "https://github.com/backnotprop/plannotator/releases/download/v0.24.1/plannotator-darwin-arm64";
+      hash = "sha256-FzObDbw4fXLIMzeifzmyOQfNK90jYd5TXHpaYzjwzZE=";
+    };
+    dontUnpack = true;
+    dontStrip = true;
+    installPhase = ''
+      runHook preInstall
+      install -Dm755 "$src" "$out/bin/plannotator"
+      runHook postInstall
+    '';
+  };
+in {
   # installation of apps and packages
   # nix-darwin options documentation: https://daiderd.com/nix-darwin/manual/index.html#sec-options
 
@@ -17,8 +33,10 @@
     pkgs.uv
     pkgs.xcode-install
     pkgs.tmux
+    pkgs.herdr
     pkgs.mosh
     pkgs.nmap
+    pkgs.pi-coding-agent
     pkgs._1password-cli
     pkgs.gnused
     pkgs.just
@@ -26,6 +44,7 @@
     pkgs.azure-cli
     pkgs.doctl
     pkgs.dust
+    plannotator
   ];
 
   fonts.packages = [
@@ -45,14 +64,13 @@
     # homebrew casks for install
     casks = [
       "wezterm"
-      "spaceid" # identify current spaces in menu bar
+      "whichspace" # identify and switch spaces from the menu bar
       "1password"
       "stats" # show system stats in menu bar
       "obsidian"
       "zotero@beta" # pdf reading and higlights
       "tailscale-app"
       "karabiner-elements"
-      "yubico-yubikey-manager" # manage yubikey
       "utm" # manage virtual machines
       "jordanbaird-ice" # menu bar manager
       "owncloud"
@@ -69,18 +87,15 @@
       "datagrip"
       "docker-desktop"
       "displaylink"
-      "sol" # launcher
+      "raycast" # launcher
       "winbox"
       "xcodes-app" # install/manage full Xcode with hardware-key auth support
       "linearmouse"
+      "logi-options+"
     ];
-    # raw Brewfile line: nix-darwin's cask args schema lacks `adopt`, needed
-    # because the app pre-dates cask management and brew refuses to overwrite it
-    extraConfig = ''
-      cask "qmk-toolbox", args: { adopt: true }
-    '';
     brews = [
       "mas" # required for masApps below to actually install
+      "mole" # macOS cleanup and maintenance CLI
       "xcodes" # CLI for installing/selecting Xcode versions
     ];
     masApps = {

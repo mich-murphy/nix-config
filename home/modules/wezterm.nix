@@ -137,8 +137,9 @@ in {
             end
           end
 
-          -- Returning a custom title bypasses WezTerm's default tab padding.
-          return " " .. (title or "") .. " "
+          -- A custom title also bypasses WezTerm's default numeric prefix, so
+          -- restore it using the same one-based numbering as the leader keys.
+          return " " .. (tab.tab_index + 1) .. ": " .. (title or "") .. " "
         end)
 
         -- General
