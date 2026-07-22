@@ -43,6 +43,14 @@ in {
   config = lib.mkIf cfg.enable {
     xdg.configFile."hunk/config.toml".text = ''
       theme = "tokyo-night"
+      mode = "auto"
+      watch = false
+      exclude_untracked = false
+      line_numbers = true
+      wrap_lines = false
+      menu_bar = false
+      agent_notes = true
+      prompt_save_view_preferences = false
     '';
 
     programs = {
