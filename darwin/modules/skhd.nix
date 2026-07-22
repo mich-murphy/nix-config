@@ -26,7 +26,7 @@ in {
           resize < e : yabai -m space --balance
 
           # Applications Shortcuts
-          cmd - return : open -na Ghostty
+          alt - return : /usr/bin/open -n /Applications/Ghostty.app
           shift + alt - return : '/Applications/Google Chrome.App/Contents/MacOS/Google Chrome'
 
           # Toggle Window

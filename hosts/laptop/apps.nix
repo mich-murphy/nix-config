@@ -92,7 +92,6 @@ in {
       "winbox"
       "xcodes-app" # install/manage full Xcode with hardware-key auth support
       "linearmouse"
-      "logi-options+"
     ];
     brews = [
       "hunk" # terminal diff viewer

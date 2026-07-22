@@ -88,6 +88,12 @@ in {
         }
         source ${pkgs.zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
 
+        # Ghostty encodes Ctrl+Shift+L as F12 so it stays distinct from
+        # Ctrl+L, which Herdr uses for right-pane navigation.
+        for keymap in emacs viins vicmd visual; do
+          bindkey -M "$keymap" '^[[24~' clear-screen
+        done
+
         # show alias for future use
         source ${pkgs.zsh-you-should-use}/share/zsh/plugins/you-should-use/you-should-use.plugin.zsh
       '';

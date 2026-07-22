@@ -21,6 +21,11 @@ in {
         set -g fish_key_bindings fish_vi_key_bindings
         set -g fish_greeting
 
+        # Fish keeps separate bindings for Vi insert and normal modes.
+        # Ghostty encodes Ctrl+Shift+L as F12 so both modes can clear.
+        bind --mode insert f12 clear-screen
+        bind --mode default f12 clear-screen
+
         # vi mode cursor shapes
         set -g fish_cursor_default block
         set -g fish_cursor_insert line
@@ -62,10 +67,6 @@ in {
         {
           name = "autopair";
           src = pkgs.fishPlugins.autopair-fish.src;
-        }
-        {
-          name = "sponge";
-          src = pkgs.fishPlugins.sponge.src;
         }
         {
           name = "fzf-fish";

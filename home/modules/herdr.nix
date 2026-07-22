@@ -11,6 +11,10 @@ in {
 
   config = lib.mkIf cfg.enable {
     xdg.configFile."herdr/config.toml".text = ''
+      # Home Manager owns this file, so persist the onboarding choice here
+      # instead of asking Herdr to write to the immutable Nix store symlink.
+      onboarding = false
+
       [theme]
       name = "tokyo-night"
 
@@ -53,8 +57,8 @@ in {
       description = "Navigate right (Neovim/Herdr)"
 
       [[keys.command]]
-      # Keep Ctrl+L for navigation while Ctrl+Shift+L clears the focused pane.
-      key = "ctrl+shift+l"
+      # Ghostty translates Ctrl+Shift+L to the otherwise-unused F12 sequence.
+      key = "f12"
       type = "shell"
       command = "\"$HERDR_BIN_PATH\" pane send-keys \"$HERDR_ACTIVE_PANE_ID\" ctrl+l"
       description = "Clear focused pane"
