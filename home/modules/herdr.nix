@@ -25,12 +25,12 @@ in {
       rename_tab = "prefix+comma"
       detach = "prefix+d"
 
-      # Direct chords are process-aware plugin actions. Prefixed bindings
-      # remain available as an escape hatch from applications that need them.
-      focus_pane_left = "prefix+h"
-      focus_pane_down = "prefix+j"
-      focus_pane_up = "prefix+k"
-      focus_pane_right = "prefix+l"
+      previous_workspace = "prefix+("
+      next_workspace = "prefix+)"
+      focus_agent = "prefix+shift+1..9"
+
+      # Direct chords are process-aware plugin actions that navigate
+      # seamlessly between Neovim and Herdr panes.
 
       [[keys.command]]
       key = "ctrl+h"
