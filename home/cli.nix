@@ -7,6 +7,7 @@
     pkgs.tree
     pkgs.procs
     pkgs.ouch
+    pkgs.prek
   ];
 
   programs = {

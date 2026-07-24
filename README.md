@@ -48,13 +48,31 @@ purge historical objects.
    nix run nix-darwin -- switch --flake ~/dev/nix-config
    ```
 
+## Commit hooks
+
+Home Manager installs `prek`. Install this repository's pre-commit shim once
+after activating the configuration:
+
+```sh
+prek install
+```
+
+Run every configured hook manually with:
+
+```sh
+prek run --all-files
+```
+
+The hooks perform fast file hygiene and syntax checks, lint Markdown, and check
+Nix formatting. Flake evaluation remains part of the validation commands below
+instead of every commit.
+
 ## Validate and activate
 
 Validate without changing the running system:
 
 ```sh
-nix fmt -- --check .
-npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"
+prek run --all-files
 nix flake check --all-systems --print-build-logs
 darwin-rebuild build --flake .
 ```

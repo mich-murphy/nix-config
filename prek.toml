@@ -1,0 +1,43 @@
+minimum_prek_version = "0.4.4"
+default_install_hook_types = ["pre-commit"]
+
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "check-added-large-files" },
+  { id = "check-case-conflict" },
+  { id = "check-json" },
+  { id = "check-toml" },
+  { id = "check-yaml" },
+  { id = "detect-private-key" },
+  { id = "end-of-file-fixer" },
+  { id = "mixed-line-ending", args = ["--fix=lf"] },
+  { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"] },
+]
+
+[[repos]]
+repo = "https://github.com/DavidAnson/markdownlint-cli2"
+rev = "v0.23.1"
+hooks = [
+  { id = "markdownlint-cli2" },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "nix-format",
+    name = "nix format",
+    language = "system",
+    entry = "nix fmt -- --check",
+    types = ["nix"],
+    require_serial = true,
+  },
+]
+
+[[repos]]
+repo = "meta"
+hooks = [
+  { id = "check-hooks-apply" },
+  { id = "check-useless-excludes" },
+]
