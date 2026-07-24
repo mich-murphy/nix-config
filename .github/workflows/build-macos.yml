@@ -1,34 +1,31 @@
-name: "test-build-macos"
+name: build-macos
+
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
-  # push:
-  #   branches: [ main ]
-  #   paths:
-  #   - 'flake.lock'
-  #   - 'flake.nix'
-  #   - 'hosts/laptop/**'
-  #   - 'darwin/**'
-  #   - 'home/**'
-  #   - '.github/workflows/build-macos'
+
+permissions:
+  contents: read
+
 jobs:
-  build_macos:
-    runs-on: macos-14
+  build-macos:
+    runs-on: macos-15
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-    - name: Check Nix Flake Inputs
-      uses: DeterminateSystems/flake-checker-action@v1
-      with:
-        send-statistics: false
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@v1
-    - name: Cache Nix Build
-      uses: DeterminateSystems/magic-nix-cache-action@v1
-    - name: Check Successful Build
-      run: |
-        cp /etc/nix/nix.conf ~/.config/nix/nix.conf
-        sudo rm -rf /etc/zshenv /etc/nix/nix.conf
-        sed -i '' -E 's "mm "runner g' hosts/laptop/user.nix home/home.nix
-        sed -i '' -E 's \/mm \/runner g' hosts/laptop/user.nix home/home.nix
-        sed -i '' -E 's users\.mm users\.runner g' flake.nix
-        nix run nix-darwin -- switch --flake .#macbook
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Check flake inputs
+        uses: DeterminateSystems/flake-checker-action@v1
+        with:
+          send-statistics: false
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v1
+      - name: Cache Nix builds
+        uses: DeterminateSystems/magic-nix-cache-action@v1
+      - name: Check Nix formatting
+        run: nix fmt -- --check .
+      - name: Lint Markdown
+        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"
+      - name: Check flake
+        run: nix flake check --print-build-logs

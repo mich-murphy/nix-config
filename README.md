@@ -1,136 +1,100 @@
 [![build-macos](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml)
 
-# Nix-Darwin Configuration Flake
+# MacBook Nix configuration
 
-![screenshot](./assets/screenshot.png)
-![screenshot-browser](./assets/screenshot-2.png)
+Nix flake for one M2 MacBook Air, exposed as
+`darwinConfigurations.macbook`. nix-darwin owns machine settings and
+applications; embedded Home Manager owns the `mm` user environment. Nix itself
+remains managed by the Determinate installer.
 
-## Repository Scope
+## Structure
 
-The active flake currently exposes only `darwinConfigurations.macbook` for the
-macOS laptop configuration.
+```text
+flake.nix
+└── configuration.nix
+    ├── darwin/default.nix
+    │   ├── system.nix
+    │   ├── maintenance.nix
+    │   ├── applications.nix
+    │   └── window-management.nix
+    └── home.nix
+        └── home/default.nix
+            └── user concern files
+```
 
-The former media/NixOS system has been archived under `archive/` for future
-reference and is not part of the active flake outputs.
+Each `default.nix` is the static manifest for its directory. Concern files
+directly define existing nix-darwin or Home Manager options; there is no
+single-host `common.*` option layer. This follows the
+[nix-darwin flake guide](https://github.com/nix-darwin/nix-darwin#flakes-recommended-for-beginners),
+[Home Manager's nix-darwin integration](https://nix-community.github.io/home-manager/nix-flakes/nix-darwin.html),
+and the [NixOS modularity model](https://nixos.org/manual/nixos/stable/#sec-modularity).
+Imports stay static; a future real host-specific condition should use an
+unconditional import with
+[`lib.mkIf`](https://nixos.org/manual/nixos/stable/#sec-option-definitions-delaying-conditionals).
 
-## Contents
+The former media/NixOS configuration and encrypted age files were removed from
+HEAD. They remain recoverable from ordinary Git history; that removal does not
+purge historical objects.
 
-<!-- vim-markdown-toc Marked -->
+## Bootstrap
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Understanding Nix](#understanding-nix)
-  - [Video Guides](#video-guides)
-  - [Documentation](#documentation)
-  - [References](#references)
-- [Useful Repositories](#useful-repositories)
+1. Install Nix with the
+   [Determinate installer](https://docs.determinate.systems/).
+2. Install [Homebrew](https://brew.sh/).
+3. Clone this repository to `/Users/mm/dev/nix-config`.
+4. Bootstrap and activate:
 
-<!-- vim-markdown-toc -->
-
-## Overview
-
-My MacOS system configuration was created using the [Nix/NixOS](https://nixos.org/)
-philosophy and tooling. The end goal is to have a declarative, reliable and
-reproducible system configuration.
-
-There are a number of tools used in producing the final configuration, namely:
-
-- [Nix Flake](https://nixos.wiki/wiki/Flakes): allows for specifying of
-  dependencies and locking of versions in configuration
-- [Nix-Darwin](https://github.com/LnL7/nix-darwin): configuration of MacOS
-  system settings
-- [Home Manager](https://github.com/nix-community/home-manager): configuration
-  of user and application settings
-
-Once you have an understanding of Nix/NixOS, the above tools can be configured
-using the following references:
-
-- [Nix Darwin - Options](https://daiderd.com/nix-darwin/manual/index.html#sec-options)
-- [Home Manager - Options](https://nix-community.github.io/home-manager/options.html)
-- [Home Manager - Darwin Options](https://nix-community.github.io/home-manager/nix-darwin-options.html)
-
-## Installation
-
-1. Install Nix on the target machine using Determinate Systems installer
-   (enables flakes by default amongst other benefits):
-
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
-   | sh -s -- install
+   ```sh
+   nix run nix-darwin -- switch --flake ~/dev/nix-config
    ```
 
-2. Some packages aren't yet available for Darwin in Nix - for these we need to
-   configure Homebrew
+## Validate and activate
 
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   brew analytics off
-   ```
+Validate without changing the running system:
 
-3. Install Git, clone the repository and run the first build of the Flake to
-   make darwin commands available
+```sh
+nix fmt -- --check .
+npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"
+nix flake check --all-systems --print-build-logs
+darwin-rebuild build --flake .
+```
 
-   ```bash
-   nix-env -iA nixpkgs.git
-   git clone https://github.com/mich-murphy/nix-config
-   nix run nix-darwin -- switch --flake ~/nix-config
-   ```
+Activation is intentionally separate:
 
-4. In future you can rebuild and activate the Flake using the following command
+```sh
+darwin-rebuild switch --flake .
+```
 
-   ```bash
-   darwin-rebuild switch --flake .
-   ```
+CI runs formatting, Markdown lint, and `nix flake check` on an ARM macOS runner.
+It never activates the runner.
 
-## Understanding Nix
+## Live configuration
 
-There are several components that are referred to regarding Nix:
+`configuration.nix` defines `repoRoot`, currently
+`/Users/mm/dev/nix-config`. Home Manager uses
+[out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
+only for configurations that are intentionally edited live:
 
-1. Nix is the name given to a functional programming language - this is the
-   language used for configuration
-2. Nix is a package manager similar to those in other operating systems. It
-   allows for installation of applications and dependencies
-3. NixOS is an operating system, which is entirely configured using the Nix language.
+- coding-agent instructions and skills;
+- Ghostty and WezTerm;
+- Herdr;
+- Karabiner;
+- skhd, passed directly to its launch agent.
 
-The active configuration in this flake is for a Macbook Air M2 running MacOS.
-The former media/NixOS configuration is retained under `archive/` for future
-reference and is not built by the current flake outputs. All active
-configuration is created by using the Nix package manager, with some additional
-options provided by Nix-Darwin.
+If the checkout moves, update `repoRoot` and rebuild. Karabiner owns and watches
+its whole configuration directory, so generated backups and complex
+modifications are ignored while `config/karabiner/karabiner.json` remains
+tracked.
 
-For further information regarding Nix refer to the below resources:
+Neovim is installed by Nix, but its external configuration must still be cloned
+to `~/.config/nvim` from `git@github.com:mich-murphy/neovim.git`. That dependency
+is intentionally pending a separate review.
 
-### Video Guides
+## Homebrew warning
 
-- [Overview & Configuration](https://github.com/MatthiasBenaets/nixos-config/blob/master/nixos.org)
-- [Detailed Configuration Guide](https://www.youtube.com/watch?v=QKoQ1gKJY5A&list=PL-saUBvIJzOkjAw_vOac75v-x6EzNzZq-)
-- [Technical Concepts & Guide](https://www.youtube.com/watch?v=NYyImy-lqaA&list=PLRGI9KQ3_HP_OFRG6R-p4iFgMSK1t5BHs)
-- [Technical Guide Covering Packaging etc.](https://www.youtube.com/user/elitespartan117j27/videos)
-
-### Documentation
-
-- [Nixpkgs](https://nixos.org/manual/nixpkgs/stable)
-- [NixOS](https://nixos.org/manual/nixos/stable)
-- [Nix Package Manager](https://nixos.org/manual/nix/stable/command-ref/command-ref.html)
-- [Nix Language](https://nixos.org/manual/nix/stable/expressions/writing-nix-expressions.html)
-- [Learn Nix in Y Minutes](https://learnxinyminutes.com/docs/nix/)
-
-### References
-
-- [Overlays - Emacs Example](https://www.heinrichhartmann.com/posts/2021-08-08-nix-into/)
-- [Nix.dev - Further Material by Nix Documentation Team](https://nix.dev/)
-- [Tweag.io - Blog With Useful Nix Articles](https://www.tweag.io/blog)
-- [Nixos Planet - Another Blog Covering Nix](https://planet.nixos.org/)
-
-## Useful Repositories
-
-- [Matthias Benaet's Dotfiles](https://github.com/MatthiasBenaets/nixos-config)
-  - General Nix Darwin/Home Manager/Nix Flakes overview
-- [Calum MacRae's Dotfiles](https://github.com/cmacrae/config)
-  - Useful reference for Firefox config
-- [Dustin Lyon's Dotfiles](https://github.com/dustinlyons/nixos-config)
-  - Useful reference for combining Nix Darwin and NixOS flakes
-- [Jordan Isaac's Doftiles](https://github.com/jordanisaacs/dotfiles)
-  - More complex principles around impermanence and building modules
-- [Cadey Ratio's Dotfiles](https://tulpa.dev/cadey/nixos-configs)
-  - A lot of more technical concepts e.g. secrets management
+Homebrew activation uses `cleanup = "zap"` with forced cleanup. Removing a cask
+or formula declaration can uninstall the application and associated files on
+the next switch. Preserve the complete declaration set unless that uninstall is
+intentional. See the
+[nix-darwin cleanup option](https://nix-darwin.github.io/nix-darwin/manual/#opt-homebrew.onActivation.cleanup)
+and [Homebrew's zap warning](https://docs.brew.sh/Cask-Cookbook#stanza-zap).
