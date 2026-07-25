@@ -78,6 +78,7 @@ in {
       "linearmouse"
     ];
     brews = [
+      "herdr"
       "pi-coding-agent"
       "hunk"
       "mas"
