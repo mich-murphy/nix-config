@@ -40,6 +40,7 @@ in {
 
   homebrew = {
     enable = true;
+    enableFishIntegration = true;
     onActivation = {
       autoUpdate = false;
       upgrade = false;

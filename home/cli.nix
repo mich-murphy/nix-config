@@ -1,4 +1,10 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  btopWithManpage = pkgs.btop.overrideAttrs (previousAttrs: {
+    nativeBuildInputs =
+      (previousAttrs.nativeBuildInputs or [])
+      ++ [pkgs.lowdown-unsandboxed];
+  });
+in {
   home.packages = [
     pkgs.fd
     pkgs.sd
@@ -55,6 +61,7 @@
     };
     btop = {
       enable = true;
+      package = btopWithManpage;
       settings = {
         color_theme = "TTY";
         theme_background = false;

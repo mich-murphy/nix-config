@@ -3,8 +3,6 @@
     enable = true;
 
     interactiveShellInit = ''
-      fish_add_path /opt/homebrew/bin
-
       # vi key bindings
       set -g fish_key_bindings fish_vi_key_bindings
       set -g fish_greeting
@@ -44,12 +42,6 @@
       set -g fish_pager_color_description 565f89
       set -g fish_pager_color_selected_background --background=283457
     '';
-
-    completions = {
-      just = builtins.readFile (pkgs.runCommandLocal "just-fish-completions" {} ''
-        ${pkgs.just}/bin/just --completions fish > $out
-      '');
-    };
 
     plugins = [
       {

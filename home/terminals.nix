@@ -22,7 +22,13 @@
       config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/wezterm";
   };
 
-  # Ghostty wins over WezTerm's fallback, but a normal user definition can win.
-  home.sessionVariables.TERMINAL =
-    lib.mkOverride 900 "/Applications/Ghostty.app/Contents/MacOS/ghostty";
+  home.sessionVariables = {
+    # Avoid Nix profile paths that Codex cannot inspect from its restricted
+    # filesystem. Ghostty continues to provide its bundled terminfo via TERMINFO.
+    TERMINFO_DIRS = "/usr/share/terminfo";
+
+    # Prefer Ghostty while allowing a regular-priority definition to win.
+    TERMINAL =
+      lib.mkOverride 900 "/Applications/Ghostty.app/Contents/MacOS/ghostty";
+  };
 }
