@@ -42,10 +42,9 @@ in {
     enable = true;
     enableFishIntegration = true;
     onActivation = {
-      autoUpdate = false;
-      upgrade = false;
+      autoUpdate = true;
+      upgrade = true;
       cleanup = "zap";
-      extraFlags = ["--force-cleanup"];
     };
     casks = [
       "claude-code@latest"

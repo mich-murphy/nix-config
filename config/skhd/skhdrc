@@ -10,7 +10,7 @@ resize < o : yabai -m space --rotate 90
 resize < e : yabai -m space --balance
 
 # Applications Shortcuts
-alt - return : /usr/bin/open -n /Applications/Ghostty.app
+alt - return : /usr/bin/osascript -e 'tell application "Ghostty" to new window'
 shift + alt - return : '/Applications/Google Chrome.App/Contents/MacOS/Google Chrome'
 
 # Toggle Window
