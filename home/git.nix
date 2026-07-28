@@ -1,41 +1,32 @@
-{pkgs, ...}: {
-  xdg.configFile."hunk/config.toml".text = ''
-    theme = "tokyo-night"
-    mode = "auto"
-    watch = false
-    exclude_untracked = false
-    line_numbers = false
-    hunk_headers = false
-    wrap_lines = false
-    menu_bar = false
-    agent_notes = true
-    prompt_save_view_preferences = false
-  '';
-
+{
+  hunk,
+  pkgs,
+  ...
+}: {
   programs = {
+    hunk = {
+      enable = true;
+      enableGitIntegration = true;
+      package = hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk;
+      settings = {
+        theme = "tokyo-night";
+        mode = "auto";
+        watch = false;
+        exclude_untracked = false;
+        line_numbers = false;
+        hunk_headers = false;
+        wrap_lines = false;
+        menu_bar = false;
+        agent_notes = true;
+        prompt_save_view_preferences = false;
+      };
+    };
     git = {
       enable = true;
-      includes = [
-        {
-          condition = "gitdir:~/businesscraft/";
-          contents = {
-            user = {
-              name = "michaelmbc";
-              email = "michaelmbc@users.noreply.github.com";
-            };
-            core.sshCommand = "ssh -i ~/.ssh/github_bc";
-          };
-        }
-      ];
       signing = {
         format = null;
       };
       settings = {
-        user = {
-          name = "mich-murphy";
-          email = "github@elmurphy.com";
-        };
-        core.pager = "hunk pager";
         alias = {
           switch-recent = "!git branch --sort=-committerdate --format='%(refname:short)' | fzf --preview='git log --date=relative --color main..{}' | xargs git switch";
           rm-merged = "!git branch --format '%(refname:short) %(upstream:track)' | awk '$2 == \"[gone]\" { print $1 }' | xargs -r git branch -D";
@@ -162,7 +153,6 @@
   home.packages = [
     pkgs.exiftool
     pkgs.gh
-    pkgs.hunk
     pkgs.lazygit
     pkgs.pandoc
   ];

@@ -63,9 +63,10 @@ nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'
 
 Home Manager owns portable CLI tools, Fish, Starship, FZF, Git behavior, Hunk,
 Herdr configuration, Yazi, OpenCode, and shared agent instructions/skills.
-Ansible retains the operating-system bootstrap and stable agent installers.
-Both hosts use the same Home Manager-owned personal and BusinessCraft Git
-identities and the same `~/businesscraft/` include path.
+Ansible retains the operating-system bootstrap, stable agent installers, and
+vaulted ai-dev Git identity fragments. macOS keeps its Home Manager-owned
+personal and BusinessCraft identities under `~/businesscraft/`; ai-dev includes
+its separate `0600` fragments under `~/work/businesscraft/`.
 
 Neovim is the explicit Linux exception. Pacman installs Neovim and the current
 editor tools, while Ansible clones `~/.config/nvim` only when absent and never

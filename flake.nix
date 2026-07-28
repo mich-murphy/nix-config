@@ -6,12 +6,14 @@
     darwin.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    hunk.url = "github:modem-dev/hunk";
   };
 
   outputs = {
     nixpkgs,
     darwin,
     home-manager,
+    hunk,
     ...
   }: let
     systems = [
@@ -25,6 +27,7 @@
         config.allowUnfree = true;
       };
     darwinConfig = darwin.lib.darwinSystem {
+      specialArgs = {inherit hunk;};
       modules = [
         home-manager.darwinModules.home-manager
         ./configuration.nix
@@ -33,6 +36,7 @@
     aiDev = home-manager.lib.homeManagerConfiguration {
       pkgs = packagesFor "x86_64-linux";
       extraSpecialArgs = {
+        inherit hunk;
         repoRoot = "/home/michael/dev/nix-config";
       };
       modules = [
@@ -58,12 +62,12 @@
     checks.aarch64-darwin = {
       macbook-system = darwinConfig.config.system.build.toplevel;
       macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
-      hunk = (packagesFor "aarch64-darwin").hunk;
+      hunk = hunk.packages.aarch64-darwin.hunk;
       opencode = (packagesFor "aarch64-darwin").opencode;
     };
     checks.x86_64-linux = {
       ai-dev-home = aiDev.activationPackage;
-      hunk = (packagesFor "x86_64-linux").hunk;
+      hunk = hunk.packages.x86_64-linux.hunk;
       opencode = (packagesFor "x86_64-linux").opencode;
     };
   };
