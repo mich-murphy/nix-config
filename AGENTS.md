@@ -1,12 +1,13 @@
 # AGENTS.md
 
 Nix flake configuring one macOS M2 MacBook Air (`aarch64-darwin`) with
-nix-darwin and embedded Home Manager.
+nix-darwin and embedded Home Manager, plus a standalone Home Manager profile
+for the ai-dev host (`x86_64-linux`).
 
 ## Project map
 
-- `flake.nix` — inputs, formatter, checks, and
-  `darwinConfigurations.macbook`
+- `flake.nix` — inputs, formatters, checks, `darwinConfigurations.macbook`,
+  and `homeConfigurations."michael@ai-dev"`
 - `configuration.nix` — machine entry point, identity, platform, state
   compatibility, Determinate integration, and Home Manager wiring
 - `darwin/default.nix` — static manifest for Darwin concern files
@@ -14,9 +15,10 @@ nix-darwin and embedded Home Manager.
 - `darwin/maintenance.nix` — Determinate-compatible generation and GC agents
 - `darwin/applications.nix` — packages, fonts, Homebrew, and MAS inventory
 - `darwin/window-management.nix` — yabai, skhd, and the live skhd path
-- `home.nix` — user entry point and Home Manager baseline
-- `home/default.nix` — static manifest for user concern files
+- `home.nix` — portable Home Manager entry point and baseline
+- `home/default.nix` — static manifest for shared user concern files
 - `home/*.nix` — direct Home Manager definitions grouped by concern
+- `hosts/*.nix` — host identity and host-only Home Manager imports
 - `config/` — intentionally live application and coding-agent configuration
 
 <important if="you need to run commands to build, test, lint, format, or update">
@@ -30,6 +32,7 @@ nix-darwin and embedded Home Manager.
 | `nix fmt -- --check .` | Check Nix formatting without writing |
 | `npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"` | Lint Markdown |
 | `nix flake check --all-systems --print-build-logs` | Run all flake checks |
+| `nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'` | Build the ai-dev home without activation |
 | `nix flake update` | Update all flake inputs |
 | `nix flake update nixpkgs` | Update a single input |
 | `nix run nix-darwin -- switch --flake ~/dev/nix-config` | First-time bootstrap |
@@ -37,26 +40,26 @@ nix-darwin and embedded Home Manager.
 </important>
 
 <important if="you are creating a new concern or adding an option">
-This is a single-host configuration. Concern files directly define existing
-nix-darwin or Home Manager options and are enabled by a static import in the
-adjacent `default.nix`. Do not add `common.*` switches or Darwin-to-Home
-forwarding wrappers for always-enabled concerns.
+Concern files directly define existing nix-darwin or Home Manager options and
+are enabled by a static import. Do not add `common.*` switches or
+Darwin-to-Home forwarding wrappers.
 
 To add a Home Manager concern:
 
 1. Create `home/<name>.nix` with direct definitions.
-2. Import it in `home/default.nix`.
-3. Add packages beside the concern that owns them.
+2. Import portable concerns in `home/default.nix`.
+3. Import host-only concerns in the appropriate `hosts/<host>.nix`.
+4. Add packages beside the concern that owns them.
 
 Add system packages, casks, formulae, fonts, or MAS applications directly to
-`darwin/applications.nix`. Only introduce a typed option with `lib.mkIf` when a
-real second host or profile needs conditional behavior; keep its import
-unconditional.
+`darwin/applications.nix`. Keep host selection in the host module lists; use
+`lib.mkIf` only when one concern genuinely contains both shared and
+platform-specific definitions.
 </important>
 
 <important if="you are adding, removing, or modifying packages">
-- **Prefer Nix** (`environment.systemPackages` or `home.packages`) for CLI tools
-  and anything in nixpkgs for Darwin
+- **Prefer Home Manager** for portable CLI tools on both hosts
+- **Prefer Nix** (`environment.systemPackages`) for Darwin-only CLI tools
 - **Use Homebrew casks** only for GUI macOS apps unavailable or broken in nixpkgs
 - **Use Homebrew formulae** only as a last resort when a package is missing in nixpkgs for `aarch64-darwin`
 - When adding a Homebrew cask, check if a Nix package exists first (`nix search nixpkgs <name>`)
@@ -67,6 +70,7 @@ unconditional.
 
 <important if="you are modifying Nix expressions or module options">
 - Keep imports static; never derive imports from `config`.
+- Keep portable definitions in `home/` and host composition in `hosts/`.
 - Do not declare custom options for files that only define existing options.
 - Do not pass the complete flake `inputs` set or override reserved module
   arguments such as `lib`.

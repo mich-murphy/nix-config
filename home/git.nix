@@ -161,7 +161,9 @@
 
   home.packages = [
     pkgs.exiftool
-    pkgs.pandoc
     pkgs.gh
+    pkgs.hunk
+    pkgs.lazygit
+    pkgs.pandoc
   ];
 }

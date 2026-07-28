@@ -6,14 +6,27 @@
   });
 in {
   home.packages = [
+    pkgs.azure-cli
+    pkgs.cargo
+    pkgs.curl
+    pkgs.doctl
+    pkgs.dust
     pkgs.fd
-    pkgs.sd
-    pkgs.ripgrep
+    pkgs.go
+    pkgs.just
     pkgs.jq
-    pkgs.tree
-    pkgs.procs
+    pkgs.nodejs
+    pkgs.opencode
     pkgs.ouch
+    pkgs.python3
+    pkgs.procs
     pkgs.prek
+    pkgs.ripgrep
+    pkgs.rsync
+    pkgs.sd
+    pkgs.tree
+    pkgs.uv
+    pkgs.wget
   ];
 
   programs = {

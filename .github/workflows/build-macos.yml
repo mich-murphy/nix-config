@@ -1,4 +1,4 @@
-name: build-macos
+name: build
 
 on:
   push:
@@ -12,6 +12,26 @@ permissions:
 jobs:
   build-macos:
     runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Check flake inputs
+        uses: DeterminateSystems/flake-checker-action@v1
+        with:
+          send-statistics: false
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v1
+      - name: Cache Nix builds
+        uses: DeterminateSystems/magic-nix-cache-action@v1
+      - name: Check Nix formatting
+        run: nix fmt -- --check .
+      - name: Lint Markdown
+        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"
+      - name: Check flake
+        run: nix flake check --print-build-logs
+
+  build-linux:
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -15,21 +15,15 @@
     '';
   };
 in {
+  environment.variables.HOMEBREW_NO_ENV_HINTS = "1";
+
   environment.systemPackages = [
-    pkgs.curl
-    pkgs.python3
-    pkgs.uv
     pkgs.xcode-install
     pkgs.tmux
     pkgs.mosh
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
-    pkgs.just
-    pkgs.acli
-    pkgs.azure-cli
-    pkgs.doctl
-    pkgs.dust
     plannotator
   ];
 
@@ -69,7 +63,6 @@ in {
       "microsoft-powerpoint"
       "microsoft-word"
       "microsoft-teams"
-      "datagrip"
       "docker-desktop"
       "displaylink"
       "raycast"
@@ -80,7 +73,6 @@ in {
     brews = [
       "herdr"
       "pi-coding-agent"
-      "hunk"
       "mas"
       "mole"
       "xcodes"
@@ -89,7 +81,6 @@ in {
       "Xcode" = 497799835;
       "Windows App" = 1295203466;
       "Supernote Partner" = 1494992020;
-      "Azure VPN Client" = 1553936137;
     };
   };
 }

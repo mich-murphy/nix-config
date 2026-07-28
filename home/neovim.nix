@@ -27,9 +27,4 @@
       pkgs.mermaid-cli
     ];
   };
-
-  home.sessionVariables = {
-    EDITOR = "nvim";
-    VISUAL = "nvim";
-  };
 }
