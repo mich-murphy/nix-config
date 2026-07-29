@@ -38,8 +38,11 @@ in {
     bat = {
       enable = true;
       config = {
-        # Use the terminal palette so bat follows Tokyo Night without a custom theme asset.
-        theme = "ansi";
+        theme = "tokyonight_night";
+      };
+      themes.tokyonight_night = {
+        src = pkgs.vimPlugins.tokyonight-nvim;
+        file = "extras/sublime/tokyonight_night.tmTheme";
       };
     };
     starship = {
