@@ -69,6 +69,7 @@ in {
       "winbox"
       "xcodes-app"
       "linearmouse"
+      "wispr-flow"
     ];
     brews = [
       "herdr"
