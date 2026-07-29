@@ -17,9 +17,5 @@
     {
       path = "~/.gitconfig-personal";
     }
-    {
-      condition = "gitdir:~/work/businesscraft/";
-      path = "~/.gitconfig-businesscraft";
-    }
   ];
 }
