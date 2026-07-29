@@ -130,7 +130,7 @@ modifications are ignored while `config/karabiner/karabiner.json` remains
 tracked.
 
 Herdr does not watch `config.toml`. After editing the live Herdr configuration,
-run `herdr server reload-config` in each active session that should receive the
+press `Ctrl+A`, then `Shift+R` in each active session that should receive the
 reload.
 
 On the Mac, Neovim is installed by Nix, but its external configuration must
