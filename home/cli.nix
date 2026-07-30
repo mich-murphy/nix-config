@@ -106,10 +106,6 @@ in {
         "--height 60%"
         "--border none"
         "--layout reverse"
-        "--color '$FZF_COLORS'"
-        "--prompt '∷ '"
-        "--pointer ▶"
-        "--marker ⇒"
       ];
       fileWidget.options = [
         "--height 60%"
@@ -117,10 +113,6 @@ in {
         "--no-scrollbar"
         "--inline-info"
         "--layout reverse"
-        "--color '$FZF_COLORS'"
-        "--prompt '∷ '"
-        "--pointer ▶"
-        "--marker ⇒"
         "--preview 'bat --color=always {}'"
         "--preview-window '~2',border-none"
       ];
