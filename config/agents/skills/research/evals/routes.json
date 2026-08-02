@@ -1,0 +1,18 @@
+{
+  "baseline": {
+    "default": {
+      "model": "gpt-5.6-sol",
+      "effort": "medium"
+    }
+  },
+  "candidate": {
+    "research-defaults-to-chat-and-primary-evidence": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium"
+    },
+    "research-asks-before-inventing-artifact-path": {
+      "model": "gpt-5.6-luna",
+      "effort": "low"
+    }
+  }
+}

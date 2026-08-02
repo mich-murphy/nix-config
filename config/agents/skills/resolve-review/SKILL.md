@@ -1,86 +1,90 @@
 ---
 name: resolve-review
-description: Resolve PR review comments end-to-end. Use when a human asks to address, resolve, or respond to review feedback on a pull request. Validates each comment, implements fixes with tests, runs the full validation gate, replies inline, and resolves handled threads before reporting a summary.
+description: Triage and address GitHub pull-request review threads through verified fixes. Use when the user asks to inspect, address, respond to, or resolve PR review feedback. Support local-only remediation and explicit end-to-end mode; push, reply, or resolve remote threads only when the user authorizes PR updates.
 ---
 
-# Resolve PR Review
+# Resolve Pull Request Review Feedback
 
-Work through every unresolved review thread on the target PR until each one is
-fixed, answered, or explicitly deferred with the reviewer's context preserved.
+Account for every unresolved review thread without overwriting user work,
+expanding the requested scope, or claiming more validation than was run.
 
-## Gather
+## Route Model and Effort
 
-1. Identify the PR (from the argument, current branch, or `gh pr view`).
-2. List all unresolved review threads:
+Use a balanced model at medium effort for bounded inspection and local fixes
+with executable checks. Use an efficient model at low effort only for
+mechanical pagination, extraction, or ledger updates. Escalate to a frontier
+model at high effort for end-to-end remote handling, conflicting threads,
+nonlocal design, or security, data-loss, concurrency, and release-critical
+risk. Keep authority, final classification, validation, and remote mutation
+with the parent agent.
 
-   ```sh
-   gh api graphql \
-     -f query='query($owner:String!,$repo:String!,$pr:Int!){
-       repository(owner:$owner,name:$repo){pullRequest(number:$pr){
-         reviewThreads(first:100){nodes{id isResolved path line
-           comments(first:20){nodes{id databaseId author{login} body}}}}}}}' \
-     -f owner=OWNER -f repo=REPO -F pr=NUMBER
-   ```
+## Establish Scope
 
-3. Sync the branch with upstream before assessing anything
-   (`git fetch origin && git status`); never judge a comment against a stale
-   ref.
+1. Read repository instructions, record the initial worktree state, and identify
+   the target PR and mode:
+   - **inspect**: assess threads and report;
+   - **local**: edit and validate locally, then draft replies; or
+   - **end-to-end**: commit, push, reply, and resolve satisfied threads.
+2. Treat requests to “address” or “fix” feedback as local by default. Remote
+   mutation requires wording such as “push,” “reply,” “resolve/close the
+   threads,” or “handle end-to-end,” or an established grant of that authority.
+3. Use the PR metadata recipe in
+   [references/github-review-api.md](references/github-review-api.md). Compare
+   local `HEAD` with the PR head OID; fetching does not update the checkout.
+4. Never check out, merge, rebase, discard, or overwrite around user changes
+   without authorization. Stop if the checkout cannot safely reach the PR head.
 
-## Validate Each Comment
+## Gather and Track Every Thread
 
-For each unresolved thread, read the referenced code at the current head and
-decide:
+Use the paginated thread query in
+[references/github-review-api.md](references/github-review-api.md); never rely
+on one `first:100` page or omit later replies.
 
-- **Valid** — the concern is real. Implement the fix.
-- **Already addressed** — a later commit resolved it. Reply with the commit
-  reference; do not re-change code.
-- **Disagree or out of scope** — do not silently ignore it. Reply explaining
-  why, and leave the thread unresolved for the reviewer to close.
+Track ID, location, latest request, classification, action, verification,
+reply, and resolution. Re-fetch before remote finalization.
 
-## Fix
+## Triage Before Editing
 
-- Implement each valid fix with an accompanying or updated test where the
-  change has testable behavior.
-- Keep changes scoped to what the comment requires; flag anything larger
-  rather than expanding the diff.
-- After any merge-conflict resolution, re-run formatters/linters before
-  pushing.
+Classify each unresolved thread against the current PR head:
 
-## Validation Gate
+- **Valid**: the concern is present; fix it.
+- **Already addressed**: current code or a later commit satisfies it; cite the
+  evidence instead of changing code again.
+- **Needs clarification**: ambiguity, conflict, or consequential scope increase;
+  ask before guessing.
+- **Disagree or defer**: explain the technical evidence, trade-off, or scope
+  boundary. Preserve the reviewer’s context and leave the thread unresolved.
 
-Run the full gate for the affected area before pushing:
+An outdated diff position does not make the concern obsolete. Inspect the
+current code and discussion before classifying it.
 
-- Web (`web/`): `bun run check-types`, `bun run lint`, `bun run test:unit`,
-  and `bun run build`, plus `bun run changelog:check` if the change is
-  customer-visible.
-- Classic/DBL: `abc --json dev --changed --elb` (60-second cap; on timeout
-  inspect `target/abc/abc-last-run.json`).
+## Implement and Verify
 
-Do not push or reply until the gate is green.
+1. Group related valid comments into the smallest coherent change.
+2. Add or update a regression test when the concern describes testable
+   behavior; when practical, confirm it fails without the fix.
+3. Keep unrelated cleanup out of the patch and preserve pre-existing changes.
+4. Discover validation from repository instructions, CI, and scripts. Run
+   focused checks while iterating and the required full gate before publishing.
+5. Inspect the final diff and tests. Green proves only what they exercised.
 
-## Reply and Resolve
+If required validation cannot run or remains red, report the exact limitation.
+Do not push, claim completion, or resolve affected threads unless explicitly
+accepted by the user.
 
-1. Push the fixes (Conventional Commit messages, one commit per logical fix or
-   a single `fix(scope): address review feedback` when the fixes are small).
-2. Reply inline on each thread with what was done and the commit SHA:
+## Publish Only in End-to-End Mode
 
-   ```sh
-   gh api repos/OWNER/REPO/pulls/NUMBER/comments/COMMENT_ID/replies \
-     -f body='Fixed in <sha>: <one-line description>'
-   ```
+1. Follow repository commit conventions. Push only intended, validated commits.
+2. Re-fetch the PR head and unresolved threads. Stop if either changed in a way
+   that invalidates the local assessment.
+3. Reply on every handled thread with the outcome, relevant commit SHA, and
+   verification. Use the reply recipe in the API reference.
+4. Resolve only when the concern is satisfied, its reply is posted, validation
+   is green, and the viewer may resolve. Leave clarification, disagreement, and
+   deferral unresolved unless directed otherwise.
+5. Re-fetch to verify resolution and report required checks.
 
-3. Resolve only threads whose fix is pushed and green:
+## Completion Report
 
-   ```sh
-   gh api graphql \
-     -f query='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){
-       thread{isResolved}}}' \
-     -f id=THREAD_ID
-   ```
-
-   Leave disagreement/deferral threads unresolved.
-
-## Report
-
-Finish with a summary: threads fixed (with commits), threads answered without
-code change, threads deferred and why, and the validation gate results.
+Summarize every thread category, commit and remote action, validation result,
+remaining check, and unresolved risk, including newly discovered threads.

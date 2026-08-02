@@ -1,0 +1,38 @@
+{
+  "baseline": {
+    "default": {
+      "model": "gpt-5.6-sol",
+      "effort": "medium"
+    }
+  },
+  "candidate": {
+    "review-no-pattern-is-valid": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium"
+    },
+    "mixed-behavior-and-refactoring-hats": {
+      "model": "gpt-5.6-sol",
+      "effort": "high"
+    },
+    "legacy-code-needs-characterization": {
+      "model": "gpt-5.6-sol",
+      "effort": "high"
+    },
+    "pattern-selection-from-pressure": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium"
+    },
+    "deep-module-review": {
+      "model": "gpt-5.6-sol",
+      "effort": "high"
+    },
+    "published-api-rename-is-migration": {
+      "model": "gpt-5.6-sol",
+      "effort": "high"
+    },
+    "semantic-model-routing": {
+      "model": "gpt-5.6-terra",
+      "effort": "low"
+    }
+  }
+}

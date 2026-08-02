@@ -1,0 +1,563 @@
+{
+  "summary": {
+    "cases": 7,
+    "accepted": 3,
+    "assertions_passed": 36,
+    "assertions_total": 43,
+    "usage": {
+      "input_tokens": 100413,
+      "cached_input_tokens": 58112,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 1125,
+      "reasoning_output_tokens": 121
+    },
+    "variant": "baseline",
+    "duration_seconds": 281.855,
+    "by_skill": {
+      "refactor": {
+        "cases": 7,
+        "accepted": 3,
+        "assertions_passed": 36,
+        "assertions_total": 43,
+        "usage": {
+          "input_tokens": 100413,
+          "cached_input_tokens": 58112,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 1125,
+          "reasoning_output_tokens": 121
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "review-no-pattern-is-valid",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": true,
+      "assertions_passed": 5,
+      "assertions_total": 5,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "mode in ['review', 'review mode'] (got 'review')"
+        },
+        {
+          "passed": true,
+          "detail": "modify_files == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "apply_pattern == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['no change', 'keep', 'direct']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['pressure', 'credible change', 'maintenance', 'unnecessary', 'speculative']"
+        }
+      ],
+      "output": "{\"mode\":\"review\",\"modify_files\":false,\"apply_pattern\":false,\"recommendation\":\"Keep the helper as-is; add a design pattern only when a concrete requirement or recurring complexity justifies it.\",\"reason\":\"No failing behavior or anticipated change is provided, so replacing this simple function with a pattern would add unnecessary abstraction.\"}",
+      "usage": {
+        "input_tokens": 14498,
+        "cached_input_tokens": 9984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 69,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 16.01,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48c-41b4-71d2-9a4d-8e2fe9e0f1f5"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"mode\":\"review\",\"modify_files\":false,\"apply_pattern\":false,\"recommendation\":\"Keep the helper as-is; add a design pattern only when a concrete requirement or recurring complexity justifies it.\",\"reason\":\"No failing behavior or anticipated change is provided, so replacing this simple function with a pattern would add unnecessary abstraction.\"}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14498,
+            "cached_input_tokens": 9984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 69,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "mixed-behavior-and-refactoring-hats",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": false,
+      "assertions_passed": 4,
+      "assertions_total": 6,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "refactoring_only == False (got False)"
+        },
+        {
+          "passed": false,
+          "detail": "first_mode in ['behavior', 'behavior mode'] (got 'behavior_change')"
+        },
+        {
+          "passed": false,
+          "detail": "contains any of ['fail', 'red', 'regression test', 'new expectation']"
+        },
+        {
+          "passed": true,
+          "detail": "second_mode in ['refactoring', 'refactoring mode'] (got 'refactoring')"
+        },
+        {
+          "passed": true,
+          "detail": "green_between_modes == True (got True)"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['observable', 'documented', 'contract', 'behavior change']"
+        }
+      ],
+      "output": "{\"refactoring_only\":false,\"first_mode\":\"behavior_change\",\"first_evidence\":\"Update the documented contract and tests to require EmptyInput for empty input, then implement that change until the suite is green.\",\"second_mode\":\"refactoring\",\"green_between_modes\":true,\"explanation\":\"Raising EmptyInput changes observable behavior, so it must be completed and verified separately before cleaning up nested branches under the now-green tests.\"}",
+      "usage": {
+        "input_tokens": 14512,
+        "cached_input_tokens": 14080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 211,
+        "reasoning_output_tokens": 121
+      },
+      "duration_seconds": 12.726,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48c-803b-7d51-b0fb-25dcb73d5980"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"refactoring_only\":false,\"first_mode\":\"behavior_change\",\"first_evidence\":\"Update the documented contract and tests to require EmptyInput for empty input, then implement that change until the suite is green.\",\"second_mode\":\"refactoring\",\"green_between_modes\":true,\"explanation\":\"Raising EmptyInput changes observable behavior, so it must be completed and verified separately before cleaning up nested branches under the now-green tests.\"}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14512,
+            "cached_input_tokens": 14080,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 211,
+            "reasoning_output_tokens": 121
+          }
+        }
+      ]
+    },
+    {
+      "id": "legacy-code-needs-characterization",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": false,
+      "assertions_passed": 5,
+      "assertions_total": 6,
+      "assertions": [
+        {
+          "passed": false,
+          "detail": "mode in ['refactoring', 'refactoring mode'] (got 'characterization-first')"
+        },
+        {
+          "passed": true,
+          "detail": "edit_now == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['characterization', 'baseline', 'current behavior', 'safety net']"
+        },
+        {
+          "passed": true,
+          "detail": "contains 'CSV'"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['smallest', 'minimal', 'only the dependency']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['not prove', 'cannot prove', 'only', 'beyond']"
+        }
+      ],
+      "output": "{\"mode\":\"characterization-first\",\"edit_now\":false,\"first_action\":\"Run the existing end-to-end job on representative inputs and preserve the generated CSV as a baseline artifact.\",\"observation_boundary\":\"Compare finance-visible CSV output at the file level, including headers, row ordering, formatting, rounding, totals, and edge-case records.\",\"seam_rule\":\"Identify the smallest behaviorally coherent seam in the routine, add characterization coverage around it, then simplify one seam at a time while requiring output equivalence.\",\"claim_limit\":\"Claim preserved behavior only for the inputs and observable CSV properties exercised by the baseline; do not claim general correctness or equivalence for untested cases.\"}",
+      "usage": {
+        "input_tokens": 14506,
+        "cached_input_tokens": 9984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 137,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 11.705,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48c-b1ee-7341-813e-c4ba65f37946"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"mode\":\"characterization-first\",\"edit_now\":false,\"first_action\":\"Run the existing end-to-end job on representative inputs and preserve the generated CSV as a baseline artifact.\",\"observation_boundary\":\"Compare finance-visible CSV output at the file level, including headers, row ordering, formatting, rounding, totals, and edge-case records.\",\"seam_rule\":\"Identify the smallest behaviorally coherent seam in the routine, add characterization coverage around it, then simplify one seam at a time while requiring output equivalence.\",\"claim_limit\":\"Claim preserved behavior only for the inputs and observable CSV properties exercised by the baseline; do not claim general correctness or equivalence for untested cases.\"}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14506,
+            "cached_input_tokens": 9984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 137,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "pattern-selection-from-pressure",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": true,
+      "assertions_passed": 6,
+      "assertions_total": 6,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "contains 'Strategy'"
+        },
+        {
+          "passed": true,
+          "detail": "pattern_automatic == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['carrier', 'shipping', 'formula', 'policy']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['function', 'mapping', 'conditional', 'switch', 'table']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['indirection', 'interface', 'complexity', 'overhead']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['focused tests', 'focused behavior tests', 'existing tests', 'same behavior', 'all carriers']"
+        }
+      ],
+      "output": "{\"candidate\":true,\"pattern_automatic\":false,\"hidden_knowledge\":\"Yes. Carrier-specific shipping formulas are varying domain policies that should be encapsulated behind a common shipping-calculation interface so callers select or receive a policy without knowing its formula.\",\"simpler_alternative\":\"If each checkout branch contains only a small, stable conditional, first centralize the calculation in one function with a carrier switch. Extract strategies when the fourth carrier arrives or when independent evolution and injection become useful.\",\"tradeoff\":\"Strategy removes carrier conditionals from callers, preserves each policy as a focused testable unit, and makes adding the approved carrier mostly additive. It also introduces an interface, implementations, and selection or registration wiring, which may be unnecessary ceremony if the policies remain trivial.\",\"verifier\":\"Refactor one existing carrier behind the proposed interface and run the focused behavior tests unchanged; then add the fourth carrier using only a new strategy plus composition/configuration wiring. Verify checkout callers contain no carrier formulas or carrier-specific branching and all existing outputs remain identical.\"}",
+      "usage": {
+        "input_tokens": 14507,
+        "cached_input_tokens": 14080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 209,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 13.871,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48c-dfaa-77e3-97b7-e0ad66322cf0"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"candidate\":true,\"pattern_automatic\":false,\"hidden_knowledge\":\"Yes. Carrier-specific shipping formulas are varying domain policies that should be encapsulated behind a common shipping-calculation interface so callers select or receive a policy without knowing its formula.\",\"simpler_alternative\":\"If each checkout branch contains only a small, stable conditional, first centralize the calculation in one function with a carrier switch. Extract strategies when the fourth carrier arrives or when independent evolution and injection become useful.\",\"tradeoff\":\"Strategy removes carrier conditionals from callers, preserves each policy as a focused testable unit, and makes adding the approved carrier mostly additive. It also introduces an interface, implementations, and selection or registration wiring, which may be unnecessary ceremony if the policies remain trivial.\",\"verifier\":\"Refactor one existing carrier behind the proposed interface and run the focused behavior tests unchanged; then add the fourth carrier using only a new strategy plus composition/configuration wiring. Verify checkout callers contain no carrier formulas or carrier-specific branching and all existing outputs remain identical.\"}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14507,
+            "cached_input_tokens": 14080,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 209,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "deep-module-review",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": false,
+      "assertions_passed": 3,
+      "assertions_total": 6,
+      "assertions": [
+        {
+          "passed": false,
+          "detail": "mode in ['review', 'review mode'] (got 'design_review')"
+        },
+        {
+          "passed": false,
+          "detail": "contains 'information leakage'"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['pass-through', 'shallow', 'temporal decomposition', 'conjoined']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['one', 'cohesive', 'deep', 'hide']"
+        },
+        {
+          "passed": true,
+          "detail": "design_alternatives_required == True (got True)"
+        },
+        {
+          "passed": false,
+          "detail": "contains any of ['knowledge', 'facts', 'modules', 'maintenance task', 'change locality']"
+        }
+      ],
+      "output": "{\"mode\":\"design_review\",\"primary_red_flags\":[\"Configuration is duplicated across every layer, increasing inconsistency and change risk.\",\"Three pass-through methods add indirection without adding behavior, policy, or abstraction value.\",\"The decomposition may reflect processing steps rather than independently meaningful components.\"],\"underlying_problem\":\"Responsibility boundaries and ownership are unclear: delimiter and escape semantics are cross-cutting, while wrapper layers expose nearly the same abstraction and behave as a forwarding chain.\",\"preferred_direction\":\"Create one parser-facing API and one authoritative immutable configuration/context object. Keep internal stages only where each owns a distinct transformation or invariant; otherwise collapse forwarding layers into a direct pipeline or cohesive parser implementation.\",\"design_alternatives_required\":true,\"success_measure\":\"One configuration source, no behavior-free forwarding methods, explicit ownership of validation/splitting/escaping rules, unchanged parsing behavior, and simpler tests and call paths.\"}",
+      "usage": {
+        "input_tokens": 13935,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 180,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 137.881,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n2026-08-02T22:16:53.344135Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48d-15d8-7b51-9684-21219bb47444"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"mode\":\"design_review\",\"primary_red_flags\":[\"Configuration is duplicated across every layer, increasing inconsistency and change risk.\",\"Three pass-through methods add indirection without adding behavior, policy, or abstraction value.\",\"The decomposition may reflect processing steps rather than independently meaningful components.\"],\"underlying_problem\":\"Responsibility boundaries and ownership are unclear: delimiter and escape semantics are cross-cutting, while wrapper layers expose nearly the same abstraction and behave as a forwarding chain.\",\"preferred_direction\":\"Create one parser-facing API and one authoritative immutable configuration/context object. Keep internal stages only where each owns a distinct transformation or invariant; otherwise collapse forwarding layers into a direct pipeline or cohesive parser implementation.\",\"design_alternatives_required\":true,\"success_measure\":\"One configuration source, no behavior-free forwarding methods, explicit ownership of validation/splitting/escaping rules, unchanged parsing behavior, and simpler tests and call paths.\"}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 13935,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 180,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "published-api-rename-is-migration",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": false,
+      "assertions_passed": 7,
+      "assertions_total": 8,
+      "assertions": [
+        {
+          "passed": false,
+          "detail": "mode in ['migration', 'migration mode'] (got 'compatibility_preserving_migration')"
+        },
+        {
+          "passed": true,
+          "detail": "refactoring_only == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['expand', 'coexist', 'add new', 'add getUser', 'compatibility alias']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['migrate', 'deprecate']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['contract', 'remove', 'retire']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['serialized', 'configuration', 'reflection', 'generated', 'external']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['unused', 'usage', 'evidence', 'consumer']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['mixed-version', 'old and new', 'rollback']"
+        }
+      ],
+      "output": "{\"mode\":\"compatibility_preserving_migration\",\"refactoring_only\":false,\"compatibility_sequence\":[\"Add getUser as the canonical implementation.\",\"Keep fetchUser as a deprecated forwarding alias to getUser.\",\"Update first-party consumers, documentation, types, examples, and generated artifacts to use getUser.\",\"Release the alias in at least one normal deprecation cycle with release notes and runtime or build-time warnings where appropriate.\",\"Remove fetchUser only in a documented breaking/major release after the removal gate is satisfied.\"],\"consumer_search\":[\"Search source, tests, documentation, examples, generated code, configuration, fixtures, and serialized scripts for fetchUser.\",\"Inspect package registries, public code search, telemetry, support reports, and deprecation-warning counts where available.\",\"Treat an incomplete search as evidence that compatibility must be retained, not as proof of zero usage.\"],\"removal_gate\":[\"The deprecation period and published support policy have elapsed.\",\"Known first-party consumers and serialized artifacts have migrated.\",\"Available telemetry and ecosystem searches show acceptably low or zero usage for a defined observation period.\",\"The breaking release, migration instructions, and replacement behavior are documented and communicated.\"],\"rollback_check\":\"Before removing the alias, verify that restoring fetchUser as a forwarding shim is safe and tested; after release, monitor errors and deprecation-related reports, and restore or patch the shim if unexpected consumers break.\"}",
+      "usage": {
+        "input_tokens": 14506,
+        "cached_input_tokens": 9984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 277,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 32.167,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48f-307d-71d1-aa61-9745452318ba"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"mode\":\"compatibility_preserving_migration\",\"refactoring_only\":false,\"compatibility_sequence\":[\"Add getUser as the canonical implementation.\",\"Keep fetchUser as a deprecated forwarding alias to getUser.\",\"Update first-party consumers, documentation, types, examples, and generated artifacts to use getUser.\",\"Release the alias in at least one normal deprecation cycle with release notes and runtime or build-time warnings where appropriate.\",\"Remove fetchUser only in a documented breaking/major release after the removal gate is satisfied.\"],\"consumer_search\":[\"Search source, tests, documentation, examples, generated code, configuration, fixtures, and serialized scripts for fetchUser.\",\"Inspect package registries, public code search, telemetry, support reports, and deprecation-warning counts where available.\",\"Treat an incomplete search as evidence that compatibility must be retained, not as proof of zero usage.\"],\"removal_gate\":[\"The deprecation period and published support policy have elapsed.\",\"Known first-party consumers and serialized artifacts have migrated.\",\"Available telemetry and ecosystem searches show acceptably low or zero usage for a defined observation period.\",\"The breaking release, migration instructions, and replacement behavior are documented and communicated.\"],\"rollback_check\":\"Before removing the alias, verify that restoring fetchUser as a forwarding shim is safe and tested; after release, monitor errors and deprecation-related reports, and restore or patch the shim if unexpected consumers break.\"}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14506,
+            "cached_input_tokens": 9984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 277,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "semantic-model-routing",
+      "skill": "refactor",
+      "variant": "baseline",
+      "references": [],
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": true,
+      "assertions_passed": 6,
+      "assertions_total": 6,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "A.lane == 'efficient' (got 'efficient')"
+        },
+        {
+          "passed": true,
+          "detail": "A.effort == 'low' (got 'low')"
+        },
+        {
+          "passed": true,
+          "detail": "B.lane == 'balanced' (got 'balanced')"
+        },
+        {
+          "passed": true,
+          "detail": "B.effort == 'medium' (got 'medium')"
+        },
+        {
+          "passed": true,
+          "detail": "C.lane == 'frontier' (got 'frontier')"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['high', 'xhigh']"
+        }
+      ],
+      "output": "{\"A\":{\"lane\":\"efficient\",\"effort\":\"low\"},\"B\":{\"lane\":\"balanced\",\"effort\":\"medium\"},\"C\":{\"lane\":\"frontier\",\"effort\":\"xhigh\"}}",
+      "usage": {
+        "input_tokens": 13949,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 42,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 57.495,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n2026-08-02T22:19:43.395432Z ERROR codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc48f-ae1d-7620-8bda-4d1f912de2a0"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"A\":{\"lane\":\"efficient\",\"effort\":\"low\"},\"B\":{\"lane\":\"balanced\",\"effort\":\"medium\"},\"C\":{\"lane\":\"frontier\",\"effort\":\"xhigh\"}}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 13949,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 42,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    }
+  ]
+}

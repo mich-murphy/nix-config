@@ -1,0 +1,179 @@
+{
+  "summary": {
+    "cases": 2,
+    "accepted": 2,
+    "assertions_passed": 12,
+    "assertions_total": 12,
+    "usage": {
+      "input_tokens": 29468,
+      "cached_input_tokens": 19968,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 119,
+      "reasoning_output_tokens": 0
+    },
+    "duration_seconds": 16.724,
+    "by_skill": {
+      "bro": {
+        "cases": 2,
+        "accepted": 2,
+        "assertions_passed": 12,
+        "assertions_total": 12,
+        "usage": {
+          "input_tokens": 29468,
+          "cached_input_tokens": 19968,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 119,
+          "reasoning_output_tokens": 0
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "bro-preserves-operational-detail",
+      "skill": "bro",
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": true,
+      "assertions_passed": 7,
+      "assertions_total": 7,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "contains '/srv/app/config.toml'"
+        },
+        {
+          "passed": true,
+          "detail": "contains 'cargo test -p worker'"
+        },
+        {
+          "passed": true,
+          "detail": "contains 'git reset --hard'"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['destroy', 'delete', 'lose', 'wipe']"
+        },
+        {
+          "passed": true,
+          "detail": "contains 'staging'"
+        },
+        {
+          "passed": true,
+          "detail": "omits 'this skill'"
+        },
+        {
+          "passed": true,
+          "detail": "word count 44 <= 105"
+        }
+      ],
+      "output": "## Deployment\n\nThe worker waits longer after each failed retry.\n\nEdit `/srv/app/config.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Don\u2019t run `git reset --hard`\u2014it would delete work that hasn\u2019t been committed.\n\nIf the test passes, deploy to staging.",
+      "usage": {
+        "input_tokens": 14750,
+        "cached_input_tokens": 9984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 70,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 8.038,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc1f6-e7a0-7b30-8b16-4ce243d49bf6"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "## Deployment\n\nThe worker waits longer after each failed retry.\n\nEdit `/srv/app/config.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Don\u2019t run `git reset --hard`\u2014it would delete work that hasn\u2019t been committed.\n\nIf the test passes, deploy to staging."
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14750,
+            "cached_input_tokens": 9984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 70,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "bro-keeps-simple-answer-simple",
+      "skill": "bro",
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "accepted": true,
+      "assertions_passed": 5,
+      "assertions_total": 5,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "contains any of ['repeat', 'again', 'retry']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['same result', \"won't change\", 'won\u2019t change', 'does not change', \"doesn't change\", 'extra changes']"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['timeout', 'times out']"
+        },
+        {
+          "passed": true,
+          "detail": "does not match /^#{1,6}\\s/"
+        },
+        {
+          "passed": true,
+          "detail": "word count 39 <= 55"
+        }
+      ],
+      "output": "An idempotent request is safe to repeat: after the first successful attempt, repeating it won\u2019t cause extra changes. This is useful when a request times out and the client isn\u2019t sure whether the server already completed it.",
+      "usage": {
+        "input_tokens": 14718,
+        "cached_input_tokens": 9984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 49,
+        "reasoning_output_tokens": 0
+      },
+      "duration_seconds": 8.686,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc1f7-065b-7063-8cea-750eaea54c7b"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "An idempotent request is safe to repeat: after the first successful attempt, repeating it won\u2019t cause extra changes. This is useful when a request times out and the client isn\u2019t sure whether the server already completed it."
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14718,
+            "cached_input_tokens": 9984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 49,
+            "reasoning_output_tokens": 0
+          }
+        }
+      ]
+    }
+  ]
+}

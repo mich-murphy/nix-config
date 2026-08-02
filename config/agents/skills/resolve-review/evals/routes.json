@@ -1,0 +1,18 @@
+{
+  "baseline": {
+    "default": {
+      "model": "gpt-5.6-sol",
+      "effort": "medium"
+    }
+  },
+  "candidate": {
+    "resolve-review-local-default-and-head-mismatch": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium"
+    },
+    "resolve-review-does-not-publish-red-validation": {
+      "model": "gpt-5.6-sol",
+      "effort": "high"
+    }
+  }
+}

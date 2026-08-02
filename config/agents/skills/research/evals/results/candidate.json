@@ -1,0 +1,163 @@
+{
+  "summary": {
+    "cases": 2,
+    "accepted": 2,
+    "assertions_passed": 8,
+    "assertions_total": 8,
+    "usage": {
+      "input_tokens": 28471,
+      "cached_input_tokens": 18944,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 172,
+      "reasoning_output_tokens": 56
+    },
+    "duration_seconds": 15.881,
+    "by_skill": {
+      "research": {
+        "cases": 2,
+        "accepted": 2,
+        "assertions_passed": 8,
+        "assertions_total": 8,
+        "usage": {
+          "input_tokens": 28471,
+          "cached_input_tokens": 18944,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 172,
+          "reasoning_output_tokens": 56
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "research-defaults-to-chat-and-primary-evidence",
+      "skill": "research",
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "accepted": true,
+      "assertions_passed": 5,
+      "assertions_total": 5,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "best_source_url == 'https://example.test/api-v2' (got 'https://example.test/api-v2')"
+        },
+        {
+          "passed": true,
+          "detail": "created_file == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "contains 'If-Match'"
+        },
+        {
+          "passed": true,
+          "detail": "contains any of ['does not establish', 'do not establish', \"doesn't establish\", 'not evidence', 'unsupported', 'cannot conclude', 'does not prove']"
+        },
+        {
+          "passed": true,
+          "detail": "contains 'atomic'"
+        }
+      ],
+      "output": "{\"answer\":\"Yes. Widget API v2 supports conditional writes on update requests via the `If-Match` header.\",\"best_source_url\":\"https://example.test/api-v2\",\"evidence_boundary\":\"This conclusion is based solely on the official API reference stating that `If-Match` is accepted on update requests. The community claim that all writes are atomic is unsupported and was not relied upon.\",\"created_file\":false}",
+      "usage": {
+        "input_tokens": 14965,
+        "cached_input_tokens": 9984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 123,
+        "reasoning_output_tokens": 33
+      },
+      "duration_seconds": 6.752,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc1fa-9f41-72c0-99a6-05d9c21d8d0f"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"answer\":\"Yes. Widget API v2 supports conditional writes on update requests via the `If-Match` header.\",\"best_source_url\":\"https://example.test/api-v2\",\"evidence_boundary\":\"This conclusion is based solely on the official API reference stating that `If-Match` is accepted on update requests. The community claim that all writes are atomic is unsupported and was not relied upon.\",\"created_file\":false}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 14965,
+            "cached_input_tokens": 9984,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 123,
+            "reasoning_output_tokens": 33
+          }
+        }
+      ]
+    },
+    {
+      "id": "research-asks-before-inventing-artifact-path",
+      "skill": "research",
+      "model": "gpt-5.6-luna",
+      "effort": "low",
+      "accepted": true,
+      "assertions_passed": 3,
+      "assertions_total": 3,
+      "assertions": [
+        {
+          "passed": true,
+          "detail": "contains any of ['ask', 'where', 'path', 'location']"
+        },
+        {
+          "passed": true,
+          "detail": "created_file == False (got False)"
+        },
+        {
+          "passed": true,
+          "detail": "invented_path == False (got False)"
+        }
+      ],
+      "output": "{\"next_action\":\"ask_where_to_save\",\"created_file\":false,\"invented_path\":false}",
+      "usage": {
+        "input_tokens": 13506,
+        "cached_input_tokens": 8960,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 49,
+        "reasoning_output_tokens": 23
+      },
+      "duration_seconds": 9.129,
+      "returncode": 0,
+      "stderr": "Reading additional input from stdin...\n",
+      "events": [
+        {
+          "type": "thread.started",
+          "thread_id": "019fc1fa-b99d-7743-bb4d-eaed0d2c06eb"
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "item": {
+            "id": "item_0",
+            "type": "agent_message",
+            "text": "{\"next_action\":\"ask_where_to_save\",\"created_file\":false,\"invented_path\":false}"
+          }
+        },
+        {
+          "type": "turn.completed",
+          "usage": {
+            "input_tokens": 13506,
+            "cached_input_tokens": 8960,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 49,
+            "reasoning_output_tokens": 23
+          }
+        }
+      ]
+    }
+  ]
+}

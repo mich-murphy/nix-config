@@ -1,0 +1,83 @@
+[
+  {
+    "id": "bro-preserves-operational-detail",
+    "skill": "bro",
+    "prompt": "The previous assistant response was:\n\n## Deployment\nThe worker uses exponential backoff, meaning every retry waits longer than the previous one. Edit `/srv/app/config.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Never run `git reset --hard` here because it would destroy uncommitted work. If the focused test passes, deploy to staging next.\n\nThe user replied: bro\n\nRewrite the previous response for that user.",
+    "assertions": [
+      {
+        "type": "contains",
+        "value": "/srv/app/config.toml"
+      },
+      {
+        "type": "contains",
+        "value": "cargo test -p worker"
+      },
+      {
+        "type": "contains",
+        "value": "git reset --hard"
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "destroy",
+          "delete",
+          "lose",
+          "wipe"
+        ]
+      },
+      {
+        "type": "contains",
+        "value": "staging"
+      },
+      {
+        "type": "not_contains",
+        "value": "this skill"
+      },
+      {
+        "type": "max_words",
+        "value": 105
+      }
+    ]
+  },
+  {
+    "id": "bro-keeps-simple-answer-simple",
+    "skill": "bro",
+    "prompt": "The previous assistant response was: An idempotent request can be repeated without changing the result after the first successful call. This matters when a client retries after a timeout because the server may already have completed the operation.\n\nThe user replied: Can you say that more simply?\n\nRewrite the previous response for that user.",
+    "assertions": [
+      {
+        "type": "contains_any",
+        "values": [
+          "repeat",
+          "again",
+          "retry"
+        ]
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "same result",
+          "won't change",
+          "won\u2019t change",
+          "does not change",
+          "doesn't change",
+          "extra changes"
+        ]
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "timeout",
+          "times out"
+        ]
+      },
+      {
+        "type": "not_regex",
+        "pattern": "^#{1,6}\\s"
+      },
+      {
+        "type": "max_words",
+        "value": 55
+      }
+    ]
+  }
+]

@@ -1,0 +1,61 @@
+[
+  {
+    "id": "hunk-discovers-session-safely",
+    "skill": "hunk-review",
+    "prompt": "A user says: 'Hunk is open for /work/project. Walk me through the current diff.' You are in a network sandbox. Do not execute anything. Return only JSON with keys `first_command`, `access`, and `launch_tui`, where `access` is the access/approval strategy and `launch_tui` is a boolean.",
+    "assertions": [
+      {
+        "type": "json_equals",
+        "path": "first_command",
+        "value": "hunk session list --json"
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "outside",
+          "approval",
+          "escalat"
+        ]
+      },
+      {
+        "type": "contains",
+        "value": "hunk session"
+      },
+      {
+        "type": "json_equals",
+        "path": "launch_tui",
+        "value": false
+      }
+    ]
+  },
+  {
+    "id": "hunk-inspects-before-patch",
+    "skill": "hunk-review",
+    "prompt": "Session discovery returned one matching session with ID `s-42` and Repo `/work/project`. The user asks you to review it, but has not asked for comments or navigation. Do not execute anything. Return only JSON with keys `commands` (an ordered array) and `mutate_comments` (boolean). Include only the minimum commands needed to confirm the session and inspect its file/hunk structure before raw patch text is known to be necessary.",
+    "assertions": [
+      {
+        "type": "json_equals",
+        "path": "commands.0",
+        "value": "hunk session get s-42 --json"
+      },
+      {
+        "type": "json_equals",
+        "path": "commands.1",
+        "value": "hunk session review s-42 --json"
+      },
+      {
+        "type": "json_equals",
+        "path": "mutate_comments",
+        "value": false
+      },
+      {
+        "type": "not_contains",
+        "value": "--include-patch"
+      },
+      {
+        "type": "not_contains",
+        "value": "hunk diff"
+      }
+    ]
+  }
+]

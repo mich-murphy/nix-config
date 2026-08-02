@@ -1,0 +1,78 @@
+[
+  {
+    "id": "resolve-review-local-default-and-head-mismatch",
+    "skill": "resolve-review",
+    "prompt": "A user says: 'Address the feedback on PR 17.' Local state: the worktree has unrelated modified files; local HEAD is `aaa`; PR head OID is `bbb`; one unresolved thread asks for a null check. Do not execute commands. Return only JSON with keys `mode`, `remote_mutation_authorized`, `edit_now`, `next_action`, and `thread_accounted_for`.",
+    "assertions": [
+      {
+        "type": "json_equals",
+        "path": "mode",
+        "value": "local"
+      },
+      {
+        "type": "json_equals",
+        "path": "remote_mutation_authorized",
+        "value": false
+      },
+      {
+        "type": "json_equals",
+        "path": "edit_now",
+        "value": false
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "mismatch",
+          "PR head",
+          "checkout",
+          "safely reach",
+          "aaa",
+          "bbb"
+        ]
+      },
+      {
+        "type": "json_truthy",
+        "path": "thread_accounted_for"
+      }
+    ]
+  },
+  {
+    "id": "resolve-review-does-not-publish-red-validation",
+    "skill": "resolve-review",
+    "prompt": "The user explicitly requested end-to-end handling. Local fixes are complete, but the required test suite still fails. One other thread is a technically justified disagreement. Do not execute commands. Return only JSON with keys `push`, `resolve_fixed_thread`, `resolve_disagreement_thread`, `report_validation`, and `remaining_threads`.",
+    "assertions": [
+      {
+        "type": "json_equals",
+        "path": "push",
+        "value": false
+      },
+      {
+        "type": "json_equals",
+        "path": "resolve_fixed_thread",
+        "value": false
+      },
+      {
+        "type": "json_equals",
+        "path": "resolve_disagreement_thread",
+        "value": false
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "fail",
+          "red",
+          "exact",
+          "limitation"
+        ]
+      },
+      {
+        "type": "contains_any",
+        "values": [
+          "disagreement",
+          "unresolved",
+          "fixed"
+        ]
+      }
+    ]
+  }
+]
