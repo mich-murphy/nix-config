@@ -1,6 +1,5 @@
 {
   config,
-  pkgs,
   repoRoot,
   ...
 }: let
@@ -19,22 +18,8 @@ in {
     ".config/agent-observability".source = liveLink "${agentConfig}/telemetry";
   };
 
-  home.packages = [
-    (pkgs.writeShellApplication {
-      name = "codex-observed";
-      text = ''exec codex --profile observability "$@"'';
-    })
-    (pkgs.writeShellApplication {
-      name = "claude-observed";
-      text = ''exec claude --settings "$HOME/.claude/observability.settings.json" "$@"'';
-    })
-    (pkgs.writeShellApplication {
-      name = "pi-observed";
-      text = ''
-        export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://docker-host:4318/v1/traces"
-        export APP_AGENT_SCHEMA_VERSION="1.0.0"
-        exec pi "$@"
-      '';
-    })
-  ];
+  programs.fish.shellAliases = {
+    codex = "command codex --profile observability";
+    claude = "command claude --settings ~/.claude/observability.settings.json";
+  };
 }

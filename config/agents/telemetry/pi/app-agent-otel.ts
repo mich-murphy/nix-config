@@ -16,7 +16,8 @@ type Span = {
 const SCHEMA_VERSION = "1.0.0";
 const MAX_PENDING_EXPORTS = 64;
 const endpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-  ?? process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  ?? process.env.OTEL_EXPORTER_OTLP_ENDPOINT
+  ?? "http://docker-host:4318/v1/traces";
 const pending: unknown[] = [];
 
 const hex = (bytes: number) => randomBytes(bytes).toString("hex");
