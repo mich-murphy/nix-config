@@ -251,7 +251,7 @@ def command_for(
     ]
 
 
-def parse_output(harness: str, stdout: str) -> tuple[str, dict[str, int], list[Any]]:
+def parse_output(harness: str, stdout: str) -> tuple[str, dict[str, Any], list[Any]]:
     if harness == "codex":
         events = []
         for line in stdout.splitlines():
@@ -272,7 +272,9 @@ def parse_output(harness: str, stdout: str) -> tuple[str, dict[str, int], list[A
             event = json.loads(stdout)
         except json.JSONDecodeError:
             return stdout.strip(), {}, []
-        usage = event.get("usage", {})
+        usage = dict(event.get("usage", {}))
+        if isinstance(event.get("total_cost_usd"), (int, float)):
+            usage["total_cost_usd"] = event["total_cost_usd"]
         return str(event.get("result", "")), usage, [event]
     return stdout.strip(), {}, []
 
@@ -327,6 +329,15 @@ def returned_model_for(events: list[Any]) -> str:
             value = message.get("model")
             if isinstance(value, str) and value:
                 return value
+        model_usage = event.get("modelUsage")
+        if isinstance(model_usage, dict):
+            canonical = {
+                item.get("canonicalModel")
+                for item in model_usage.values()
+                if isinstance(item, dict) and isinstance(item.get("canonicalModel"), str)
+            }
+            if len(canonical) == 1:
+                return canonical.pop()
     return "not_observed"
 
 

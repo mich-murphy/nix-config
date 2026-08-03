@@ -72,6 +72,24 @@ class EvalRuntimeTests(unittest.TestCase):
         self.assertEqual(metadata["app.agent.outcome.verifier"], "assertion-scorer@eval-hash")
         self.assertEqual(metadata["app.agent.cost.status"], "not_observed")
 
+    def test_claude_parser_retains_returned_model_and_cost(self) -> None:
+        event = {
+            "type": "result",
+            "result": "done",
+            "usage": {"input_tokens": 2, "output_tokens": 1},
+            "total_cost_usd": 0.012,
+            "modelUsage": {
+                "provider-versioned-id": {"canonicalModel": "claude-haiku-4-5"},
+                "claude-haiku-4-5": {"canonicalModel": "claude-haiku-4-5"},
+            },
+        }
+
+        output, usage, events = eval_runtime.parse_output("claude", json.dumps(event))
+
+        self.assertEqual(output, "done")
+        self.assertEqual(usage["total_cost_usd"], 0.012)
+        self.assertEqual(eval_runtime.returned_model_for(events), "claude-haiku-4-5")
+
     def test_run_result_returns_exported_mlflow_trace_id(self) -> None:
         eval_dir = ROOT / "skills" / "bro" / "evals"
         case = json.loads((eval_dir / "cases.json").read_text())[0]
