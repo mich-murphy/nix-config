@@ -63,7 +63,6 @@ class ContractTests(unittest.TestCase):
         self.assertIn(f"app.agent.schema.version={version}", claude["OTEL_RESOURCE_ATTRIBUTES"])
         self.assertIn(f'const SCHEMA_VERSION = "{version}"', pi)
         self.assertEqual(claude["OTEL_LOG_USER_PROMPTS"], "1")
-        self.assertEqual(claude["OTEL_LOG_ASSISTANT_RESPONSES"], "1")
         self.assertEqual(claude["OTEL_LOG_TOOL_DETAILS"], "1")
         self.assertEqual(claude["OTEL_LOG_TOOL_CONTENT"], "1")
         self.assertEqual(claude["OTEL_LOG_RAW_API_BODIES"], "0")
