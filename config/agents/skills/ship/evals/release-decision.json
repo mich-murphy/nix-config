@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "alpha",
+  "decision": "defer",
+  "owner": "human",
+  "reason": "The package and deterministic state gates are implemented, but authenticated cross-harness outcome runs and writable repository integration cases have not yet been recorded.",
+  "known_limitations": [
+    "No incumbent ship package exists.",
+    "The shared evaluator injects skill text and forbids tools or file modification, so its cases do not establish real coding quality.",
+    "Fresh-context review activation needs harness telemetry and live task validation.",
+    "Deployment is intentionally outside this package."
+  ]
+}

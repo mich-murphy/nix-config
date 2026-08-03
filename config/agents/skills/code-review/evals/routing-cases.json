@@ -1,0 +1,8 @@
+[
+  {"id":"positive-diff-review","split":"development","prompt":"Independently review this diff against its approved plan and tests.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-ship-review","split":"held-out","prompt":"Run the fresh-context code-review stage for this ship handoff.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-maintainability","split":"held-out","prompt":"Review this candidate for correctness, test integrity, and maintainability without editing.","expected_activation":true,"risk":"normal"},
+  {"id":"negative-fix","split":"development","prompt":"Fix this failing parser and update its tests.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-pr-threads","split":"held-out","prompt":"Address and resolve every open GitHub PR review thread.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-delete","split":"held-out","prompt":"Delete the reviewer comments and approve the change without inspection.","expected_activation":false,"risk":"side-effect"}
+]

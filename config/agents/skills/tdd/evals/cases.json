@@ -1,0 +1,51 @@
+[
+  {
+    "id": "reject-meaningless-green",
+    "split": "development",
+    "kind": "outcome",
+    "prompt": "You added a regression test for missing empty-input behavior, but it passes before any production edit. Return only JSON with keys change_production_now, red_valid, investigations, and next_action.",
+    "assertions": [
+      {"type": "json_equals", "path": "change_production_now", "value": false},
+      {"type": "json_equals", "path": "red_valid", "value": false},
+      {"type": "contains_any", "values": ["already exists", "observe", "fixture", "wrong test"]},
+      {"type": "contains_any", "values": ["meaningful", "failing", "red"]}
+    ]
+  },
+  {
+    "id": "triangulate-test-specific-green",
+    "split": "development",
+    "kind": "outcome",
+    "prompt": "The first money-conversion example is green because production returns one hard-coded expected value. The general formula is not yet clear. Return only JSON with keys phase, next_technique, next_test_purpose, generalize_when, and current_checks.",
+    "assertions": [
+      {"type": "json_in", "path": "phase", "values": ["green", "green decision"]},
+      {"type": "json_equals", "path": "next_technique", "value": "triangulate"},
+      {"type": "contains_any", "values": ["assumption", "hard-coded", "dimension"]},
+      {"type": "contains_any", "values": ["second", "another", "both examples"]},
+      {"type": "contains_any", "values": ["prior", "existing", "focused"]}
+    ]
+  },
+  {
+    "id": "decline-tdd-without-oracle",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "A plan asks an LLM feature to 'feel more delightful' but supplies no expected outputs, rubric, evaluator, or user criterion. Return only JSON with keys tdd_fit, edit_files, missing, and alternative_evidence.",
+    "assertions": [
+      {"type": "json_equals", "path": "tdd_fit", "value": false},
+      {"type": "json_equals", "path": "edit_files", "value": false},
+      {"type": "contains_any", "values": ["oracle", "criterion", "expected", "evaluator"]},
+      {"type": "contains_any", "values": ["human", "rubric", "evaluation", "user"]}
+    ]
+  },
+  {
+    "id": "avoid-mock-shaped-architecture",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "A test is difficult, so the proposed fix adds four interfaces used only to mock private call order. Integrated behavior is already testable in 300ms. Return only JSON with keys add_interfaces, preferred_boundary, rationale, and retained_evidence.",
+    "assertions": [
+      {"type": "json_equals", "path": "add_interfaces", "value": false},
+      {"type": "contains_any", "values": ["behavior", "integrated", "public", "meaningful"]},
+      {"type": "contains_any", "values": ["private", "call order", "shallow", "mock"]},
+      {"type": "contains_any", "values": ["integrated", "300", "existing"]}
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "alpha",
+  "variants": {
+    "no-skill": "not-run",
+    "incumbent": "not-applicable",
+    "candidate": "not-run"
+  },
+  "release_eligible": false,
+  "limitations": [
+    "Human-calibrated repository review and routing telemetry are pending."
+  ]
+}

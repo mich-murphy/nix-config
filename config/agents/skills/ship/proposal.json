@@ -1,0 +1,57 @@
+{
+  "evidence": {
+    "kind": "reviewed_workflow_and_failure_controls",
+    "references": [
+      "/Users/mm/dev/agentic-workflow/docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md",
+      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kun-chen-current-workflow.md",
+      "/Users/mm/dev/nix-config/config/agents/skills/refactor/SKILL.md",
+      "/Users/mm/dev/nix-config/config/agents/skills/resolve-review/SKILL.md"
+    ],
+    "frequency_or_severity": "Every nontrivial implemented change needs trustworthy behavioral evidence and independent review; stale review evidence and invented plan decisions are high-severity failures.",
+    "owner": "human"
+  },
+  "job": "Take an implementation-ready plan through test-driven implementation, verification, fresh-context review, bounded remediation, and a release-ready decision.",
+  "container": {
+    "choice": "skill_with_deterministic_state_script",
+    "rejected_alternatives": [
+      "Repository instructions cannot express a reusable cross-repository lifecycle.",
+      "A prose-only skill cannot safely enforce state order or stale-evidence invalidation.",
+      "Research, architecture planning, and deployment are separate jobs."
+    ]
+  },
+  "positive_triggers": [
+    "Explicit request to ship an approved implementation plan.",
+    "Request to manage implementation through TDD and independent review.",
+    "Validated handoff containing settled requirements and design decisions."
+  ],
+  "negative_triggers": [
+    "Requirements research or product discovery.",
+    "Architecture or program design with unresolved consequential decisions.",
+    "Review-only, PR-thread-only, or deployment-only requests."
+  ],
+  "inputs": [
+    "Implementation-ready plan.",
+    "Repository instructions and codebase.",
+    "Acceptance criteria, non-goals, constraints, and required verification."
+  ],
+  "outputs": [
+    "Release-ready candidate or an exact stopped-state handoff.",
+    "TDD, verification, and independent-review evidence.",
+    "Remaining risks and unexecuted checks."
+  ],
+  "default": "Modify locally, require fresh independent review, and stop at release-ready without committing, pushing, merging, publishing, or deploying.",
+  "forbidden_effects": [
+    "Invent unresolved requirements or architecture decisions.",
+    "Weaken or bypass tests.",
+    "Self-certify through the implementation context.",
+    "Deploy or release.",
+    "Overwrite user work or expand scope."
+  ],
+  "completion_checks": [
+    "Plan and readiness artifacts remain unchanged.",
+    "Acceptance criteria and repository-required checks pass.",
+    "The candidate has a fresh independent pass review.",
+    "No blocking finding remains.",
+    "The deterministic state validator reports release-ready."
+  ]
+}

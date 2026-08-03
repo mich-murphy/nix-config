@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "alpha",
+  "decision": "defer",
+  "owner": "human",
+  "reason": "The independent review contract and routing cases are implemented, but human-calibrated finding quality and authenticated cross-harness repetitions have not yet been recorded.",
+  "known_limitations": [
+    "No incumbent code-review package exists.",
+    "Text fixtures do not establish real-repository recall, false-positive rate, or fresh-context isolation.",
+    "Review quality requires maintainer labels and delayed escaped-defect evidence."
+  ]
+}

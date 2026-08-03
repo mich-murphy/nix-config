@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "alpha",
+  "decision": "defer",
+  "owner": "human",
+  "reason": "The explicit authority, preflight, observation, and recovery contracts are implemented, but no safe authenticated deployment integration matrix has been recorded.",
+  "known_limitations": [
+    "No incumbent deploy package exists.",
+    "No production mutation is exercised by the text-only evaluation runtime.",
+    "Provider-specific deployment paths, permissions, telemetry, and recovery require repository-local integration cases."
+  ]
+}

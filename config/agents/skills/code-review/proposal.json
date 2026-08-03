@@ -1,0 +1,52 @@
+{
+  "evidence": {
+    "kind": "official_review_guidance_and_practitioner_synthesis",
+    "references": [
+      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/riccomini-ryaboy-missing-readme.md",
+      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kent-beck-test-driven-development-by-example.md",
+      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kun-chen-current-workflow.md"
+    ],
+    "frequency_or_severity": "Implementation agents can miss requirement, test-integrity, design, compatibility, and operational defects; self-review is vulnerable to context anchoring.",
+    "owner": "human"
+  },
+  "job": "Independently review a candidate against its plan, repository constraints, tests, compatibility, and operational obligations, without editing it.",
+  "container": {
+    "choice": "skill",
+    "rejected_alternatives": [
+      "Static tools cannot judge intent, maintainability, or evidence gaps.",
+      "PR feedback remediation is a different workflow owned by resolve-review."
+    ]
+  },
+  "positive_triggers": [
+    "Fresh-context review of an implemented change.",
+    "Review a diff against an approved plan.",
+    "A ship review handoff requests structured findings."
+  ],
+  "negative_triggers": [
+    "Implement, refactor, or fix the code.",
+    "Address existing GitHub review threads.",
+    "Explain code without assessing a candidate change."
+  ],
+  "inputs": [
+    "Original plan and acceptance criteria.",
+    "Repository instructions, base revision, candidate diff, tests, and verification evidence."
+  ],
+  "outputs": [
+    "Prioritized evidence-backed findings.",
+    "Pass, changes-required, or replan verdict.",
+    "TDD, refactor, replan, clarification, or accept route for each finding."
+  ],
+  "default": "Remain read-only, reconstruct intent independently, and report only material findings.",
+  "forbidden_effects": [
+    "Modify files or remediate findings.",
+    "Trust the implementer's summary over primary artifacts.",
+    "Treat preferences as defects.",
+    "Claim safety beyond inspected evidence."
+  ],
+  "completion_checks": [
+    "Plan, diff, tests, and evidence were inspected.",
+    "Blocking findings include location, evidence, consequence, and route.",
+    "Verdict is consistent with the findings.",
+    "No edits were made."
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "evidence": {
+    "kind": "expert_demonstration_and_agent_failure_report",
+    "references": [
+      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kent-beck-test-driven-development-by-example.md",
+      "/Users/mm/dev/agentic-workflow/docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md",
+      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/riccomini-ryaboy-missing-readme.md"
+    ],
+    "frequency_or_severity": "Agents routinely code ahead, accept meaningless green tests, couple tests to implementation, and mix behavior with cleanup; these failures undermine correctness and maintainability.",
+    "owner": "human"
+  },
+  "job": "Drive one predictable behavior at a time through a meaningful red, the smallest real green implementation, and optional green-state refactoring.",
+  "container": {
+    "choice": "skill",
+    "rejected_alternatives": [
+      "A deterministic script cannot choose behavioral examples or observation boundaries.",
+      "Generic testing knowledge does not reliably enforce meaningful red-green-refactor discipline."
+    ]
+  },
+  "positive_triggers": [
+    "Implement a predictable behavior using TDD.",
+    "Reproduce and fix a defect with a failing regression test.",
+    "A ship handoff requests behavior-mode implementation."
+  ],
+  "negative_triggers": [
+    "Pure refactoring with no intended behavior change.",
+    "Architecture, product, deployment, or research work.",
+    "Emergent or nondeterministic output without a trustworthy executable oracle."
+  ],
+  "inputs": [
+    "Named behavior and preserved contracts.",
+    "Approved design constraints.",
+    "Repository test commands and relevant existing tests."
+  ],
+  "outputs": [
+    "Living behavioral test list.",
+    "Observed red and green evidence.",
+    "Production change and test-quality handoff.",
+    "Explicit non-TDD risks and verifiers."
+  ],
+  "default": "Add one behavior-focused test, observe the intended failure, make the smallest real passing change, and refactor only from green.",
+  "forbidden_effects": [
+    "Write production behavior before a meaningful red when TDD applies.",
+    "Weaken assertions or paste actual output into expectations.",
+    "Disable existing checks or add test-only production branches.",
+    "Create mock-shaped architecture or speculative abstractions.",
+    "Claim tests establish architecture or production safety."
+  ],
+  "completion_checks": [
+    "Every implemented behavior has meaningful failure and passing evidence.",
+    "Focused and relevant prior tests pass.",
+    "Tests observe behavior rather than private structure.",
+    "Discoveries and non-TDD risks are reported."
+  ]
+}

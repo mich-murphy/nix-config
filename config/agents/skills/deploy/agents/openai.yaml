@@ -1,0 +1,6 @@
+interface:
+  display_name: "Deploy"
+  short_description: "Deploy and verify a release-ready candidate"
+  default_prompt: "Use $deploy to deploy this release-ready candidate through the repository's normal path and verify its health."
+policy:
+  allow_implicit_invocation: false

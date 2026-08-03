@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ship"
+  short_description: "Manage implementation through release readiness"
+  default_prompt: "Use $ship to implement this approved plan through TDD, fresh review, and release readiness."
+policy:
+  allow_implicit_invocation: false

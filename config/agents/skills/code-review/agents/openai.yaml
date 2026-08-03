@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Review"
+  short_description: "Run an independent evidence-led code review"
+  default_prompt: "Use $code-review to independently review this candidate against its plan, tests, and repository constraints."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "TDD"
+  short_description: "Drive behavior with disciplined TDD"
+  default_prompt: "Use $tdd to implement this behavior one meaningful red-green-refactor cycle at a time."

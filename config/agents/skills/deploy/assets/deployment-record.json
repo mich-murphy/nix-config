@@ -1,0 +1,16 @@
+{
+  "status": "blocked",
+  "candidate": "",
+  "target": "",
+  "authority": "",
+  "commands": [],
+  "deployment_marker": "",
+  "exposure": "",
+  "observations": [],
+  "recovery": {
+    "action": "",
+    "result": ""
+  },
+  "remaining_risks": [],
+  "next_owner": ""
+}

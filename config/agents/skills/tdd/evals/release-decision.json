@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "alpha",
+  "decision": "defer",
+  "owner": "human",
+  "reason": "The evidence-backed behavioral contract and evaluation package are implemented, but authenticated cross-harness repetitions and writable repository cases have not yet been recorded.",
+  "known_limitations": [
+    "No incumbent TDD package exists.",
+    "Current text-only cases test decisions but not actual red-green ordering or test integrity in a repository.",
+    "The contract is a local-trial synthesis; general quality uplift is unproven."
+  ]
+}
