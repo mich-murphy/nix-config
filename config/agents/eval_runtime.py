@@ -193,8 +193,12 @@ trace_exporter = { "otlp-http" = { endpoint = "http://docker-host:4318/v1/traces
                         "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": env[
                             "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
                         ],
-                        "OTEL_LOG_USER_PROMPTS": "0",
-                        "OTEL_LOG_TOOL_DETAILS": "0",
+                        "OTEL_LOG_USER_PROMPTS": "1",
+                        "OTEL_LOG_ASSISTANT_RESPONSES": "1",
+                        "OTEL_LOG_TOOL_DETAILS": "1",
+                        "OTEL_LOG_TOOL_CONTENT": "1",
+                        "OTEL_LOG_RAW_API_BODIES": "0",
+                        "CLAUDE_CODE_OTEL_CONTENT_MAX_LENGTH": "61440",
                     }
                 }
             )

@@ -40,11 +40,33 @@ class ContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.validate({"annotation_id": "short"})
 
-    def test_normal_contract_has_no_content_fields(self) -> None:
+    def test_rich_contract_exposes_content_without_credential_fields(self) -> None:
         schema = json.loads((ROOT / "schemas" / "task-record.schema.json").read_text())
-        forbidden = {"prompt", "source", "diff", "command", "path", "payload", "body"}
-        properties = {name.rsplit(".", 1)[-1] for name in schema["properties"]}
-        self.assertTrue(forbidden.isdisjoint(properties))
+        properties = set(schema["properties"])
+        self.assertTrue({
+            "gen_ai.input.messages",
+            "gen_ai.output.messages",
+            "gen_ai.tool.call.arguments",
+            "gen_ai.tool.call.result",
+        }.issubset(properties))
+        forbidden = {"authorization", "cookie", "password", "api_key", "access_token", "refresh_token", "private_key"}
+        leaf_names = {name.rsplit(".", 1)[-1] for name in properties}
+        self.assertTrue(forbidden.isdisjoint(leaf_names))
+
+    def test_harnesses_use_rich_contract_version_and_safe_content_gates(self) -> None:
+        schema = json.loads((ROOT / "schemas" / "task-record.schema.json").read_text())
+        version = schema["properties"]["app.agent.schema.version"]["const"]
+        claude = json.loads((ROOT / "claude-observability.settings.json").read_text())["env"]
+        pi = (ROOT / "pi" / "app-agent-otel.ts").read_text()
+
+        self.assertIn(f"Contract {version}", (ROOT / "contract.md").read_text())
+        self.assertIn(f"app.agent.schema.version={version}", claude["OTEL_RESOURCE_ATTRIBUTES"])
+        self.assertIn(f'const SCHEMA_VERSION = "{version}"', pi)
+        self.assertEqual(claude["OTEL_LOG_USER_PROMPTS"], "1")
+        self.assertEqual(claude["OTEL_LOG_ASSISTANT_RESPONSES"], "1")
+        self.assertEqual(claude["OTEL_LOG_TOOL_DETAILS"], "1")
+        self.assertEqual(claude["OTEL_LOG_TOOL_CONTENT"], "1")
+        self.assertEqual(claude["OTEL_LOG_RAW_API_BODIES"], "0")
 
 
 if __name__ == "__main__":

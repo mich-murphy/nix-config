@@ -13,8 +13,9 @@ type Span = {
   status?: "ok" | "error";
 };
 
-const SCHEMA_VERSION = "1.0.0";
+const SCHEMA_VERSION = "1.1.0";
 const MAX_PENDING_EXPORTS = 64;
+const MAX_CONTENT_LENGTH = 61_440;
 const endpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
   ?? process.env.OTEL_EXPORTER_OTLP_ENDPOINT
   ?? "http://docker-host:4318/v1/traces";
@@ -23,6 +24,47 @@ const pending: unknown[] = [];
 const hex = (bytes: number) => randomBytes(bytes).toString("hex");
 const now = () => (BigInt(Date.now()) * 1_000_000n).toString();
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+
+function truncate(value: string): string {
+  if (value.length <= MAX_CONTENT_LENGTH) return value;
+  const marker = `[TRUNCATED ${value.length - MAX_CONTENT_LENGTH} CHARS]`;
+  return `${value.slice(0, MAX_CONTENT_LENGTH - marker.length)}${marker}`;
+}
+
+function jsonAttribute(value: unknown): string {
+  try {
+    return truncate(JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item) ?? "null");
+  } catch {
+    return truncate(String(value));
+  }
+}
+
+function inputMessages(prompt: string): string {
+  return jsonAttribute([{ role: "user", parts: [{ type: "text", content: prompt }] }]);
+}
+
+function outputMessages(message: unknown): string {
+  const value = message as { content?: Array<Record<string, unknown>>; stopReason?: string };
+  const parts: Array<Record<string, unknown>> = [];
+  for (const item of value.content ?? []) {
+    if (item.type === "text" && typeof item.text === "string") {
+      parts.push({ type: "text", content: item.text });
+    }
+    if (item.type === "toolCall" && typeof item.name === "string") {
+      parts.push({
+        type: "tool_call",
+        ...(typeof item.id === "string" ? { id: item.id } : {}),
+        name: item.name,
+        arguments: item.arguments ?? {},
+      });
+    }
+  }
+  return jsonAttribute([{
+    role: "assistant",
+    parts,
+    ...(typeof value.stopReason === "string" ? { finish_reason: value.stopReason } : {}),
+  }]);
+}
 
 function otlpValue(value: string | number | boolean): Record<string, unknown> {
   if (typeof value === "boolean") return { boolValue: value };
@@ -102,6 +144,7 @@ export default function appAgentOtel(pi: ExtensionAPI) {
   let spans: Span[] = [];
   let currentTurn: Span | undefined;
   let taskStartedAtMs = 0;
+  let pendingPrompt = "";
   const tools = new Map<string, Span>();
 
   const resource = (): Attributes => ({
@@ -121,6 +164,10 @@ export default function appAgentOtel(pi: ExtensionAPI) {
     await flush();
   });
 
+  pi.on("before_agent_start", (event) => {
+    pendingPrompt = event.prompt;
+  });
+
   pi.on("agent_start", async (_event, ctx) => {
     const traceId = hex(16);
     task = {
@@ -138,8 +185,10 @@ export default function appAgentOtel(pi: ExtensionAPI) {
         "app.agent.model.returned": ctx.model?.id ?? "not_observed",
         "app.agent.model.effort": ctx.thinkingLevel ?? "not_observed",
         "app.agent.permission.decision": "not_observed",
+        "gen_ai.input.messages": inputMessages(pendingPrompt),
       },
     };
+    pendingPrompt = "";
     taskStartedAtMs = Date.now();
     spans = [];
   });
@@ -167,6 +216,10 @@ export default function appAgentOtel(pi: ExtensionAPI) {
       attributes: {
         "app.agent.record.type": "tool",
         "app.agent.tool.type": toolType(event.toolName),
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": event.toolName,
+        "gen_ai.tool.call.id": event.toolCallId,
+        "gen_ai.tool.call.arguments": jsonAttribute(event.args),
       },
     });
   });
@@ -177,6 +230,7 @@ export default function appAgentOtel(pi: ExtensionAPI) {
     span.endTimeUnixNano = now();
     span.status = event.isError ? "error" : "ok";
     span.attributes["app.agent.tool.status"] = event.isError ? "error" : "ok";
+    span.attributes["gen_ai.tool.call.result"] = jsonAttribute(event.result);
     spans.push(span);
     tools.delete(event.toolCallId);
   });
@@ -193,6 +247,7 @@ export default function appAgentOtel(pi: ExtensionAPI) {
       currentTurn.attributes["gen_ai.usage.output_tokens"] = usage.output;
       currentTurn.attributes["app.agent.tokens.cached"] = usage.cacheRead;
       currentTurn.attributes["app.agent.tokens.reasoning"] = usage.reasoning ?? 0;
+      currentTurn.attributes["gen_ai.output.messages"] = outputMessages(event.message);
     }
     spans.push(currentTurn);
     currentTurn = undefined;
@@ -222,8 +277,10 @@ export default function appAgentOtel(pi: ExtensionAPI) {
     });
   });
 
-  pi.on("agent_end", async () => {
+  pi.on("agent_end", async (event) => {
     if (!task) return;
+    const finalAssistant = [...event.messages].reverse().find((message) => message.role === "assistant");
+    if (finalAssistant) task.attributes["gen_ai.output.messages"] = outputMessages(finalAssistant);
     task.endTimeUnixNano = now();
     task.status = "ok";
     task.attributes["app.agent.final.status"] = "accepted";

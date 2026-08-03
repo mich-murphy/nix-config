@@ -1,4 +1,4 @@
-# Application Agent Telemetry Contract 1.0.0
+# Application Agent Telemetry Contract 1.1.0
 
 This contract extends OpenTelemetry GenAI semantic conventions with the
 `app.agent.*` namespace. OpenTelemetry remains the transport and policy
@@ -15,7 +15,7 @@ Use these record types and parent them beneath `agent.task`:
 
 - `skill.activate` for selection, activation, and branch-specific resource use;
 - `gen_ai.invoke_agent` and standard GenAI spans for model work;
-- `tool.execute` for a content-free tool category and result;
+- `tool.execute` for the tool category, arguments, result, and status;
 - `permission.wait` for a requested and completed permission decision;
 - `validation.run` for tests, builds, lint, review, or policy checks; and
 - `outcome.record` for append-only CI, review, merge, revert, incident, owner,
@@ -37,14 +37,25 @@ labels. They may remain trace-only attributes when policy permits.
 
 ## Content policy
 
-Normal telemetry is metadata-only. Do not emit prompts, model messages,
-reasoning, source, diffs, commands, file paths, tool arguments/results, request
-or response bodies, environment variables, authorization data, or secrets.
-Content capture requires a separately approved pipeline and storage policy.
+Operational traces may include prompts, assistant responses, source, diffs,
+commands, file paths, and tool arguments and results in the approved self-hosted
+pipeline. Record structured GenAI content in `gen_ai.input.messages`,
+`gen_ai.output.messages`, `gen_ai.tool.call.arguments`, and
+`gen_ai.tool.call.result` when the harness exposes it. Do not record hidden
+reasoning or raw provider request and response bodies.
 
-The Collector must fail closed with an attribute allowlist, mask seeded secret
-patterns, retry asynchronously, and expose queue, rejection, and export-failure
-telemetry. An exporter outage never changes the agent task result.
+Never retain environment-variable collections, authorization or proxy
+authorization headers, cookies, passwords, API keys, access or refresh tokens,
+private keys, or other credentials. The Collector must mask
+credential-shaped attributes and seeded secret patterns in retained values,
+retry asynchronously, and expose queue, rejection, and export-failure
+telemetry. Rich content is trace-only and must never become a metric label. An
+exporter outage never changes the agent task result.
+
+Harnesses may expose different content over their trace signal. Record the
+richest native trace available without scraping private session databases or
+adding launch wrappers solely for telemetry. Mark unavailable content as not
+observed rather than reconstructing it from unstable internal storage.
 
 ## Outcomes and annotations
 
