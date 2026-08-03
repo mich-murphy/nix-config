@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Add the owned evaluation and release skeleton to an initialized skill."""
+"""Add an evidence, evaluation, telemetry, and release skeleton to a skill."""
 
 from __future__ import annotations
 
@@ -13,29 +13,68 @@ ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "assets" / "templates"
 
 
-def main() -> None:
+def write_if_missing(source: Path, target: Path) -> bool:
+    if target.exists():
+        return False
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    return True
+
+
+def scaffold(skill: Path, proposal_path: Path) -> list[Path]:
+    if not (skill / "SKILL.md").is_file():
+        raise ValueError("run the harness's official skill initializer first")
+    proposal = json.loads(proposal_path.read_text(encoding="utf-8"))
+    references = proposal.get("evidence", {}).get("references", [])
+    if not references:
+        raise ValueError("proposal needs at least one inspected evidence reference")
+    if not proposal.get("job"):
+        raise ValueError("proposal needs one explicit job")
+
+    created: list[Path] = []
+    proposal_target = skill / "proposal.json"
+    if proposal_target.exists():
+        raise ValueError("proposal.json already exists; refusing to overwrite")
+    proposal_target.write_text(
+        json.dumps(proposal, indent=2) + "\n", encoding="utf-8"
+    )
+    created.append(proposal_target)
+
+    mapping = {
+        "routes.json": skill / "evals" / "routes.json",
+        "release-decision.json": skill / "evals" / "release-decision.json",
+        "telemetry-policy.json": skill / "evals" / "telemetry-policy.json",
+        "status.json": skill / "evals" / "results" / "status.json",
+    }
+    for source_name, target in mapping.items():
+        if write_if_missing(TEMPLATES / source_name, target):
+            created.append(target)
+
+    cases = skill / "evals" / "cases.json"
+    if not cases.exists():
+        cases.parent.mkdir(parents=True, exist_ok=True)
+        cases.write_text("[]\n", encoding="utf-8")
+        created.append(cases)
+    routing = skill / "evals" / "routing-cases.json"
+    if not routing.exists():
+        routing.write_text("[]\n", encoding="utf-8")
+        created.append(routing)
+    return created
+
+
+def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("skill", type=Path)
     parser.add_argument("--proposal", type=Path, required=True)
     args = parser.parse_args()
-    skill = args.skill.resolve()
-    if not (skill / "SKILL.md").is_file():
-        raise SystemExit("run the harness's official skill initializer first")
-    proposal = json.loads(args.proposal.read_text())
-    if not proposal.get("evidence", {}).get("references"):
-        raise SystemExit("proposal needs at least one inspected evidence reference")
-    evals = skill / "evals"
-    evals.mkdir(exist_ok=True)
-    (evals / "results").mkdir(exist_ok=True)
-    release = evals / "release-decision.json"
-    if not release.exists():
-        shutil.copyfile(TEMPLATES / "release-decision.json", release)
-    proposal_target = skill / "proposal.json"
-    if proposal_target.exists():
-        raise SystemExit("proposal.json already exists; refusing to overwrite")
-    proposal_target.write_text(json.dumps(proposal, indent=2) + "\n")
-    print(skill)
+    try:
+        created = scaffold(args.skill.resolve(), args.proposal.resolve())
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        raise SystemExit(str(error)) from error
+    for path in created:
+        print(path)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

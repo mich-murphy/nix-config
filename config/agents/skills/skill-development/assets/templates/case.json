@@ -2,7 +2,11 @@
   "id": "",
   "split": "development",
   "kind": "outcome",
-  "origin": {"trace_reference": "", "redaction_version": "", "deduplication_hash": ""},
+  "origin": {
+    "trace_reference": "",
+    "redaction_version": "",
+    "deduplication_hash": ""
+  },
   "prompt": "",
   "skill_eligible": true,
   "risk_class": "low",

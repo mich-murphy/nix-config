@@ -1,0 +1,318 @@
+{
+  "schema_version": "1.0.0",
+  "configuration": {
+    "suite": "smoke",
+    "repetitions": 1,
+    "harnesses": [
+      "codex",
+      "claude"
+    ],
+    "variants": [
+      "candidate"
+    ],
+    "routes": {
+      "codex": {
+        "model": "gpt-5.6-terra",
+        "effort": "medium"
+      },
+      "claude": {
+        "model": "sonnet",
+        "effort": "medium"
+      },
+      "pi": {
+        "model": "anthropic/claude-sonnet-4-6",
+        "effort": "medium"
+      }
+    },
+    "fixed": [
+      "task",
+      "model",
+      "effort",
+      "tools",
+      "permissions",
+      "timeout",
+      "workspace",
+      "verifier"
+    ],
+    "content_capture": false
+  },
+  "summary": {
+    "runs": 2,
+    "valid_runs": 2,
+    "accepted": 2,
+    "duration_seconds": 1104.639
+  },
+  "results": [
+    {
+      "id": "create-reviewed-changelog-skill",
+      "split": "development",
+      "risk": "normal",
+      "harness": "claude",
+      "variant": "candidate",
+      "repetition": 1,
+      "model": "sonnet",
+      "effort": "medium",
+      "skill_hash": "cb94f3726241b83ceb7fca82a20f7eb030427888d16c15ceac2e65f5fc81332c",
+      "state": "succeeded",
+      "failure_kind": null,
+      "valid": true,
+      "accepted": true,
+      "score": 1.0,
+      "assertions_passed": 12,
+      "assertions_total": 12,
+      "assertions": [
+        {
+          "name": "valid concise SKILL.md",
+          "passed": true,
+          "blocking": true,
+          "detail": ""
+        },
+        {
+          "name": "evidence-backed proposal",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "source lineage preserved",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "three outcome cases with held-out split",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "positive and negative routing cases",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "side-effect routing boundary",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "semantic cross-harness model routes",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "privacy-first telemetry",
+          "passed": true,
+          "blocking": true,
+          "detail": ""
+        },
+        {
+          "name": "complete skill lifecycle tracing",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "deferred quality-gated release",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "all control variants represented",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "executable runner and comparator",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        }
+      ],
+      "blocking_failures": [],
+      "duration_seconds": 842.752,
+      "usage": {
+        "input_tokens": 134,
+        "cache_creation_input_tokens": 108699,
+        "cache_read_input_tokens": 6313935,
+        "output_tokens": 47578,
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 108699,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 850,
+            "cache_read_input_tokens": 135104,
+            "cache_creation_input_tokens": 302,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 302
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "returncode": 0,
+      "telemetry": {
+        "schema_version": "1.0.0",
+        "metadata_only": true,
+        "case_id": "create-reviewed-changelog-skill",
+        "harness": "claude",
+        "model": "sonnet",
+        "effort": "medium",
+        "skill": "skill-development",
+        "skill_hash": "cb94f3726241b83ceb7fca82a20f7eb030427888d16c15ceac2e65f5fc81332c",
+        "invocation_route": "explicit",
+        "lifecycle": [
+          "offered",
+          "selected",
+          "activated",
+          "evaluated"
+        ],
+        "outcome": "accepted"
+      },
+      "artifact": "/private/tmp/skill-development-candidate-final-smoke-artifacts/create-reviewed-changelog-skill--claude--candidate--r1",
+      "final_response": "Everything validates cleanly. Here's a summary of what was built.\n\n## Summary\n\nEvidence in `evidence.md` (three accepted, redacted release-note review threads, recurring failure pattern) justified a **skill**, not a lighter-weight container \u2014 it's a stable, reusable review procedure with judgment calls (classifying breaking changes, grounding claims) that a script alone can't make. Built at `output/changelog-review/`:\n\n- **`SKILL.md`** \u2014 operational contract: job, procedure, safe default (never auto-publish), forbidden effects, completion checks. The real `claude plugin init` initializer was blocked by the sandbox even in a workspace-local fake `HOME` (it unconditionally targets `~/.claude/skills`), so I hand-authored the package to match that same official anatomy and recorded the substitution honestly as a limitation.\n- **`proposal.json`** \u2014 evidence lineage preserved (source, frequency, workaround, owner) per the scaffold's validated schema.\n- **`scripts/`** \u2014 deterministic, network-free: `check_links.py` (offline by default), `build_claim_table.py`, `validate_draft.py` (fail-closed validator).\n- **`evals/`** \u2014 6 outcome cases (3 development, 3 held-out) with minimized fixtures traced to the evidence, 8 routing cases (4 positive/4 negative, including a required side-effect negative for \"publish this\"), a route manifest with an honest semantic lane (balanced/medium) with escalation conditions, and exact/verified `claude-sonnet-5` route for this harness \u2014 Codex/Pi left as explicit unverified placeholders rather than fabricated.\n- **`evals/run-evals.py` / `compare-evals.py`** \u2014 runnable now; they self-test the deterministic scripts against all 6 fixtures (all pass) and explicitly report all model-backed routing/efficacy/utility experiments as **pending**, claiming no benefit.\n- **Telemetry policy** \u2014 metadata-only by default, content capture off, full skill lifecycle covered.\n- **Release decision** \u2014 `owner_decision: defer`, package/case-set hashes stamped, honest limitations listed (no agent-run evidence yet, unverified non-Claude routes, unpinned OTel semconv version).\n\nChecks run and passing: `audit_package.py` (clean), `package_hash.py` (stable across edits), `run-evals.py` self-test (6/6), `compare-evals.py` (correctly reports \"pending\", no benefit claimed). `evidence.md` untouched; no network used.",
+      "stderr": "",
+      "event_count": 436
+    },
+    {
+      "id": "create-reviewed-changelog-skill",
+      "split": "development",
+      "risk": "normal",
+      "harness": "codex",
+      "variant": "candidate",
+      "repetition": 1,
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "skill_hash": "cb94f3726241b83ceb7fca82a20f7eb030427888d16c15ceac2e65f5fc81332c",
+      "state": "succeeded",
+      "failure_kind": null,
+      "valid": true,
+      "accepted": true,
+      "score": 1.0,
+      "assertions_passed": 12,
+      "assertions_total": 12,
+      "assertions": [
+        {
+          "name": "valid concise SKILL.md",
+          "passed": true,
+          "blocking": true,
+          "detail": ""
+        },
+        {
+          "name": "evidence-backed proposal",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "source lineage preserved",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "three outcome cases with held-out split",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "positive and negative routing cases",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "side-effect routing boundary",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "semantic cross-harness model routes",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "privacy-first telemetry",
+          "passed": true,
+          "blocking": true,
+          "detail": ""
+        },
+        {
+          "name": "complete skill lifecycle tracing",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "deferred quality-gated release",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "all control variants represented",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        },
+        {
+          "name": "executable runner and comparator",
+          "passed": true,
+          "blocking": false,
+          "detail": ""
+        }
+      ],
+      "blocking_failures": [],
+      "duration_seconds": 261.887,
+      "usage": {
+        "input_tokens": 651656,
+        "cached_input_tokens": 604416,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 11509,
+        "reasoning_output_tokens": 1736
+      },
+      "returncode": 0,
+      "telemetry": {
+        "schema_version": "1.0.0",
+        "metadata_only": true,
+        "case_id": "create-reviewed-changelog-skill",
+        "harness": "codex",
+        "model": "gpt-5.6-terra",
+        "effort": "medium",
+        "skill": "skill-development",
+        "skill_hash": "cb94f3726241b83ceb7fca82a20f7eb030427888d16c15ceac2e65f5fc81332c",
+        "invocation_route": "explicit",
+        "lifecycle": [
+          "offered",
+          "selected",
+          "activated",
+          "evaluated"
+        ],
+        "outcome": "accepted"
+      },
+      "artifact": "/private/tmp/skill-development-candidate-final-smoke-artifacts/create-reviewed-changelog-skill--codex--candidate--r1",
+      "final_response": "Created the reusable skill at [output/changelog-review](/private/var/folders/rr/2ypk50n14tq8902_21mkbc840000gn/T/skill-development-eval-scwxk7ym/workspace/output/changelog-review).\n\nIt includes:\n\n- Draft-only, evidence-grounded changelog workflow and offline validator in [SKILL.md](/private/var/folders/rr/2ypk50n14tq8902_21mkbc840000gn/T/skill-development-eval-scwxk7ym/workspace/output/changelog-review/SKILL.md).\n- Evidence lineage, privacy-first telemetry, exact route manifest, and alpha/defer release record.\n- Development and held-out outcome/routing cases plus runnable pending-only evaluation and comparison scripts.\n- Local unit tests and structural audit.\n\nChecks passed: 2 unit tests, Python compilation, custom frontmatter check, package audit, and hash reconciliation. The official creator validator could not run because its local `yaml` dependency is unavailable.\n\nNo model-backed evaluations were launched; results remain explicitly pending and no benefit is claimed.",
+      "stderr": "Reading additional input from stdin...\n2026-08-03T06:08:58.628535Z ERROR codex_core::tools::router: error=patch rejected: writing outside of the project; rejected by user approval settings\n",
+      "event_count": 41
+    }
+  ]
+}

@@ -12,8 +12,8 @@ harness-specific agent configuration.
 | Ambiguous design, architecture, or consequential synthesis | Frontier | High |
 | Security, data-loss, concurrency, or release-critical review | Frontier | High or xhigh |
 
-For difficult work, establish the quality ceiling with the frontier lane at
-balanced/high effort, reduce effort one level, then test a lower lane. For
+For difficult work, establish the quality ceiling with the frontier lane at a
+balanced or high effort, reduce effort one level, then test a lower lane. For
 deterministic high-volume work, begin efficient and escalate only when the
 verifier exposes a gap. Change one variable per experiment.
 
@@ -25,6 +25,3 @@ Measure end-to-end and p50/p95 latency, time to first output when available,
 tool and permission wait, retries, input/output/cached/reasoning tokens, cost,
 and human rework per accepted task. A latency or token reduction is an
 improvement only when acceptance, quality, and safety remain non-inferior.
-Reduce latency through selected-branch loading, removing repeated instructions
-and unused examples, exposing relevant tools only, parallel independent reads,
-and eliminating unnecessary agent or evaluator calls.

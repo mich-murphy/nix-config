@@ -6,7 +6,7 @@ incident, or a stable manual procedure. Record source lineage and preserve the
 smallest redacted reproduction. Frequency matters for convenience failures;
 severity can justify a single security or data-loss regression.
 
-Choose the narrowest control:
+Choose the narrowest effective control:
 
 | Need | Container |
 | --- | --- |
@@ -20,3 +20,9 @@ Choose the narrowest control:
 Do not use prose to simulate a deterministic validator. Do not copy a volatile
 manual into a skill. Combine containers when the skill selects a branch and a
 script safely executes its mechanics.
+
+For material recommendations, preserve the repository corpus's claim-level
+evidence type, certainty, directness, recommendation strength, and source.
+Official documentation establishes current behavior, not improved outcomes.
+One benchmark supports its measured task more strongly than a generalized
+workflow claim.

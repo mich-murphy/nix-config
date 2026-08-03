@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "evidence": {
+    "kind": "reviewed_failure_or_success",
+    "references": [
+      "docs/skills-and-instructions/official-skill-creation-comparison.md",
+      "docs/tools-models-and-orchestration/ai-agent-observability.md",
+      "docs/tools-models-and-orchestration/official-anthropic-openai-model-guidance.md",
+      "installed Codex skill-creator",
+      "installed Claude skill-creator"
+    ],
+    "frequency_or_severity": "Built-in creators cover structure but incompletely enforce evidence lineage, container choice, cross-harness controls, privacy-first telemetry, model/effort experiments, and release gates.",
+    "current_workaround": "Manually combine the repository corpus, built-in creator output, bespoke evaluation scripts, and release review.",
+    "owner": "repository maintainers"
+  },
+  "job": "Turn an observed reusable agent workflow into the narrowest evidence-backed control and prove its bounded benefit before release.",
+  "container": {
+    "choice": "skill",
+    "rejected_alternatives": [
+      "A prompt is not reusable across tasks.",
+      "A script alone cannot make the evidence, routing, model, evaluation, and release decisions.",
+      "Repository instructions would impose this workflow on unrelated work."
+    ]
+  },
+  "positive_triggers": [
+    "create or revise an agent skill",
+    "evaluate or release a skill",
+    "promote reviewed traces into a skill regression case",
+    "choose telemetry, model, effort, or container boundaries for a skill"
+  ],
+  "negative_triggers": [
+    "install an existing skill",
+    "write one task's prompt",
+    "perform a one-off deterministic transformation",
+    "create a speculative workflow with no inspected evidence"
+  ],
+  "inputs": ["reviewed workflow evidence", "target harnesses", "accepted outcome", "risk and permission boundaries"],
+  "outputs": ["skill or narrower control", "owned evaluation package", "telemetry policy", "route manifest", "release decision"],
+  "safe_default": "Remain alpha and defer automatic activation until held-out gates pass.",
+  "forbidden_effects": ["claim general benefit from structural validation", "capture content by default", "release after a critical safety regression", "overwrite incumbent evidence"],
+  "completion_checks": ["package audit passes", "unit tests pass", "candidate is compared with no-skill and incumbent", "release record limits claims to the tested matrix"]
+}

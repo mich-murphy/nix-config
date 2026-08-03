@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "boundary": "opentelemetry-otlp",
+  "semantic_convention_version": "PIN_BEFORE_EXPORT",
+  "application_namespace": "app.agent",
+  "metadata_only_default": true,
+  "content_capture_enabled": false,
+  "content_capture_requires": ["explicit_approval", "redaction", "access_policy", "retention_policy", "deletion_policy"],
+  "skill_lifecycle": ["offered", "selected", "activated", "expanded", "executed", "evaluated"],
+  "required_dimensions": [
+    "trace_id",
+    "task_id",
+    "evaluation_case_id",
+    "skill_name",
+    "skill_version_or_hash",
+    "skill_source",
+    "invocation_route",
+    "harness_name_and_version",
+    "model_requested_and_returned",
+    "effort",
+    "prompt_version",
+    "tool_versions",
+    "evaluator_version",
+    "latency",
+    "input_output_cached_reasoning_tokens",
+    "cost",
+    "retries",
+    "permission_wait",
+    "task_outcome"
+  ],
+  "forbidden_metric_labels": ["prompt", "response", "source_code", "tool_payload", "credential", "environment_variable", "raw_user_identifier"]
+}
