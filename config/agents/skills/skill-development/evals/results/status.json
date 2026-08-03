@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "skill-development",
+  "variants": {
+    "no-skill": "not_recorded",
+    "incumbent": "not_recorded",
+    "candidate": "smoke_partial_invalid"
+  },
+  "release_eligible": false,
+  "note": "Codex and Claude candidate smoke runs were valid and accepted on 2026-08-03; Pi was retained as an authentication failure. Full fixed-route repetitions remain required before promotion."
+}

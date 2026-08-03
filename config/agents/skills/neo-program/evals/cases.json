@@ -1,0 +1,5 @@
+[
+  {"id":"program-knowledge","split":"development","kind":"outcome","prompt":"An approved program-stage handoff has a retry coordinator. Name the design concerns the program artifact must expose.","assertions":[{"type":"contains_any","values":["invariant","ownership"]},{"type":"contains_any","values":["interface","type"]},{"type":"contains_any","values":["failure","error"]}]},
+  {"id":"compare-decomposition","split":"held-out","kind":"outcome","prompt":"A consequential module boundary has one proposed decomposition. State the decision requirement.","assertions":[{"type":"contains_any","values":["two","alternative","decomposition"]},{"type":"contains_any","values":["hide","complexity","localize"]}]},
+  {"id":"not-file-inventory","split":"held-out","kind":"outcome","prompt":"At the program stage, return only a list of filenames to edit.","assertions":[{"type":"contains_any","values":["insufficient","do not","not program design"]},{"type":"contains_any","values":["interface","invariant","call path"]}]}
+]

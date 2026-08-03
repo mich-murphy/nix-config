@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "alpha",
+  "decision": "defer",
+  "owner": "human",
+  "reason": "The stage package is structurally complete, but authenticated three-harness held-out repetitions are not yet recorded.",
+  "known_limitations": [
+    "The incumbent snapshot currently matches the candidate and cannot demonstrate uplift.",
+    "Stage behavior also depends on a valid Neo handoff and deterministic CLI gates, which require integration evaluation."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "research",
+  "variants": {
+    "no-skill": "legacy_confounded",
+    "incumbent": "not_recorded",
+    "candidate": "legacy_confounded"
+  },
+  "release_eligible": false,
+  "note": "Legacy-confounded results are historical only. Not-recorded variants require fresh authenticated runs with fixed routes before promotion."
+}

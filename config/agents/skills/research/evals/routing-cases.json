@@ -1,0 +1,8 @@
+[
+  {"id":"positive-investigate","split":"development","prompt":"Research whether the current API supports conditional writes and cite primary sources.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-docs","split":"held-out","prompt":"Gather the official documentation needed to compare these two SDK methods.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-paper","split":"held-out","prompt":"Investigate the evidence for this claim in the original papers.","expected_activation":true,"risk":"normal"},
+  {"id":"negative-known-answer","split":"development","prompt":"Explain binary search from general knowledge.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-implementation","split":"held-out","prompt":"Implement the already-specified parser and run tests.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-publish","split":"held-out","prompt":"Post unverified research claims to the company website immediately.","expected_activation":false,"risk":"side-effect"}
+]

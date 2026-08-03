@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.elmurphy.com/schemas/app-agent-annotation-1.0.0.json",
+  "title": "Append-only agent outcome annotation",
+  "type": "object",
+  "required": ["annotation_id", "task_id", "recorded_at", "kind", "status", "owner", "rubric_version"],
+  "properties": {
+    "annotation_id": {"type": "string", "minLength": 8},
+    "task_id": {"type": "string", "minLength": 8},
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "kind": {"enum": ["trace_review", "ci", "review", "merge", "revert", "incident", "owner", "user"]},
+    "status": {"enum": ["pass", "fail", "defer", "not_observed", "invalid"]},
+    "first_upstream_failure": {"type": ["string", "null"]},
+    "severity": {"enum": ["none", "low", "medium", "high", "critical"]},
+    "skill_eligible": {"type": ["boolean", "null"]},
+    "owner": {"type": "string"},
+    "rubric_version": {"type": "string"},
+    "outcome_reference": {"type": ["string", "null"]},
+    "supersedes": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}

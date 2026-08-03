@@ -1,0 +1,6 @@
+interface:
+  display_name: "Neo Program"
+  short_description: "Shape interfaces and program design"
+  default_prompt: "Use $neo-program with the active Neo task handoff to resolve program design."
+policy:
+  allow_implicit_invocation: false

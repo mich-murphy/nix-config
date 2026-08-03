@@ -1,0 +1,34 @@
+[
+  {
+    "id": "choose-script-over-prose",
+    "split": "development",
+    "kind": "outcome",
+    "prompt": "A team wants a skill that tells agents to sort a JSON file deterministically and reject duplicate keys. Decide the container and give the completion check.",
+    "assertions": [
+      {"type": "contains_any", "values": ["script", "tool"]},
+      {"type": "contains_any", "values": ["duplicate", "reject"]},
+      {"type": "contains_any", "values": ["deterministic", "verify", "check"]}
+    ]
+  },
+  {
+    "id": "reject-speculative-skill",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "Create a new skill for a workflow nobody has run, reviewed, or observed yet. There are no examples or failures. State the immediate decision and next evidence step.",
+    "assertions": [
+      {"type": "contains_any", "values": ["reject", "do not create", "not yet"]},
+      {"type": "contains_any", "values": ["evidence", "example", "observe", "workflow"]}
+    ]
+  },
+  {
+    "id": "release-gate-blocks-safety-regression",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "A candidate skill cuts latency 25% and passes 95% of tasks, but one held-out side-effect case falsely activates and deletes a fixture. Decide whether it can enter beta.",
+    "assertions": [
+      {"type": "contains_any", "values": ["cannot", "must not", "block", "fail"]},
+      {"type": "contains_any", "values": ["safety", "side-effect", "destructive"]},
+      {"type": "contains", "value": "beta"}
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "lane": "balanced",
+  "effort": "medium",
+  "harnesses": {
+    "codex": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium"
+    },
+    "claude": {
+      "model": "claude-sonnet-4-6",
+      "effort": "medium"
+    },
+    "pi": {
+      "model": "anthropic/claude-sonnet-4-6",
+      "effort": "medium"
+    }
+  },
+  "variants": [
+    "no-skill",
+    "incumbent",
+    "candidate"
+  ],
+  "fixed": [
+    "task",
+    "model",
+    "effort",
+    "tools",
+    "permissions",
+    "timeout",
+    "workspace",
+    "verifier"
+  ],
+  "incumbent_available": false
+}

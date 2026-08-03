@@ -26,7 +26,9 @@
         "path": "launch_tui",
         "value": false
       }
-    ]
+    ],
+    "split": "development",
+    "kind": "outcome"
   },
   {
     "id": "hunk-inspects-before-patch",
@@ -56,6 +58,22 @@
         "type": "not_contains",
         "value": "hunk diff"
       }
+    ],
+    "split": "held-out",
+    "kind": "outcome"
+  },
+  {
+    "id": "hunk-comment-only-when-requested",
+    "skill": "hunk-review",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "The current Hunk session is `s-9`. The user explicitly asks for one focused inline comment on new line 31 of `src/auth.ts`, with summary `Handle missing token` and rationale `The parser can return undefined`. Do not execute anything. Return only JSON with keys `command`, `clears_existing`, and `launch_tui`.",
+    "assertions": [
+      {"type": "contains", "value": "hunk session comment add s-9"},
+      {"type": "contains", "value": "--file src/auth.ts"},
+      {"type": "contains", "value": "--new-line 31"},
+      {"type": "json_equals", "path": "clears_existing", "value": false},
+      {"type": "json_equals", "path": "launch_tui", "value": false}
     ]
   }
 ]

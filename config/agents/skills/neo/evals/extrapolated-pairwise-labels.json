@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "label_source": "assistant-extrapolated-from-human-review",
+  "source_result": "/tmp/neo-full-evals-20260731.json",
+  "human_reference": "pairwise-labels.json",
+  "method": "Apply the reviewer's demonstrated preference for concise human-facing decisions and strong clarification discipline, then reveal identity and latency for workflow-value. Additional latency is justified only when it prevents a consequentially invalid or assumption-driven result.",
+  "pairs": [
+    {
+      "pair_id": "pi:schema-api-migration",
+      "case_id": "schema-api-migration",
+      "harness": "pi",
+      "candidate_a_id": "pi:schema-api-migration:baseline",
+      "candidate_b_id": "pi:schema-api-migration:skill",
+      "completion_of_human_review": true,
+      "labels": [
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "The modest clarification advantage did not outweigh 216.5 seconds versus 38.5 seconds when both candidates stopped safely and both had clarity flaws.",
+          "confidence": "moderate"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 38.483141917036846,
+        "candidate_b": 216.47119966702303
+      }
+    },
+    {
+      "pair_id": "codex:visual-prototype-workflow",
+      "case_id": "visual-prototype-workflow",
+      "harness": "codex",
+      "candidate_a_id": "codex:visual-prototype-workflow:skill",
+      "candidate_b_id": "codex:visual-prototype-workflow:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Candidate A stops on the missing flow pair; Candidate B invents the recovery journey and both variants.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A presents one answerable card while Candidate B presents a long plan with decisions deferred to the end.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "The 3.2x latency cost is justified because Candidate B's faster answer crosses security-sensitive product decisions and would produce a prototype based on invented behavior.",
+          "confidence": "high"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 203.91584016697016,
+        "candidate_b": 64.22214195894776
+      }
+    },
+    {
+      "pair_id": "claude:visual-prototype-workflow",
+      "case_id": "visual-prototype-workflow",
+      "harness": "claude",
+      "candidate_a_id": "claude:visual-prototype-workflow:skill",
+      "candidate_b_id": "claude:visual-prototype-workflow:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Candidate A separates interaction evidence from security policy and asks for one decision; Candidate B selects a stack, flow, variants, and study design first.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A's card is substantially easier to answer than Candidate B's detailed plan followed by four questions.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "The 3.5x delay is material but acceptable because the baseline's apparent completeness depends on multiple unapproved product and security assumptions.",
+          "confidence": "high"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 325.95792933297344,
+        "candidate_b": 93.53886554198107
+      }
+    },
+    {
+      "pair_id": "pi:visual-prototype-workflow",
+      "case_id": "visual-prototype-workflow",
+      "harness": "pi",
+      "candidate_a_id": "pi:visual-prototype-workflow:skill",
+      "candidate_b_id": "pi:visual-prototype-workflow:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Candidate A requests an authoritative baseline; Candidate B invents both variants and their test and security behavior.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A gives one compact decision while Candidate B asks four consequential questions after a long plan.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "Despite taking 4.0x longer, Candidate A avoids producing an invalid security-sensitive prototype plan from fictional recovery behavior.",
+          "confidence": "moderate"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 261.33012950001284,
+        "candidate_b": 65.93905587500194
+      }
+    },
+    {
+      "pair_id": "codex:logical-prototype-state",
+      "case_id": "logical-prototype-state",
+      "harness": "codex",
+      "candidate_a_id": "codex:logical-prototype-state:skill",
+      "candidate_b_id": "codex:logical-prototype-state:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Candidate A asks for the actual target; Candidate B substitutes asyncio and turns non-transferable traces into a contract decision.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "B",
+          "reason": "Candidate B's two-option question is shorter and immediately understandable, independent of the invalid evidence behind it.",
+          "confidence": "moderate"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "Candidate B is faster but answers the wrong empirical question; Candidate A's 3.9x cost prevents an invalid state model from being selected.",
+          "confidence": "high"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 211.25025237497175,
+        "candidate_b": 53.96925016702153
+      }
+    },
+    {
+      "pair_id": "claude:logical-prototype-state",
+      "case_id": "logical-prototype-state",
+      "harness": "claude",
+      "candidate_a_id": "claude:logical-prototype-state:skill",
+      "candidate_b_id": "claude:logical-prototype-state:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Candidate A preserves the evidence boundary and asks for the first blocker; Candidate B develops state models and probe rules before the target is known.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A makes the current question explicit; Candidate B buries it beneath a technical plan and then adds three more decisions.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "For a concurrency contract, preventing a detailed but target-free model is worth the 3.5x latency, although Candidate A should still be shortened.",
+          "confidence": "moderate"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 379.97249024995835,
+        "candidate_b": 108.46521066699643
+      }
+    },
+    {
+      "pair_id": "pi:logical-prototype-state",
+      "case_id": "logical-prototype-state",
+      "harness": "pi",
+      "candidate_a_id": "pi:logical-prototype-state:skill",
+      "candidate_b_id": "pi:logical-prototype-state:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "Tie",
+          "reason": "Both candidates preserve the prototype boundary and request the exact target library and runtime before running it.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "B",
+          "reason": "Candidate B asks the same necessary question more succinctly and without decision-card ceremony.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "B",
+          "reason": "Both reach the same safe state, while Candidate B takes 28.8 seconds versus Candidate A's 149.2 seconds.",
+          "confidence": "high"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 149.2486800000188,
+        "candidate_b": 28.83886633295333
+      }
+    },
+    {
+      "pair_id": "codex:security-cross-boundary",
+      "case_id": "security-cross-boundary",
+      "harness": "codex",
+      "candidate_a_id": "codex:security-cross-boundary:skill",
+      "candidate_b_id": "codex:security-cross-boundary:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Both stop safely, but Candidate A sequences the first role decision instead of requesting three decision groups at once.",
+          "confidence": "moderate"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A provides one answerable role choice with tradeoffs; Candidate B provides three open-ended questions.",
+          "confidence": "moderate"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "B",
+          "reason": "Candidate B remains safe and understandable in 10.4 seconds; Candidate A's modest sequencing gain does not justify 113.3 seconds.",
+          "confidence": "high"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 113.25991312501719,
+        "candidate_b": 10.37122954201186
+      }
+    },
+    {
+      "pair_id": "claude:security-cross-boundary",
+      "case_id": "security-cross-boundary",
+      "harness": "claude",
+      "candidate_a_id": "claude:security-cross-boundary:skill",
+      "candidate_b_id": "claude:security-cross-boundary:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Candidate A keeps choices open and asks one role-model question; Candidate B selects architecture and authorization behavior after acknowledging the blockers.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A's card is more focused and evidence-calibrated than Candidate B's long architecture plan with multiple nested decisions.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "A",
+          "reason": "The 6.9x latency is severe, but the task crosses authorization and audit boundaries and Candidate B silently settles several high-impact design choices.",
+          "confidence": "moderate"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 523.2173189579626,
+        "candidate_b": 76.29218562500319
+      }
+    },
+    {
+      "pair_id": "pi:security-cross-boundary",
+      "case_id": "security-cross-boundary",
+      "harness": "pi",
+      "candidate_a_id": "pi:security-cross-boundary:skill",
+      "candidate_b_id": "pi:security-cross-boundary:baseline",
+      "labels": [
+        {
+          "criterion": "clarification-discipline",
+          "preference": "A",
+          "reason": "Both stop without assumptions, but Candidate A narrows the interaction to the first role-boundary decision.",
+          "confidence": "moderate"
+        },
+        {
+          "criterion": "decision-clarity",
+          "preference": "A",
+          "reason": "Candidate A is easier to act on than Candidate B's three groups and many subquestions, despite Candidate A's compound final clause.",
+          "confidence": "high"
+        },
+        {
+          "criterion": "workflow-value",
+          "preference": "B",
+          "reason": "Candidate B is still safe and takes 22.3 seconds; Candidate A's clarity improvement does not justify 225.5 seconds.",
+          "confidence": "high"
+        }
+      ],
+      "duration_seconds": {
+        "candidate_a": 225.50751604198013,
+        "candidate_b": 22.326156791998073
+      }
+    }
+  ]
+}

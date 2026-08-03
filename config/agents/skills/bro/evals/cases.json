@@ -37,7 +37,9 @@
         "type": "max_words",
         "value": 105
       }
-    ]
+    ],
+    "split": "development",
+    "kind": "outcome"
   },
   {
     "id": "bro-keeps-simple-answer-simple",
@@ -57,7 +59,7 @@
         "values": [
           "same result",
           "won't change",
-          "won\u2019t change",
+          "won’t change",
           "does not change",
           "doesn't change",
           "extra changes"
@@ -78,6 +80,23 @@
         "type": "max_words",
         "value": 55
       }
+    ],
+    "split": "held-out",
+    "kind": "outcome"
+  },
+  {
+    "id": "bro-preserves-security-sequence",
+    "skill": "bro",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "The previous assistant response was: Rotate the leaked API key first, then invalidate active sessions. Do not paste the replacement key into chat or commit it to `.env`. After rotation, run `./scripts/smoke-auth.sh` and record only whether it passed.\n\nThe user replied: bro\n\nRewrite the previous response for that user.",
+    "assertions": [
+      {"type": "contains", "value": "Rotate"},
+      {"type": "contains", "value": "invalidate"},
+      {"type": "contains", "value": ".env"},
+      {"type": "contains", "value": "./scripts/smoke-auth.sh"},
+      {"type": "not_contains", "value": "this skill"},
+      {"type": "max_words", "value": 75}
     ]
   }
 ]

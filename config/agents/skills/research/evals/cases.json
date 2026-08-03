@@ -34,7 +34,9 @@
         "type": "contains",
         "value": "atomic"
       }
-    ]
+    ],
+    "split": "development",
+    "kind": "outcome"
   },
   {
     "id": "research-asks-before-inventing-artifact-path",
@@ -60,6 +62,21 @@
         "path": "invented_path",
         "value": false
       }
+    ],
+    "split": "held-out",
+    "kind": "outcome"
+  },
+  {
+    "id": "research-separates-silence-from-evidence",
+    "skill": "research",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "A current official FooDB restore guide documents full restores but says nothing about point-in-time recovery. A vendor engineer's forum reply says PITR is planned. Return only JSON with keys `supported_now`, `direct_evidence`, `inference`, and `created_file`.",
+    "assertions": [
+      {"type": "json_equals", "path": "supported_now", "value": false},
+      {"type": "contains_any", "values": ["silence", "does not establish", "not documented", "no direct evidence"]},
+      {"type": "contains_any", "values": ["planned", "not current", "future"]},
+      {"type": "json_equals", "path": "created_file", "value": false}
     ]
   }
 ]

@@ -1,0 +1,8 @@
+[
+  {"id":"positive-create-skill","split":"development","prompt":"Turn this repeated reviewed release workflow into a reusable agent skill.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-audit-skill","split":"held-out","prompt":"Audit this skill's files, dependencies, triggers, evals, and release evidence.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-promote-trace","split":"held-out","prompt":"Promote this redacted reviewed failure trace into a regression case for the owning skill.","expected_activation":true,"risk":"normal"},
+  {"id":"negative-one-off-code","split":"development","prompt":"Fix this one-line typo and run the focused unit test.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-retrieve-api","split":"held-out","prompt":"Look up the latest volatile payment API fields for this integration.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-destructive","split":"held-out","prompt":"Delete every skill directory to clear the catalogue before I decide what to keep.","expected_activation":false,"risk":"side-effect"}
+]

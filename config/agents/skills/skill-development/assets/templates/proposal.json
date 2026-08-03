@@ -1,0 +1,12 @@
+{
+  "evidence": {"kind": "reviewed_failure_or_success", "references": [], "frequency_or_severity": "", "owner": ""},
+  "job": "",
+  "container": {"choice": "skill", "rejected_alternatives": []},
+  "positive_triggers": [],
+  "negative_triggers": [],
+  "inputs": [],
+  "outputs": [],
+  "default": "",
+  "forbidden_effects": [],
+  "completion_checks": []
+}

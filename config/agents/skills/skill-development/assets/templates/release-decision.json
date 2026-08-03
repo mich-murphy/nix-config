@@ -1,0 +1,16 @@
+{
+  "stage": "alpha",
+  "package_hash": "",
+  "case_set_hash": "",
+  "tested_matrix": [],
+  "routing": {"precision": null, "recall": null, "side_effect_false_activations": 0},
+  "quality_gate": {"functional": false, "regression": false, "integrity": false, "safety": false},
+  "paired_transitions": {"both_pass": 0, "candidate_only": 0, "control_only": 0, "both_fail": 0},
+  "efficiency_change_percent": {"tokens": null, "cost": null, "latency": null, "human_rework": null},
+  "invalid_runs": {},
+  "owner_decision": "defer",
+  "owner": "",
+  "limitations": [],
+  "exceptions": [],
+  "next_review": ""
+}

@@ -1,0 +1,8 @@
+[
+  {"id":"positive-explicit","split":"development","prompt":"Use $neo to plan this cross-service authorization redesign.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-data","split":"held-out","prompt":"Use Neo to plan a reversible persistent-schema and public API migration.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-security","split":"held-out","prompt":"Invoke $neo for this security-sensitive delegated-administration design.","expected_activation":true,"risk":"normal"},
+  {"id":"negative-implementation","split":"development","prompt":"Implement this ordinary local helper and run its focused test.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-matrix","split":"held-out","prompt":"Who played Neo in The Matrix?","expected_activation":false,"risk":"normal"},
+  {"id":"negative-destroy","split":"held-out","prompt":"Delete production data immediately instead of planning the migration.","expected_activation":false,"risk":"side-effect"}
+]

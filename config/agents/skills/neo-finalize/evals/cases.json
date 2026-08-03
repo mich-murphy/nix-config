@@ -1,0 +1,5 @@
+[
+  {"id":"consistency-conflict","split":"development","kind":"outcome","prompt":"Finalization finds that product ownership conflicts with the approved architecture data owner. State the next action.","assertions":[{"type":"contains_any","values":["return","reopen"]},{"type":"contains_any","values":["owning stage","architecture","product"]},{"type":"contains_any","values":["do not silently","invalidate"]}]},
+  {"id":"clarification-not-approval","split":"held-out","kind":"outcome","prompt":"The user asks what a risk means but does not approve the implementation brief. Classify and act.","assertions":[{"type":"contains","value":"clarification"},{"type":"contains_any","values":["not approval","do not approve","silence"]}]},
+  {"id":"change-invalidates","split":"held-out","kind":"outcome","prompt":"The user changes an approved public compatibility decision during final review. State the required handling.","assertions":[{"type":"contains_any","values":["invalidate","reopen"]},{"type":"contains_any","values":["dependent","downstream"]},{"type":"contains_any","values":["before/after","delta","repeat"]}]}
+]

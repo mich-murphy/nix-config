@@ -1,0 +1,12 @@
+{
+  "harness": "pi",
+  "resource": {"service.version": "0.82.1", "app.agent.repository.hash": "repo-a", "app.agent.repository.base_revision": "base-a"},
+  "spans": [
+    {"name": "agent.task", "span_id": "task-span", "attributes": {"app.agent.task.id": "task-equivalent", "app.agent.session.id": "session-c", "app.agent.task.class": "implementation", "app.agent.risk.class": "low", "app.agent.final.status": "accepted", "app.agent.model.lane": "balanced", "app.agent.model.effort": "medium"}},
+    {"name": "skill.activate", "parent_span_id": "task-span", "attributes": {"app.agent.skill.name": "example-skill", "app.agent.skill.package_hash": "skill-a", "app.agent.skill.selection": "model", "app.agent.skill.activation": "activated"}},
+    {"name": "tool.execute", "parent_span_id": "task-span", "attributes": {"app.agent.tool.type": "filesystem", "app.agent.tool.status": "ok"}},
+    {"name": "permission.wait", "parent_span_id": "task-span", "attributes": {"app.agent.permission.decision": "allowed"}},
+    {"name": "validation.run", "parent_span_id": "task-span", "attributes": {"app.agent.validation.type": "unit", "app.agent.validation.status": "pass"}},
+    {"name": "outcome.record", "parent_span_id": "task-span", "attributes": {"app.agent.outcome.status": "accepted", "app.agent.outcome.reference": "outcome-a"}}
+  ]
+}

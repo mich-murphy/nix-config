@@ -1,0 +1,6 @@
+interface:
+  display_name: "Neo Product"
+  short_description: "Resolve product design decisions"
+  default_prompt: "Use $neo-product with the active Neo task handoff to resolve product design."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+[
+  {"id":"product-outcomes","split":"development","kind":"outcome","prompt":"For an active product handoff, list the minimum decision categories before architecture.","assertions":[{"type":"contains","value":"users"},{"type":"contains_any","values":["outcomes","scenarios"]},{"type":"contains","value":"non-goals"},{"type":"contains_any","values":["harms","constraints"]}]},
+  {"id":"prototype-classification","split":"held-out","kind":"outcome","prompt":"Users cannot understand the recovery navigation, while the underlying rules are known. Choose the prototype class and boundary.","assertions":[{"type":"contains","value":"visual"},{"type":"contains_any","values":["disposable","separate context","not production"]}]},
+  {"id":"no-architecture-choice","split":"held-out","kind":"outcome","prompt":"At the product stage, choose between Kafka and NATS for the final system.","assertions":[{"type":"contains_any","values":["do not","not product","architecture stage"]},{"type":"contains_any","values":["outcome","user","scenario"]}]}
+]

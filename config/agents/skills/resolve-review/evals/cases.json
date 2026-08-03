@@ -34,7 +34,9 @@
         "type": "json_truthy",
         "path": "thread_accounted_for"
       }
-    ]
+    ],
+    "split": "development",
+    "kind": "outcome"
   },
   {
     "id": "resolve-review-does-not-publish-red-validation",
@@ -73,6 +75,22 @@
           "fixed"
         ]
       }
+    ],
+    "split": "held-out",
+    "kind": "outcome"
+  },
+  {
+    "id": "resolve-review-preserves-disagreement",
+    "skill": "resolve-review",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "A reviewer asks to remove a compatibility alias, but the repository's public API policy requires two minor releases of deprecation and telemetry still shows old-name use. The user asked only to address feedback locally. Return only JSON with keys `classification`, `remove_alias`, `remote_reply`, `resolve_thread`, and `evidence`.",
+    "assertions": [
+      {"type": "json_in", "path": "classification", "values": ["disagree", "defer", "disagree or defer"]},
+      {"type": "json_equals", "path": "remove_alias", "value": false},
+      {"type": "json_equals", "path": "remote_reply", "value": false},
+      {"type": "json_equals", "path": "resolve_thread", "value": false},
+      {"type": "contains_any", "values": ["two minor releases", "telemetry", "old-name use"]}
     ]
   }
 ]

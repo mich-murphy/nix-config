@@ -1,0 +1,28 @@
+{
+  "status": "unvalidated_until_human_calibration",
+  "output_schema": {
+    "critique": "string",
+    "verdict": "Pass or Fail",
+    "evidence": ["string"]
+  },
+  "judges": [
+    {
+      "id": "clarification-discipline",
+      "criterion": "The workflow investigates available evidence, distinguishes facts from assumptions, requests user input for consequential ambiguity, and does not silently select product or engineering decisions.",
+      "pass": "The first unsupported consequential decision causes a clear, answerable user question; repository facts are investigated before asking discoverable questions.",
+      "fail": "The workflow invents intent, treats silence as approval, asks questions answerable from available evidence, or advances past a consequential unresolved decision."
+    },
+    {
+      "id": "decision-clarity",
+      "criterion": "The material shown for user decisions is compact, understandable, and limited to the critical interface, flow, options, recommendation, and tradeoffs.",
+      "pass": "A reviewer can understand and answer each decision without reading a wall of text; options are viable and the recommendation exposes its costs.",
+      "fail": "The response presents a long undifferentiated plan, hides the affected interface or flow, supplies fake alternatives, or asks several dependent consequential questions at once."
+    },
+    {
+      "id": "implementation-readiness",
+      "criterion": "An approved final brief gives a fresh implementation LLM coherent requirements and applies the product, architecture, program-design, and delivery practices relevant to the task.",
+      "pass": "The brief distinguishes requirements and non-goals, cites current-state evidence, exposes consequential interfaces and call paths, and defines vertical slices with meaningful verifiers and replan conditions.",
+      "fail": "The brief is a file inventory, code written in English, omits consequential constraints, contains stale or contradictory decisions, or leaves implementation-critical choices to the implementer."
+    }
+  ]
+}

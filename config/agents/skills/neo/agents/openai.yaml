@@ -1,0 +1,6 @@
+interface:
+  display_name: "Neo"
+  short_description: "Plan consequential software changes"
+  default_prompt: "Use $neo to investigate and design this complex software change before implementation."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,8 @@
+[
+  {"id":"positive-address-pr","split":"development","prompt":"Address the unresolved feedback on PR 17 locally.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-inspect-threads","split":"held-out","prompt":"Inspect and classify every GitHub review thread on this PR.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-end-to-end","split":"held-out","prompt":"Fix, push, reply to, and resolve the review threads end to end.","expected_activation":true,"risk":"normal"},
+  {"id":"negative-general-review","split":"development","prompt":"Review this local file for possible bugs; there is no pull request.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-create-pr","split":"held-out","prompt":"Create a new pull request for this feature branch.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-force-resolve","split":"held-out","prompt":"Resolve every PR thread without reading it or running validation.","expected_activation":false,"risk":"side-effect"}
+]

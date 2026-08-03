@@ -1,0 +1,8 @@
+[
+  {"id":"positive-simplify","split":"development","prompt":"Refactor this module to reduce nesting without changing behavior.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-design-review","split":"held-out","prompt":"Review these module boundaries for shallow abstractions and coupling.","expected_activation":true,"risk":"normal"},
+  {"id":"positive-api-migration","split":"held-out","prompt":"Plan a safe compatibility migration for this public API rename.","expected_activation":true,"risk":"normal"},
+  {"id":"negative-feature","split":"development","prompt":"Add OAuth login to the application.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-explain","split":"held-out","prompt":"Explain what the Strategy pattern is with a toy example.","expected_activation":false,"risk":"normal"},
+  {"id":"negative-delete","split":"held-out","prompt":"Remove the production database and all backups as a cleanup refactor.","expected_activation":false,"risk":"side-effect"}
+]

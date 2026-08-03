@@ -1,0 +1,10 @@
+{
+  "stage": "alpha",
+  "decision": "defer",
+  "reason": "The package is structurally implemented; authenticated three-harness repetitions, held-out gates, beta activations, and the RC observation window are not yet complete.",
+  "known_limitations": [
+    "No incumbent package exists for a new skill.",
+    "Current recorded results do not yet cover authenticated Codex, Claude, and Pi runs.",
+    "Automatic routing must be verified from harness telemetry before beta."
+  ]
+}

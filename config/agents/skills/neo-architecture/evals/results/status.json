@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "neo-architecture",
+  "variants": {
+    "no-skill": "not_recorded",
+    "incumbent": "not_recorded",
+    "candidate": "not_recorded"
+  },
+  "release_eligible": false,
+  "note": "Legacy-confounded results are historical only. Not-recorded variants require fresh authenticated runs with fixed routes before promotion."
+}

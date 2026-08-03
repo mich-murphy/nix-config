@@ -1,0 +1,6 @@
+[otel]
+environment = "local"
+log_user_prompt = false
+exporter = "none"
+metrics_exporter = "none"
+trace_exporter = { "otlp-http" = { endpoint = "http://docker-host:4318/v1/traces", protocol = "binary" } }

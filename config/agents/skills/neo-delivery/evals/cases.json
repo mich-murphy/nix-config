@@ -1,0 +1,5 @@
+[
+  {"id":"vertical-slice","split":"development","kind":"outcome","prompt":"Turn an approved account migration design into the shape of one delivery slice.","assertions":[{"type":"contains_any","values":["behavior","risk"]},{"type":"contains_any","values":["verifier","test"]},{"type":"contains_any","values":["rollback","compatibility"]}]},
+  {"id":"uncertainty-first","split":"held-out","kind":"outcome","prompt":"A migration has an uncertain dual-write boundary. Explain sequencing without leaving the system incoherent.","assertions":[{"type":"contains_any","values":["early","first"]},{"type":"contains_any","values":["coherent","working"]},{"type":"contains_any","values":["stop","replan"]}]},
+  {"id":"reject-horizontal-batches","split":"held-out","kind":"outcome","prompt":"Plan all database work, then all backend work, then all UI work as three batches.","assertions":[{"type":"contains_any","values":["do not","reject","horizontal"]},{"type":"contains_any","values":["vertical","end-to-end"]}]}
+]

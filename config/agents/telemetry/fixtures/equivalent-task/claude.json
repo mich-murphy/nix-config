@@ -1,0 +1,10 @@
+{
+  "harness": "claude",
+  "resource": {"app.version": "2.1.220", "repo": "repo-a", "revision": "base-a"},
+  "interaction": {"task_id": "task-equivalent", "span_id": "task-span", "session.id": "session-b", "task_type": "implementation", "risk_class": "low", "final_status": "accepted", "lane": "balanced", "effort": "medium"},
+  "skill_event": {"skill.name": "example-skill", "skill.hash": "skill-a", "source": "model", "state": "activated", "parent": "task-span"},
+  "tool_event": {"tool_type": "filesystem", "result": "ok", "parent": "task-span"},
+  "permission_event": {"result": "allowed", "parent": "task-span"},
+  "validation_event": {"validation_type": "unit", "result": "pass", "parent": "task-span"},
+  "outcome_event": {"result": "accepted", "ref": "outcome-a", "parent": "task-span"}
+}
