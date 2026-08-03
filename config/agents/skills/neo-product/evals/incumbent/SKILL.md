@@ -7,15 +7,17 @@ description: Resolve users, outcomes, scenarios, non-goals, constraints, harms, 
 
 Work only on the active Neo `product` stage.
 
-Resolve `<neo-cli>` to `.agents/skills/neo/scripts/neo.py` when present;
-otherwise use `~/.agents/skills/neo/scripts/neo.py`.
+Use the `<neo-cli>` already resolved by the active `$neo` router. If it is not
+present in the handoff context, resolve
+[scripts/neo.py](../../../neo/scripts/neo.py) from the installed `neo` skill's
+source location.
 
 1. Validate the handoff with `neo.py handoff <slug> --expect product`.
 2. Load approved discovery evidence.
 3. Read
-   [interaction.md](../neo/references/interaction.md),
-   [product-design.md](../neo/references/product-design.md), and
-   [prototype.md](../neo/references/prototype.md).
+   [interaction.md](../../../neo/references/interaction.md),
+   [product-design.md](../../../neo/references/product-design.md), and
+   [prototype.md](../../../neo/references/prototype.md).
 4. Establish users, context, current behavior, desired observable outcomes,
    representative success and harm scenarios, constraints, non-goals,
    acceptance evidence, and unverified assumptions.

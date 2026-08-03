@@ -7,15 +7,17 @@ description: Shape modules, interfaces, types, invariants, ownership, data struc
 
 Work only on the active Neo `program` stage.
 
-Resolve `<neo-cli>` to `.agents/skills/neo/scripts/neo.py` when present;
-otherwise use `~/.agents/skills/neo/scripts/neo.py`.
+Use the `<neo-cli>` already resolved by the active `$neo` router. If it is not
+present in the handoff context, resolve
+[scripts/neo.py](../../../neo/scripts/neo.py) from the installed `neo` skill's
+source location.
 
 1. Validate the handoff with `neo.py handoff <slug> --expect program`.
 2. Load approved upstream artifacts and inspect repository-native conventions.
 3. Read
-   [interaction.md](../neo/references/interaction.md),
-   [program-design.md](../neo/references/program-design.md), and
-   [prototype.md](../neo/references/prototype.md).
+   [interaction.md](../../../neo/references/interaction.md),
+   [program-design.md](../../../neo/references/program-design.md), and
+   [prototype.md](../../../neo/references/prototype.md).
 4. Define module knowledge, interfaces, types, contracts, errors, invariants,
    ownership, mutation, data operations, resource lifetime, dependency
    direction, test seams, and representative success and failure call paths.

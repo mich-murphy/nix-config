@@ -2,9 +2,7 @@
   "evidence": {
     "kind": "expert_demonstration_and_agent_failure_report",
     "references": [
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kent-beck-test-driven-development-by-example.md",
-      "/Users/mm/dev/agentic-workflow/docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md",
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/riccomini-ryaboy-missing-readme.md"
+      "references/sources.md"
     ],
     "frequency_or_severity": "Agents routinely code ahead, accept meaningless green tests, couple tests to implementation, and mix behavior with cleanup; these failures undermine correctness and maintainability.",
     "owner": "human"

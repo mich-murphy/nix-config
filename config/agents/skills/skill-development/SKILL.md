@@ -10,9 +10,9 @@ harnesses where it will run. Treat loadability as a structural check, not proof
 that the skill helps.
 
 Read [corpus-evidence.md](references/corpus-evidence.md) before making a
-material design, telemetry, model-route, or release recommendation. Resolve the
-linked claim in the repository evidence corpus when it is available; otherwise
-use the packaged rule provisionally and verify time-sensitive product facts.
+material design, telemetry, model-route, or release recommendation. Treat the
+packaged evidence boundary as the local source of truth; follow its public
+source links only when a time-sensitive product fact needs verification.
 
 ## Establish the Case
 
@@ -43,7 +43,7 @@ instructions that do not change observed behavior.
 Use the current harness's official initializer when one is available. Then run:
 
 ```sh
-python3 scripts/scaffold_package.py /path/to/skill --proposal proposal.json
+python3 scripts/scaffold_package.py <skill-directory> --proposal proposal.json
 ```
 
 Resolve `scripts/scaffold_package.py` relative to this `SKILL.md`, not the task
@@ -92,8 +92,8 @@ Inventory every bundled file, dependency, permission, external fetch, and
 third-party source. Run:
 
 ```sh
-python3 scripts/audit_package.py /path/to/skill
-python3 scripts/package_hash.py /path/to/skill
+python3 scripts/audit_package.py <skill-directory>
+python3 scripts/package_hash.py <skill-directory>
 ```
 
 Inspect every finding; a green structural audit does not establish behavioral

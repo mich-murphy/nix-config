@@ -55,7 +55,7 @@
           "detail": "launch_tui == False (got False)"
         }
       ],
-      "output": "{\"first_command\":\"hunk session list --json\",\"access\":\"Run the first discovery command outside the network sandbox and request reusable approval for the `hunk session` prefix; then match the session whose Repo is `/work/project`.\",\"launch_tui\":false}",
+      "output": "{\"first_command\":\"hunk session list --json\",\"access\":\"Run the first discovery command outside the network sandbox and request reusable approval for the `hunk session` prefix; then match the session whose Repo is `workspace/project`.\",\"launch_tui\":false}",
       "usage": {
         "input_tokens": 14987,
         "cached_input_tokens": 9984,
@@ -79,7 +79,7 @@
           "item": {
             "id": "item_0",
             "type": "agent_message",
-            "text": "{\"first_command\":\"hunk session list --json\",\"access\":\"Run the first discovery command outside the network sandbox and request reusable approval for the `hunk session` prefix; then match the session whose Repo is `/work/project`.\",\"launch_tui\":false}"
+            "text": "{\"first_command\":\"hunk session list --json\",\"access\":\"Run the first discovery command outside the network sandbox and request reusable approval for the `hunk session` prefix; then match the session whose Repo is `workspace/project`.\",\"launch_tui\":false}"
           }
         },
         {

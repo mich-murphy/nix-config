@@ -2,8 +2,7 @@
   "evidence": {
     "kind": "observational_delivery_guidance_and_implementation_reports",
     "references": [
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kim-et-al-devops-handbook.md",
-      "/Users/mm/dev/agentic-workflow/docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md"
+      "references/sources.md"
     ],
     "frequency_or_severity": "Deploying an unverified, mutable, or unrecoverable candidate can cause production incidents and data loss.",
     "owner": "human"

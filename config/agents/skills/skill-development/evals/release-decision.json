@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "stage": "alpha",
-  "package_hash": "4c7a0f64cdd11630117aea56bdf857fd01dc220f8ae421a3289a0ea98b32d486",
+  "package_hash": "6e8e375a36b1aaaa6ae7378351fd717bb1e100f653bc91f21326469b32c45e74",
   "case_set_hash": "d19a7f61dd780d6f28eb68c648ba0101ffecbc31fb316aec686df931b025e5bc",
   "tested_matrix": [
     {
@@ -23,7 +23,7 @@
   "owner": "repository maintainers",
   "limitations": [
     "One development smoke case and one repetition per harness support only a bounded development claim.",
-    "Recorded smoke runs used the behaviorally identical predecessor package; the moved package changes only corpus links from source-repository-relative paths to canonical repository URLs.",
+    "Recorded smoke runs predate the portability cleanup; the cleanup changes only local reference resolution, provenance links, and host-path redaction.",
     "No no-skill control, automatic-routing run, held-out outcome case, Pi run, production activation, or human-rework measure is recorded.",
     "The artifact grader reflects this repository's evidence, telemetry, route, safety, and release requirements; it is not a universal skill-quality score."
   ],

@@ -7,8 +7,10 @@ description: Ground an active Neo task in repository evidence, clarify the probl
 
 Work only on the active Neo `discover` stage.
 
-Resolve `<neo-cli>` to `.agents/skills/neo/scripts/neo.py` when present;
-otherwise use `~/.agents/skills/neo/scripts/neo.py`.
+Use the `<neo-cli>` already resolved by the active `$neo` router. If it is not
+present in the handoff context, resolve
+[scripts/neo.py](../../../neo/scripts/neo.py) from the installed `neo` skill's
+source location.
 
 1. Validate the handoff:
 
@@ -19,8 +21,8 @@ otherwise use `~/.agents/skills/neo/scripts/neo.py`.
 2. Read repository instructions, then inspect targeted code, tests, schemas,
    history, and runtime evidence before asking discoverable questions.
 3. Read
-   [interaction.md](../neo/references/interaction.md) and
-   [discovery.md](../neo/references/discovery.md).
+   [interaction.md](../../../neo/references/interaction.md) and
+   [discovery.md](../../../neo/references/discovery.md).
 4. If targeted inspection exposes one immediate blocking unknown that prevents
    meaningful discovery, record only that unknown with `record-unknown`, create
    no artifact, skip the gate, ask exactly one compact question, and stop.

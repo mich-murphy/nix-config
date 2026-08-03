@@ -7,8 +7,9 @@ description: Convert approved Neo context and design into thin vertical implemen
 
 Work only on the active Neo `delivery` stage.
 
-Resolve `<neo-cli>` to `.agents/skills/neo/scripts/neo.py` when present;
-otherwise use `~/.agents/skills/neo/scripts/neo.py`.
+Use the `<neo-cli>` already resolved by the active `$neo` router. If it is not
+present in the handoff context, resolve [scripts/neo.py](../neo/scripts/neo.py)
+from the installed `neo` skill's source location.
 
 1. Validate the handoff with `neo.py handoff <slug> --expect delivery`.
 2. Load all approved required-stage artifacts.

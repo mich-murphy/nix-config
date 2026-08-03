@@ -9,8 +9,8 @@ Take one approved plan to a release-ready candidate. Own the lifecycle and
 acceptance decision; delegate specialist mechanics without delegating scope or
 final judgment.
 
-Resolve `<ship-cli>` to `.agents/skills/ship/scripts/ship.py` when present;
-otherwise use `~/.agents/skills/ship/scripts/ship.py`.
+Resolve `<ship-cli>` as [scripts/ship.py](scripts/ship.py) relative to this
+skill's source location, independent of the current working directory.
 
 ## Admit the Plan
 

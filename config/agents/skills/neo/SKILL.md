@@ -9,9 +9,9 @@ Act as the public entry point to the Neo suite. Bootstrap routing locally, then
 continue required planning stages in the same context until user input is
 required. Do not duplicate discovery during routing or implement code.
 
-Resolve `<neo-cli>` to `.agents/skills/neo/scripts/neo.py` when that portable
-fixture exists; otherwise use `~/.agents/skills/neo/scripts/neo.py` from the
-managed installation. Use the resolved path for every `neo.py` command.
+Resolve `<neo-cli>` as [scripts/neo.py](scripts/neo.py) relative to this skill's
+source location, independent of the current working directory. Use that
+resolved path for every `neo.py` command.
 
 ## Start
 

@@ -2,11 +2,11 @@
   {
     "id": "bro-preserves-operational-detail",
     "skill": "bro",
-    "prompt": "The previous assistant response was:\n\n## Deployment\nThe worker uses exponential backoff, meaning every retry waits longer than the previous one. Edit `/srv/app/config.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Never run `git reset --hard` here because it would destroy uncommitted work. If the focused test passes, deploy to staging next.\n\nThe user replied: bro\n\nRewrite the previous response for that user.",
+    "prompt": "The previous assistant response was:\n\n## Deployment\nThe worker uses exponential backoff, meaning every retry waits longer than the previous one. Edit `config/worker.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Never run `git reset --hard` here because it would destroy uncommitted work. If the focused test passes, deploy to staging next.\n\nThe user replied: bro\n\nRewrite the previous response for that user.",
     "assertions": [
       {
         "type": "contains",
-        "value": "/srv/app/config.toml"
+        "value": "config/worker.toml"
       },
       {
         "type": "contains",

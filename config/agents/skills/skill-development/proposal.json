@@ -3,11 +3,8 @@
   "evidence": {
     "kind": "reviewed_failure_or_success",
     "references": [
-      "docs/skills-and-instructions/official-skill-creation-comparison.md",
-      "docs/tools-models-and-orchestration/ai-agent-observability.md",
-      "docs/tools-models-and-orchestration/official-anthropic-openai-model-guidance.md",
-      "installed Codex skill-creator",
-      "installed Claude skill-creator"
+      "references/corpus-evidence.md",
+      "references/security-and-provenance.md"
     ],
     "frequency_or_severity": "Built-in creators cover structure but incompletely enforce evidence lineage, container choice, cross-harness controls, privacy-first telemetry, model/effort experiments, and release gates.",
     "current_workaround": "Manually combine the repository corpus, built-in creator output, bespoke evaluation scripts, and release review.",

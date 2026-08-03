@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "label_source": "assistant-extrapolated-from-human-review",
-  "source_result": "/tmp/neo-full-evals-20260731.json",
+  "source_result": "results/baseline.json",
   "human_reference": "pairwise-labels.json",
   "method": "Apply the reviewer's demonstrated preference for concise human-facing decisions and strong clarification discipline, then reveal identity and latency for workflow-value. Additional latency is justified only when it prevents a consequentially invalid or assumption-driven result.",
   "pairs": [

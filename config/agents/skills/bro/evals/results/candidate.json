@@ -40,7 +40,7 @@
       "assertions": [
         {
           "passed": true,
-          "detail": "contains '/srv/app/config.toml'"
+          "detail": "contains 'config/worker.toml'"
         },
         {
           "passed": true,
@@ -67,7 +67,7 @@
           "detail": "word count 42 <= 105"
         }
       ],
-      "output": "## Deployment\n\nThe worker waits longer after each failed retry. Edit `/srv/app/config.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Don\u2019t run `git reset --hard`; it would delete uncommitted work. If the focused test passes, deploy to staging next.",
+      "output": "## Deployment\n\nThe worker waits longer after each failed retry. Edit `config/worker.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Don\u2019t run `git reset --hard`; it would delete uncommitted work. If the focused test passes, deploy to staging next.",
       "usage": {
         "input_tokens": 13384,
         "cached_input_tokens": 8960,
@@ -91,7 +91,7 @@
           "item": {
             "id": "item_0",
             "type": "agent_message",
-            "text": "## Deployment\n\nThe worker waits longer after each failed retry. Edit `/srv/app/config.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Don\u2019t run `git reset --hard`; it would delete uncommitted work. If the focused test passes, deploy to staging next."
+            "text": "## Deployment\n\nThe worker waits longer after each failed retry. Edit `config/worker.toml`, then run:\n\n```sh\ncargo test -p worker\n```\n\n**Warning:** Don\u2019t run `git reset --hard`; it would delete uncommitted work. If the focused test passes, deploy to staging next."
           }
         },
         {

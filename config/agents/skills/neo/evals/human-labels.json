@@ -10,7 +10,7 @@
     "human_reason": "refused to create files that did not exist and flagged this as a user decision",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -23,7 +23,7 @@
     "human_reason": "easily understood and clear",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -36,7 +36,7 @@
     "human_reason": "doesn't reach this state, so nothing to judge",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -49,7 +49,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -62,7 +62,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -75,7 +75,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -88,7 +88,7 @@
     "human_reason": "too verbose, this is the type of text wall I'm trying to avoid",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -101,7 +101,7 @@
     "human_reason": "stopped where expected",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -114,7 +114,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -127,7 +127,7 @@
     "human_reason": "presented a much clearer action to the user, with only the needed information",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -140,7 +140,7 @@
     "human_reason": "stopped where expected",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "trivial-established-change",
@@ -153,7 +153,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -166,7 +166,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -179,7 +179,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -192,7 +192,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -205,7 +205,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -218,7 +218,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -231,7 +231,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -244,7 +244,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -257,7 +257,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -270,7 +270,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -283,7 +283,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -296,7 +296,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -309,7 +309,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -322,7 +322,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -335,7 +335,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -348,7 +348,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -361,7 +361,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -374,7 +374,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "ambiguous-brownfield-feature",
@@ -387,7 +387,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -400,7 +400,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -413,7 +413,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -426,7 +426,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -439,7 +439,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -452,7 +452,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -465,7 +465,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -478,7 +478,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -491,7 +491,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -504,7 +504,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -517,7 +517,7 @@
     "human_reason": "jumped to making assumptions",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -530,7 +530,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -543,7 +543,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -556,7 +556,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -569,7 +569,7 @@
     "human_reason": "presents too many questions at once",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -582,7 +582,7 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -595,7 +595,7 @@
     "human_reason": null,
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -608,7 +608,7 @@
     "human_reason": "asks multiple questions in the same question and presents recommendations without evidence",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "case_id": "schema-api-migration",
@@ -621,6 +621,6 @@
     "human_reason": "no approved final brief was produced",
     "predicted": null,
     "split": "development",
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   }
 ]

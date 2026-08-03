@@ -1,12 +1,18 @@
 # Evidence and Provenance
 
-Primary local synthesis:
+This package incorporates the relevant synthesis directly. Its primary sources
+are:
 
-- `docs/practitioner-workflows/kim-et-al-devops-handbook.md`: delivery
-  pipeline, small batches, production telemetry, reliability, security,
-  recovery, and balanced measurement.
-- `docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md`:
-  lifecycle definition of done and observable deployment conditions.
+- Gene Kim et al.,
+  [*The DevOps Handbook* excerpt](https://itrevolution.com/wp-content/uploads/2022/06/DOHB2_Excerpt.pdf),
+  for flow, feedback, continual learning, reliability, and security.
+- DORA on [continuous delivery](https://dora.dev/capabilities/continuous-delivery/),
+  [small batches](https://dora.dev/capabilities/working-in-small-batches/),
+  [monitoring and observability](https://dora.dev/capabilities/monitoring-and-observability/),
+  and [pervasive security](https://dora.dev/capabilities/pervasive-security/).
+- Google SRE's
+  [canarying guidance](https://sre.google/workbook/canarying-releases/), for
+  progressive exposure, health signals, and recovery decisions.
 
 DORA evidence is observational and context-dependent. It supports local trials
 of delivery capabilities, not a universal causal claim that a particular tool

@@ -2,10 +2,7 @@
   "evidence": {
     "kind": "reviewed_workflow_and_failure_controls",
     "references": [
-      "/Users/mm/dev/agentic-workflow/docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md",
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kun-chen-current-workflow.md",
-      "/Users/mm/dev/nix-config/config/agents/skills/refactor/SKILL.md",
-      "/Users/mm/dev/nix-config/config/agents/skills/resolve-review/SKILL.md"
+      "references/sources.md"
     ],
     "frequency_or_severity": "Every nontrivial implemented change needs trustworthy behavioral evidence and independent review; stale review evidence and invented plan decisions are high-severity failures.",
     "owner": "human"

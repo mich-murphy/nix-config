@@ -28,7 +28,7 @@
       "candidate_a": 272.2571514999727,
       "candidate_b": 37.30741399998078
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "claude:trivial-established-change",
@@ -59,7 +59,7 @@
       "candidate_a": 75.01545491698198,
       "candidate_b": 556.5033717500046
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "pi:trivial-established-change",
@@ -92,7 +92,7 @@
       "candidate_a": 300.02596054098103,
       "candidate_b": 44.8014462920255
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "codex:ambiguous-brownfield-feature",
@@ -124,7 +124,7 @@
       "candidate_a": 206.86860558396438,
       "candidate_b": 46.4806122079608
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "claude:ambiguous-brownfield-feature",
@@ -156,7 +156,7 @@
       "candidate_a": 55.9883221249911,
       "candidate_b": 467.01087204093346
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "pi:ambiguous-brownfield-feature",
@@ -188,7 +188,7 @@
       "candidate_a": 358.83277029101737,
       "candidate_b": 27.746247667004354
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "codex:schema-api-migration",
@@ -220,7 +220,7 @@
       "candidate_a": 43.02519887499511,
       "candidate_b": 129.9762765839696
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "claude:schema-api-migration",
@@ -252,7 +252,7 @@
       "candidate_a": 407.73016945895506,
       "candidate_b": 107.54944350000005
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   },
   {
     "pair_id": "pi:schema-api-migration",
@@ -284,6 +284,6 @@
       "candidate_a": 38.483141917036846,
       "candidate_b": 216.47119966702303
     },
-    "source_result": "/tmp/neo-full-evals-20260731.json"
+    "source_result": "results/baseline.json"
   }
 ]

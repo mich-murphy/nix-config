@@ -1,15 +1,14 @@
 # Evidence and Provenance
 
-Primary local synthesis:
-
-- `docs/practitioner-workflows/kent-beck-test-driven-development-by-example.md`
-  in the agentic-workflow corpus.
-- `docs/foundations-and-synthesis/software-development-practice-for-agent-steering.md`.
-- `docs/practitioner-workflows/riccomini-ryaboy-missing-readme.md`.
-
-The corpus traces mechanics to Kent Beck's *Test-Driven Development: By
-Example*, licensed book previews, Beck's later Canon TDD, TDD Prerequisites,
-Test Desiderata, and his agent-assisted implementation report.
+This package incorporates the relevant synthesis directly. Its primary sources
+are Kent Beck's [*Test-Driven Development: By Example* official sample](https://www.informit.com/content/images/9780321146533/samplepages/0321146530.pdf),
+[Canon TDD](https://newsletter.kentbeck.com/p/canon-tdd),
+[TDD prerequisites](https://newsletter.kentbeck.com/p/tdd-prerequisites),
+[Test Desiderata](https://testdesiderata.com/), and his
+[agent-assisted implementation report](https://newsletter.kentbeck.com/p/augmented-coding-beyond-the-vibes).
+Chris Riccomini and Dmitriy Ryaboy's
+[*The Missing README*](https://themissingreadme.com/) supplies the wider
+brownfield, review, compatibility, and delivery boundary.
 
 The mechanics are expert guidance and worked demonstration. They establish what
 the method does, not a general causal improvement in defects, productivity, or

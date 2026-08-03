@@ -2,9 +2,7 @@
   "evidence": {
     "kind": "official_review_guidance_and_practitioner_synthesis",
     "references": [
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/riccomini-ryaboy-missing-readme.md",
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kent-beck-test-driven-development-by-example.md",
-      "/Users/mm/dev/agentic-workflow/docs/practitioner-workflows/kun-chen-current-workflow.md"
+      "references/sources.md"
     ],
     "frequency_or_severity": "Implementation agents can miss requirement, test-integrity, design, compatibility, and operational defects; self-review is vulnerable to context anchoring.",
     "owner": "human"

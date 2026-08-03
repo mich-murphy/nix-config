@@ -7,8 +7,9 @@ description: Consolidate approved Neo artifacts into a versioned implementation 
 
 Work only on the active Neo `finalize` stage.
 
-Resolve `<neo-cli>` to `.agents/skills/neo/scripts/neo.py` when present;
-otherwise use `~/.agents/skills/neo/scripts/neo.py`.
+Use the `<neo-cli>` already resolved by the active `$neo` router. If it is not
+present in the handoff context, resolve [scripts/neo.py](../neo/scripts/neo.py)
+from the installed `neo` skill's source location.
 
 1. Validate the handoff with `neo.py handoff <slug> --expect finalize`.
 2. Load approved artifacts, recorded decisions, prototype evidence, and open
