@@ -1,20 +1,28 @@
 {
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-    "OTEL_TRACES_EXPORTER": "otlp",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "0",
+    "OTEL_TRACES_EXPORTER": "none",
     "OTEL_METRICS_EXPORTER": "none",
     "OTEL_LOGS_EXPORTER": "none",
     "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": "http/protobuf",
     "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://docker-host:4318/v1/traces",
-    "OTEL_LOG_USER_PROMPTS": "1",
-    "OTEL_LOG_TOOL_DETAILS": "1",
-    "OTEL_LOG_TOOL_CONTENT": "1",
+    "OTEL_LOG_USER_PROMPTS": "0",
+    "OTEL_LOG_TOOL_DETAILS": "0",
+    "OTEL_LOG_TOOL_CONTENT": "0",
     "OTEL_LOG_RAW_API_BODIES": "0",
     "CLAUDE_CODE_OTEL_CONTENT_MAX_LENGTH": "61440",
     "OTEL_METRICS_INCLUDE_SESSION_ID": "false",
     "OTEL_METRICS_INCLUDE_ACCOUNT_UUID": "false",
     "OTEL_METRICS_INCLUDE_VERSION": "true",
-    "OTEL_RESOURCE_ATTRIBUTES": "app.agent.schema.version=1.1.0,app.agent.harness.name=claude"
+    "OTEL_RESOURCE_ATTRIBUTES": "app.agent.schema.version=1.2.0,app.agent.harness.name=claude"
+  },
+  "hooks": {
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "python3 \"$HOME/.config/agent-observability/hooks/app_agent_hook.py\" --harness claude", "timeout": 5}]}],
+    "PreToolUse": [{"hooks": [{"type": "command", "command": "python3 \"$HOME/.config/agent-observability/hooks/app_agent_hook.py\" --harness claude", "timeout": 5}]}],
+    "PermissionRequest": [{"hooks": [{"type": "command", "command": "python3 \"$HOME/.config/agent-observability/hooks/app_agent_hook.py\" --harness claude", "timeout": 5}]}],
+    "PostToolUse": [{"hooks": [{"type": "command", "command": "python3 \"$HOME/.config/agent-observability/hooks/app_agent_hook.py\" --harness claude", "timeout": 5}]}],
+    "PostToolUseFailure": [{"hooks": [{"type": "command", "command": "python3 \"$HOME/.config/agent-observability/hooks/app_agent_hook.py\" --harness claude", "timeout": 5}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "python3 \"$HOME/.config/agent-observability/hooks/app_agent_hook.py\" --harness claude", "timeout": 10}]}]
   }
 }

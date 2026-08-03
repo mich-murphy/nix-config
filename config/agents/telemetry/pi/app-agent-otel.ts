@@ -13,7 +13,7 @@ type Span = {
   status?: "ok" | "error";
 };
 
-const SCHEMA_VERSION = "1.1.0";
+const SCHEMA_VERSION = "1.2.0";
 const MAX_PENDING_EXPORTS = 64;
 const MAX_CONTENT_LENGTH = 61_440;
 const endpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
@@ -39,31 +39,52 @@ function jsonAttribute(value: unknown): string {
   }
 }
 
-function inputMessages(prompt: string): string {
-  return jsonAttribute([{ role: "user", parts: [{ type: "text", content: prompt }] }]);
+function metadataMessages(role: string, values: Record<string, unknown>): string {
+  return jsonAttribute([{ role, parts: [{ type: "text", content: JSON.stringify(values) }] }]);
 }
 
-function outputMessages(message: unknown): string {
+function outputMetadata(message: unknown): string {
   const value = message as { content?: Array<Record<string, unknown>>; stopReason?: string };
-  const parts: Array<Record<string, unknown>> = [];
+  const contentHashes: string[] = [];
   for (const item of value.content ?? []) {
     if (item.type === "text" && typeof item.text === "string") {
-      parts.push({ type: "text", content: item.text });
-    }
-    if (item.type === "toolCall" && typeof item.name === "string") {
-      parts.push({
-        type: "tool_call",
-        ...(typeof item.id === "string" ? { id: item.id } : {}),
-        name: item.name,
-        arguments: item.arguments ?? {},
-      });
+      contentHashes.push(hash(item.text));
     }
   }
-  return jsonAttribute([{
-    role: "assistant",
-    parts,
-    ...(typeof value.stopReason === "string" ? { finish_reason: value.stopReason } : {}),
-  }]);
+  return metadataMessages("assistant", {
+    content_hashes: contentHashes,
+    finish_reason: value.stopReason ?? "not_observed",
+  });
+}
+
+function verifiedOutcome(): { status: string; verifier: string } {
+  const requested = process.env.APP_AGENT_VERIFIED_OUTCOME ?? "completed";
+  const verifier = process.env.APP_AGENT_VERIFIER_PROVENANCE ?? "not_observed";
+  const supported = ["completed", "accepted", "failed", "delayed", "cancelled"];
+  if (!supported.includes(requested)) return { status: "completed", verifier };
+  if (["accepted", "failed"].includes(requested) && verifier === "not_observed") {
+    return { status: "completed", verifier };
+  }
+  return { status: requested, verifier };
+}
+
+function validationType(name: string, args: unknown): string | undefined {
+  if (name !== "bash") return undefined;
+  const command = String((args as { command?: unknown })?.command ?? "").toLowerCase();
+  if (/\b(pytest|unittest|cargo test|go test|nix flake check)\b/.test(command)) return "test";
+  if (/\b(lint|ruff|clippy|shellcheck|markdownlint)\b/.test(command)) return "lint";
+  if (/\b(build|docker compose config)\b/.test(command)) return "build";
+  return undefined;
+}
+
+function skillReference(args: unknown): { name: string; stage: string } | undefined {
+  const text = jsonAttribute(args);
+  const match = text.match(/(?:^|\/)skills\/([a-z][a-z0-9-]{1,80})\/(SKILL\.md|references\/|scripts\/)/);
+  if (!match) return undefined;
+  return {
+    name: match[1],
+    stage: match[2] === "SKILL.md" ? "activated" : match[2] === "references/" ? "expanded" : "executed",
+  };
 }
 
 function otlpValue(value: string | number | boolean): Record<string, unknown> {
@@ -144,8 +165,12 @@ export default function appAgentOtel(pi: ExtensionAPI) {
   let spans: Span[] = [];
   let currentTurn: Span | undefined;
   let taskStartedAtMs = 0;
+  let taskCostUsd = 0;
+  let costObserved = false;
   let pendingPrompt = "";
   const tools = new Map<string, Span>();
+  const skills = new Map<string, Set<string>>();
+  const skillHashes = new Map<string, string>();
 
   const resource = (): Attributes => ({
     "service.name": "pi-coding-agent",
@@ -156,6 +181,8 @@ export default function appAgentOtel(pi: ExtensionAPI) {
     "app.agent.repository.hash": process.env.APP_AGENT_REPOSITORY_HASH ?? "not_observed",
     "app.agent.repository.base_revision": process.env.APP_AGENT_BASE_REVISION ?? "not_observed",
     "app.agent.skill.catalogue_hash": process.env.APP_AGENT_SKILL_CATALOGUE_HASH ?? "not_observed",
+    "app.agent.trace.kind": process.env.APP_AGENT_TRACE_KIND ?? "operational",
+    "deployment.environment.name": process.env.APP_AGENT_TRACE_KIND === "evaluation" ? "evaluation" : "local",
   });
 
   pi.on("session_start", async (_event, ctx) => {
@@ -166,9 +193,19 @@ export default function appAgentOtel(pi: ExtensionAPI) {
 
   pi.on("before_agent_start", (event) => {
     pendingPrompt = event.prompt;
+    skills.clear();
+    skillHashes.clear();
+    for (const match of event.prompt.matchAll(/(?:^|\s)[$/]([a-z][a-z0-9-]{1,80})\b/g)) {
+      skills.set(match[1], new Set(["offered", "selected"]));
+    }
+    for (const skill of event.systemPromptOptions.skills ?? []) {
+      skills.set(skill.name, new Set(["offered"]));
+      skillHashes.set(skill.name, hash(skill.content));
+    }
   });
 
   pi.on("agent_start", async (_event, ctx) => {
+    if (task) return;
     const traceId = hex(16);
     task = {
       traceId,
@@ -178,18 +215,23 @@ export default function appAgentOtel(pi: ExtensionAPI) {
       attributes: {
         "app.agent.record.type": "task",
         "app.agent.task.id": traceId,
+        "session.id": sessionId,
         "app.agent.session.id": sessionId,
         "app.agent.task.class": process.env.APP_AGENT_TASK_CLASS ?? "not_observed",
         "app.agent.risk.class": process.env.APP_AGENT_RISK_CLASS ?? "not_observed",
+        "app.agent.skill.catalogue_hash": process.env.APP_AGENT_SKILL_CATALOGUE_HASH ?? "not_observed",
         "app.agent.model.requested": ctx.model?.id ?? "not_observed",
         "app.agent.model.returned": ctx.model?.id ?? "not_observed",
         "app.agent.model.effort": ctx.thinkingLevel ?? "not_observed",
         "app.agent.permission.decision": "not_observed",
-        "gen_ai.input.messages": inputMessages(pendingPrompt),
+        "app.agent.content.capture": "metadata",
+        "gen_ai.input.messages": metadataMessages("user", { prompt_hash: hash(pendingPrompt) }),
       },
     };
     pendingPrompt = "";
     taskStartedAtMs = Date.now();
+    taskCostUsd = 0;
+    costObserved = false;
     spans = [];
   });
 
@@ -201,12 +243,24 @@ export default function appAgentOtel(pi: ExtensionAPI) {
       parentSpanId: task.spanId,
       name: "gen_ai.invoke_agent",
       startTimeUnixNano: String(BigInt(event.timestamp) * 1_000_000n),
-      attributes: { "gen_ai.operation.name": "invoke_agent", "app.agent.retry.count": event.turnIndex },
+      attributes: {
+        "gen_ai.operation.name": "invoke_agent",
+        "app.agent.retry.count": event.turnIndex,
+        "app.agent.content.capture": "metadata",
+      },
     };
   });
 
   pi.on("tool_execution_start", (event) => {
     if (!task) return;
+    const referenced = skillReference(event.args);
+    if (referenced) {
+      const stages = skills.get(referenced.name) ?? new Set<string>();
+      for (const stage of ["offered", "selected", "activated"]) stages.add(stage);
+      if (referenced.stage === "expanded" || referenced.stage === "executed") stages.add("expanded");
+      if (referenced.stage === "executed") stages.add("executed");
+      skills.set(referenced.name, stages);
+    }
     tools.set(event.toolCallId, {
       traceId: task.traceId,
       spanId: hex(8),
@@ -219,7 +273,10 @@ export default function appAgentOtel(pi: ExtensionAPI) {
         "gen_ai.operation.name": "execute_tool",
         "gen_ai.tool.name": event.toolName,
         "gen_ai.tool.call.id": event.toolCallId,
-        "gen_ai.tool.call.arguments": jsonAttribute(event.args),
+        "app.agent.tool.input_hash": hash(jsonAttribute(event.args)),
+        ...(validationType(event.toolName, event.args)
+          ? { "app.agent.validation.type": validationType(event.toolName, event.args) as string }
+          : {}),
       },
     });
   });
@@ -230,8 +287,26 @@ export default function appAgentOtel(pi: ExtensionAPI) {
     span.endTimeUnixNano = now();
     span.status = event.isError ? "error" : "ok";
     span.attributes["app.agent.tool.status"] = event.isError ? "error" : "ok";
-    span.attributes["gen_ai.tool.call.result"] = jsonAttribute(event.result);
+    span.attributes["app.agent.tool.output_hash"] = hash(jsonAttribute(event.result));
     spans.push(span);
+    const validation = span.attributes["app.agent.validation.type"];
+    if (typeof validation === "string") {
+      spans.push({
+        traceId: span.traceId,
+        spanId: hex(8),
+        parentSpanId: task?.spanId,
+        name: "validation.run",
+        startTimeUnixNano: span.startTimeUnixNano,
+        endTimeUnixNano: span.endTimeUnixNano,
+        status: span.status,
+        attributes: {
+          "app.agent.record.type": "validation",
+          "app.agent.validation.type": validation,
+          "app.agent.validation.status": event.isError ? "fail" : "pass",
+          "app.agent.validation.provenance": `tool:${event.toolCallId}`,
+        },
+      });
+    }
     tools.delete(event.toolCallId);
   });
 
@@ -247,7 +322,12 @@ export default function appAgentOtel(pi: ExtensionAPI) {
       currentTurn.attributes["gen_ai.usage.output_tokens"] = usage.output;
       currentTurn.attributes["app.agent.tokens.cached"] = usage.cacheRead;
       currentTurn.attributes["app.agent.tokens.reasoning"] = usage.reasoning ?? 0;
-      currentTurn.attributes["gen_ai.output.messages"] = outputMessages(event.message);
+      if (typeof usage.cost?.total === "number") {
+        currentTurn.attributes["app.agent.cost.usd"] = usage.cost.total;
+        taskCostUsd += usage.cost.total;
+        costObserved = true;
+      }
+      currentTurn.attributes["gen_ai.output.messages"] = outputMetadata(event.message);
     }
     spans.push(currentTurn);
     currentTurn = undefined;
@@ -277,15 +357,61 @@ export default function appAgentOtel(pi: ExtensionAPI) {
     });
   });
 
-  pi.on("agent_end", async (event) => {
+  pi.on("agent_end", (event) => {
     if (!task) return;
     const finalAssistant = [...event.messages].reverse().find((message) => message.role === "assistant");
-    if (finalAssistant) task.attributes["gen_ai.output.messages"] = outputMessages(finalAssistant);
+    if (finalAssistant) task.attributes["gen_ai.output.messages"] = outputMetadata(finalAssistant);
+  });
+
+  pi.on("agent_settled", async () => {
+    if (!task) return;
+    for (const [name, observedStages] of skills.entries()) {
+      observedStages.add("evaluated");
+      for (const stage of observedStages) {
+        spans.push({
+          traceId: task.traceId,
+          spanId: hex(8),
+          parentSpanId: task.spanId,
+          name: stage === "activated" ? "skill.activate" : "skill.lifecycle",
+          startTimeUnixNano: task.startTimeUnixNano,
+          endTimeUnixNano: now(),
+          attributes: {
+            "app.agent.record.type": "skill",
+            "app.agent.skill.name": name,
+            "app.agent.skill.package_hash": skillHashes.get(name)
+              ?? process.env.APP_AGENT_SKILL_PACKAGE_HASH
+              ?? "not_observed",
+            "app.agent.skill.activation": stage,
+            "app.agent.skill.selection": "observed",
+          },
+        });
+      }
+    }
+    const outcome = verifiedOutcome();
     task.endTimeUnixNano = now();
-    task.status = "ok";
-    task.attributes["app.agent.final.status"] = "accepted";
+    task.status = ["failed", "cancelled"].includes(outcome.status) ? "error" : "ok";
+    task.attributes["app.agent.final.status"] = outcome.status;
+    task.attributes["app.agent.outcome.status"] = outcome.status;
+    task.attributes["app.agent.outcome.verifier"] = outcome.verifier;
+    task.attributes["app.agent.cost.status"] = costObserved ? "observed" : "not_observed";
+    if (costObserved) task.attributes["app.agent.cost.usd"] = taskCostUsd;
     task.attributes["app.agent.duration_ms"] = Date.now() - taskStartedAtMs;
     task.attributes["app.agent.outcome.reference"] = process.env.APP_AGENT_OUTCOME_REFERENCE ?? "not_observed";
+    spans.push({
+      traceId: task.traceId,
+      spanId: hex(8),
+      parentSpanId: task.spanId,
+      name: "agent.final",
+      startTimeUnixNano: task.endTimeUnixNano,
+      endTimeUnixNano: task.endTimeUnixNano,
+      status: task.status,
+      attributes: {
+        "app.agent.record.type": "outcome",
+        "app.agent.final.status": outcome.status,
+        "app.agent.outcome.status": outcome.status,
+        "app.agent.outcome.verifier": outcome.verifier,
+      },
+    });
     await flush(payload([task, ...spans], resource()));
     task = undefined;
     spans = [];

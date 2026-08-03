@@ -10,15 +10,19 @@ from __future__ import annotations
 
 import argparse
 import copy
+import functools
 import json
 import os
 import re
+import secrets
 import shutil
 import subprocess
 import tempfile
 import time
 from pathlib import Path
 from typing import Any
+
+from telemetry import task_trace
 
 
 HARNESS_COMMANDS = {"codex": "codex", "claude": "claude", "pi": "pi"}
@@ -31,6 +35,17 @@ USAGE_KEYS = (
     "output_tokens",
     "reasoning_output_tokens",
 )
+
+
+@functools.lru_cache(maxsize=None)
+def harness_version(harness: str) -> str:
+    try:
+        return subprocess.check_output(
+            [HARNESS_COMMANDS[harness], "--version"], text=True,
+            stderr=subprocess.DEVNULL, timeout=10,
+        ).strip() or "not_observed"
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return "not_observed"
 
 
 def read_json(path: Path) -> Any:
@@ -160,10 +175,7 @@ def copy_auth(source: Path, destination: Path) -> None:
 def isolated_environment(harness: str, temp_root: Path) -> dict[str, str]:
     env = os.environ.copy()
     env["APP_AGENT_EVAL_RUN"] = "1"
-    env["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] = env.get(
-        "APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"
-    )
-    env["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http/protobuf"
+    env["APP_AGENT_TRACE_KIND"] = "evaluation"
     if harness == "codex":
         codex_home = temp_root / "codex"
         codex_home.mkdir(mode=0o700)
@@ -175,7 +187,7 @@ environment = "evaluation"
 log_user_prompt = false
 exporter = "none"
 metrics_exporter = "none"
-trace_exporter = { "otlp-http" = { endpoint = "http://docker-host:4318/v1/traces", protocol = "binary" } }
+trace_exporter = "none"
 """
         )
         env["CODEX_HOME"] = str(codex_home)
@@ -188,14 +200,10 @@ trace_exporter = { "otlp-http" = { endpoint = "http://docker-host:4318/v1/traces
                         "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
                         "OTEL_METRICS_EXPORTER": "none",
                         "OTEL_LOGS_EXPORTER": "none",
-                        "OTEL_TRACES_EXPORTER": "otlp",
-                        "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
-                        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": env[
-                            "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
-                        ],
-                        "OTEL_LOG_USER_PROMPTS": "1",
-                        "OTEL_LOG_TOOL_DETAILS": "1",
-                        "OTEL_LOG_TOOL_CONTENT": "1",
+                        "OTEL_TRACES_EXPORTER": "none",
+                        "OTEL_LOG_USER_PROMPTS": "0",
+                        "OTEL_LOG_TOOL_DETAILS": "0",
+                        "OTEL_LOG_TOOL_CONTENT": "0",
                         "OTEL_LOG_RAW_API_BODIES": "0",
                         "CLAUDE_CODE_OTEL_CONTENT_MAX_LENGTH": "61440",
                     }
@@ -236,10 +244,9 @@ def command_for(
             str(temp_root / "claude-settings.json"), "--setting-sources", "project",
             "--model", model, "--effort", effort, prompt,
         ]
-    extension = eval_dir.parents[2] / "telemetry" / "pi" / "app-agent-otel.ts"
     return [
         "pi", "--print", "--no-session", "--no-tools", "--no-extensions",
-        "--no-skills", "--no-context-files", "--extension", str(extension),
+        "--no-skills", "--no-context-files",
         "--model", model, "--thinking", effort, prompt,
     ]
 
@@ -296,6 +303,148 @@ def failure_kind_for(state: str, stderr: str, returncode: int) -> str | None:
     return "model_or_task"
 
 
+def git_value(repository: Path, *arguments: str) -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(repository), *arguments],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip() or "not_observed"
+    except (OSError, subprocess.CalledProcessError):
+        return "not_observed"
+
+
+def returned_model_for(events: list[Any]) -> str:
+    for event in reversed(events):
+        if not isinstance(event, dict):
+            continue
+        for key in ("response_model", "responseModel", "model"):
+            value = event.get(key)
+            if isinstance(value, str) and value:
+                return value
+        message = event.get("message")
+        if isinstance(message, dict):
+            value = message.get("model")
+            if isinstance(value, str) and value:
+                return value
+    return "not_observed"
+
+
+def observed_cost(usage: dict[str, Any]) -> float | None:
+    for value in (usage.get("cost_usd"), usage.get("total_cost_usd")):
+        if isinstance(value, (int, float)):
+            return float(value)
+    cost = usage.get("cost")
+    if isinstance(cost, dict) and isinstance(cost.get("total"), (int, float)):
+        return float(cost["total"])
+    return None
+
+
+def outcome_for(state: str, accepted: bool) -> str:
+    if accepted:
+        return "accepted"
+    return {
+        "succeeded": "failed",
+        "task_failure": "failed",
+        "harness_failure": "invalid_harness",
+        "environment_failure": "invalid_environment",
+        "evaluator_failure": "evaluator_error",
+    }.get(state, "not_observed")
+
+
+def evaluation_children(
+    *,
+    process_started_ns: int,
+    process_ended_ns: int,
+    evaluation_ended_ns: int,
+    route: dict[str, str],
+    usage: dict[str, Any],
+    skill_name: str,
+    skill_hash: str,
+    variant: str,
+    mode: str,
+    assertions_passed: int,
+    assertions_total: int,
+    outcome: str,
+    evaluator_version: str,
+) -> list[dict[str, Any]]:
+    invocation_attributes: dict[str, str | int | float | bool] = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": route["model"],
+        "app.agent.model.effort": route["effort"],
+    }
+    for source, target in (
+        ("input_tokens", "gen_ai.usage.input_tokens"),
+        ("output_tokens", "gen_ai.usage.output_tokens"),
+        ("cached_input_tokens", "app.agent.tokens.cached"),
+        ("reasoning_output_tokens", "app.agent.tokens.reasoning"),
+    ):
+        value = usage.get(source)
+        if isinstance(value, int):
+            invocation_attributes[target] = value
+    children = [task_trace.child_span(
+        "gen_ai.invoke_agent",
+        started_ns=process_started_ns,
+        ended_ns=process_ended_ns,
+        attributes=invocation_attributes,
+    )]
+    if variant != "no-skill":
+        stages = ["offered", "evaluated"]
+        if mode in {"conditional", "end-to-end"}:
+            stages[1:1] = ["selected", "activated", "expanded", "executed"]
+        for index, stage in enumerate(stages):
+            timestamp = min(process_ended_ns, process_started_ns + index)
+            children.append(task_trace.child_span(
+                "skill.activate" if stage == "activated" else "skill.lifecycle",
+                started_ns=timestamp,
+                ended_ns=timestamp,
+                attributes={
+                    "app.agent.record.type": "skill",
+                    "app.agent.skill.name": skill_name,
+                    "app.agent.skill.package_hash": skill_hash,
+                    "app.agent.skill.activation": stage,
+                    "app.agent.skill.selection": "user" if mode == "conditional" else "router",
+                },
+            ))
+    children.extend([
+        task_trace.child_span(
+            "validation.run",
+            started_ns=process_ended_ns,
+            ended_ns=evaluation_ended_ns,
+            attributes={
+                "app.agent.record.type": "validation",
+                "app.agent.validation.type": "packaged_assertions",
+                "app.agent.validation.status": "pass" if outcome == "accepted" else "fail",
+                "app.agent.validation.passed": assertions_passed,
+                "app.agent.validation.failed": max(0, assertions_total - assertions_passed),
+            },
+            status="ok" if outcome == "accepted" else "error",
+        ),
+        task_trace.child_span(
+            "evaluator.run",
+            started_ns=process_ended_ns,
+            ended_ns=evaluation_ended_ns,
+            attributes={
+                "app.agent.evaluator.name": "packaged-assertion-scorer",
+                "app.agent.evaluator.version": evaluator_version,
+                "app.agent.outcome.status": outcome,
+            },
+            status="error" if outcome == "evaluator_error" else "ok",
+        ),
+        task_trace.child_span(
+            "agent.final",
+            started_ns=evaluation_ended_ns,
+            ended_ns=evaluation_ended_ns,
+            attributes={
+                "app.agent.record.type": "outcome",
+                "app.agent.final.status": outcome,
+                "app.agent.outcome.verifier": f"packaged-assertion-scorer@{evaluator_version}",
+            },
+        ),
+    ])
+    return children
+
+
 def run_once(
     eval_dir: Path,
     case: dict[str, Any],
@@ -306,15 +455,55 @@ def run_once(
     repetition: int,
     timeout: int,
 ) -> dict[str, Any]:
+    run_started_ns = time.time_ns()
     context = skill_context(eval_dir, case, variant)
     if variant == "incumbent" and context is None:
-        return {
+        prompt = prompt_for(eval_dir, case, variant, mode)
+        evaluator_version = task_trace.sha256_path(Path(__file__))
+        repository = eval_dir.parents[4]
+        attributes = task_trace.evaluation_attributes(
+            case_id=case["id"], variant=variant, repetition=repetition, mode=mode,
+            skill_name=eval_dir.parent.name, skill_hash="not_observed",
+            skill_source=variant,
+            repository_hash=task_trace.sha256_text(str(repository.resolve())),
+            base_revision=git_value(repository, "rev-parse", "HEAD"),
+            model_requested=route["model"], model_returned="not_observed",
+            effort=route["effort"], prompt_version=task_trace.sha256_text(prompt),
+            tool_version=route.get("harness_version", "not_observed"),
+            evaluator_version=evaluator_version, risk=case.get("risk", "normal"),
+            outcome="invalid_environment",
+            verifier=f"packaged-assertion-scorer@{evaluator_version}",
+        )
+        trace = task_trace.build_task_trace(
+            harness=harness, session_id=f"eval-{secrets.token_hex(16)}",
+            task_id=f"{case['id']}-{harness}-{variant}-{mode}-{repetition}",
+            started_ns=run_started_ns, ended_ns=time.time_ns(), attributes=attributes,
+            children=[task_trace.child_span(
+                "agent.final", started_ns=run_started_ns, ended_ns=time.time_ns(),
+                attributes={
+                    "app.agent.record.type": "outcome",
+                    "app.agent.final.status": "invalid_environment",
+                    "app.agent.outcome.verifier": f"packaged-assertion-scorer@{evaluator_version}",
+                }, status="error",
+            )], status="error",
+        )
+        delivery = task_trace.export_task_trace(
+            trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+        )
+        result = {
             "id": case["id"], "harness": harness, "variant": variant, "mode": mode,
             "repetition": repetition, "state": "environment_failure",
             "failure_kind": "incumbent_missing", "accepted": False, "valid": False,
             "assertions": [], "assertions_passed": 0, "assertions_total": 0,
             "output": "", "usage": {}, "duration_seconds": 0.0,
+            "trace_id": trace["trace_id"], "mlflow_trace_id": trace["mlflow_trace_id"],
+            "telemetry": delivery,
         }
+        if delivery.get("status") != "exported":
+            result["task_state"] = result["state"]
+            result["state"] = "telemetry_failure"
+            result["failure_kind"] = delivery.get("error", "export_failed")
+        return result
     with tempfile.TemporaryDirectory(prefix="skill-eval-") as temp:
         root = Path(temp)
         workspace = root / "workspace"
@@ -322,6 +511,7 @@ def run_once(
         env = isolated_environment(harness, root)
         prompt = prompt_for(eval_dir, case, variant, mode)
         command = command_for(harness, route, prompt, root, eval_dir)
+        process_started_ns = time.time_ns()
         started = time.monotonic()
         try:
             completed = subprocess.run(
@@ -339,6 +529,7 @@ def run_once(
             duration, output, usage, events = time.monotonic() - started, "", {}, []
             completed = subprocess.CompletedProcess(command, 124, "", str(error))
             state = "environment_failure"
+        process_ended_ns = time.time_ns()
 
     if mode == "routing":
         expected = bool(case["expected_activation"])
@@ -356,7 +547,80 @@ def run_once(
             actual_activation = bool(json.loads(output)["activate"])
         except (json.JSONDecodeError, KeyError, TypeError):
             pass
-    return {
+    evaluation_ended_ns = time.time_ns()
+    outcome = outcome_for(state, accepted)
+    repository = eval_dir.parents[4]
+    skill_root = eval_dir.parent if variant == "candidate" else eval_dir / "incumbent"
+    skill_hash = "none" if variant == "no-skill" else task_trace.sha256_path(skill_root)
+    evaluator_version = task_trace.sha256_path(Path(__file__))
+    prompt_version = task_trace.sha256_text(prompt)
+    tool_version = route.get("harness_version", "not_observed")
+    trace_attributes = task_trace.evaluation_attributes(
+        case_id=case["id"],
+        variant=variant,
+        repetition=repetition,
+        mode=mode,
+        skill_name=eval_dir.parent.name if variant != "no-skill" else "none",
+        skill_hash=skill_hash,
+        skill_source=variant,
+        repository_hash=task_trace.sha256_text(str(repository.resolve())),
+        base_revision=git_value(repository, "rev-parse", "HEAD"),
+        model_requested=route["model"],
+        model_returned=returned_model_for(events),
+        effort=route["effort"],
+        prompt_version=prompt_version,
+        tool_version=tool_version,
+        evaluator_version=evaluator_version,
+        risk=case.get("risk", "normal"),
+        outcome=outcome,
+        verifier=f"packaged-assertion-scorer@{evaluator_version}",
+    )
+    trace_attributes.update({
+        "app.agent.harness.version": tool_version,
+        "app.agent.task.class": "skill_evaluation",
+        "gen_ai.input.messages": task_trace.metadata_messages("user", {
+            "case_id": case["id"], "variant": variant, "mode": mode,
+        }),
+        "gen_ai.output.messages": task_trace.metadata_messages("assistant", {
+            "outcome": outcome, "assertions_passed": sum(item["passed"] for item in scored),
+            "assertions_total": len(scored),
+        }),
+    })
+    cost = observed_cost(usage)
+    if cost is not None:
+        trace_attributes["app.agent.cost.status"] = "observed"
+        trace_attributes["app.agent.cost.usd"] = cost
+    session_id = f"eval-{secrets.token_hex(16)}"
+    task_id = f"{case['id']}-{harness}-{variant}-{mode}-{repetition}-{secrets.token_hex(4)}"
+    trace = task_trace.build_task_trace(
+        harness=harness,
+        session_id=session_id,
+        task_id=task_id,
+        started_ns=process_started_ns,
+        ended_ns=evaluation_ended_ns,
+        attributes=trace_attributes,
+        children=evaluation_children(
+            process_started_ns=process_started_ns,
+            process_ended_ns=process_ended_ns,
+            evaluation_ended_ns=evaluation_ended_ns,
+            route=route,
+            usage=usage,
+            skill_name=eval_dir.parent.name if variant != "no-skill" else "none",
+            skill_hash=skill_hash,
+            variant=variant,
+            mode=mode,
+            assertions_passed=sum(item["passed"] for item in scored),
+            assertions_total=len(scored),
+            outcome=outcome,
+            evaluator_version=evaluator_version,
+        ),
+        status="error" if state not in {"succeeded", "task_failure"} else "ok",
+    )
+    delivery = task_trace.export_task_trace(
+        trace,
+        os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+    )
+    result = {
         "id": case["id"], "split": case.get("split", "development"),
         "risk": case.get("risk", "normal"), "harness": harness, "variant": variant,
         "mode": mode, "repetition": repetition, "model": route["model"],
@@ -370,7 +634,21 @@ def run_once(
         "usage": usage, "duration_seconds": round(duration, 3),
         "returncode": completed.returncode, "stderr": completed.stderr,
         "events": events, "telemetry_warning": telemetry_warning,
+        "trace_id": trace["trace_id"], "mlflow_trace_id": trace["mlflow_trace_id"],
+        "session_id": session_id, "telemetry": delivery,
+        "skill_hash": skill_hash, "prompt_version": prompt_version,
+        "tool_version": tool_version, "evaluator_version": evaluator_version,
+        "repository_revision": trace_attributes["app.agent.repository.base_revision"],
+        "model_returned": trace_attributes["app.agent.model.returned"],
+        "outcome": outcome,
     }
+    if delivery.get("status") != "exported":
+        result["task_state"] = result["state"]
+        result["state"] = "telemetry_failure"
+        result["failure_kind"] = delivery.get("error", "export_failed")
+        result["valid"] = False
+        result["accepted"] = False
+    return result
 
 
 def replay(eval_dir: Path, source: Path, output: Path) -> None:
@@ -447,6 +725,7 @@ def main(eval_dir: Path) -> None:
     parser.add_argument("--repetitions", type=int)
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--replay", type=Path)
+    parser.add_argument("--publish-mlflow", action="store_true")
     args = parser.parse_args()
     if args.replay:
         replay(eval_dir, args.replay, args.output)
@@ -465,7 +744,8 @@ def main(eval_dir: Path) -> None:
             cases = cases[:1]
         for case in cases:
             for harness in harnesses:
-                route = routes["harnesses"][harness]
+                route = dict(routes["harnesses"][harness])
+                route["harness_version"] = harness_version(harness)
                 for variant in variants:
                     for repetition in range(1, repetitions + 1):
                         print(f"running {case['id']} ({mode}/{harness}/{variant} #{repetition})", flush=True)
@@ -476,3 +756,8 @@ def main(eval_dir: Path) -> None:
         "routes": routes["harnesses"], "fixed": routes.get("fixed", []),
     }
     write_results(args.output, configuration, results)
+    if args.publish_mlflow:
+        subprocess.run(
+            ["uv", "run", str(Path(__file__).parent / "telemetry" / "publish_evals.py"), str(args.output)],
+            check=True,
+        )

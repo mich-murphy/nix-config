@@ -5,26 +5,76 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import functools
 import hashlib
 import json
 import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
 EVAL_DIR = Path(__file__).resolve().parent
 SKILL_ROOT = EVAL_DIR.parent
-REPO_ROOT = SKILL_ROOT.parents[2]
+REPO_ROOT = SKILL_ROOT.parents[3]
+AGENT_ROOT = SKILL_ROOT.parents[1]
+if str(AGENT_ROOT) not in sys.path:
+    sys.path.insert(0, str(AGENT_ROOT))
+
+from telemetry import task_trace  # noqa: E402
 CASES = json.loads((EVAL_DIR / "cases.json").read_text(encoding="utf-8"))
 ROUTES = json.loads((EVAL_DIR / "routes.json").read_text(encoding="utf-8"))
 VARIANTS = ("incumbent", "candidate")
 HARNESSES = ("codex", "claude")
+
+
+@functools.lru_cache(maxsize=None)
+def harness_version(harness: str) -> str:
+    try:
+        return subprocess.check_output(
+            [harness, "--version"], text=True, stderr=subprocess.DEVNULL, timeout=10,
+        ).strip() or "not_observed"
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return "not_observed"
+
+
+def git_value(*arguments: str) -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(REPO_ROOT), *arguments], text=True,
+            stderr=subprocess.DEVNULL, timeout=10,
+        ).strip() or "not_observed"
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return "not_observed"
+
+
+def returned_model(events: list[Any]) -> str:
+    for event in reversed(events):
+        if not isinstance(event, dict):
+            continue
+        for key in ("response_model", "responseModel", "model"):
+            if isinstance(event.get(key), str) and event[key]:
+                return event[key]
+        message = event.get("message")
+        if isinstance(message, dict) and isinstance(message.get("model"), str):
+            return message["model"]
+    return "not_observed"
+
+
+def observed_cost(usage: dict[str, Any]) -> float | None:
+    for value in (usage.get("cost_usd"), usage.get("total_cost_usd")):
+        if isinstance(value, (int, float)):
+            return float(value)
+    cost = usage.get("cost")
+    if isinstance(cost, dict) and isinstance(cost.get("total"), (int, float)):
+        return float(cost["total"])
+    return None
 
 
 @dataclass
@@ -149,8 +199,13 @@ def run_process(command: list[str], workspace: Path, timeout: int) -> ProcessRes
         if key.startswith("FZF_"):
             environment.pop(key)
     environment["APP_AGENT_EVAL_RUN"] = "1"
+    environment["APP_AGENT_TRACE_KIND"] = "evaluation"
+    environment["OTEL_TRACES_EXPORTER"] = "none"
+    environment["CLAUDE_CODE_ENHANCED_TELEMETRY_BETA"] = "0"
     environment["OTEL_LOG_USER_PROMPTS"] = "0"
     environment["OTEL_LOG_TOOL_DETAILS"] = "0"
+    environment["OTEL_LOG_TOOL_CONTENT"] = "0"
+    environment["OTEL_LOG_RAW_API_BODIES"] = "0"
     started = time.monotonic()
     try:
         completed = subprocess.run(
@@ -298,16 +353,166 @@ def classify_failure(result: ProcessResult, final: str) -> tuple[str, str | None
     return "task_failure", "model_or_task"
 
 
+def export_evaluation_trace(
+    *,
+    case: dict[str, Any],
+    harness: str,
+    variant: str,
+    repetition: int,
+    skill_name: str,
+    skill_hash: str,
+    prompt: str,
+    started_ns: int,
+    ended_ns: int,
+    evaluation_ended_ns: int,
+    state: str,
+    accepted: bool,
+    score: float,
+    passed: int,
+    total: int,
+    usage: dict[str, Any],
+    events: list[Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    route = ROUTES["harnesses"][harness]
+    evaluator_version = task_trace.sha256_path(Path(__file__))
+    outcome = "accepted" if accepted else (
+        "invalid_harness" if state == "harness_failure" else
+        "invalid_environment" if state == "environment_failure" else
+        "evaluator_error" if state == "evaluator_failure" else "failed"
+    )
+    verifier = f"skill-development-package-grader@{evaluator_version}"
+    attributes = task_trace.evaluation_attributes(
+        case_id=case["id"], variant=variant, repetition=repetition,
+        mode="end-to-end", skill_name=skill_name, skill_hash=skill_hash,
+        skill_source=variant,
+        repository_hash=task_trace.sha256_text(str(REPO_ROOT.resolve())),
+        base_revision=git_value("rev-parse", "HEAD"),
+        model_requested=route["model"], model_returned=returned_model(events),
+        effort=route["effort"], prompt_version=task_trace.sha256_text(prompt),
+        tool_version=harness_version(harness), evaluator_version=evaluator_version,
+        risk=case.get("risk", "normal"), outcome=outcome, verifier=verifier,
+    )
+    attributes.update({
+        "app.agent.task.class": "skill_evaluation",
+        "app.agent.harness.version": harness_version(harness),
+        "gen_ai.input.messages": task_trace.metadata_messages("user", {
+            "case_id": case["id"], "variant": variant, "repetition": repetition,
+        }),
+        "gen_ai.output.messages": task_trace.metadata_messages("assistant", {
+            "outcome": outcome, "score": score, "assertions_passed": passed,
+            "assertions_total": total,
+        }),
+    })
+    cost = observed_cost(usage)
+    if cost is not None:
+        attributes["app.agent.cost.status"] = "observed"
+        attributes["app.agent.cost.usd"] = cost
+    invocation: dict[str, str | int | float | bool] = {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": route["model"],
+        "app.agent.model.effort": route["effort"],
+    }
+    for source, target in (
+        ("input_tokens", "gen_ai.usage.input_tokens"),
+        ("output_tokens", "gen_ai.usage.output_tokens"),
+        ("cache_read_input_tokens", "app.agent.tokens.cached"),
+    ):
+        if isinstance(usage.get(source), int):
+            invocation[target] = usage[source]
+    children = [task_trace.child_span(
+        "gen_ai.invoke_agent", started_ns=started_ns, ended_ns=ended_ns,
+        attributes=invocation,
+        status="error" if state not in {"succeeded", "task_failure"} else "ok",
+    )]
+    for index, stage in enumerate(("offered", "selected", "activated", "expanded", "executed", "evaluated")):
+        lifecycle_ns = min(ended_ns, started_ns + index)
+        children.append(task_trace.child_span(
+            "skill.activate" if stage == "activated" else "skill.lifecycle",
+            started_ns=lifecycle_ns, ended_ns=lifecycle_ns,
+            attributes={
+                "app.agent.record.type": "skill",
+                "app.agent.skill.name": skill_name,
+                "app.agent.skill.package_hash": skill_hash,
+                "app.agent.skill.activation": stage,
+                "app.agent.skill.selection": "explicit",
+            },
+        ))
+    children.extend([
+        task_trace.child_span(
+            "validation.run", started_ns=ended_ns, ended_ns=evaluation_ended_ns,
+            attributes={
+                "app.agent.record.type": "validation",
+                "app.agent.validation.type": "skill-package-grader",
+                "app.agent.validation.status": "pass" if accepted else "fail",
+                "app.agent.validation.passed": passed,
+                "app.agent.validation.failed": max(0, total - passed),
+            }, status="ok" if accepted else "error",
+        ),
+        task_trace.child_span(
+            "evaluator.run", started_ns=ended_ns, ended_ns=evaluation_ended_ns,
+            attributes={
+                "app.agent.evaluator.name": "skill-development-package-grader",
+                "app.agent.evaluator.version": evaluator_version,
+                "app.agent.outcome.status": outcome,
+            }, status="error" if state == "evaluator_failure" else "ok",
+        ),
+        task_trace.child_span(
+            "agent.final", started_ns=evaluation_ended_ns, ended_ns=evaluation_ended_ns,
+            attributes={
+                "app.agent.record.type": "outcome", "app.agent.final.status": outcome,
+                "app.agent.outcome.status": outcome, "app.agent.outcome.verifier": verifier,
+            },
+        ),
+    ])
+    session_seed = f"{case['id']}-{harness}-{variant}-{repetition}-{started_ns}"
+    session_id = f"eval-{task_trace.sha256_text(session_seed)[:24]}"
+    trace = task_trace.build_task_trace(
+        harness=harness, session_id=session_id,
+        task_id=f"{case['id']}-{harness}-{variant}-{repetition}-{started_ns}",
+        started_ns=started_ns, ended_ns=evaluation_ended_ns,
+        attributes=attributes, children=children,
+        status="error" if state not in {"succeeded", "task_failure"} else "ok",
+    )
+    delivery = task_trace.export_task_trace(
+        trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+    )
+    return trace, delivery
+
+
 def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, timeout: int, artifacts: Path) -> dict[str, Any]:
+    started_ns = time.time_ns()
     with tempfile.TemporaryDirectory(prefix="skill-development-eval-") as directory:
         workspace = Path(directory) / "workspace"
         initialize_workspace(workspace, case)
         try:
             skill_name, source_hash = install_variant(workspace, harness, variant)
         except OSError as error:
-            return {"id": case["id"], "split": case["split"], "harness": harness, "variant": variant, "repetition": repetition, "valid": False, "accepted": False, "score": 0.0, "blocking_failures": [str(error)], "state": "environment_failure", "failure_kind": "incumbent_missing"}
+            ended_ns = time.time_ns()
+            prompt = prompt_for(harness, "skill-creator" if variant == "incumbent" else "skill-development", case)
+            trace, delivery = export_evaluation_trace(
+                case=case, harness=harness, variant=variant, repetition=repetition,
+                skill_name="skill-creator" if variant == "incumbent" else "skill-development",
+                skill_hash="not_observed", prompt=prompt, started_ns=started_ns,
+                ended_ns=ended_ns, evaluation_ended_ns=ended_ns,
+                state="environment_failure", accepted=False, score=0.0,
+                passed=0, total=0, usage={}, events=[],
+            )
+            record = {
+                "id": case["id"], "split": case["split"], "harness": harness,
+                "variant": variant, "repetition": repetition, "valid": False,
+                "accepted": False, "score": 0.0, "blocking_failures": [str(error)],
+                "state": "environment_failure", "failure_kind": "incumbent_missing",
+                "trace_id": trace["trace_id"], "mlflow_trace_id": trace["mlflow_trace_id"],
+                "session_id": trace["session_id"], "telemetry": delivery,
+            }
+            if delivery.get("status") != "exported":
+                record["task_state"] = record["state"]
+                record["state"] = "telemetry_failure"
+                record["failure_kind"] = delivery.get("error", "export_failed")
+            return record
         prompt = prompt_for(harness, skill_name, case)
         result = run_process(command_for(harness, workspace, prompt), workspace, timeout)
+        ended_ns = time.time_ns()
         final, usage, events = parse_harness_output(harness, result)
         state, failure_kind = classify_failure(result, final)
         checks = grade(case, workspace / "output") if state == "succeeded" else []
@@ -318,35 +523,51 @@ def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, 
         passed = sum(item["passed"] for item in checks)
         score = passed / len(checks) if checks else 0.0
         blockers = [item["name"] for item in checks if item["blocking"] and not item["passed"]]
-        trace = {
-            "schema_version": "1.0.0",
-            "metadata_only": True,
-            "case_id": case["id"],
-            "harness": harness,
-            "model": ROUTES["harnesses"][harness]["model"],
-            "effort": ROUTES["harnesses"][harness]["effort"],
-            "skill": skill_name,
-            "skill_hash": source_hash,
-            "invocation_route": "explicit",
-            "lifecycle": ["offered", "selected", "activated", "evaluated"],
-            "outcome": "accepted" if score >= ROUTES["comparison_gate"]["minimum_candidate_score"] and not blockers else "failed",
-        }
-        return {
+        accepted = state == "succeeded" and score >= ROUTES["comparison_gate"]["minimum_candidate_score"] and not blockers
+        evaluation_ended_ns = time.time_ns()
+        trace, delivery = export_evaluation_trace(
+            case=case, harness=harness, variant=variant, repetition=repetition,
+            skill_name=skill_name, skill_hash=source_hash, prompt=prompt,
+            started_ns=started_ns, ended_ns=ended_ns,
+            evaluation_ended_ns=evaluation_ended_ns, state=state,
+            accepted=accepted, score=score, passed=passed, total=len(checks),
+            usage=usage, events=events,
+        )
+        record = {
             "id": case["id"], "split": case["split"], "risk": case["risk"],
             "harness": harness, "variant": variant, "repetition": repetition,
             "model": ROUTES["harnesses"][harness]["model"],
             "effort": ROUTES["harnesses"][harness]["effort"],
             "skill_hash": source_hash, "state": state, "failure_kind": failure_kind,
             "valid": state in {"succeeded", "task_failure"},
-            "accepted": state == "succeeded" and score >= ROUTES["comparison_gate"]["minimum_candidate_score"] and not blockers,
+            "accepted": accepted,
             "score": round(score, 4), "assertions_passed": passed,
             "assertions_total": len(checks), "assertions": checks,
             "blocking_failures": blockers, "duration_seconds": round(result.duration_seconds, 3),
             "usage": usage, "returncode": result.returncode,
-            "telemetry": trace, "artifact": str(artifact),
+            "trace_id": trace["trace_id"], "mlflow_trace_id": trace["mlflow_trace_id"],
+            "telemetry": delivery, "artifact": str(artifact),
+            "session_id": trace["session_id"],
+            "prompt_version": task_trace.sha256_text(prompt),
+            "tool_version": harness_version(harness),
+            "evaluator_version": task_trace.sha256_path(Path(__file__)),
+            "repository_revision": git_value("rev-parse", "HEAD"),
+            "model_returned": returned_model(events),
+            "outcome": "accepted" if accepted else (
+                "invalid_harness" if state == "harness_failure" else
+                "invalid_environment" if state == "environment_failure" else
+                "evaluator_error" if state == "evaluator_failure" else "failed"
+            ),
             "final_response": final, "stderr": result.stderr,
             "event_count": len(events),
         }
+        if delivery.get("status") != "exported":
+            record["task_state"] = record["state"]
+            record["state"] = "telemetry_failure"
+            record["failure_kind"] = delivery.get("error", "export_failed")
+            record["valid"] = False
+            record["accepted"] = False
+        return record
 
 
 def main() -> int:
@@ -359,6 +580,7 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--list", action="store_true")
+    parser.add_argument("--publish-mlflow", action="store_true")
     args = parser.parse_args()
     selected_cases = CASES[:1] if args.suite == "smoke" else [case for case in CASES if args.suite == "full" or case["split"] == args.suite]
     harnesses = HARNESSES if args.harness == "all" else (args.harness,)
@@ -382,6 +604,21 @@ def main() -> int:
                 result = future.result()
             except Exception as error:  # Preserve the matrix; comparator treats this as invalid.
                 case_id, harness, variant, repetition = identity
+                case = next(case for case in selected_cases if case["id"] == case_id)
+                timestamp = time.time_ns()
+                emergency_trace, delivery = export_evaluation_trace(
+                    case=case, harness=harness, variant=variant, repetition=repetition,
+                    skill_name="skill-development" if variant == "candidate" else "skill-creator",
+                    skill_hash="not_observed",
+                    prompt=prompt_for(
+                        harness,
+                        "skill-development" if variant == "candidate" else "skill-creator",
+                        case,
+                    ),
+                    started_ns=timestamp, ended_ns=timestamp,
+                    evaluation_ended_ns=timestamp, state="evaluator_failure",
+                    accepted=False, score=0.0, passed=0, total=0, usage={}, events=[],
+                )
                 result = {
                     "id": case_id,
                     "split": next(case["split"] for case in selected_cases if case["id"] == case_id),
@@ -395,18 +632,26 @@ def main() -> int:
                     "state": "evaluator_failure",
                     "failure_kind": type(error).__name__,
                     "stderr": str(error),
+                    "trace_id": emergency_trace["trace_id"],
+                    "mlflow_trace_id": emergency_trace["mlflow_trace_id"],
+                    "telemetry": delivery,
                 }
             results.append(result)
             print(f"{identity}: state={result['state']} score={result['score']:.3f} accepted={result['accepted']}", flush=True)
     results.sort(key=lambda item: (item["id"], item["harness"], item["variant"], item["repetition"]))
     document = {
         "schema_version": "1.0.0",
-        "configuration": {"suite": args.suite, "repetitions": repetitions, "harnesses": list(harnesses), "variants": list(variants), "routes": ROUTES["harnesses"], "fixed": ROUTES["fixed"], "content_capture": False},
+        "configuration": {"skill": "skill-development", "suite": args.suite, "repetitions": repetitions, "harnesses": list(harnesses), "variants": list(variants), "routes": ROUTES["harnesses"], "fixed": ROUTES["fixed"], "content_capture": False},
         "summary": {"runs": len(results), "valid_runs": sum(item["valid"] for item in results), "accepted": sum(item["accepted"] for item in results), "duration_seconds": round(sum(item.get("duration_seconds", 0) for item in results), 3)},
         "results": results,
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+    if args.publish_mlflow:
+        subprocess.run(
+            ["uv", "run", str(REPO_ROOT / "config/agents/telemetry/publish_evals.py"), str(output)],
+            check=True,
+        )
     print(f"results: {output}")
     print(f"artifacts: {artifacts}")
     return 0 if all(item["valid"] for item in results) else 1

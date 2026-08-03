@@ -7,6 +7,7 @@
   "properties": {
     "annotation_id": {"type": "string", "minLength": 8},
     "task_id": {"type": "string", "minLength": 8},
+    "mlflow_trace_id": {"type": ["string", "null"], "pattern": "^tr-[0-9a-f]{32}$"},
     "recorded_at": {"type": "string", "format": "date-time"},
     "kind": {"enum": ["trace_review", "ci", "review", "merge", "revert", "incident", "owner", "user"]},
     "status": {"enum": ["pass", "fail", "defer", "not_observed", "invalid"]},
