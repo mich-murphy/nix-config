@@ -2,7 +2,8 @@
 
 ## Decision Card
 
-Keep a card at or below 250 words and use these headings:
+Keep the durable decision card at or below 250 words and use these headings in
+the on-disk artifact:
 
 ```markdown
 ## Decision
@@ -18,6 +19,21 @@ Offer two or three genuinely viable options. State costs and risks, not only
 benefits. Recommend an option when evidence permits, including its evidence
 strength. Ask one consequential question at a time; group only independent
 low-risk confirmations.
+
+## Present the Question
+
+Do not paste the raw decision-card artifact or its seven headings into the
+conversation. Present only the context needed to answer the current decision,
+without a fenced code block.
+
+When the harness provides a native question or choice control, use it for the
+approval question. Put the recommended option first, mark it as recommended,
+and keep each option label and description short. Send supporting context
+before invoking the control, and do not repeat the question after it.
+
+When no native control is available, use one short rendered heading, a numbered
+list of options with the recommendation clearly marked, and one final plain-text
+question. Never ask the user to respond to Markdown source or an artifact view.
 
 ## Feedback
 
