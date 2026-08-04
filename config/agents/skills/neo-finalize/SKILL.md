@@ -26,8 +26,53 @@ from the installed `neo` skill's source location.
      --artifact .neo/tasks/<slug>/implementation-brief.md
    ```
 
-6. Present only critical decisions, unresolved risks, changes since the prior
-   review, and the artifact path.
+6. Present a decision-complete approval summary in the conversation. The
+   artifact path is supporting detail, never the review surface by itself.
+   Keep the summary at or below 650 words, excluding the path, SHA-256, and
+   approval question. Do not omit required review information to meet the
+   limit; compress the source material instead:
+   - **Outcome:** one sentence naming the intended user or operator behavior
+     and the one or two exclusions most likely to be misunderstood.
+   - **Critical decisions:** use distinct Product, Architecture, and Program
+     labels. Under each, present one to three consequential choices with their
+     rationale or trade-off and the main consequence a reviewer should
+     challenge. Name real boundaries, contracts, types, and invariants where
+     they carry the decision; do not reduce architecture to a stack inventory
+     or program design to a module list.
+   - **External interface and contract delta:** use a compact Markdown table to
+     show added, changed, or removed commands, routes, events, or public
+     operations and their input/output or compatibility effect. Distinguish
+     contracts that are reused, added, and changed.
+   - **Dependency and flow views:** show one static dependency or wiring view,
+     then one to three representative runtime paths: the main read, main
+     mutation, and critical failure/recovery path only when materially
+     distinct. Use real symbols and show boundary crossings, transaction or
+     authority ownership, durable effects, and recovery. Put every view in its
+     own fenced `text` block under a short label. Use a consistently indented
+     tree with `├─` and `└─`, keep one operation per line, and keep each
+     block between six and twelve lines. Never use a long inline arrow chain,
+     raw code dump, or several unrelated flows in one block.
+   - **Error contract:** use a compact Markdown table to show the important
+     failure, normalized error or outcome, owning handler, and retry,
+     reconciliation, or terminal behavior.
+   - **Slice sequence and verifiers:** show every slice in order as one compact
+     row or line with its behavior or retired risk, focused verifier, and
+     observable proof. Preserve dependencies, rollback, or replan conditions
+     only when they materially affect approval.
+   - **Change surface:** when it helps a reviewer challenge scope, name only the
+     packages, modules, migrations, or runtime wiring created, materially
+     changed, or removed. Never expand this into an exhaustive file inventory.
+   - **Residual gates:** only unresolved risks whose acceptance permits
+     implementation to start. Name the evidence or owner when known, what the
+     result could change, and the exact stage it blocks.
+   - **Delta:** include a compact before/after item only when this candidate
+     changed after an earlier review.
+   Then show the artifact path and SHA-256 and ask whether the user approves
+   that exact version as the implementation baseline, including the stated
+   decisions, interface and contract delta, dependency and runtime flows, error
+   ownership, slice plan, residual gates, and replan triggers. Do not recap
+   completed phases, paste the complete brief, or ask the user to open the file
+   before answering.
 7. Classify user feedback:
    - clarification: answer and record without invalidation;
    - change: identify affected decisions, confirm ambiguous interpretation,

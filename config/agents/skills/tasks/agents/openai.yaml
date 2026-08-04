@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tasks"
+  short_description: "Split approved plans into Ship-ready tasks"
+  default_prompt: "Use $tasks to split this approved plan into context-bounded task plans for $ship."

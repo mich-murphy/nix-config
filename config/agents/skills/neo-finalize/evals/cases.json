@@ -1,5 +1,82 @@
 [
-  {"id":"consistency-conflict","split":"development","kind":"outcome","prompt":"Finalization finds that product ownership conflicts with the approved architecture data owner. State the next action.","assertions":[{"type":"contains_any","values":["return","reopen"]},{"type":"contains_any","values":["owning stage","architecture","product"]},{"type":"contains_any","values":["do not silently","invalidate"]}]},
-  {"id":"clarification-not-approval","split":"held-out","kind":"outcome","prompt":"The user asks what a risk means but does not approve the implementation brief. Classify and act.","assertions":[{"type":"contains","value":"clarification"},{"type":"contains_any","values":["not approval","do not approve","silence"]}]},
-  {"id":"change-invalidates","split":"held-out","kind":"outcome","prompt":"The user changes an approved public compatibility decision during final review. State the required handling.","assertions":[{"type":"contains_any","values":["invalidate","reopen"]},{"type":"contains_any","values":["dependent","downstream"]},{"type":"contains_any","values":["before/after","delta","repeat"]}]}
+  {
+    "id": "consistency-conflict",
+    "split": "development",
+    "kind": "outcome",
+    "prompt": "Finalization finds that product ownership conflicts with the approved architecture data owner. State the next action.",
+    "assertions": [
+      {"type": "contains_any", "values": ["return", "reopen"]},
+      {"type": "contains_any", "values": ["owning stage", "architecture", "product"]},
+      {"type": "contains_any", "values": ["do not silently", "invalidate"]}
+    ]
+  },
+  {
+    "id": "approval-summary-inline",
+    "split": "development",
+    "kind": "outcome",
+    "prompt": "All earlier gates are approved. Present the final approval request for this brief. Product: replace voting and immediate checkout with an operator-led, non-binding interest cycle; members pay one immutable whole-order invoice after supply and price confirmation; no local pickup or unattended publication. Architecture: use one Astro/Node modular monolith and PostgreSQL source of truth instead of distributed services; transactional pg-boss jobs invoke replay-safe provider adapters after durable intent. Program: feature-owned operations enforce allocation, invoice, payment/expiry, procurement, and fulfilment invariants. Interface and contracts: reuse Money and InvoiceId; add PaymentEventOutcome = Paid | Expired | RefundRequired; change applyPaymentEvent(invoiceId, event) into the authoritative payment operation while the Stripe webhook remains provider-specific. Static wiring: Astro action or webhook boundary calls a feature operation; the operation owns domain policy and Kysely/PostgreSQL access and reaches providers only through PaymentPort, implemented by StripeAdapter. Payment mutation: Stripe webhook, signature verification, unique provider inbox, applyPaymentEvent, invoice row lock, atomic state/audit/job-intent commit, then worker reload and provider reconciliation. Critical recovery: the worker reloads durable intent, queries the provider by idempotency key, records the normalized outcome, and alerts when still indeterminate. Errors: ProviderSignatureError is owned by the webhook boundary and is terminal; PaymentConflict is owned by applyPaymentEvent and returns a reload/409 result; IndeterminateProviderOutcome is owned by the worker and is reconciled then alerted if unresolved. Change surface: add payment application operation and PaymentPort/StripeAdapter; change webhook wiring and invoice/payment persistence; add provider-inbox and job-intent migrations; remove direct provider calls from request handlers. Delivery: 1 Identity/admin write to PostgreSQL, verified by Playwright auth/MFA/audit proof; 2 Editorial/publication to PostgreSQL, verified by Playwright review/public proof; 3 URL extraction, verified by adversarial fetch/parser tests and representative permitted URLs; 4 Indication/snapshot, verified by a deadline-race PostgreSQL test and member Playwright flow; 5 Supply/allocation/invoice, verified by property/PostgreSQL checks and finance recalculation; 6 Payment/expiry, verified by provider sandbox and PostgreSQL race tests; 7 Recovery/procurement, verified by checkpoint/reconciliation tests and finance walkthrough; 8 Fulfilment/closure, verified by PostgreSQL invariants and staff/member Playwright flows; 9 Launch/recovery, verified by CI, isolated restore, and rollback rehearsal. Residual gates: Better Auth before Access; provider/privacy and Australian legal/accounting before launch; representative URL evidence before extraction; database-restore proof before launch. The artifact is .neo/tasks/roaster-redesign/implementation-brief.md with SHA-256 abc123. Do not explain the workflow.",
+    "assertions": [
+      {"type": "contains", "value": "non-binding"},
+      {"type": "contains_any", "values": ["voting", "immediate checkout"]},
+      {"type": "contains", "value": "Product"},
+      {"type": "contains", "value": "Architecture"},
+      {"type": "contains", "value": "Program"},
+      {"type": "contains_any", "values": ["modular monolith", "PostgreSQL"]},
+      {"type": "contains_any", "values": ["payment/expiry", "payment race", "expiry race"]},
+      {"type": "contains_any", "values": ["Interface", "Contract delta", "Contracts"]},
+      {"type": "contains", "value": "Reuse"},
+      {"type": "contains", "value": "Add"},
+      {"type": "contains", "value": "Change"},
+      {"type": "contains", "value": "Money"},
+      {"type": "contains", "value": "PaymentEventOutcome"},
+      {"type": "contains", "value": "applyPaymentEvent"},
+      {"type": "contains", "value": "RefundRequired"},
+      {"type": "contains_any", "values": ["Dependency", "Wiring"]},
+      {"type": "contains", "value": "PaymentPort"},
+      {"type": "contains", "value": "StripeAdapter"},
+      {"type": "regex", "pattern": "(?s)```text\\s+.*?```.*?```text\\s+.*?```"},
+      {"type": "contains_any", "values": ["├─", "└─"]},
+      {"type": "not_regex", "pattern": "(?:->|→)(?:[^\\n]*(?:->|→)){3,}"},
+      {"type": "contains", "value": "Error"},
+      {"type": "contains_any", "values": ["Owner", "Owning handler"]},
+      {"type": "contains", "value": "ProviderSignatureError"},
+      {"type": "contains", "value": "IndeterminateProviderOutcome"},
+      {"type": "contains", "value": "Change surface"},
+      {"type": "regex", "pattern": "(?m)^\\|[^\\n]+\\|$"},
+      {"type": "regex", "pattern": "(?m)^\\s*(?:1[.)]|\\|\\s*1\\s*\\|)"},
+      {"type": "regex", "pattern": "(?m)^\\s*(?:9[.)]|\\|\\s*9\\s*\\|)"},
+      {"type": "contains_any", "values": ["URL extraction", "source extraction"]},
+      {"type": "contains_any", "values": ["Fulfilment", "Fulfillment"]},
+      {"type": "contains_any", "values": ["Playwright", "browser"]},
+      {"type": "contains_any", "values": ["sandbox", "provider"]},
+      {"type": "contains_any", "values": ["Better Auth", "legal/accounting", "database restore"]},
+      {"type": "contains_any", "values": ["before launch", "before Access", "blocks launch", "blocks Access"]},
+      {"type": "contains", "value": ".neo/tasks/roaster-redesign/implementation-brief.md"},
+      {"type": "contains", "value": "SHA-256"},
+      {"type": "contains", "value": "approve"},
+      {"type": "max_words", "value": 650},
+      {"type": "not_contains", "value": "All five decisions are recorded"}
+    ]
+  },
+  {
+    "id": "clarification-not-approval",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "The user asks what a risk means but does not approve the implementation brief. Classify and act.",
+    "assertions": [
+      {"type": "contains", "value": "clarification"},
+      {"type": "contains_any", "values": ["not approval", "do not approve", "silence"]}
+    ]
+  },
+  {
+    "id": "change-invalidates",
+    "split": "held-out",
+    "kind": "outcome",
+    "prompt": "The user changes an approved public compatibility decision during final review. State the required handling.",
+    "assertions": [
+      {"type": "contains_any", "values": ["invalidate", "reopen"]},
+      {"type": "contains_any", "values": ["dependent", "downstream"]},
+      {"type": "contains_any", "values": ["before/after", "delta", "repeat"]}
+    ]
+  }
 ]

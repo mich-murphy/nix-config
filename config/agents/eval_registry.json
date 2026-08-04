@@ -12,6 +12,7 @@
     "neo-finalize": {"adapter": "generic"},
     "neo-product": {"adapter": "generic"},
     "neo-program": {"adapter": "generic"},
+    "tasks": {"adapter": "generic"},
     "refactor": {"adapter": "generic"},
     "research": {"adapter": "generic"},
     "resolve-review": {"adapter": "generic"},

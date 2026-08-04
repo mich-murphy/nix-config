@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0.0",
+  "evidence": {
+    "kind": "reviewed_workflow_and_failure_controls",
+    "references": [
+      "references/sources.md",
+      "agentic-workflow/docs/foundations-and-synthesis/agentic-workflow-principles-summary.md#structure-work-vertically",
+      "agentic-workflow/docs/foundations-and-synthesis/design-before-code-for-agentic-engineering.md#4-delivery-design-turn-decisions-into-verifiable-slices",
+      "agentic-workflow/docs/practitioner-workflows/dillon-mulroy-workflow.md#3-convert-the-design-into-a-ticket-graph",
+      "agentic-workflow/docs/practitioner-workflows/dex-horthy-current-workflow.md#context-management"
+    ],
+    "frequency_or_severity": "Large approved plans routinely need a smaller execution graph; horizontal batches, hidden dependencies, unresolved design choices, and tasks that exhaust useful context cause high-rework or unsafe Ship handoffs.",
+    "current_workaround": "A human or planning agent manually rewrites delivery slices into tickets and informally judges whether each will fit one fresh context.",
+    "owner": "human"
+  },
+  "job": "Convert one approved implementation-ready plan into a dependency-ordered graph of independently admissible, context-bounded task plans for $ship.",
+  "container": {
+    "choice": "skill_with_schema_validator",
+    "rejected_alternatives": [
+      "Neo delivery defines vertical slices but intentionally stops before producing per-task Ship admission packets.",
+      "Ship manages one admitted plan and should not redesign or decompose a larger plan during implementation.",
+      "A deterministic script can validate graph shape and coverage declarations but cannot judge semantic task boundaries without repository-aware agent reasoning.",
+      "Repository instructions are too local for a reusable cross-repository decomposition workflow."
+    ]
+  },
+  "positive_triggers": [
+    "Break an approved Neo implementation brief into tasks for $ship.",
+    "Turn a large implementation-ready plan into a dependency graph of one-context implementation tasks.",
+    "Review or revise task granularity before dispatching tasks to separate Ship runs."
+  ],
+  "negative_triggers": [
+    "Requirements, architecture, or public contracts remain unsettled.",
+    "The user wants the plan implemented rather than decomposed.",
+    "The supplied plan is already one bounded Ship-ready task.",
+    "The request is project scheduling, staffing, issue-tracker mutation, deployment, or release."
+  ],
+  "inputs": [
+    "Approved implementation-ready plan and its stable identity or content hash.",
+    "Repository instructions plus relevant source, tests, schemas, and verification commands.",
+    "Optional target model context window or a default 200k-class window with a 100k warning threshold."
+  ],
+  "outputs": [
+    "A validated task-graph.json with requirement coverage, dependencies, and context-size assessments.",
+    "One self-contained Markdown plan per task that satisfies the $ship readiness contract.",
+    "An exact upstream stop handoff when decomposition exposes a missing consequential decision."
+  ],
+  "safe_default": "Work locally, preserve the source plan unchanged, target one fresh context per task with at least 50 percent reserve, and do not publish tickets or implement tasks.",
+  "forbidden_effects": [
+    "Change the approved source plan or silently invent missing product, architecture, data, security, or compatibility decisions.",
+    "Implement any task or invoke $ship.",
+    "Create, update, assign, or publish external issue-tracker items without separate authorization.",
+    "Claim a token guarantee from line counts, file counts, or an advertised context-window maximum.",
+    "Create horizontal tasks that cannot independently prove behavior or a named migration risk."
+  ],
+  "completion_checks": [
+    "Every source-plan requirement and non-goal is covered or explicitly deferred with an approved reason.",
+    "Every task has one observable outcome, focused verification, real-interface evidence where relevant, explicit non-goals, and replan triggers.",
+    "The dependency graph is acyclic and each task leaves the repository coherent for its dependents.",
+    "Each task records a context warning threshold, sizing drivers, confidence, and split triggers; oversized or uncertain tasks are split or stopped.",
+    "Every generated task plan is independently admissible by the $ship readiness contract.",
+    "The bundled validator passes."
+  ]
+}

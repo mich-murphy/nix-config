@@ -1003,7 +1003,13 @@ class EvalRuntimeTests(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 0, completed.stderr)
         listed = json.loads(completed.stdout)
-        self.assertEqual(len(listed["skills"]), 17)
+        registry = json.loads(
+            (ROOT / "eval_registry.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            {item["name"] for item in listed["skills"]},
+            set(registry["skills"]),
+        )
         self.assertEqual(
             {item["name"] for item in listed["skills"] if item["adapter"] != "generic"},
             {"neo", "skill-development"},
@@ -1038,8 +1044,11 @@ class EvalRuntimeTests(unittest.TestCase):
 
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
         report = json.loads(completed.stdout)
+        registry = json.loads(
+            (ROOT / "eval_registry.json").read_text(encoding="utf-8")
+        )
         self.assertTrue(report["valid"])
-        self.assertEqual(report["skills"], 17)
+        self.assertEqual(report["skills"], len(registry["skills"]))
         self.assertEqual(report["errors"], [])
 
     def test_central_cli_rejects_an_unregistered_skill(self) -> None:

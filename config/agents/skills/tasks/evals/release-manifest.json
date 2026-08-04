@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "tasks",
+  "git_revision": "48ce4dd0aefc807661aaea4194c93e227028893a",
+  "definition_hashes": {
+    "cases.json": "1496713e8f5986756739e0cf5461ef0267885a0c69d96769f66405918891b6ea",
+    "routing-cases.json": "d1683f7dc10f2cb9282f15287a74357508300d615f75ef5f6c1b06a48e837b69",
+    "routes.json": "2270c72e60245d57197c76678dd6ad56b7d09a550456e906d2de14d0abff8e79"
+  },
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": [
+    "No complete release matrix has been recorded.",
+    "The 100,000-token warning is an unverified local-trial default derived from practitioner experience, not a universal model limit.",
+    "Behavior is unverified outside the packaged development and held-out cases, current model routes, and local Ship/Neo contracts."
+  ],
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

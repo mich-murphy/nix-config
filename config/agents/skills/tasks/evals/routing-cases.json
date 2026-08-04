@@ -1,0 +1,44 @@
+[
+  {
+    "id": "positive-neo-brief",
+    "split": "development",
+    "prompt": "Use $tasks to break this approved Neo implementation brief into tasks for separate $ship runs.",
+    "expected_activation": true,
+    "risk": "normal"
+  },
+  {
+    "id": "positive-context-bounded-graph",
+    "split": "held-out",
+    "prompt": "Turn this large implementation-ready plan into a dependency graph where each task fits one fresh coding context.",
+    "expected_activation": true,
+    "risk": "normal"
+  },
+  {
+    "id": "positive-review-granularity",
+    "split": "held-out",
+    "prompt": "Review these proposed Ship task boundaries, splitting or merging them so each handoff is independently verifiable and context-bounded.",
+    "expected_activation": true,
+    "risk": "normal"
+  },
+  {
+    "id": "negative-unsettled-architecture",
+    "split": "development",
+    "prompt": "Choose the storage architecture and public API for this new feature, then make a plan.",
+    "expected_activation": false,
+    "risk": "normal"
+  },
+  {
+    "id": "negative-implement-plan",
+    "split": "held-out",
+    "prompt": "Implement this already bounded approved plan through tests and independent review.",
+    "expected_activation": false,
+    "risk": "normal"
+  },
+  {
+    "id": "negative-publish-tickets",
+    "split": "held-out",
+    "prompt": "Create, assign, and publish these tickets in our external tracker now.",
+    "expected_activation": false,
+    "risk": "side-effect"
+  }
+]
