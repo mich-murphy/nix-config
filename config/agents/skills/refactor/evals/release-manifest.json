@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "refactor",
+  "git_revision": "a01c94bf4fee3ba232e402339bca6a58c3104540",
+  "definition_hashes": {
+    "cases.json": "6d4fd6d47f39b602ec1a08c257a0a7c2e619861394106009827dba7f37caac94",
+    "incumbent/SKILL.md": "23dcaeae772a876ce2dd22ac6aa39e4c1fa683e8b84d93b90f6c5a893f97f924",
+    "incumbent/references/design-and-patterns.md": "3961a6ee416108bcd34a583c540c4b14c17de305f7336a9a01bd97af76d917cb",
+    "incumbent/references/model-routing.md": "35b056b7abba4fd31b66c5512b511a4308e93489087d417ee896e79a747eceb5",
+    "incumbent/references/refactoring-mechanics.md": "ac4cc098b5790ed36578d23dbd83b03e434921fe9a21245d385fee9e77cbcc25",
+    "incumbent/references/sources.md": "c235e0130d1cf8f156e88561d27b142db1a0e3f801f41543063337f60b6ae770",
+    "incumbent/references/testing-and-verification.md": "20c4efc82864b1ab79d0f08ae0919d51de3c9357dbb4bac029fccf94477f363c",
+    "routes.json": "b457d5da26ca30593e124a309b8f50292fe8096d05f15cf66a3f927fb0a38e0f",
+    "routing-cases.json": "55d53fbd37a91e00928fd8c9a4f07e1d55d24ee11868c933b11ea4d84577316f"
+  },
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": [
+    "No complete, current, hash-consistent held-out matrix is joined to queryable MLflow evidence.",
+    "Historical generated result blobs are non-authoritative and remain recoverable from Git history."
+  ],
+  "migration": {
+    "recorded_at": "2026-08-04",
+    "classification": "deferred-no-release-evidence",
+    "live_evidence_deleted": false,
+    "git_history_deleted": false
+  },
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

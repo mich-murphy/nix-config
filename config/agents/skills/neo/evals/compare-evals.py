@@ -74,7 +74,7 @@ def main() -> int:
     parser.add_argument(
         "--baseline",
         type=Path,
-        default=HERE / "results" / "baseline.json",
+        default=HERE / "baseline.json",
     )
     args = parser.parse_args()
     baseline = json.loads(args.baseline.read_text(encoding="utf-8"))

@@ -1,0 +1,19 @@
+{
+  "candidate_hash": "sha256:444b250ee23a6bd9fed11e197863d5948c2f7bd088d8d392bb6a7a7a944e2d7e",
+  "reason": "Align specialized suite repetition defaults found during the unrecorded pre-verdict review.",
+  "changes": [
+    "Central Neo smoke normalization now records the runner's actual three-repetition default.",
+    "Central Neo full normalization records the runner's five-repetition default.",
+    "Skill-development full defaults to five repetitions, matching its help text and strict release tier.",
+    "The skill-development release manifest definition hashes were refreshed."
+  ],
+  "tdd": {
+    "red": "specialized suite mapping regression had no repetition contract and exposed the one-versus-three mismatch",
+    "green": "explicit smoke/full/default/override repetition assertions and all 86 agent tests pass"
+  },
+  "scope": {
+    "live_mutation": false,
+    "model_calls": false,
+    "deployment": false
+  }
+}

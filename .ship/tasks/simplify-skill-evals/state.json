@@ -1,0 +1,407 @@
+{
+  "schema_version": "1.0.0",
+  "slug": "simplify-skill-evals",
+  "title": "Simplify skill evaluations around MLflow",
+  "root": "/Users/mm/dev/nix-config",
+  "plan": "/Users/mm/dev/agentic-workflow/.neo/tasks/simplify-skill-evals/implementation-brief.md",
+  "plan_hash": "sha256:1c3f03624694291c4fed01f236491134e13f3bd5ad9da319329556bca09989e7",
+  "readiness": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/readiness.json",
+  "readiness_hash": "sha256:aa045b03821d70ce36fae954bb373f774885744904657145821aab9e0daea4a1",
+  "base_revision": "a01c94bf4fee3ba232e402339bca6a58c3104540",
+  "initial_candidate_hash": "sha256:344763c303fa344d12a237235a591a2a9704dbbe93dd91a3626b89a220627b8b",
+  "initial_paths": [],
+  "current": "release-ready",
+  "max_review_cycles": 2,
+  "review_attempts": 2,
+  "verified_candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+  "evidence": [
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence.json",
+      "hash": "sha256:e78a419798641b9801e4bf2ba00be748f9204984db8fe84a68f9e28e64a676b0",
+      "candidate_hash": "sha256:7b14c9c2b56a309bee94db71c434c55600a8d571b0fec59681d3b409da058d40",
+      "recorded_at": "2026-08-04T04:00:40.282301+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence.json",
+      "hash": "sha256:62167eff1800f420344e91cef7652baf1928152e94a1086709c923f96750ba52",
+      "candidate_hash": "sha256:7b14c9c2b56a309bee94db71c434c55600a8d571b0fec59681d3b409da058d40",
+      "recorded_at": "2026-08-04T04:02:26.874818+00:00"
+    },
+    {
+      "stage": "remediation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/remediation-evidence.json",
+      "hash": "sha256:6753d75d4353b29461d5656e185a73d4e6462dde44ceee38ea6a432595048db1",
+      "candidate_hash": "sha256:2c3f6243cee4168be78b391a0d153687e42b76e74fc9ab70e1669629983c7447",
+      "recorded_at": "2026-08-04T04:27:57.604761+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-2.json",
+      "hash": "sha256:65045c13a9006a6242dbb27b4cb9d6cb0387b31eb7ed1efaefff36a3b87842f1",
+      "candidate_hash": "sha256:2c3f6243cee4168be78b391a0d153687e42b76e74fc9ab70e1669629983c7447",
+      "recorded_at": "2026-08-04T04:29:15.261566+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-2.json",
+      "hash": "sha256:488eb90353df79030e8cacd7c642aa15bde0e8ac3e1c0d082a0c5da2f0b9bac6",
+      "candidate_hash": "sha256:21aafbbcd9bac97518382b33d71e7d042d6d8d89c6778f0ec5b1c72f21a47c08",
+      "recorded_at": "2026-08-04T04:33:49.641834+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-3.json",
+      "hash": "sha256:b383534e64ead09b39b3b168f1128231397587bb791798646814900b7bbcc87b",
+      "candidate_hash": "sha256:21aafbbcd9bac97518382b33d71e7d042d6d8d89c6778f0ec5b1c72f21a47c08",
+      "recorded_at": "2026-08-04T04:33:49.932785+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-3.json",
+      "hash": "sha256:df52d3972635eaab6a6b439fb0f69688b23fb046bd89ebdfd542e624df456341",
+      "candidate_hash": "sha256:444b250ee23a6bd9fed11e197863d5948c2f7bd088d8d392bb6a7a7a944e2d7e",
+      "recorded_at": "2026-08-04T04:40:28.191049+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-4.json",
+      "hash": "sha256:12974762ff397aef66b494159e9aaa5b12cf68507e4b82889e38ab15e887a29c",
+      "candidate_hash": "sha256:444b250ee23a6bd9fed11e197863d5948c2f7bd088d8d392bb6a7a7a944e2d7e",
+      "recorded_at": "2026-08-04T04:40:28.477681+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-4.json",
+      "hash": "sha256:e75f27367b60dfd6ca080d6753bf0b4a3b801331864ff84383f8670d535573fe",
+      "candidate_hash": "sha256:374375325798dc374a0d9d2de89623ea5731778302945b56dc2b31da9716d99e",
+      "recorded_at": "2026-08-04T04:52:15.987496+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-5.json",
+      "hash": "sha256:a0e8a740d234d2e1b84b8d6621d443450f67c4b247d464d5bb2de73c3532b632",
+      "candidate_hash": "sha256:374375325798dc374a0d9d2de89623ea5731778302945b56dc2b31da9716d99e",
+      "recorded_at": "2026-08-04T04:52:16.265109+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-5.json",
+      "hash": "sha256:dbe05454a7bb2023a28b0ca21930a6be828a987bcf3cbd1bd4732fa65ce8c992",
+      "candidate_hash": "sha256:3c704ecc82f5153ff321a2541958dc84124b885640bc0e7369f2874e3e639f26",
+      "recorded_at": "2026-08-04T04:59:35.716404+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-6.json",
+      "hash": "sha256:593bae29e0814b6c2d455d531d5ce82e2025646f3bee0b398d6f3039acf65939",
+      "candidate_hash": "sha256:3c704ecc82f5153ff321a2541958dc84124b885640bc0e7369f2874e3e639f26",
+      "recorded_at": "2026-08-04T04:59:36.020584+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-6.json",
+      "hash": "sha256:5353754bd84b1534fce5603be9be6fbee21bb541cfe5bcdba61d421dc8738fc9",
+      "candidate_hash": "sha256:baa09b00320d07d3f8ea22effddaff8076cf36dcd57c11177a57fb3af327d3a9",
+      "recorded_at": "2026-08-04T05:07:12.397049+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-7.json",
+      "hash": "sha256:4b35506c60889544dc6cedf2b9feaebfa3a8b72d5a9ba8646d32c32499a6fdbd",
+      "candidate_hash": "sha256:baa09b00320d07d3f8ea22effddaff8076cf36dcd57c11177a57fb3af327d3a9",
+      "recorded_at": "2026-08-04T05:07:12.677789+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-7.json",
+      "hash": "sha256:22f7f91cba2dddc17c778d133e9eb2c58f33e5f666cd454cd3d4ea3e751fa737",
+      "candidate_hash": "sha256:08ea8a985ae62b13f104983376a656e8780a4d5e168926d603c65778c40aaf9d",
+      "recorded_at": "2026-08-04T05:16:21.976819+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-8.json",
+      "hash": "sha256:d2312f3613fe8261d7f44439bc4c8fb1be2d96e1b7270366bc399bead33526c6",
+      "candidate_hash": "sha256:08ea8a985ae62b13f104983376a656e8780a4d5e168926d603c65778c40aaf9d",
+      "recorded_at": "2026-08-04T05:16:22.286914+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-8.json",
+      "hash": "sha256:43734f7218e4859e49e3934b4216b5714009bc8b6bdaa6453e7d4dca24966474",
+      "candidate_hash": "sha256:5b82418d98a46f3f8241988ead16c31cebc70c2cba2cd7a7949c739c756a9dda",
+      "recorded_at": "2026-08-04T05:29:01.049969+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-9.json",
+      "hash": "sha256:f5d4c09b8934adf3335e47e55c32ccd8dc57c66117b0098c91b2946b61362b28",
+      "candidate_hash": "sha256:5b82418d98a46f3f8241988ead16c31cebc70c2cba2cd7a7949c739c756a9dda",
+      "recorded_at": "2026-08-04T05:29:01.351995+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-9.json",
+      "hash": "sha256:c4948c27c91d0443475584e1aa9207e2561f68312d216589819a31c9a1e60964",
+      "candidate_hash": "sha256:9b4cff19986108e137c909ebded009d3455e50dcc6b9fcf2531c9404b17e5923",
+      "recorded_at": "2026-08-04T05:36:14.557502+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-10.json",
+      "hash": "sha256:b361e578c1cc1d1f91fc6db0694c101c2bb76e33105afb3c15292657fae1ea47",
+      "candidate_hash": "sha256:9b4cff19986108e137c909ebded009d3455e50dcc6b9fcf2531c9404b17e5923",
+      "recorded_at": "2026-08-04T05:36:14.843827+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-10.json",
+      "hash": "sha256:85bff26e82dbe9bf00b808f99272f3c268bb5fbcc6ff68e6c5fb82e72498d248",
+      "candidate_hash": "sha256:1c680b5844c03ae1f575291ddf2a3c751271e5b70708f9ef491597db7e56f4ea",
+      "recorded_at": "2026-08-04T05:48:24.345262+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-11.json",
+      "hash": "sha256:41733280045232a1b52122a76f333c416c319e1dd8570210aaed3753096fe843",
+      "candidate_hash": "sha256:1c680b5844c03ae1f575291ddf2a3c751271e5b70708f9ef491597db7e56f4ea",
+      "recorded_at": "2026-08-04T05:48:24.433768+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-11.json",
+      "hash": "sha256:a6b3efe990fc1f658a94558ef1ace3b141197e6ca68c553ad83adebf9a90c477",
+      "candidate_hash": "sha256:f054f92f1b124e748fb2c10736767c3dc9c6a9c20f146b5c97fee6b5c464f455",
+      "recorded_at": "2026-08-04T05:59:25.736950+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-12.json",
+      "hash": "sha256:d0da3c381cc818bce7ba11e0fb8911404da614a83950c907db1512de0d2c488b",
+      "candidate_hash": "sha256:f054f92f1b124e748fb2c10736767c3dc9c6a9c20f146b5c97fee6b5c464f455",
+      "recorded_at": "2026-08-04T05:59:25.831235+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-12.json",
+      "hash": "sha256:3e7b3d16cd1e597156056cdfa71449de8a7b0c8d460991135e073db14af6e8e2",
+      "candidate_hash": "sha256:c1b9ad2006e0858341a2e040df343c5ee3f020e65ab8740f2606f92c7d1a5bc0",
+      "recorded_at": "2026-08-04T06:09:40.515839+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-13.json",
+      "hash": "sha256:691dc62aa02b6d65d2f02aa213db0fae16237f5a561cd69ed390a7e0230810f0",
+      "candidate_hash": "sha256:c1b9ad2006e0858341a2e040df343c5ee3f020e65ab8740f2606f92c7d1a5bc0",
+      "recorded_at": "2026-08-04T06:09:40.604911+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-13.json",
+      "hash": "sha256:2e1df4415cf1313e0a097b38be31f09f5033474889cd79af2220cb256021c958",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "recorded_at": "2026-08-04T06:21:42.926658+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-14.json",
+      "hash": "sha256:01d8f5f15f01786d7642c2be4636b70704b19fbafae86f1a9ea965836c82c36d",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "recorded_at": "2026-08-04T06:21:43.014999+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-14.json",
+      "hash": "sha256:4b3acf689f8a0960ac5ea127ec87c6e4167b4c8a9976d0140080b9956273eff5",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "recorded_at": "2026-08-04T06:30:21.643069+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-15.json",
+      "hash": "sha256:792c59ef01c62201ef35a007e929ce7cb771a6d48df39d2b28318d572e55f2a2",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "recorded_at": "2026-08-04T06:30:21.739363+00:00"
+    },
+    {
+      "stage": "implementation",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/implementation-evidence-15.json",
+      "hash": "sha256:7d8b3ef5cd2e3985a96ac03901617780779a08b83a8d05b77b602a9ad8bcc9e8",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "recorded_at": "2026-08-04T06:37:03.676091+00:00"
+    },
+    {
+      "stage": "verification",
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/verification-evidence-16.json",
+      "hash": "sha256:f4517deea1f37f0c4b951146a3d431b9c9be61b19a91533a52b5f4f4b2da2717",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "recorded_at": "2026-08-04T06:37:03.763475+00:00"
+    }
+  ],
+  "reviews": [
+    {
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/review-1.json",
+      "hash": "sha256:936a5bb67da72fb9a8fb2de831c78e80b49dc8d64f888a3c9f64575e7092bb6e",
+      "candidate_hash": "sha256:7b14c9c2b56a309bee94db71c434c55600a8d571b0fec59681d3b409da058d40",
+      "verdict": "changes-required",
+      "findings": [
+        {
+          "id": "R1",
+          "severity": "blocking",
+          "category": "correctness",
+          "location": "config/agents/eval_identity.py:13",
+          "finding": "Evaluation identity omits the unique execution ID, evaluator version, evaluated skill/package hash, and specialized evaluator assets.",
+          "evidence": "DEFINITION_FILES contains only cases.json, routing-cases.json, and routes.json. build_identity hashes those files and selected controls, then adds the random execution_id only after the key has already been computed.",
+          "consequence": "Separate executions and behavior-affecting changes can share one key, overwrite spools, or join unrelated evidence.",
+          "route": "tdd"
+        },
+        {
+          "id": "R2",
+          "severity": "blocking",
+          "category": "correctness",
+          "location": "config/agents/eval_compare.py:103",
+          "finding": "Strict release does not prove that results are the complete declared matrix or that the comparison belongs to the candidate.",
+          "evidence": "complete_valid_matrix only checks item validity; release eligibility trusts configuration and separately supplied comparison/publication artifacts are not identity-bound.",
+          "consequence": "A valid subset or another candidate's comparison can satisfy strict release.",
+          "route": "tdd"
+        },
+        {
+          "id": "R3",
+          "severity": "blocking",
+          "category": "correctness",
+          "location": "config/agents/telemetry/publish_evals.py:145",
+          "finding": "Publication retries do not detect conflicting result content for an existing evaluation identity.",
+          "evidence": "Assessments are accepted by name and summary reuse checks only definition_hashes, not the safe result document or values.",
+          "consequence": "Changed content can reuse stale assessments and summaries while reporting published.",
+          "route": "tdd"
+        },
+        {
+          "id": "R4",
+          "severity": "blocking",
+          "category": "correctness",
+          "location": "config/agents/skills/skill-development/evals/run-evals.py:623",
+          "finding": "The skill-development adapter overwrites its evaluation identity with a future-label tuple.",
+          "evidence": "identity is created as a dictionary, reassigned from futures[future], and then used as both tuple and dictionary.",
+          "consequence": "Pending runs and exception handling fail, while exported runs carry malformed identity.",
+          "route": "tdd"
+        },
+        {
+          "id": "R5",
+          "severity": "blocking",
+          "category": "requirements",
+          "location": "config/agents/eval_cli.py:108",
+          "finding": "Neo cannot complete the central strict-release workflow.",
+          "evidence": "The central adapter never passes required full-cost acknowledgement and Neo results have no common publication traces, so evidence remains pending with nothing retryable.",
+          "consequence": "Neo cannot run and publish the approved full specialized matrix through the central CLI.",
+          "route": "tdd"
+        },
+        {
+          "id": "R6",
+          "severity": "blocking",
+          "category": "security",
+          "location": "config/agents/eval_publication.py:70",
+          "finding": "Metadata-only publication does not recursively exclude forbidden content.",
+          "evidence": "Nested dictionaries inside allowed fields are truncated but their keys are not filtered; assessment rationale includes blocking failure values.",
+          "consequence": "Nested prompt, response, environment, credential, source, or tool content can reach MLflow.",
+          "route": "tdd"
+        },
+        {
+          "id": "R7",
+          "severity": "blocking",
+          "category": "operations",
+          "location": "docker/ai-observability/retention.py:121",
+          "finding": "Retention does not paginate MLflow runs or traces and requests 1,000 traces despite a 500-result trace page maximum.",
+          "evidence": "Each search is called once and no page token is consumed; pure selection tests do not cover enumeration.",
+          "consequence": "Retention can fail or make a deletion decision from a partial evidence set, violating global fail-safe behavior.",
+          "route": "tdd"
+        }
+      ],
+      "recorded_at": "2026-08-04T04:11:50.482709+00:00"
+    },
+    {
+      "path": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/review-2.json",
+      "hash": "sha256:9ad81c2a2ae739b134eae8aa1341b4f829a0fbfd4b37d511eb5ab7913a935098",
+      "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+      "verdict": "pass",
+      "findings": [],
+      "recorded_at": "2026-08-04T06:40:17.607272+00:00"
+    }
+  ],
+  "invalidations": [
+    {
+      "from": "review",
+      "reason": "Pre-review fault-boundary audit found assessments need their own identity/content claim when no summary run exists",
+      "recorded_at": "2026-08-04T04:30:47.261440+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found Neo smoke runner defaults to three repetitions while normalized configuration recorded one",
+      "recorded_at": "2026-08-04T04:38:09.443856+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found mixed exported/pending spools lose successful eligibility and retry cannot produce a release-ready candidate",
+      "recorded_at": "2026-08-04T04:47:20.523083+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found strict release neither recomputes current identity provenance nor binds the publication receipt to candidate content hash",
+      "recorded_at": "2026-08-04T04:56:27.523978+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found protection mutates the new summary before validating optional supersession references",
+      "recorded_at": "2026-08-04T05:04:40.521335+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found summary runs with tags but missing metrics/artifact are accepted as complete on retry",
+      "recorded_at": "2026-08-04T05:10:55.388855+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found exported traces are identity-bound but not result-content-bound before derived publication begins",
+      "recorded_at": "2026-08-04T05:25:10.249227+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found generic missing-incumbent early-return traces lack the required result content hash",
+      "recorded_at": "2026-08-04T05:34:13.387581+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh pre-verdict review found candidate/trace hashes omit privacy-safe fields consumed by specialized comparators",
+      "recorded_at": "2026-08-04T05:40:05.020309+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Fresh review found non-idempotent specialized minimization, unsafe supersession lineage, ambiguous retention metadata deletion, and incomplete evaluator provenance",
+      "recorded_at": "2026-08-04T05:52:59.168786+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Re-review found normalized claim/raw field conflicts and re-adoption of already-superseded current summaries",
+      "recorded_at": "2026-08-04T06:06:40.120718+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Final review found blocker-count override collision and non-recoverable interrupted supersession",
+      "recorded_at": "2026-08-04T06:18:05.157608+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Final retention review found unresolved superseded_by references could authorize deletion",
+      "recorded_at": "2026-08-04T06:27:36.230048+00:00"
+    },
+    {
+      "from": "review",
+      "reason": "Retention re-review found empty-skill lineage and cyclic supersession graphs accepted",
+      "recorded_at": "2026-08-04T06:34:30.732711+00:00"
+    }
+  ],
+  "stop_reason": null,
+  "created_at": "2026-08-04T03:30:21.883945+00:00",
+  "updated_at": "2026-08-04T06:40:17.607449+00:00"
+}

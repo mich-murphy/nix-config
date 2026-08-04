@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "skills": {
+    "bro": {"adapter": "generic"},
+    "code-review": {"adapter": "generic"},
+    "deploy": {"adapter": "generic"},
+    "hunk-review": {"adapter": "generic"},
+    "neo": {"adapter": "neo"},
+    "neo-architecture": {"adapter": "generic"},
+    "neo-delivery": {"adapter": "generic"},
+    "neo-discover": {"adapter": "generic"},
+    "neo-finalize": {"adapter": "generic"},
+    "neo-product": {"adapter": "generic"},
+    "neo-program": {"adapter": "generic"},
+    "refactor": {"adapter": "generic"},
+    "research": {"adapter": "generic"},
+    "resolve-review": {"adapter": "generic"},
+    "ship": {"adapter": "generic"},
+    "skill-development": {"adapter": "skill-development"},
+    "tdd": {"adapter": "generic"}
+  }
+}

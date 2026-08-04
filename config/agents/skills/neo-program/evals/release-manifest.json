@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "neo-program",
+  "git_revision": "a01c94bf4fee3ba232e402339bca6a58c3104540",
+  "definition_hashes": {
+    "cases.json": "6e9857508f91b2beb22e862e9ff3d46f9b2446d68fa180194eb18b918f1ec364",
+    "incumbent/SKILL.md": "ebbcec9d96fb3d6bfee5315c5b2c7c285ce0f7f1006d14af5a29e02e9698bc88",
+    "routes.json": "708bbedfe2510e5d1c2fcf796cada1222b3d67b4c46079bdadeffbabdf0b3de8",
+    "routing-cases.json": "dba973d882a7ef8ec44a380d5c8f72df2e5404563d9756830217705930577007"
+  },
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": [
+    "No complete, current, hash-consistent held-out matrix is joined to queryable MLflow evidence.",
+    "Historical generated result blobs are non-authoritative and remain recoverable from Git history."
+  ],
+  "migration": {
+    "recorded_at": "2026-08-04",
+    "classification": "deferred-no-release-evidence",
+    "live_evidence_deleted": false,
+    "git_history_deleted": false
+  },
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

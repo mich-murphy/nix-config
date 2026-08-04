@@ -22,6 +22,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from eval_identity import build_identity
+from eval_publication import trace_result_hash, write_spool
 from telemetry import task_trace
 
 
@@ -465,6 +467,9 @@ def run_once(
     route: dict[str, str],
     repetition: int,
     timeout: int,
+    *,
+    offline: bool = False,
+    evaluation_key: str | None = None,
 ) -> dict[str, Any]:
     run_started_ns = time.time_ns()
     context = skill_context(eval_dir, case, variant)
@@ -485,6 +490,24 @@ def run_once(
             outcome="invalid_environment",
             verifier=f"packaged-assertion-scorer@{evaluator_version}",
         )
+        if evaluation_key:
+            attributes["app.agent.eval.identity"] = evaluation_key
+        attributes["app.agent.eval.result_hash"] = trace_result_hash({
+            "id": case["id"],
+            "harness": harness,
+            "variant": variant,
+            "mode": mode,
+            "repetition": repetition,
+            "valid": False,
+            "accepted": False,
+            "assertions_passed": 0,
+            "assertions_total": 0,
+            "risk": case.get("risk", "normal"),
+            "expected_activation": case.get("expected_activation"),
+            "actual_activation": None,
+            "duration_seconds": 0.0,
+            "usage": {},
+        })
         trace = task_trace.build_task_trace(
             harness=harness, session_id=f"eval-{secrets.token_hex(16)}",
             task_id=f"{case['id']}-{harness}-{variant}-{mode}-{repetition}",
@@ -498,8 +521,12 @@ def run_once(
                 }, status="error",
             )], status="error",
         )
-        delivery = task_trace.export_task_trace(
-            trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+        delivery = (
+            {"status": "disabled", "reason": "offline"}
+            if offline
+            else task_trace.export_task_trace(
+                trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+            )
         )
         result = {
             "id": case["id"], "harness": harness, "variant": variant, "mode": mode,
@@ -509,11 +536,13 @@ def run_once(
             "output": "", "usage": {}, "duration_seconds": 0.0,
             "trace_id": trace["trace_id"], "mlflow_trace_id": trace["mlflow_trace_id"],
             "telemetry": delivery,
+            "evidence_state": "published" if delivery.get("status") == "exported" else "pending",
         }
         if delivery.get("status") != "exported":
-            result["task_state"] = result["state"]
-            result["state"] = "telemetry_failure"
-            result["failure_kind"] = delivery.get("error", "export_failed")
+            result["publication_failure_kind"] = (
+                "offline" if offline else delivery.get("error", "export_failed")
+            )
+            result["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
         return result
     with tempfile.TemporaryDirectory(prefix="skill-eval-") as temp:
         root = Path(temp)
@@ -597,6 +626,24 @@ def run_once(
             "assertions_total": len(scored),
         }),
     })
+    if evaluation_key:
+        trace_attributes["app.agent.eval.identity"] = evaluation_key
+    trace_attributes["app.agent.eval.result_hash"] = trace_result_hash({
+        "id": case["id"],
+        "harness": harness,
+        "variant": variant,
+        "mode": mode,
+        "repetition": repetition,
+        "valid": state in {"succeeded", "task_failure"},
+        "accepted": accepted,
+        "assertions_passed": sum(item["passed"] for item in scored),
+        "assertions_total": len(scored),
+        "risk": case.get("risk", "normal"),
+        "expected_activation": case.get("expected_activation"),
+        "actual_activation": actual_activation,
+        "duration_seconds": round(duration, 3),
+        "usage": usage,
+    })
     cost = observed_cost(usage)
     if cost is not None:
         trace_attributes["app.agent.cost.status"] = "observed"
@@ -627,9 +674,13 @@ def run_once(
         ),
         status="error" if state not in {"succeeded", "task_failure"} else "ok",
     )
-    delivery = task_trace.export_task_trace(
-        trace,
-        os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+    delivery = (
+        {"status": "disabled", "reason": "offline"}
+        if offline
+        else task_trace.export_task_trace(
+            trace,
+            os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+        )
     )
     result = {
         "id": case["id"], "split": case.get("split", "development"),
@@ -652,17 +703,17 @@ def run_once(
         "repository_revision": trace_attributes["app.agent.repository.base_revision"],
         "model_returned": trace_attributes["app.agent.model.returned"],
         "outcome": outcome,
+        "evidence_state": "published" if delivery.get("status") == "exported" else "pending",
     }
     if delivery.get("status") != "exported":
-        result["task_state"] = result["state"]
-        result["state"] = "telemetry_failure"
-        result["failure_kind"] = delivery.get("error", "export_failed")
-        result["valid"] = False
-        result["accepted"] = False
+        result["publication_failure_kind"] = (
+            "offline" if offline else delivery.get("error", "export_failed")
+        )
+        result["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
     return result
 
 
-def replay(eval_dir: Path, source: Path, output: Path) -> None:
+def replay(eval_dir: Path, source: Path, output: Path) -> dict[str, Any]:
     document = read_json(source)
     outcome_cases = {case["id"]: case for case in read_json(eval_dir / "cases.json")}
     routing_cases = {case["id"]: case for case in read_json(eval_dir / "routing-cases.json")}
@@ -694,10 +745,10 @@ def replay(eval_dir: Path, source: Path, output: Path) -> None:
             ),
         )
         results.append(result)
-    write_results(output, document.get("configuration", {}), results)
+    return write_results(output, document.get("configuration", {}), results)
 
 
-def write_results(output: Path, configuration: dict[str, Any], results: list[dict[str, Any]]) -> None:
+def write_results(output: Path, configuration: dict[str, Any], results: list[dict[str, Any]]) -> dict[str, Any]:
     valid = [result for result in results if result.get("valid")]
     usage = {key: sum(result.get("usage", {}).get(key, 0) or 0 for result in valid) for key in USAGE_KEYS}
     durations = sorted(result.get("duration_seconds", 0) for result in valid)
@@ -722,11 +773,13 @@ def write_results(output: Path, configuration: dict[str, Any], results: list[dic
         "usage": usage,
     }
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps({"schema_version": "2.0.0", "configuration": configuration, "summary": summary, "results": results}, indent=2) + "\n")
+    document = {"schema_version": "2.0.0", "configuration": configuration, "summary": summary, "results": results}
+    output.write_text(json.dumps(document, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
+    return document
 
 
-def main(eval_dir: Path) -> None:
+def main(eval_dir: Path, argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=f"Run {eval_dir.parent.name} evaluations")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--harness", choices=(*HARNESS_COMMANDS, "all"), default="all")
@@ -737,15 +790,29 @@ def main(eval_dir: Path) -> None:
     parser.add_argument("--timeout", type=int, default=240)
     parser.add_argument("--replay", type=Path)
     parser.add_argument("--publish-mlflow", action="store_true")
-    args = parser.parse_args()
+    parser.add_argument("--offline", action="store_true")
+    parser.add_argument("--strict", action="store_true")
+    parser.add_argument("--spool", type=Path)
+    args = parser.parse_args(argv)
     if args.replay:
-        replay(eval_dir, args.replay, args.output)
-        return
+        document = replay(eval_dir, args.replay, args.output)
+        document["evaluation_identity"] = build_identity(
+            eval_dir.parent.name, eval_dir, document.get("configuration", {})
+        )
+        document["evidence_state"] = "pending"
+        args.output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        return 1 if args.strict else 0
     routes = read_json(eval_dir / "routes.json")
     harnesses = list(HARNESS_COMMANDS) if args.harness == "all" else [args.harness]
     variants = list(VARIANTS) if args.variant == "all" else [args.variant]
     modes = list(MODES) if args.mode == "all" else [args.mode]
     repetitions = args.repetitions or (1 if args.suite == "smoke" else 5 if args.suite == "held-out" else 3)
+    configuration = {
+        "skill": eval_dir.parent.name, "suite": args.suite, "repetitions": repetitions,
+        "harnesses": harnesses, "variants": variants, "modes": modes,
+        "routes": routes["harnesses"], "fixed": routes.get("fixed", []),
+    }
+    identity = build_identity(eval_dir.parent.name, eval_dir, configuration)
     results = []
     for mode in modes:
         cases = read_json(eval_dir / ("routing-cases.json" if mode == "routing" else "cases.json"))
@@ -760,15 +827,28 @@ def main(eval_dir: Path) -> None:
                 for variant in variants:
                     for repetition in range(1, repetitions + 1):
                         print(f"running {case['id']} ({mode}/{harness}/{variant} #{repetition})", flush=True)
-                        results.append(run_once(eval_dir, case, harness, variant, mode, route, repetition, args.timeout))
-    configuration = {
-        "skill": eval_dir.parent.name, "suite": args.suite, "repetitions": repetitions,
-        "harnesses": harnesses, "variants": variants, "modes": modes,
-        "routes": routes["harnesses"], "fixed": routes.get("fixed", []),
-    }
-    write_results(args.output, configuration, results)
+                        results.append(run_once(
+                            eval_dir, case, harness, variant, mode, route,
+                            repetition, args.timeout, offline=args.offline,
+                            evaluation_key=identity["key"],
+                        ))
+    document = write_results(args.output, configuration, results)
+    document["evaluation_identity"] = identity
+    evidence_states = {result.get("evidence_state", "pending") for result in results}
+    document["evidence_state"] = (
+        "conflict" if "conflict" in evidence_states
+        else "published" if evidence_states == {"published"}
+        else "pending"
+    )
+    if document["evidence_state"] != "published":
+        spool_root = args.spool or Path(
+            os.environ.get("APP_AGENT_EVAL_SPOOL", Path(__file__).parent / ".eval-spool")
+        )
+        document["publication_spool"] = str(write_spool(document, spool_root))
+    args.output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     if args.publish_mlflow:
         subprocess.run(
             ["uv", "run", str(Path(__file__).parent / "telemetry" / "publish_evals.py"), str(args.output)],
             check=True,
         )
+    return 1 if args.strict and document["evidence_state"] != "published" else 0

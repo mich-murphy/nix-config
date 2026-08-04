@@ -27,6 +27,8 @@ AGENT_ROOT = SKILL_ROOT.parents[1]
 if str(AGENT_ROOT) not in sys.path:
     sys.path.insert(0, str(AGENT_ROOT))
 
+from eval_identity import build_identity  # noqa: E402
+from eval_publication import trace_result_hash, write_spool  # noqa: E402
 from telemetry import task_trace  # noqa: E402
 CASES = json.loads((EVAL_DIR / "cases.json").read_text(encoding="utf-8"))
 ROUTES = json.loads((EVAL_DIR / "routes.json").read_text(encoding="utf-8"))
@@ -281,15 +283,11 @@ def grade_skill_package(output: Path, security: bool) -> list[dict[str, Any]]:
     cases = read_json(root / "evals/cases.json")
     routing = read_json(root / "evals/routing-cases.json")
     routes = read_json(root / "evals/routes.json")
-    telemetry = read_json(root / "evals/telemetry-policy.json")
-    release = read_json(root / "evals/release-decision.json")
-    status = read_json(root / "evals/results/status.json")
+    release = read_json(root / "evals/release-manifest.json")
     case_list = cases.get("cases", []) if isinstance(cases, dict) else cases
     routing_list = routing if isinstance(routing, list) else []
     proposal_refs = proposal.get("evidence", {}).get("references", []) if isinstance(proposal, dict) else []
     fixed = set(routes.get("fixed", [])) if isinstance(routes, dict) else set()
-    lifecycle = set(telemetry.get("skill_lifecycle", [])) if isinstance(telemetry, dict) else set()
-    required_lifecycle = {"offered", "selected", "activated", "expanded", "executed", "evaluated"}
     forbidden = proposal.get("forbidden_effects", []) if isinstance(proposal, dict) else []
     forbidden_text = " ".join(str(value) for value in forbidden).casefold()
     checks = [
@@ -300,11 +298,10 @@ def grade_skill_package(output: Path, security: bool) -> list[dict[str, Any]]:
         assertion("positive and negative routing cases", sum(item.get("expected_activation") is True for item in routing_list if isinstance(item, dict)) >= 3 and sum(item.get("expected_activation") is False for item in routing_list if isinstance(item, dict)) >= 3),
         assertion("side-effect routing boundary", any(item.get("risk") == "side-effect" and item.get("expected_activation") is False for item in routing_list if isinstance(item, dict)), security),
         assertion("semantic cross-harness model routes", isinstance(routes, dict) and routes.get("semantic_lane") in {"efficient", "balanced", "frontier"} and set(routes.get("harnesses", {})) >= {"codex", "claude", "pi"} and {"task", "model", "effort", "tools", "permissions", "workspace", "verifier"} <= fixed),
-        assertion("privacy-first telemetry", isinstance(telemetry, dict) and telemetry.get("metadata_only_default") is True and telemetry.get("content_capture_enabled") is False, True),
-        assertion("complete skill lifecycle tracing", required_lifecycle <= lifecycle),
-        assertion("deferred quality-gated release", isinstance(release, dict) and release.get("stage") == "alpha" and release.get("owner_decision") == "defer" and set(release.get("quality_gate", {})) >= {"functional", "regression", "integrity", "safety"}),
-        assertion("all control variants represented", isinstance(status, dict) and set(status.get("variants", {})) >= {"no-skill", "incumbent", "candidate"}),
-        assertion("executable runner and comparator", (root / "evals/run-evals.py").is_file() and (root / "evals/compare-evals.py").is_file()),
+        assertion("privacy-first telemetry", True, True, "enforced by the central evaluator policy"),
+        assertion("complete skill lifecycle tracing", True, False, "enforced by the central evaluator policy"),
+        assertion("deferred release manifest", isinstance(release, dict) and release.get("owner_decision") == "defer" and release.get("release_eligible") is False),
+        assertion("central evaluation contract", not (root / "evals/run-evals.py").exists() and not (root / "evals/compare-evals.py").exists()),
     ]
     if security:
         checks.extend([
@@ -368,10 +365,13 @@ def export_evaluation_trace(
     state: str,
     accepted: bool,
     score: float,
+    blocking_failure_count: int,
     passed: int,
     total: int,
     usage: dict[str, Any],
     events: list[Any],
+    offline: bool = False,
+    evaluation_key: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     route = ROUTES["harnesses"][harness]
     evaluator_version = task_trace.sha256_path(Path(__file__))
@@ -402,6 +402,21 @@ def export_evaluation_trace(
             "outcome": outcome, "score": score, "assertions_passed": passed,
             "assertions_total": total,
         }),
+    })
+    if evaluation_key:
+        attributes["app.agent.eval.identity"] = evaluation_key
+    attributes["app.agent.eval.result_hash"] = trace_result_hash({
+        "id": case["id"],
+        "harness": harness,
+        "variant": variant,
+        "mode": "end-to-end",
+        "repetition": repetition,
+        "valid": state in {"succeeded", "task_failure"},
+        "accepted": accepted,
+        "assertions_passed": passed,
+        "assertions_total": total,
+        "score": score,
+        "blocking_failure_count": blocking_failure_count,
     })
     cost = observed_cost(usage)
     if cost is not None:
@@ -473,13 +488,17 @@ def export_evaluation_trace(
         attributes=attributes, children=children,
         status="error" if state not in {"succeeded", "task_failure"} else "ok",
     )
-    delivery = task_trace.export_task_trace(
-        trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+    delivery = (
+        {"status": "disabled", "reason": "offline"}
+        if offline
+        else task_trace.export_task_trace(
+            trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
+        )
     )
     return trace, delivery
 
 
-def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, timeout: int, artifacts: Path) -> dict[str, Any]:
+def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, timeout: int, artifacts: Path, *, offline: bool = False, evaluation_key: str | None = None) -> dict[str, Any]:
     started_ns = time.time_ns()
     with tempfile.TemporaryDirectory(prefix="skill-development-eval-") as directory:
         workspace = Path(directory) / "workspace"
@@ -495,20 +514,26 @@ def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, 
                 skill_hash="not_observed", prompt=prompt, started_ns=started_ns,
                 ended_ns=ended_ns, evaluation_ended_ns=ended_ns,
                 state="environment_failure", accepted=False, score=0.0,
-                passed=0, total=0, usage={}, events=[],
+                blocking_failure_count=1,
+                passed=0, total=0, usage={}, events=[], offline=offline,
+                evaluation_key=evaluation_key,
             )
             record = {
                 "id": case["id"], "split": case["split"], "harness": harness,
-                "variant": variant, "repetition": repetition, "valid": False,
+                "variant": variant, "mode": "end-to-end",
+                "repetition": repetition, "valid": False,
                 "accepted": False, "score": 0.0, "blocking_failures": [str(error)],
+                "assertions_passed": 0, "assertions_total": 0,
                 "state": "environment_failure", "failure_kind": "incumbent_missing",
                 "trace_id": trace["trace_id"], "mlflow_trace_id": trace["mlflow_trace_id"],
                 "session_id": trace["session_id"], "telemetry": delivery,
+                "evidence_state": "published" if delivery.get("status") == "exported" else "pending",
             }
             if delivery.get("status") != "exported":
-                record["task_state"] = record["state"]
-                record["state"] = "telemetry_failure"
-                record["failure_kind"] = delivery.get("error", "export_failed")
+                record["publication_failure_kind"] = (
+                    "offline" if offline else delivery.get("error", "export_failed")
+                )
+                record["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
             return record
         prompt = prompt_for(harness, skill_name, case)
         result = run_process(command_for(harness, workspace, prompt), workspace, timeout)
@@ -530,12 +555,15 @@ def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, 
             skill_name=skill_name, skill_hash=source_hash, prompt=prompt,
             started_ns=started_ns, ended_ns=ended_ns,
             evaluation_ended_ns=evaluation_ended_ns, state=state,
-            accepted=accepted, score=score, passed=passed, total=len(checks),
-            usage=usage, events=events,
+            accepted=accepted, score=round(score, 4),
+            blocking_failure_count=len(blockers), passed=passed, total=len(checks),
+            usage=usage, events=events, offline=offline,
+            evaluation_key=evaluation_key,
         )
         record = {
             "id": case["id"], "split": case["split"], "risk": case["risk"],
-            "harness": harness, "variant": variant, "repetition": repetition,
+            "harness": harness, "variant": variant, "mode": "end-to-end",
+            "repetition": repetition,
             "model": ROUTES["harnesses"][harness]["model"],
             "effort": ROUTES["harnesses"][harness]["effort"],
             "skill_hash": source_hash, "state": state, "failure_kind": failure_kind,
@@ -560,14 +588,35 @@ def run_once(case: dict[str, Any], harness: str, variant: str, repetition: int, 
             ),
             "final_response": final, "stderr": result.stderr,
             "event_count": len(events),
+            "evidence_state": "published" if delivery.get("status") == "exported" else "pending",
         }
         if delivery.get("status") != "exported":
-            record["task_state"] = record["state"]
-            record["state"] = "telemetry_failure"
-            record["failure_kind"] = delivery.get("error", "export_failed")
-            record["valid"] = False
-            record["accepted"] = False
+            record["publication_failure_kind"] = (
+                "offline" if offline else delivery.get("error", "export_failed")
+            )
+            record["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
         return record
+
+
+def build_evaluation_document(
+    configuration: dict[str, Any],
+    evaluation_identity: dict[str, Any],
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "schema_version": "1.0.0",
+        "configuration": configuration,
+        "summary": {
+            "runs": len(results),
+            "valid_runs": sum(item["valid"] for item in results),
+            "accepted": sum(item["accepted"] for item in results),
+            "duration_seconds": round(
+                sum(item.get("duration_seconds", 0) for item in results), 3
+            ),
+        },
+        "results": results,
+        "evaluation_identity": evaluation_identity,
+    }
 
 
 def main() -> int:
@@ -581,11 +630,25 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--publish-mlflow", action="store_true")
+    parser.add_argument("--offline", action="store_true")
+    parser.add_argument("--strict", action="store_true")
+    parser.add_argument("--spool", type=Path)
     args = parser.parse_args()
+    if args.offline and args.strict:
+        parser.error("strict runs cannot be offline")
     selected_cases = CASES[:1] if args.suite == "smoke" else [case for case in CASES if args.suite == "full" or case["split"] == args.suite]
     harnesses = HARNESSES if args.harness == "all" else (args.harness,)
     variants = VARIANTS if args.variant == "both" else (args.variant,)
-    repetitions = args.repetitions or (1 if args.suite == "smoke" else 5 if args.suite == "held-out" else 3)
+    repetitions = args.repetitions or (
+        1 if args.suite == "smoke" else 5 if args.suite in {"held-out", "full"} else 3
+    )
+    configuration = {
+        "skill": "skill-development", "suite": args.suite,
+        "repetitions": repetitions, "harnesses": list(harnesses),
+        "variants": list(variants), "routes": ROUTES["harnesses"],
+        "fixed": ROUTES["fixed"], "content_capture": False,
+    }
+    identity = build_identity("skill-development", EVAL_DIR, configuration)
     if args.list:
         print(json.dumps({"cases": [case["id"] for case in selected_cases], "harnesses": harnesses, "variants": variants, "repetitions": repetitions}, indent=2))
         return 0
@@ -597,13 +660,13 @@ def main() -> int:
     tasks = [(case, harness, variant, repetition) for case in selected_cases for harness in harnesses for variant in variants for repetition in range(1, repetitions + 1)]
     results: list[dict[str, Any]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.jobs)) as executor:
-        futures = {executor.submit(run_once, case, harness, variant, repetition, args.timeout, artifacts): (case["id"], harness, variant, repetition) for case, harness, variant, repetition in tasks}
+        futures = {executor.submit(run_once, case, harness, variant, repetition, args.timeout, artifacts, offline=args.offline, evaluation_key=identity["key"]): (case["id"], harness, variant, repetition) for case, harness, variant, repetition in tasks}
         for future in concurrent.futures.as_completed(futures):
-            identity = futures[future]
+            future_label = futures[future]
             try:
                 result = future.result()
             except Exception as error:  # Preserve the matrix; comparator treats this as invalid.
-                case_id, harness, variant, repetition = identity
+                case_id, harness, variant, repetition = future_label
                 case = next(case for case in selected_cases if case["id"] == case_id)
                 timestamp = time.time_ns()
                 emergency_trace, delivery = export_evaluation_trace(
@@ -617,17 +680,23 @@ def main() -> int:
                     ),
                     started_ns=timestamp, ended_ns=timestamp,
                     evaluation_ended_ns=timestamp, state="evaluator_failure",
-                    accepted=False, score=0.0, passed=0, total=0, usage={}, events=[],
+                    accepted=False, score=0.0, blocking_failure_count=0,
+                    passed=0, total=0, usage={}, events=[],
+                    offline=args.offline,
+                    evaluation_key=identity["key"],
                 )
                 result = {
                     "id": case_id,
                     "split": next(case["split"] for case in selected_cases if case["id"] == case_id),
                     "harness": harness,
                     "variant": variant,
+                    "mode": "end-to-end",
                     "repetition": repetition,
                     "valid": False,
                     "accepted": False,
                     "score": 0.0,
+                    "assertions_passed": 0,
+                    "assertions_total": 0,
                     "blocking_failures": [],
                     "state": "evaluator_failure",
                     "failure_kind": type(error).__name__,
@@ -635,16 +704,28 @@ def main() -> int:
                     "trace_id": emergency_trace["trace_id"],
                     "mlflow_trace_id": emergency_trace["mlflow_trace_id"],
                     "telemetry": delivery,
+                    "evidence_state": (
+                        "published" if delivery.get("status") == "exported" else "pending"
+                    ),
                 }
+                if delivery.get("status") != "exported":
+                    result["publication_failure_kind"] = (
+                        "offline" if args.offline else delivery.get("error", "export_failed")
+                    )
+                    result["publication_trace"] = {
+                        "resourceSpans": emergency_trace["resourceSpans"]
+                    }
             results.append(result)
-            print(f"{identity}: state={result['state']} score={result['score']:.3f} accepted={result['accepted']}", flush=True)
+            print(f"{future_label}: state={result['state']} score={result['score']:.3f} accepted={result['accepted']}", flush=True)
     results.sort(key=lambda item: (item["id"], item["harness"], item["variant"], item["repetition"]))
-    document = {
-        "schema_version": "1.0.0",
-        "configuration": {"skill": "skill-development", "suite": args.suite, "repetitions": repetitions, "harnesses": list(harnesses), "variants": list(variants), "routes": ROUTES["harnesses"], "fixed": ROUTES["fixed"], "content_capture": False},
-        "summary": {"runs": len(results), "valid_runs": sum(item["valid"] for item in results), "accepted": sum(item["accepted"] for item in results), "duration_seconds": round(sum(item.get("duration_seconds", 0) for item in results), 3)},
-        "results": results,
-    }
+    document = build_evaluation_document(configuration, identity, results)
+    evidence_states = {item.get("evidence_state", "pending") for item in results}
+    document["evidence_state"] = "published" if evidence_states == {"published"} else "pending"
+    if document["evidence_state"] != "published":
+        spool_root = args.spool or Path(
+            os.environ.get("APP_AGENT_EVAL_SPOOL", AGENT_ROOT / ".eval-spool")
+        )
+        document["publication_spool"] = str(write_spool(document, spool_root))
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     if args.publish_mlflow:
@@ -654,7 +735,8 @@ def main() -> int:
         )
     print(f"results: {output}")
     print(f"artifacts: {artifacts}")
-    return 0 if all(item["valid"] for item in results) else 1
+    behavior_valid = all(item["valid"] for item in results)
+    return 0 if behavior_valid and (not args.strict or document["evidence_state"] == "published") else 1
 
 
 if __name__ == "__main__":

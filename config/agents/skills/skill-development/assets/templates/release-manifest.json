@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "replace-me",
+  "git_revision": "not-recorded",
+  "definition_hashes": {},
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": ["No complete release matrix has been recorded."],
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,7 +41,11 @@ class PackageScriptTests(unittest.TestCase):
             proposal = root / "proposal.json"
             proposal.write_text(json.dumps({"job": "x", "evidence": {"references": ["trace-1"]}}), encoding="utf-8")
             created = module.scaffold(skill, proposal)
-            self.assertTrue(skill / "evals/telemetry-policy.json" in created)
+            self.assertTrue(skill / "evals/release-manifest.json" in created)
+            manifest = json.loads((skill / "evals/release-manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["skill"], "example")
+            self.assertFalse((skill / "evals/run-evals.py").exists())
+            self.assertFalse((skill / "evals/compare-evals.py").exists())
             with self.assertRaisesRegex(ValueError, "refusing to overwrite"):
                 module.scaffold(skill, proposal)
 
@@ -82,7 +87,35 @@ class ArtifactGraderTests(unittest.TestCase):
         self.assertEqual(usage["input_tokens"], 4)
         self.assertEqual(len(events), 1)
 
-    def test_skill_grader_blocks_content_capture(self) -> None:
+    def test_offline_specialized_trace_is_pending_without_export(self) -> None:
+        case = self.runner.CASES[0]
+        with mock.patch.object(self.runner.task_trace, "export_task_trace") as exporter:
+            _, delivery = self.runner.export_evaluation_trace(
+                case=case,
+                harness="codex",
+                variant="candidate",
+                repetition=1,
+                skill_name="skill-development",
+                skill_hash="abc",
+                prompt="metadata-only prompt",
+                started_ns=1,
+                ended_ns=2,
+                evaluation_ended_ns=3,
+                state="succeeded",
+                accepted=True,
+                score=1.0,
+                blocking_failure_count=0,
+                passed=1,
+                total=1,
+                usage={},
+                events=[],
+                offline=True,
+            )
+
+        exporter.assert_not_called()
+        self.assertEqual(delivery, {"status": "disabled", "reason": "offline"})
+
+    def test_skill_grader_uses_central_privacy_and_evaluation_mechanics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
             skill = output / "example"
@@ -92,13 +125,13 @@ class ArtifactGraderTests(unittest.TestCase):
             (skill / "evals/cases.json").write_text("[]", encoding="utf-8")
             (skill / "evals/routing-cases.json").write_text("[]", encoding="utf-8")
             (skill / "evals/routes.json").write_text("{}", encoding="utf-8")
-            (skill / "evals/telemetry-policy.json").write_text(json.dumps({"metadata_only_default": False, "content_capture_enabled": True}), encoding="utf-8")
-            (skill / "evals/release-decision.json").write_text("{}", encoding="utf-8")
-            (skill / "evals/results/status.json").write_text("{}", encoding="utf-8")
+            (skill / "evals/release-manifest.json").write_text(json.dumps({"owner_decision": "defer", "release_eligible": False}), encoding="utf-8")
             checks = self.runner.grade_skill_package(output, False)
             privacy = next(item for item in checks if item["name"] == "privacy-first telemetry")
+            central = next(item for item in checks if item["name"] == "central evaluation contract")
             self.assertTrue(privacy["blocking"])
-            self.assertFalse(privacy["passed"])
+            self.assertTrue(privacy["passed"])
+            self.assertTrue(central["passed"])
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "complete_with_method_limitations",
-  "source_result": "results/baseline.json",
+  "source_result": "baseline.json",
   "label_sources": {
     "direct_human": [
       "human-labels.json",

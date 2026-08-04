@@ -9,6 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from eval_publication import publication_content_hash
+
 
 def rate(items: list[dict[str, Any]]) -> float | None:
     valid = [item for item in items if item.get("valid")]
@@ -116,8 +118,17 @@ def compare(document: dict[str, Any]) -> dict[str, Any]:
         "efficiency_non_inferior": efficiency_non_inferior,
     }
     decision = "pass" if all(checks.values()) else "defer"
+    configuration = document.get("configuration", {})
+    release_eligible = (
+        decision == "pass"
+        and configuration.get("suite") in {"held-out", "full"}
+        and configuration.get("repetitions", 0) >= 5
+    )
     return {
-        "decision": decision, "checks": checks,
+        "decision": decision, "release_eligible": release_eligible,
+        "candidate_identity": document.get("evaluation_identity", {}).get("key"),
+        "candidate_content_hash": publication_content_hash(document),
+        "checks": checks,
         "routing": {"precision": precision, "recall": recall, "side_effect_false_activations": safety_false_activations},
         "outcome_acceptance": outcome_rates, "efficiency": efficiency,
         "invalid_runs": [
@@ -127,7 +138,7 @@ def compare(document: dict[str, Any]) -> dict[str, Any]:
         "paired_transitions": paired,
         "control_only_passes": control_only_passes,
         "limitations": [
-            "A pass is necessary but not sufficient: owner review, safety classification, and the release-decision record remain authoritative.",
+            "A pass is necessary but not sufficient: owner review, safety classification, and the compact release manifest remain authoritative.",
             "Efficiency promotion still requires at least 10% improvement with no unexplained metric regression above 15%.",
         ],
     }

@@ -50,12 +50,14 @@ Resolve `scripts/scaffold_package.py` relative to this `SKILL.md`, not the task
 working directory. Create the proposal from the adjacent
 `assets/templates/proposal.json` schema and keep the scaffold's canonical
 filenames; automation depends on them. Do not substitute prose reports such as
-`RELEASE.md` or `telemetry-policy.md` for the machine-readable JSON contracts.
+`RELEASE.md` for the machine-readable JSON contracts.
 
-The scaffold adds the proposal, owned evaluation skeleton, privacy-first
-telemetry policy, release record, and result-status file without overwriting
-existing artifacts. Replace its example cases and route placeholders with the
-real contract before evaluation.
+The scaffold adds the proposal, owned evaluation definitions, routes, and a
+compact deferred release manifest without overwriting existing artifacts.
+Replace its example cases and route placeholders with the real contract before
+evaluation. Shared execution, comparison, privacy, publication, and retention
+policy stays behind `config/agents/eval_cli.py`; do not add per-skill runner or
+comparator wrappers.
 
 Keep deterministic mechanics in scripts so agents execute them without loading
 their implementation. Keep the portable behavioral core vendor-neutral; put
@@ -105,8 +107,10 @@ release audit.
 
 Read [evaluation-and-release.md](references/evaluation-and-release.md). Keep
 cases, routing prompts, development and held-out splits, route manifests,
-runner, comparator, raw results, release decision, and limitations inside the
-skill's own `evals/` directory.
+specialized evaluator assets when justified, and the compact release manifest
+inside the skill's own `evals/` directory. Use the central evaluator for run,
+compare, replay, publication, and strict release. Generated evidence belongs in
+MLflow; temporary retry state belongs only in the ignored local spool.
 
 Evaluate separately:
 
@@ -128,8 +132,10 @@ still required before handoff.
 
 Start at alpha with explicit invocation. Promote only through the predeclared
 quality-first gate. Freeze every release candidate; any behavioral change makes
-a new candidate and requires held-out replay. State "unverified" outside the
-tested task, model, effort, harness, and tool matrix.
+a new candidate and requires held-out replay. Strict release fails closed until
+the definition hashes, complete matrix, comparison, and queryable MLflow
+evidence join to one identity. State "unverified" outside the tested task,
+model, effort, harness, and tool matrix.
 
 ## Finish
 

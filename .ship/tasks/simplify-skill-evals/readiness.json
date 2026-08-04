@@ -1,0 +1,31 @@
+{
+  "objective": "Replace duplicated per-skill evaluation facades with one central evaluator across all 17 skills while preserving generic and specialized behavior, separating behavioral validity from telemetry, making publication privacy-safe and idempotent, and recording compact Git release manifests backed by MLflow evidence.",
+  "acceptance_criteria": [
+    "One central CLI supports run, compare, publish/retry, replay, list, offline development, and strict release workflows.",
+    "Fifteen generic skills use shared execution and comparison while Neo and skill-development retain specialized adapters.",
+    "Behavioral validity remains independent of telemetry availability, while strict release fails closed on incomplete or inconsistent MLflow evidence.",
+    "Default publication is metadata-only, retryable without model reruns, and idempotent at trace, dataset, assessment, and summary boundaries.",
+    "Ordinary evaluation evidence has a 365-day policy and adopted or restricted evidence remains protected until superseded plus 365 days; malformed references fail safe.",
+    "All 17 packages retain Git-owned definitions and compact release manifests, old generic wrappers and generated result blobs are removed, and specialized assets remain intact.",
+    "Repository instructions, scaffold, audit, validators, command mappings, conformance checks, and tests reflect the central interface atomically."
+  ],
+  "non_goals": [
+    "No skill behavior, cases, model routes, quality thresholds, or judge criteria redesign.",
+    "No MLflow upgrade, rich-content capture, third archive, live evidence deletion, Git-history deletion, deployment, activation, release, publish, merge, or costly model matrix.",
+    "No compatibility shim for removed generic wrapper commands and no inference that deferred skills are release-ready."
+  ],
+  "constraints": [
+    "Git remains authoritative for definitions and release manifests; MLflow remains authoritative for generated evidence.",
+    "No live operational actions are authorized; operational checks requiring credentials, deployment, backup, deletion, or model expenditure remain unexecuted.",
+    "The primary Ship state is rooted in nix-config; home-infra candidate identity must be recorded explicitly in verification and review evidence because the Ship CLI hashes one Git root.",
+    "Immediate cutover must preserve Neo and skill-development specialized behavior behind adapters and must not delete live evidence."
+  ],
+  "verification": [
+    "Focused central evaluator contract, failure-classification, publication idempotency, privacy canary, retention lifecycle, registry, manifest, specialized adapter, scaffold, audit, and Neo tests.",
+    "No-model list and replay for every skill plus generic and specialized deterministic smoke paths.",
+    "Package inventory, schema and referential integrity, secret and canary scans, Markdown lint, repository build, and home-infra focused tests or static checks.",
+    "Fresh independent code review of both repository diffs and recorded verification evidence.",
+    "Operational live backup, health, conformance, dry-run, authenticated publication, and model-backed smoke are recorded as unexecuted without explicit authority."
+  ],
+  "open_questions": []
+}

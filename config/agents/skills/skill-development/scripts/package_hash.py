@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 IGNORED_PARTS = {"__pycache__", ".pytest_cache"}
-IGNORED_MUTABLE = {"evals/release-decision.json"}
+IGNORED_MUTABLE = {"evals/release-manifest.json"}
 
 
 def package_hash(root: Path) -> str:

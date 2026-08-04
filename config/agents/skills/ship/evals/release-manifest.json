@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "ship",
+  "git_revision": "a01c94bf4fee3ba232e402339bca6a58c3104540",
+  "definition_hashes": {
+    "cases.json": "a3728845a25b21b2a26b485217fcd76b39a5fc04e36d2e29fbc3d73ad027d9d2",
+    "routing-cases.json": "c3eab255a9359d3595239a48707211a078d764054503b34c817c431634e80e74",
+    "routes.json": "069334f82ee181707781e185872e7f4c84da1ffbb1c96a26232421f0e52ea35d"
+  },
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": [
+    "No complete, current, hash-consistent held-out matrix is joined to queryable MLflow evidence.",
+    "Historical generated result blobs are non-authoritative and remain recoverable from Git history."
+  ],
+  "migration": {
+    "recorded_at": "2026-08-04",
+    "classification": "deferred-no-release-evidence",
+    "live_evidence_deleted": false,
+    "git_history_deleted": false
+  },
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

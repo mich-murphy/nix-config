@@ -4,3 +4,4 @@ config/karabiner/automatic_backups/
 config/karabiner/assets/complex_modifications/
 result
 result-*
+config/agents/.eval-spool/

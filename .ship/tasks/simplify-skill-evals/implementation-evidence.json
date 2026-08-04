@@ -1,0 +1,76 @@
+{
+  "behavior_list": [
+    {"behavior": "Telemetry/export failure preserves behavioral state, validity, and acceptance while publication remains pending", "status": "implemented"},
+    {"behavior": "Offline evaluation makes no export call and creates privacy-minimized retry evidence", "status": "implemented"},
+    {"behavior": "One registry and central CLI list, run, compare, publish, retry, replay, validate, and perform strict release for all 17 skills", "status": "implemented"},
+    {"behavior": "Fifteen generic skills use central mechanics while Neo and skill-development retain explicit specialized adapters", "status": "implemented"},
+    {"behavior": "Publication is metadata-only, bounded, identity-keyed, retryable without a model call, and reconciles one logical summary/dataset record/assessment set", "status": "implemented"},
+    {"behavior": "Strict release fails closed without a complete matrix, passing gate, joined published evidence, and MLflow protection", "status": "implemented"},
+    {"behavior": "Protected retention preserves active adopted/restricted evidence, applies a 365-day supersession grace period, and fails safe on malformed references", "status": "implemented"},
+    {"behavior": "All packages own definitions and compact deferred manifests while generated result blobs and generic facades are absent", "status": "implemented"},
+    {"behavior": "Live MLflow publication, protection, retention dry-run, deletion, backup, deployment, and model-backed matrices", "status": "deferred_without_operational_authority"}
+  ],
+  "cycles": [
+    {
+      "behavior": "Telemetry non-interference",
+      "red": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_telemetry_failure_preserves_successful_behavior_and_marks_publication_pending", "result": "failed: state was telemetry_failure instead of succeeded", "intended_reason": "export failure rewrote behavioral validity"},
+      "green": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_telemetry_failure_preserves_successful_behavior_and_marks_publication_pending", "result": "passed"},
+      "refactoring": []
+    },
+    {
+      "behavior": "Central registry and invalid-skill contract",
+      "red": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_central_cli_lists_all_skills_and_specialized_adapters", "result": "failed: central CLI did not exist", "intended_reason": "central operator interface was absent"},
+      "green": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_central_cli_lists_all_skills_and_specialized_adapters", "result": "passed with 17 entries and two specialized adapters"},
+      "refactoring": ["Extracted registry, identity, publication, and validation policy into central modules"]
+    },
+    {
+      "behavior": "Generic and specialized no-model replay",
+      "red": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_central_cli_replays_generic_results_without_a_model_call", "result": "failed: replay command was absent", "intended_reason": "model-free replay was not centrally available"},
+      "green": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_every_registered_skill_has_a_no_model_replay_path", "result": "passed for all 17 skills"},
+      "refactoring": []
+    },
+    {
+      "behavior": "Privacy-safe retry spool",
+      "red": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_retry_spool_keeps_a_redacted_otlp_payload_without_raw_content", "result": "failed: retry_traces were absent", "intended_reason": "publication retry could not recover without rerunning behavior"},
+      "green": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_retry_spool_keeps_a_redacted_otlp_payload_without_raw_content config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_retry_exports_spooled_trace_without_rerunning_behavior", "result": "passed; forbidden fields and canary were absent"},
+      "refactoring": []
+    },
+    {
+      "behavior": "Protected retention",
+      "red": {"command": "python3 -m unittest docker/ai-observability/test_retention.py", "result": "failed: select_expired_evidence was absent", "intended_reason": "retention had only blanket age deletion"},
+      "green": {"command": "python3 -m unittest docker/ai-observability/test_retention.py", "result": "3 tests passed"},
+      "refactoring": ["Moved daemon side effects behind main and separated pure lifecycle selection from MLflow effects"]
+    },
+    {
+      "behavior": "Fleet cutover and manifest integrity",
+      "red": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_registry_packages_use_central_mechanics_and_compact_manifests", "result": "failed: release manifests were absent", "intended_reason": "packages still owned facades and mutable result status"},
+      "green": {"command": "python3 -m unittest config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_registry_packages_use_central_mechanics_and_compact_manifests config.agents.tests.test_eval_runtime.EvalRuntimeTests.test_central_validator_checks_registry_manifests_and_definition_hashes", "result": "passed for all 17 skills"},
+      "refactoring": ["Removed 15 generic runner/comparator pairs after central characterization stayed green", "Retained Neo and skill-development runners/comparators as specialized adapter assets"]
+    }
+  ],
+  "design_decisions": [
+    "The central CLI is the operator facade; the registry hides package layout and declares adapter ownership.",
+    "Definition hashes and a stable evaluation key are computed before execution; a unique execution ID distinguishes attempts.",
+    "Behavioral and evidence states are separate; strict mode alone converts pending evidence into command failure.",
+    "Retry spools contain only bounded allowed OTLP metadata and are ignored by Git.",
+    "Release adoption/restriction updates MLflow protection before writing a Git manifest.",
+    "Retention reads MLflow identity/protection tags and selects nothing if any reference is absent, duplicate, or malformed."
+  ],
+  "broader_checks": [
+    "All config/agents test files passed individually (75 tests).",
+    "Neo suite validator passed.",
+    "All 17 package audits passed.",
+    "home-infra retention tests, Python compilation, and Compose configuration passed.",
+    "darwin-rebuild build --flake . passed without activation."
+  ],
+  "non_tdd_verifiers": [
+    "Markdown lint passed for nix-config.",
+    "Git diff checks and secret-pattern scan passed.",
+    "MLflow 3.13.0 API inspection confirmed MlflowClient.search_traces and delete_traces(trace_ids=...) contracts."
+  ],
+  "residual_risks": [
+    "Live authenticated publication, backup, retention dry-run, conformance, and protection queries were not executed without operational authority.",
+    "No model-backed smoke or held-out matrix was run; all migrated manifests truthfully remain deferred and non-release-eligible.",
+    "The Ship state hashes nix-config only; home-infra base and candidate identities must be checked separately during verification and review."
+  ]
+}

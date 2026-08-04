@@ -74,5 +74,6 @@ unstable internal storage.
 revert, incident, and owner decisions by appending
 an annotation conforming to `schemas/annotation.schema.json`. Never edit an old
 annotation; append a superseding event that names its predecessor. Git is
-authoritative for minimized evaluation cases, release manifests, and recorded
-results. MLflow is the searchable operational and experiment record.
+authoritative for minimized evaluation definitions and compact release
+manifests. MLflow is authoritative for generated runs, traces, assessments,
+metrics, and minimized result artifacts.

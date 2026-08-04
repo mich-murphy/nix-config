@@ -1,0 +1,23 @@
+{
+  "candidate_hash": "sha256:d4a0cde69ab194b1c4237f56bb25b406e7e40915bc7182031efbd02ebad74601",
+  "reason": "Resolve every superseded_by reference before protected evidence can become deletion-eligible.",
+  "changes": [
+    "Retention inventories summary identity, skill, completion, protection, decision, grace, and supersession metadata.",
+    "Each superseded_by value must resolve to exactly one complete protected adopted/restricted successor summary.",
+    "The successor must be distinct and belong to the same skill lineage.",
+    "Dangling, ambiguous, cross-skill, self-referential, incomplete, or unprotected successors mark the reference invalid and globally select no deletion."
+  ],
+  "tdd": {
+    "red": "a dangling successor identity allowed expired protected and ordinary evidence to be selected",
+    "green": [
+      "dangling, cross-skill, and self-referential successor cases globally block selection",
+      "valid resolved successors retain the 365-day supersession behavior",
+      "all 107 agent tests and 7 retention tests pass"
+    ]
+  },
+  "scope": {
+    "live_mutation": false,
+    "model_calls": false,
+    "deployment": false
+  }
+}

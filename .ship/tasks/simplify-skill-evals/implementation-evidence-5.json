@@ -1,0 +1,27 @@
+{
+  "candidate_hash": "sha256:3c704ecc82f5153ff321a2541958dc84124b885640bc0e7369f2874e3e639f26",
+  "reason": "Close strict-release current-provenance and publication-content binding gaps found before recorded review.",
+  "changes": [
+    "Strict release rebuilds the identity with the original execution ID and current definitions, skill package, evaluator, and controls.",
+    "Stale or internally inconsistent identity provenance fails before protection or manifest mutation.",
+    "Publication receipts include the canonical candidate content hash.",
+    "Strict release requires both comparison and publication receipts to match candidate identity and content.",
+    "MLflow protection queries and validates both summary identity and summary content hash before setting protection tags."
+  ],
+  "tdd": {
+    "red": [
+      "release provenance validation seam was absent",
+      "protection validated identity only"
+    ],
+    "green": [
+      "current identity and matching comparison/publication pass",
+      "stale evaluator provenance and publication content mismatch fail closed",
+      "summary identity/content validation occurs before protection mutation"
+    ]
+  },
+  "scope": {
+    "live_mutation": false,
+    "model_calls": false,
+    "deployment": false
+  }
+}

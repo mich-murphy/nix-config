@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "label_source": "assistant-extrapolated-from-human-review",
-  "source_result": "results/baseline.json",
+  "source_result": "baseline.json",
   "human_reference": "human-labels.json",
   "method": "Apply the reviewer's demonstrated rubric to the nine unreviewed pairs. Prefer concise, answerable clarification; fail assumption-driven progress; and treat implementation-readiness as not applicable when no approved final brief exists.",
   "labels": [

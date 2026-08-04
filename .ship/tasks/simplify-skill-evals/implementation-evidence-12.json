@@ -1,0 +1,26 @@
+{
+  "candidate_hash": "sha256:c1b9ad2006e0858341a2e040df343c5ee3f020e65ab8740f2606f92c7d1a5bc0",
+  "reason": "Close the re-review's normalized-claim consistency and current-summary reactivation gaps.",
+  "changes": [
+    "Preserved normalized claims are accepted only when their adapter and every still-present raw comparator field agree.",
+    "Neo raw deterministic, invocation, process, enablement, and duration claims conflict-check before hashing or minimization.",
+    "Skill-development raw score and blocker count conflict-check while minimized blocker text remains absent.",
+    "A current summary with a nonempty superseded_at timestamp is rejected before protection or predecessor mutation."
+  ],
+  "tdd": {
+    "red": [
+      "altered Neo deterministic output and skill-development blockers retained unchanged hashes through stale comparison_claim values",
+      "an already-superseded current summary was re-adopted without clearing its retention timestamp"
+    ],
+    "green": [
+      "conflicting normalized/raw claims fail before trace or publication hashing while repeated safe minimization remains idempotent",
+      "already-superseded current summaries perform zero tag mutations",
+      "all 105 agent tests and 5 retention tests pass"
+    ]
+  },
+  "scope": {
+    "live_mutation": false,
+    "model_calls": false,
+    "deployment": false
+  }
+}

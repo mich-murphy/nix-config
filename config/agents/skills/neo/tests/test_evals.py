@@ -141,7 +141,7 @@ class EvalHarnessTests(unittest.TestCase):
 
     def test_comparator_accepts_quality_preserving_latency_reduction(self) -> None:
         baseline = json.loads(
-            (RUNNER.HERE / "results" / "baseline.json").read_text(encoding="utf-8")
+            (RUNNER.HERE / "baseline.json").read_text(encoding="utf-8")
         )
         candidate = {
             "cases": 3,

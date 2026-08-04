@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "skill-development",
+  "git_revision": "a01c94bf4fee3ba232e402339bca6a58c3104540",
+  "definition_hashes": {
+    "cases.json": "d19a7f61dd780d6f28eb68c648ba0101ffecbc31fb316aec686df931b025e5bc",
+    "compare-evals.py": "d90be920581dffac00320c07beeed9b33e9a3b33cc97f91c3c95435bed40b7af",
+    "fixtures/incident-triage.md": "eceecbab63251c4b1d6c1880f59493b5dbbb921b60052af6e390b769e729ce94",
+    "fixtures/json-canonicalization.md": "77db390d3c60f38320a321afb53e80d039e50b2144f29a0c136f6d62513e3ac7",
+    "fixtures/reviewed-changelog.md": "af0a7454814aa69d6d525beb478185ab6a1f4f3a44d51ede427e085696fec435",
+    "routes.json": "24870948b5459f1b5f79dbe609ce709e57686e50d4d355fa38dbc3b42b67d5af",
+    "routing-cases.json": "2a1a1d6195d752249dbf612a8b25f03446e9d7bb4be447437ab18698ad541ea5",
+    "run-evals.py": "1cc657df3f8505812fe7b574bd54fac2774da2fe8799e6fde490554231a6adcd"
+  },
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": [
+    "No complete, current, hash-consistent held-out matrix is joined to queryable MLflow evidence.",
+    "Historical generated result blobs are non-authoritative and remain recoverable from Git history."
+  ],
+  "migration": {
+    "recorded_at": "2026-08-04",
+    "classification": "deferred-no-release-evidence",
+    "live_evidence_deleted": false,
+    "git_history_deleted": false
+  },
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

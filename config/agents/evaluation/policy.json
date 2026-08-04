@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "metadata_only_default": true,
+  "content_capture_enabled": false,
+  "forbidden_content": [
+    "prompt",
+    "response",
+    "source",
+    "tool_payload",
+    "environment",
+    "credential",
+    "unbounded_event"
+  ],
+  "skill_lifecycle": [
+    "offered",
+    "selected",
+    "activated",
+    "expanded",
+    "executed",
+    "evaluated"
+  ],
+  "ordinary_retention_days": 365,
+  "protected_supersession_grace_days": 365,
+  "strict_release_requires_published_evidence": true
+}

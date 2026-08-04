@@ -1,0 +1,62 @@
+{
+  "review": "/Users/mm/dev/nix-config/.ship/tasks/simplify-skill-evals/review-1.json",
+  "candidate_hash": "sha256:2c3f6243cee4168be78b391a0d153687e42b76e74fc9ab70e1669629983c7447",
+  "findings": [
+    {
+      "id": "R1",
+      "resolution": "Execution IDs now participate in the identity key; identity provenance includes complete evaluation definitions, the evaluated package hash, and central plus specialized evaluator hashes.",
+      "red": "test_evaluation_identity_is_unique_per_execution_and_binds_skill_and_evaluator failed on identical keys and missing hashes",
+      "green": "focused identity regression and the complete agent suite pass"
+    },
+    {
+      "id": "R2",
+      "resolution": "The central validator reconstructs exact configured matrices and rejects missing, duplicate, extra, or invalid runs; comparisons bind candidate identity and privacy-safe content hash; strict release revalidates matrix, evidence tier, and bindings.",
+      "red": "matrix and comparison binding tests failed because neither capability existed",
+      "green": "matrix completeness, comparison binding, and strict fail-closed tests pass"
+    },
+    {
+      "id": "R3",
+      "resolution": "Publication stores a canonical safe-content hash and checks existing summary identity, definition hash, and content hash before trace retry, dataset merge, or assessment mutation.",
+      "red": "existing-summary conflict test failed because content hashes were absent",
+      "green": "content-hash determinism and conflict rejection tests pass"
+    },
+    {
+      "id": "R4",
+      "resolution": "The skill-development future label no longer shadows evaluation identity, and document assembly preserves the identity object.",
+      "red": "document identity regression initially had no safe assembly seam and source inspection confirmed tuple shadowing",
+      "green": "specialized document identity regression and package tests pass"
+    },
+    {
+      "id": "R5",
+      "resolution": "The central Neo route exposes and forwards explicit full-cost acknowledgement, normalizes specialized results, emits common metadata-only traces, and spools retryable offline traces.",
+      "red": "the central parser rejected --ack-full-cost and no Neo evidence adapter existed",
+      "green": "acknowledgement forwarding and offline retry-evidence tests pass"
+    },
+    {
+      "id": "R6",
+      "resolution": "Publication uses explicit safe shapes for configuration, controls, summary metrics, usage, results, failure classes, and retry attributes; raw blocking failures and assessment content are excluded.",
+      "red": "nested privacy canaries appeared in serialized publication records",
+      "green": "nested prompt, response, environment, source, failure, and tool-content canaries are absent"
+    },
+    {
+      "id": "R7",
+      "resolution": "Retention follows opaque page tokens for all runs and traces and caps trace pages at the MLflow 3.13 limit of 500 before global fail-safe selection.",
+      "red": "pagination regression failed because inventory iterators did not exist",
+      "green": "multi-page run and trace inventory plus all retention selection tests pass"
+    }
+  ],
+  "checks": [
+    "84 tests across all six config/agents test files pass",
+    "4 protected-retention tests pass",
+    "central validation passes for all 17 skills",
+    "Neo suite validation passes",
+    "all 17 package audits pass",
+    "Python compilation and staged/unstaged diff checks pass"
+  ],
+  "preservation": {
+    "model_calls_executed": false,
+    "live_mlflow_mutated": false,
+    "retention_deletion_executed": false,
+    "services_activated": false
+  }
+}

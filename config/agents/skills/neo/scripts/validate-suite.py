@@ -101,7 +101,7 @@ def validate_suite(skill_root: Path = SKILL_ROOT) -> list[str]:
         "evals/judges.json",
         "evals/run-evals.py",
         "evals/compare-evals.py",
-        "evals/results/baseline.json",
+        "evals/baseline.json",
         "evals/validate-judges.py",
     ):
         if not (neo / relative).is_file():

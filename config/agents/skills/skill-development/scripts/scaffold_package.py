@@ -42,13 +42,19 @@ def scaffold(skill: Path, proposal_path: Path) -> list[Path]:
 
     mapping = {
         "routes.json": skill / "evals" / "routes.json",
-        "release-decision.json": skill / "evals" / "release-decision.json",
-        "telemetry-policy.json": skill / "evals" / "telemetry-policy.json",
-        "status.json": skill / "evals" / "results" / "status.json",
+        "release-manifest.json": skill / "evals" / "release-manifest.json",
     }
     for source_name, target in mapping.items():
         if write_if_missing(TEMPLATES / source_name, target):
             created.append(target)
+
+    release_manifest = skill / "evals" / "release-manifest.json"
+    if release_manifest in created:
+        manifest = json.loads(release_manifest.read_text(encoding="utf-8"))
+        manifest["skill"] = skill.name
+        release_manifest.write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+        )
 
     cases = skill / "evals" / "cases.json"
     if not cases.exists():

@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "skill": "neo",
+  "git_revision": "a01c94bf4fee3ba232e402339bca6a58c3104540",
+  "definition_hashes": {
+    "baseline.json": "972cff96e131c3c4a852ea89b213317046d39de11a8ce755eb302521912a9995",
+    "cases.json": "fc4d6d6fda49359ecd92a2b7653b341c873f42c3acaac321ab2e3bd2842ef818",
+    "compare-evals.py": "de02149e9cb1bad265bc20045fb5ec8777a3608357eb3b5e3bcdb705fb730436",
+    "extrapolated-labels.json": "17679a81139794bd98f1a80ceeb842dd8a2a52e51e980ea7575c9020165f53f1",
+    "extrapolated-pairwise-labels.json": "81149a4bfc94ab2967a5dfbb72ad41a0e92853f6d65b3656c974d190cadeeb06",
+    "human-labels.json": "aa0c7777bad16f848756dc6b993e93ab6059a92bb78520661a48522dd2c29be3",
+    "incumbent/SKILL.md": "30d70bc74b91441f3daf217423ff6cbb2190be75ae8e5c275f1e0ada8a12737d",
+    "incumbent/references/architecture.md": "ab6c5fe87237120e8b49256eb1251fbc1480f490beba196848d584f00536e60d",
+    "incumbent/references/delivery.md": "4e4afb967445d0dcda476aba9fe7618b8a4590182445ae909fa5202b579360e5",
+    "incumbent/references/discovery.md": "45e54a303feb3f9410e63dbe0bef7c925c03bd0cf96a9c300e580800ae98028f",
+    "incumbent/references/evaluation.md": "355aad64e5970b03f5f2dea2acf8e1f07ff442daaf05f593fcbee9aa452204ba",
+    "incumbent/references/implementation-brief.md": "0a6bc6cbbcd913a7bc66ba82329409ff2db50e09b19d6428e69cd15a9fba8507",
+    "incumbent/references/interaction.md": "c1ab192035bfcc5f46408a95de5acbfe76b8d4127e9f8b3bdd375b820201491a",
+    "incumbent/references/product-design.md": "9046072c14492abc011acfeff86010eb2577df58ef9bbab00c68200ba6c87794",
+    "incumbent/references/program-design.md": "0172a8c8876a8d06ac037b970822335087768b19c3b9d0de76cef354ae421986",
+    "incumbent/references/prototype.md": "aeb87e3ba77f3b0be03f3bf0d4fa8c9782146e4375c6caa13db5fcb5d5418ae9",
+    "incumbent/references/risk-routing.md": "3fcc5603107c53582c86e67e63b7e1bc7a2b8e725e39abd05eeebf587e9a5a78",
+    "judges.json": "115258b25c7dea029aae95b314a46d8c7d3e171d9ac63413dd424d5dd206e4b1",
+    "pairwise-labels.json": "e6b4aa13f66562728b489450daa509e8a5d1a23b7c683d30386620a8a7a58b73",
+    "review-summary.json": "1aa4a4f3c6f30a6c143b1a950c01c37834d11102b2c3bcc5c752fd9f843b0d48",
+    "routes.json": "b457d5da26ca30593e124a309b8f50292fe8096d05f15cf66a3f927fb0a38e0f",
+    "routing-cases.json": "e1ec5c7c7f5c7e23ffe21dddcb3018719fb25d5d8cb51b3580e53fc9ac4d889a",
+    "run-evals.py": "74bc77dd521695211f7a6ed5bce0c734848c0ab34eb0068848f8fbfd8f190c9e",
+    "validate-judges.py": "f912ed7718be6e24464cc37cb059add64b470fcddcba38e5ef22157ddf3ac4ed"
+  },
+  "evaluation_identity": null,
+  "mlflow": {},
+  "owner_decision": "defer",
+  "owner": "repository maintainers",
+  "limitations": [
+    "No complete, current, hash-consistent held-out matrix is joined to queryable MLflow evidence.",
+    "Historical generated result blobs are non-authoritative and remain recoverable from Git history."
+  ],
+  "migration": {
+    "recorded_at": "2026-08-04",
+    "classification": "deferred-no-release-evidence",
+    "live_evidence_deleted": false,
+    "git_history_deleted": false
+  },
+  "supersedes": null,
+  "protection": {
+    "state": "ordinary",
+    "protected_until_superseded": false,
+    "superseded_at": null,
+    "grace_days": 365
+  },
+  "release_eligible": false
+}

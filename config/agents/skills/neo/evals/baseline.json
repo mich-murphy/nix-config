@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "source": {
+    "review": "review-summary.json",
+    "recorded_at": "2026-07-31",
+    "note": "The skill-only deterministic count is derived from the recorded 35/36 paired result: the sole failure was a skill-enabled Pi timeout."
+  },
+  "summary": {
+    "cases": 18,
+    "deterministic_passed": 17,
+    "deterministic_pass_rate": 0.9444444444444444,
+    "completed_mean_seconds": 294.66532274268855,
+    "model_invocations": 37,
+    "model_invocations_per_case": 2.0555555555555554
+  }
+}

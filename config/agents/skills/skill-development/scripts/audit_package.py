@@ -17,11 +17,7 @@ REQUIRED_EVAL_FILES = (
     "cases.json",
     "routing-cases.json",
     "routes.json",
-    "run-evals.py",
-    "compare-evals.py",
-    "release-decision.json",
-    "telemetry-policy.json",
-    "results/status.json",
+    "release-manifest.json",
 )
 
 
@@ -69,7 +65,16 @@ def audit(root: Path) -> list[str]:
         if SECRET.search(content):
             findings.append(f"possible embedded secret: {relative}")
 
-    proposal = load_json(root / "proposal.json", findings)
+    release_path = root / "evals" / "release-manifest.json"
+    release = load_json(release_path, findings) if release_path.is_file() else None
+    proposal_path = root / "proposal.json"
+    proposal = load_json(proposal_path, findings) if proposal_path.is_file() else None
+    if not proposal_path.is_file() and not (
+        isinstance(release, dict)
+        and release.get("owner_decision") == "defer"
+        and isinstance(release.get("migration"), dict)
+    ):
+        findings.append("missing proposal.json without a deferred legacy migration record")
     if isinstance(proposal, dict):
         if not proposal.get("evidence", {}).get("references"):
             findings.append("proposal needs at least one evidence reference")
@@ -114,29 +119,15 @@ def audit(root: Path) -> list[str]:
         if not required <= fixed:
             findings.append("routes do not fix all comparison controls")
 
-    telemetry = load_json(evals / "telemetry-policy.json", findings)
-    if isinstance(telemetry, dict):
-        if telemetry.get("metadata_only_default") is not True:
-            findings.append("telemetry must default to metadata-only capture")
-        if telemetry.get("content_capture_enabled") is not False:
-            findings.append("telemetry content capture must default off")
-        lifecycle = set(telemetry.get("skill_lifecycle", []))
-        if lifecycle != {"offered", "selected", "activated", "expanded", "executed", "evaluated"}:
-            findings.append("telemetry does not cover the complete skill lifecycle")
-
-    release = load_json(evals / "release-decision.json", findings)
+    if release is None:
+        release = load_json(evals / "release-manifest.json", findings)
     if isinstance(release, dict):
         if release.get("owner_decision") not in {"defer", "adopt", "reject", "restrict"}:
             findings.append("release decision has an unknown owner_decision")
-        if set(release.get("quality_gate", {})) != {"functional", "regression", "integrity", "safety"}:
-            findings.append("release decision is missing quality gates")
-
-    status = load_json(evals / "results" / "status.json", findings)
-    if isinstance(status, dict):
-        if set(status.get("variants", {})) != {"no-skill", "incumbent", "candidate"}:
-            findings.append("result status must account for all three variants")
-        if status.get("release_eligible") not in {True, False}:
-            findings.append("result status must declare release_eligible")
+        if release.get("release_eligible") not in {True, False}:
+            findings.append("release manifest must declare release_eligible")
+        if not isinstance(release.get("definition_hashes"), dict):
+            findings.append("release manifest must record definition hashes")
     return findings
 
 

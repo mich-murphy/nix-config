@@ -1,0 +1,27 @@
+{
+  "candidate_hash": "sha256:1c680b5844c03ae1f575291ddf2a3c751271e5b70708f9ef491597db7e56f4ea",
+  "reason": "Bind every privacy-safe field consumed by generic and specialized comparators into publication and immutable trace identity.",
+  "changes": [
+    "Comparator claims contain only controlled metadata while covering generic risk, activation, duration, and usage decisions.",
+    "Neo claims bind enablement, process outcome, timeout, deterministic pass, model invocation count, and duration.",
+    "Skill-development claims bind rounded score and blocker count without exposing blocker text.",
+    "Generic, Neo, and skill-development trace producers now hash the same comparator claims present in their final result records.",
+    "Publication content hashes include the controlled comparator adapter and risk strings as well as numeric and boolean claims."
+  ],
+  "tdd": {
+    "red": [
+      "changing Neo model-step count did not change trace or publication content hashes",
+      "specialized trace hashes did not reproduce from final result records"
+    ],
+    "green": [
+      "specialized claim changes alter immutable hashes without publishing raw blockers",
+      "generic missing-incumbent, Neo offline, and skill-development offline traces reproduce from final records",
+      "all 100 agent tests pass"
+    ]
+  },
+  "scope": {
+    "live_mutation": false,
+    "model_calls": false,
+    "deployment": false
+  }
+}
