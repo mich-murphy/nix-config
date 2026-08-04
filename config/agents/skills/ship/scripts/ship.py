@@ -132,7 +132,7 @@ def initial_paths(root: Path) -> list[str]:
     return [
         item.decode("utf-8", errors="replace")
         for item in entries
-        if not item[3:].startswith(".ship/")
+        if not item[3:].startswith(b".ship/")
     ]
 
 

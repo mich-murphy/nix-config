@@ -127,6 +127,19 @@ class ShipCliTests(unittest.TestCase):
         self.assertEqual(result["current"], "release-ready")
         self.assertTrue(self.cli("validate", "change-value")["valid"])
 
+    def test_start_records_dirty_paths_and_excludes_ship_state(self) -> None:
+        (self.root / "draft.py").write_text("VALUE = 2\n")
+        ship_state = self.root / ".ship" / "tasks" / "existing"
+        ship_state.mkdir(parents=True)
+        (ship_state / "state.json").write_text("{}\n")
+
+        result = self.cli(
+            "start", "change-value", "--title", "Change value",
+            "--plan", str(self.plan),
+        )
+
+        self.assertEqual(result["initial_paths"], ["?? draft.py"])
+
     def test_candidate_change_invalidates_verified_review_input(self) -> None:
         self.start_ready()
         self.reach_review()
