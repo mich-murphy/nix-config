@@ -199,6 +199,94 @@ def start_task(payload: dict[str, Any], harness: str, state: dict[str, Any]) -> 
     })
 
 
+def _tool_spans(state: dict[str, Any], ended_ns: int) -> list[dict[str, Any]]:
+    """Build tool and verifier spans in their original execution order."""
+    spans = []
+    for item in state.get("tools", []):
+        attributes: dict[str, str | int | float | bool] = {
+            "app.agent.record.type": "tool",
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": item["name"],
+            "gen_ai.tool.call.id": item["id"],
+            "app.agent.tool.type": tool_type(item["name"]),
+            "app.agent.tool.status": item.get("status", "not_observed"),
+            "app.agent.tool.input_hash": item.get("input_hash", "not_observed"),
+            "app.agent.tool.output_hash": item.get("output_hash", "not_observed"),
+        }
+        spans.append(task_trace.child_span(
+            "tool.execute",
+            started_ns=int(item["started_ns"]),
+            ended_ns=int(item.get("ended_ns", ended_ns)),
+            attributes=attributes,
+            status="error" if item.get("status") == "error" else "ok",
+        ))
+        if item.get("validation_type"):
+            spans.append(task_trace.child_span(
+                "validation.run",
+                started_ns=int(item["started_ns"]),
+                ended_ns=int(item.get("ended_ns", ended_ns)),
+                attributes={
+                    "app.agent.record.type": "validation",
+                    "app.agent.validation.type": item["validation_type"],
+                    "app.agent.validation.status": (
+                        "fail" if item.get("status") == "error" else "pass"
+                    ),
+                    "app.agent.validation.provenance": f"tool:{item['id']}",
+                },
+                status="error" if item.get("status") == "error" else "ok",
+            ))
+    return spans
+
+
+def _permission_spans(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build the observed permission-wait spans for a task."""
+    return [
+        task_trace.child_span(
+            "permission.wait",
+            started_ns=int(permission["started_ns"]),
+            ended_ns=int(permission["started_ns"]),
+            attributes={
+                "app.agent.record.type": "permission",
+                "app.agent.permission.decision": "not_observed",
+                "app.agent.permission.policy": str(
+                    permission.get("mode", "not_observed")
+                ),
+                "gen_ai.tool.name": str(
+                    permission.get("tool_name", "not_observed")
+                ),
+            },
+        )
+        for permission in state.get("permissions", [])
+    ]
+
+
+def _skill_spans(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """Complete and render each observed skill lifecycle."""
+    spans = []
+    for name, stages in state.get("skills", {}).items():
+        if "activated" in stages and "executed" not in stages:
+            stages.append("executed")
+        if "evaluated" not in stages:
+            stages.append("evaluated")
+        package_hash = state.get("skill_hashes", {}).get(name, "not_observed")
+        for stage in stages:
+            spans.append(task_trace.child_span(
+                "skill.activate" if stage == "activated" else "skill.lifecycle",
+                started_ns=int(state["started_ns"]),
+                ended_ns=int(state["started_ns"]),
+                attributes={
+                    "app.agent.record.type": "skill",
+                    "app.agent.skill.name": name,
+                    "app.agent.skill.package_hash": package_hash,
+                    "app.agent.skill.activation": stage,
+                    "app.agent.skill.selection": (
+                        "user" if stage in {"offered", "selected"} else "model"
+                    ),
+                },
+            ))
+    return spans
+
+
 def finish_task(state: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any] | None:
     if not state.get("trace_id"):
         return None
@@ -214,68 +302,9 @@ def finish_task(state: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any
             "app.agent.model.effort": state.get("effort", "not_observed"),
         },
     )]
-    for item in state.get("tools", []):
-        attributes: dict[str, str | int | float | bool] = {
-            "app.agent.record.type": "tool",
-            "gen_ai.operation.name": "execute_tool",
-            "gen_ai.tool.name": item["name"],
-            "gen_ai.tool.call.id": item["id"],
-            "app.agent.tool.type": tool_type(item["name"]),
-            "app.agent.tool.status": item.get("status", "not_observed"),
-            "app.agent.tool.input_hash": item.get("input_hash", "not_observed"),
-            "app.agent.tool.output_hash": item.get("output_hash", "not_observed"),
-        }
-        children.append(task_trace.child_span(
-            "tool.execute",
-            started_ns=int(item["started_ns"]),
-            ended_ns=int(item.get("ended_ns", ended_ns)),
-            attributes=attributes,
-            status="error" if item.get("status") == "error" else "ok",
-        ))
-        if item.get("validation_type"):
-            children.append(task_trace.child_span(
-                "validation.run",
-                started_ns=int(item["started_ns"]),
-                ended_ns=int(item.get("ended_ns", ended_ns)),
-                attributes={
-                    "app.agent.record.type": "validation",
-                    "app.agent.validation.type": item["validation_type"],
-                    "app.agent.validation.status": "fail" if item.get("status") == "error" else "pass",
-                    "app.agent.validation.provenance": f"tool:{item['id']}",
-                },
-                status="error" if item.get("status") == "error" else "ok",
-            ))
-    for permission in state.get("permissions", []):
-        children.append(task_trace.child_span(
-            "permission.wait",
-            started_ns=int(permission["started_ns"]),
-            ended_ns=int(permission["started_ns"]),
-            attributes={
-                "app.agent.record.type": "permission",
-                "app.agent.permission.decision": "not_observed",
-                "app.agent.permission.policy": str(permission.get("mode", "not_observed")),
-                "gen_ai.tool.name": str(permission.get("tool_name", "not_observed")),
-            },
-        ))
-    for name, stages in state.get("skills", {}).items():
-        if "activated" in stages and "executed" not in stages:
-            stages.append("executed")
-        if "evaluated" not in stages:
-            stages.append("evaluated")
-        package_hash = state.get("skill_hashes", {}).get(name, "not_observed")
-        for stage in stages:
-            children.append(task_trace.child_span(
-                "skill.activate" if stage == "activated" else "skill.lifecycle",
-                started_ns=int(state["started_ns"]),
-                ended_ns=int(state["started_ns"]),
-                attributes={
-                    "app.agent.record.type": "skill",
-                    "app.agent.skill.name": name,
-                    "app.agent.skill.package_hash": package_hash,
-                    "app.agent.skill.activation": stage,
-                    "app.agent.skill.selection": "user" if stage in {"offered", "selected"} else "model",
-                },
-            ))
+    children.extend(_tool_spans(state, ended_ns))
+    children.extend(_permission_spans(state))
+    children.extend(_skill_spans(state))
     children.append(task_trace.child_span(
         "agent.final",
         started_ns=ended_ns,

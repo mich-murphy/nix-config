@@ -29,17 +29,8 @@ def load_json(path: Path, findings: list[str]) -> Any | None:
         return None
 
 
-def audit(root: Path) -> list[str]:
-    findings: list[str] = []
-    skill = root / "SKILL.md"
-    if not skill.is_file():
-        return ["missing SKILL.md"]
-    text = skill.read_text(encoding="utf-8")
-    if len(text.splitlines()) > 500:
-        findings.append("SKILL.md exceeds the 500-line review threshold")
-    if not text.startswith("---\n") or text.count("---\n") < 2:
-        findings.append("SKILL.md frontmatter is malformed")
-
+def _audit_package_files(root: Path, findings: list[str]) -> None:
+    """Check package boundaries and content that is unsafe to distribute."""
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
         if any(
@@ -65,8 +56,11 @@ def audit(root: Path) -> list[str]:
         if SECRET.search(content):
             findings.append(f"possible embedded secret: {relative}")
 
-    release_path = root / "evals" / "release-manifest.json"
-    release = load_json(release_path, findings) if release_path.is_file() else None
+
+def _audit_proposal(
+    root: Path, release: Any, findings: list[str]
+) -> None:
+    """Check the evidence-backed reason for creating or retaining the skill."""
     proposal_path = root / "proposal.json"
     proposal = load_json(proposal_path, findings) if proposal_path.is_file() else None
     if not proposal_path.is_file() and not (
@@ -85,6 +79,11 @@ def audit(root: Path) -> list[str]:
         if not proposal.get("completion_checks"):
             findings.append("proposal needs observable completion checks")
 
+
+def _audit_evaluations(
+    root: Path, release: Any, findings: list[str]
+) -> None:
+    """Check immutable evaluation definitions and compact release metadata."""
     evals = root / "evals"
     for name in REQUIRED_EVAL_FILES:
         if not (evals / name).exists():
@@ -128,6 +127,24 @@ def audit(root: Path) -> list[str]:
             findings.append("release manifest must declare release_eligible")
         if not isinstance(release.get("definition_hashes"), dict):
             findings.append("release manifest must record definition hashes")
+
+
+def audit(root: Path) -> list[str]:
+    findings: list[str] = []
+    skill = root / "SKILL.md"
+    if not skill.is_file():
+        return ["missing SKILL.md"]
+    text = skill.read_text(encoding="utf-8")
+    if len(text.splitlines()) > 500:
+        findings.append("SKILL.md exceeds the 500-line review threshold")
+    if not text.startswith("---\n") or text.count("---\n") < 2:
+        findings.append("SKILL.md frontmatter is malformed")
+
+    _audit_package_files(root, findings)
+    release_path = root / "evals" / "release-manifest.json"
+    release = load_json(release_path, findings) if release_path.is_file() else None
+    _audit_proposal(root, release, findings)
+    _audit_evaluations(root, release, findings)
     return findings
 
 

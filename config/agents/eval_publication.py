@@ -182,79 +182,42 @@ def _safe_result_enum(field: str, value: Any) -> str:
     return value if value in allowed[field] else "other"
 
 
-def comparison_claim(result: dict[str, Any]) -> dict[str, Any]:
-    """Return only privacy-safe fields that can affect the selected comparator."""
-    existing = result.get("comparison_claim")
-    if isinstance(existing, dict):
-        adapter = existing.get("adapter")
-        try:
-            if adapter == "neo":
-                normalized = {
-                    "adapter": "neo",
-                    "skill_enabled": bool(existing.get("skill_enabled")),
-                    "returncode": int(existing.get("returncode", -1)),
-                    "timed_out": bool(existing.get("timed_out")),
-                    "deterministic_pass": bool(existing.get("deterministic_pass")),
-                    "model_invocations": int(existing.get("model_invocations", 0)),
-                    "duration_seconds": float(existing.get("duration_seconds", 0)),
-                }
-            elif adapter == "skill-development":
-                normalized = {
-                    "adapter": "skill-development",
-                    "score": float(existing.get("score", 0)),
-                    "blocking_failure_count": int(
-                        existing.get("blocking_failure_count", 0)
-                    ),
-                }
-            elif adapter == "generic":
-                normalized = {
-                    "adapter": "generic",
-                    "risk": existing.get("risk", "normal"),
-                    "expected_activation": existing.get("expected_activation"),
-                    "actual_activation": existing.get("actual_activation"),
-                    "duration_seconds": float(existing.get("duration_seconds", 0)),
-                    "usage": _safe_usage(existing.get("usage", {})),
-                }
-            else:
-                raise ValueError("unknown comparison adapter")
-        except (TypeError, ValueError) as error:
-            raise ValueError("comparison claim conflicts with raw result") from error
+def _normalize_comparison_claim(claim: dict[str, Any]) -> dict[str, Any]:
+    adapter = claim.get("adapter")
+    try:
+        if adapter == "neo":
+            return {
+                "adapter": "neo",
+                "skill_enabled": bool(claim.get("skill_enabled")),
+                "returncode": int(claim.get("returncode", -1)),
+                "timed_out": bool(claim.get("timed_out")),
+                "deterministic_pass": bool(claim.get("deterministic_pass")),
+                "model_invocations": int(claim.get("model_invocations", 0)),
+                "duration_seconds": float(claim.get("duration_seconds", 0)),
+            }
+        if adapter == "skill-development":
+            return {
+                "adapter": "skill-development",
+                "score": float(claim.get("score", 0)),
+                "blocking_failure_count": int(
+                    claim.get("blocking_failure_count", 0)
+                ),
+            }
+        if adapter == "generic":
+            return {
+                "adapter": "generic",
+                "risk": claim.get("risk", "normal"),
+                "expected_activation": claim.get("expected_activation"),
+                "actual_activation": claim.get("actual_activation"),
+                "duration_seconds": float(claim.get("duration_seconds", 0)),
+                "usage": _safe_usage(claim.get("usage", {})),
+            }
+        raise ValueError("unknown comparison adapter")
+    except (TypeError, ValueError) as error:
+        raise ValueError("comparison claim conflicts with raw result") from error
 
-        neo_raw = any(
-            field in result
-            for field in ("skill_enabled", "deterministic", "steps", "timed_out")
-        )
-        skill_development_raw = any(
-            field in result for field in ("blocking_failures", "blocking_failure_count")
-        )
-        if neo_raw:
-            raw = dict(result)
-            raw.pop("comparison_claim", None)
-            if adapter != "neo" or comparison_claim(raw) != normalized:
-                raise ValueError("comparison claim conflicts with raw result")
-        elif skill_development_raw:
-            raw = dict(result)
-            raw.pop("comparison_claim", None)
-            if adapter != "skill-development" or comparison_claim(raw) != normalized:
-                raise ValueError("comparison claim conflicts with raw result")
-        elif adapter == "generic":
-            raw = dict(result)
-            raw.pop("comparison_claim", None)
-            if comparison_claim(raw) != normalized:
-                raise ValueError("comparison claim conflicts with raw result")
-        elif adapter == "neo" and (
-            ("returncode" in result and int(result["returncode"]) != normalized["returncode"])
-            or (
-                "duration_seconds" in result
-                and float(result["duration_seconds"]) != normalized["duration_seconds"]
-            )
-        ):
-            raise ValueError("comparison claim conflicts with raw result")
-        elif adapter == "skill-development" and (
-            "score" in result and float(result["score"]) != normalized["score"]
-        ):
-            raise ValueError("comparison claim conflicts with raw result")
-        return normalized
+
+def _raw_comparison_claim(result: dict[str, Any]) -> dict[str, Any]:
     if any(field in result for field in ("skill_enabled", "deterministic", "steps", "timed_out")):
         deterministic = result.get("deterministic", {})
         return {
@@ -292,6 +255,54 @@ def comparison_claim(result: dict[str, Any]) -> dict[str, Any]:
         "duration_seconds": float(result.get("duration_seconds", 0)),
         "usage": usage,
     }
+
+
+def _validate_comparison_claim(
+    result: dict[str, Any], normalized: dict[str, Any]
+) -> None:
+    adapter = normalized["adapter"]
+    neo_raw = any(
+        field in result
+        for field in ("skill_enabled", "deterministic", "steps", "timed_out")
+    )
+    skill_development_raw = any(
+        field in result for field in ("blocking_failures", "blocking_failure_count")
+    )
+    raw = dict(result)
+    raw.pop("comparison_claim", None)
+    if neo_raw:
+        conflicts = adapter != "neo" or _raw_comparison_claim(raw) != normalized
+    elif skill_development_raw:
+        conflicts = (
+            adapter != "skill-development"
+            or _raw_comparison_claim(raw) != normalized
+        )
+    elif adapter == "generic":
+        conflicts = _raw_comparison_claim(raw) != normalized
+    elif adapter == "neo":
+        conflicts = (
+            "returncode" in result
+            and int(result["returncode"]) != normalized["returncode"]
+        ) or (
+            "duration_seconds" in result
+            and float(result["duration_seconds"]) != normalized["duration_seconds"]
+        )
+    else:
+        conflicts = (
+            "score" in result and float(result["score"]) != normalized["score"]
+        )
+    if conflicts:
+        raise ValueError("comparison claim conflicts with raw result")
+
+
+def comparison_claim(result: dict[str, Any]) -> dict[str, Any]:
+    """Return only privacy-safe fields that can affect the selected comparator."""
+    existing = result.get("comparison_claim")
+    if not isinstance(existing, dict):
+        return _raw_comparison_claim(result)
+    normalized = _normalize_comparison_claim(existing)
+    _validate_comparison_claim(result, normalized)
+    return normalized
 
 
 def safe_publication_document(document: dict[str, Any]) -> dict[str, Any]:

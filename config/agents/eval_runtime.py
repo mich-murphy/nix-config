@@ -39,6 +39,34 @@ USAGE_KEYS = (
 )
 
 
+def _deliver_trace(trace: dict[str, Any], *, offline: bool) -> dict[str, Any]:
+    """Export a trace or describe why publication was intentionally skipped."""
+    if offline:
+        return {"status": "disabled", "reason": "offline"}
+    return task_trace.export_task_trace(
+        trace,
+        os.environ.get(
+            "APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"
+        ),
+    )
+
+
+def _attach_publication_state(
+    result: dict[str, Any],
+    trace: dict[str, Any],
+    delivery: dict[str, Any],
+    *,
+    offline: bool,
+) -> None:
+    """Attach bounded retry evidence when a task trace was not published."""
+    if delivery.get("status") == "exported":
+        return
+    result["publication_failure_kind"] = (
+        "offline" if offline else delivery.get("error", "export_failed")
+    )
+    result["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
+
+
 @functools.lru_cache(maxsize=None)
 def harness_version(harness: str) -> str:
     try:
@@ -104,6 +132,25 @@ def assertion_results(output: str, assertions: list[dict[str, Any]]) -> list[dic
             passed, detail = False, f"assertion error: {error}"
         scored.append({"passed": passed, "detail": detail})
     return scored
+
+
+def _assertions_for(case: dict[str, Any], mode: str) -> list[dict[str, Any]]:
+    """Resolve the packaged assertions for one evaluation mode."""
+    if mode == "routing":
+        return [{
+            "type": "json_equals",
+            "path": "activate",
+            "value": bool(case["expected_activation"]),
+        }]
+    return case["assertions"]
+
+
+def _parse_activation(output: str) -> bool | None:
+    """Read a routing decision without letting malformed output escape scoring."""
+    try:
+        return bool(json.loads(output)["activate"])
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return None
 
 
 def skill_context(eval_dir: Path, case: dict[str, Any], variant: str) -> str | None:
@@ -521,13 +568,7 @@ def run_once(
                 }, status="error",
             )], status="error",
         )
-        delivery = (
-            {"status": "disabled", "reason": "offline"}
-            if offline
-            else task_trace.export_task_trace(
-                trace, os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
-            )
-        )
+        delivery = _deliver_trace(trace, offline=offline)
         result = {
             "id": case["id"], "harness": harness, "variant": variant, "mode": mode,
             "repetition": repetition, "state": "environment_failure",
@@ -538,11 +579,7 @@ def run_once(
             "telemetry": delivery,
             "evidence_state": "published" if delivery.get("status") == "exported" else "pending",
         }
-        if delivery.get("status") != "exported":
-            result["publication_failure_kind"] = (
-                "offline" if offline else delivery.get("error", "export_failed")
-            )
-            result["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
+        _attach_publication_state(result, trace, delivery, offline=offline)
         return result
     with tempfile.TemporaryDirectory(prefix="skill-eval-") as temp:
         root = Path(temp)
@@ -571,22 +608,17 @@ def run_once(
             state = "environment_failure"
         process_ended_ns = time.time_ns()
 
-    if mode == "routing":
-        expected = bool(case["expected_activation"])
-        assertions = [{"type": "json_equals", "path": "activate", "value": expected}]
-    else:
-        assertions = case["assertions"]
+    assertions = _assertions_for(case, mode)
     scored = assertion_results(output, assertions) if state == "succeeded" else []
     telemetry_warning = any(
         word in completed.stderr.casefold() for word in ("otel", "telemetry", "exporter")
     )
     accepted = state == "succeeded" and all(item["passed"] for item in scored)
-    actual_activation = None
-    if mode == "routing" and state == "succeeded":
-        try:
-            actual_activation = bool(json.loads(output)["activate"])
-        except (json.JSONDecodeError, KeyError, TypeError):
-            pass
+    actual_activation = (
+        _parse_activation(output)
+        if mode == "routing" and state == "succeeded"
+        else None
+    )
     evaluation_ended_ns = time.time_ns()
     outcome = outcome_for(state, accepted)
     repository = eval_dir.parents[4]
@@ -674,14 +706,7 @@ def run_once(
         ),
         status="error" if state not in {"succeeded", "task_failure"} else "ok",
     )
-    delivery = (
-        {"status": "disabled", "reason": "offline"}
-        if offline
-        else task_trace.export_task_trace(
-            trace,
-            os.environ.get("APP_AGENT_EVAL_OTLP_ENDPOINT", "http://docker-host:4318/v1/traces"),
-        )
-    )
+    delivery = _deliver_trace(trace, offline=offline)
     result = {
         "id": case["id"], "split": case.get("split", "development"),
         "risk": case.get("risk", "normal"), "harness": harness, "variant": variant,
@@ -705,11 +730,7 @@ def run_once(
         "outcome": outcome,
         "evidence_state": "published" if delivery.get("status") == "exported" else "pending",
     }
-    if delivery.get("status") != "exported":
-        result["publication_failure_kind"] = (
-            "offline" if offline else delivery.get("error", "export_failed")
-        )
-        result["publication_trace"] = {"resourceSpans": trace["resourceSpans"]}
+    _attach_publication_state(result, trace, delivery, offline=offline)
     return result
 
 
@@ -721,17 +742,11 @@ def replay(eval_dir: Path, source: Path, output: Path) -> dict[str, Any]:
     for original in document["results"]:
         result = copy.deepcopy(original)
         case = routing_cases[result["id"]] if result["mode"] == "routing" else outcome_cases[result["id"]]
-        assertions = (
-            [{"type": "json_equals", "path": "activate", "value": bool(case["expected_activation"])}]
-            if result["mode"] == "routing" else case["assertions"]
-        )
+        assertions = _assertions_for(case, result["mode"])
         scored = assertion_results(result.get("output", ""), assertions)
         actual_activation = result.get("actual_activation")
         if result["mode"] == "routing":
-            try:
-                actual_activation = bool(json.loads(result.get("output", ""))["activate"])
-            except (json.JSONDecodeError, KeyError, TypeError):
-                actual_activation = None
+            actual_activation = _parse_activation(result.get("output", ""))
         result.update(
             accepted=result.get("state") == "succeeded" and all(item["passed"] for item in scored),
             assertions=scored,

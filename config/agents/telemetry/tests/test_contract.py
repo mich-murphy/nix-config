@@ -53,6 +53,77 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(attributes["app.agent.final.status"], "completed")
         self.assertNotEqual(attributes["app.agent.final.status"], "accepted")
 
+    def test_hook_preserves_tool_permission_and_skill_span_order(self) -> None:
+        exported = []
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            skill = root / ".agents" / "skills" / "example"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text(
+                "---\nname: example\ndescription: example\n---\n",
+                encoding="utf-8",
+            )
+            environment = {"APP_AGENT_HOOK_STATE_DIR": str(root / "state")}
+            with mock.patch.dict(os.environ, environment), mock.patch(
+                "telemetry.task_trace.export_task_trace",
+                side_effect=lambda trace: exported.append(trace) or {"status": "exported"},
+            ):
+                common = {
+                    "session_id": "conversation-1",
+                    "turn_id": "turn-1",
+                    "cwd": temporary,
+                    "model": "gpt-test",
+                }
+                HOOK.handle({
+                    **common,
+                    "hook_event_name": "UserPromptSubmit",
+                    "prompt": "$example run the tests",
+                }, "codex")
+                HOOK.handle({
+                    **common,
+                    "hook_event_name": "PreToolUse",
+                    "tool_name": "exec_command",
+                    "tool_use_id": "tool-1",
+                    "tool_input": {"cmd": "python3 -m unittest"},
+                }, "codex")
+                HOOK.handle({
+                    **common,
+                    "hook_event_name": "PermissionRequest",
+                    "tool_name": "exec_command",
+                    "permission_mode": "default",
+                }, "codex")
+                HOOK.handle({
+                    **common,
+                    "hook_event_name": "PostToolUse",
+                    "tool_name": "exec_command",
+                    "tool_use_id": "tool-1",
+                    "tool_response": "ok",
+                }, "codex")
+                HOOK.handle({
+                    **common,
+                    "hook_event_name": "Stop",
+                    "last_assistant_message": "Done",
+                }, "codex")
+
+        spans = exported[0]["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        self.assertEqual(
+            [span["name"] for span in spans],
+            [
+                "agent.task",
+                "gen_ai.invoke_agent",
+                "tool.execute",
+                "validation.run",
+                "permission.wait",
+                "skill.lifecycle",
+                "skill.lifecycle",
+                "skill.activate",
+                "skill.lifecycle",
+                "skill.lifecycle",
+                "skill.lifecycle",
+                "agent.final",
+            ],
+        )
+
     def test_equivalent_harness_fixtures_normalize_identically(self) -> None:
         fixture_dir = ROOT / "fixtures" / "equivalent-task"
         expected = json.loads((fixture_dir / "expected.json").read_text())
