@@ -1,6 +1,8 @@
 .claude/
 .DS_Store
+node_modules/
 config/karabiner/automatic_backups/
 config/karabiner/assets/complex_modifications/
 result
 result-*
+.markdownlint-cli2.yaml

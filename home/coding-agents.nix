@@ -9,5 +9,9 @@ in {
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     ".claude/skills".source = liveLink "${agentConfig}/skills";
+    ".pi/agent/extensions" = {
+      source = liveLink "${agentConfig}/extensions";
+      force = true;
+    };
   };
 }

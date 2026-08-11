@@ -26,7 +26,7 @@ jobs:
       - name: Check Nix formatting
         run: nix fmt -- --check .
       - name: Lint Markdown
-        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"
+        run: npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"
       - name: Check flake
         run: nix flake check --print-build-logs
 
@@ -46,6 +46,6 @@ jobs:
       - name: Check Nix formatting
         run: nix fmt -- --check .
       - name: Lint Markdown
-        run: npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"
+        run: npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"
       - name: Check flake
         run: nix flake check --print-build-logs

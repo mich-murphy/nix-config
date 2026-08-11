@@ -1,3 +1,5 @@
+ignores:
+  - "**/node_modules/**"
 config:
   line-length: false
   first-line-heading: false

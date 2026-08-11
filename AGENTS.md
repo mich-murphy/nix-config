@@ -30,7 +30,7 @@ for the ai-dev host (`x86_64-linux`).
 | `nix fmt` | Format all Nix files with Alejandra |
 | `nix fmt -- file1.nix file2.nix` | Format specific files |
 | `nix fmt -- --check .` | Check Nix formatting without writing |
-| `npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"` | Lint Markdown |
+| `npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"` | Lint Markdown |
 | `nix flake check --all-systems --print-build-logs` | Run all flake checks |
 | `nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'` | Build the ai-dev home without activation |
 | `nix flake update` | Update all flake inputs |
@@ -92,8 +92,8 @@ invisible to flake evaluation.
 
 <important if="you are editing or creating Markdown files">
 Run
-`npx --yes markdownlint-cli2 "**/*.md" "#node_modules" "#.claude/skills"`
-before committing. Configuration is in `.markdownlint-cli2.yaml`.
+`npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"`
+before committing. Configuration is in `config/markdownlint-cli2.yaml`.
 </important>
 
 <important if="you are making changes across multiple files">
