@@ -1,8 +1,0 @@
-[
-  {"id":"positive-approved-plan","split":"development","prompt":"Use $ship to implement this approved plan through TDD and fresh review.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-release-ready-loop","split":"held-out","prompt":"Requirements and design are settled; manage this change until it is release-ready.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-ship-handoff","split":"held-out","prompt":"Continue this validated ship handoff from implementation through independent review.","expected_activation":true,"risk":"normal"},
-  {"id":"negative-research","split":"development","prompt":"Research how our customers expect cache failures to work.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-architecture","split":"held-out","prompt":"Choose a storage architecture for this new multi-region service.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-deploy","split":"held-out","prompt":"Deploy this release candidate to production immediately.","expected_activation":false,"risk":"side-effect"}
-]

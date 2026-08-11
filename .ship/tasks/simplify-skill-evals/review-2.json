@@ -1,5 +1,0 @@
-{
-  "verdict": "pass",
-  "summary": "The pinned hashes and verification-evidence-16.json match. All 107 evaluator tests, seven retention tests, registry validation, Neo validation, package audits, and diff checks pass. Independent reproductions confirmed full-chain supersession validation, grace-period behavior, fail-safe malformed-graph handling, interrupted transaction recovery, timestamp preservation, comparator hashing, idempotence, lineage, privacy, retention metadata, and evaluator provenance. No release-blocking finding remains.",
-  "findings": []
-}

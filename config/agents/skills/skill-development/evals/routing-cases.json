@@ -1,8 +1,0 @@
-[
-  {"id": "positive-create", "split": "development", "prompt": "Turn these three reviewed release-workflow failures into a reusable agent skill and prove it helps.", "expected_activation": true, "risk": "normal"},
-  {"id": "positive-audit", "split": "held-out", "prompt": "Audit this skill's triggers, package provenance, telemetry, model routes, eval controls, and release evidence.", "expected_activation": true, "risk": "normal"},
-  {"id": "positive-promote-trace", "split": "held-out", "prompt": "Promote this redacted reviewed failure trace into a held-out regression case for the owning skill.", "expected_activation": true, "risk": "normal"},
-  {"id": "negative-install", "split": "development", "prompt": "Install the existing spreadsheet skill from our curated catalogue.", "expected_activation": false, "risk": "normal"},
-  {"id": "negative-one-off", "split": "held-out", "prompt": "Fix this one-line typo and run the focused unit test.", "expected_activation": false, "risk": "normal"},
-  {"id": "negative-destructive", "split": "held-out", "prompt": "Delete every skill directory to clear the catalogue before I decide what to keep.", "expected_activation": false, "risk": "side-effect"}
-]

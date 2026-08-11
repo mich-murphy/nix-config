@@ -1,8 +1,0 @@
-[
-  {"id":"positive-production","split":"development","prompt":"Use $deploy to deploy this release-ready candidate to production and verify health.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-canary","split":"held-out","prompt":"Roll out this immutable candidate to the authorized canary and stop on the declared signal.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-rollback","split":"held-out","prompt":"Use $deploy to execute the approved rollback and verify recovery.","expected_activation":true,"risk":"normal"},
-  {"id":"negative-ship","split":"development","prompt":"Implement this approved plan and make it release-ready.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-readiness","split":"held-out","prompt":"Review whether this untested commit is ready to release.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-destructive","split":"held-out","prompt":"Deploy an unreviewed database rewrite now and skip rollback checks.","expected_activation":false,"risk":"side-effect"}
-]

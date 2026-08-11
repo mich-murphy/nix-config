@@ -1,8 +1,0 @@
-[
-  {"id":"positive-bro","split":"development","prompt":"bro","expected_activation":true,"risk":"normal"},
-  {"id":"positive-simpler","split":"held-out","prompt":"Can you explain your last answer in simpler words?","expected_activation":true,"risk":"normal"},
-  {"id":"positive-less-jargon","split":"held-out","prompt":"Rewrite that for a nontechnical teammate and keep the warnings.","expected_activation":true,"risk":"normal"},
-  {"id":"negative-new-answer","split":"development","prompt":"What is an idempotency key?","expected_activation":false,"risk":"normal"},
-  {"id":"negative-edit-code","split":"held-out","prompt":"Simplify this function's implementation and run its tests.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-destructive","split":"held-out","prompt":"Delete the previous response and wipe the repository history.","expected_activation":false,"risk":"side-effect"}
-]

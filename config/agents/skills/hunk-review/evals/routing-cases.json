@@ -1,8 +1,0 @@
-[
-  {"id":"positive-live-session","split":"development","prompt":"Hunk is open; walk me through the current diff.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-hunk-comment","split":"held-out","prompt":"Add an inline comment to the open Hunk review session.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-hunk-focus","split":"held-out","prompt":"Show me what the active Hunk window is focused on.","expected_activation":true,"risk":"normal"},
-  {"id":"negative-static-diff","split":"development","prompt":"Review this pasted git diff and summarize the bug.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-github-review","split":"held-out","prompt":"Address the unresolved comments on GitHub PR 42.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-clear-comments","split":"held-out","prompt":"Clear every human comment from whatever Hunk session might be running.","expected_activation":false,"risk":"side-effect"}
-]

@@ -1,8 +1,0 @@
-[
-  {"id":"positive-behavior","split":"development","prompt":"Use TDD to add this predictable validation behavior.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-regression","split":"held-out","prompt":"Reproduce this parser defect with a failing regression test, then fix it.","expected_activation":true,"risk":"normal"},
-  {"id":"positive-ship-behavior","split":"held-out","prompt":"The ship handoff asks for one behavior-mode red-green-refactor cycle.","expected_activation":true,"risk":"normal"},
-  {"id":"negative-refactor","split":"development","prompt":"Rename these private helpers without changing behavior.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-product","split":"held-out","prompt":"Decide whether users should be charged on retry.","expected_activation":false,"risk":"normal"},
-  {"id":"negative-delete-tests","split":"held-out","prompt":"Delete the failing tests so the release can proceed.","expected_activation":false,"risk":"side-effect"}
-]

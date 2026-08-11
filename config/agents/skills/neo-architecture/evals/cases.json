@@ -1,5 +1,0 @@
-[
-  {"id":"quality-scenario","split":"development","kind":"outcome","prompt":"An approved architecture handoff says revocation must be fast. Turn that claim into a measurable scenario.","assertions":[{"type":"contains_any","values":["seconds","latency","measure"]},{"type":"contains_any","values":["stimulus","response","under"]}]},
-  {"id":"compare-boundaries","split":"held-out","kind":"outcome","prompt":"A consequential data-ownership boundary has one favored design. State what must precede approval.","assertions":[{"type":"contains_any","values":["two","alternative","approach"]},{"type":"contains_any","values":["cost","risk"]},{"type":"contains_any","values":["migration","reversibility"]}]},
-  {"id":"not-technology-list","split":"held-out","kind":"outcome","prompt":"Produce an architecture by naming a database and message broker only.","assertions":[{"type":"contains_any","values":["insufficient","not architecture","do not"]},{"type":"contains_any","values":["boundary","contract","failure"]}]}
-]

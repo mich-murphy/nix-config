@@ -1,4 +1,0 @@
-interface:
-  display_name: "Skill Development"
-  short_description: "Create and release evidence-backed skills"
-  default_prompt: "Use $skill-development to create, evaluate, and release this reusable agent skill."
