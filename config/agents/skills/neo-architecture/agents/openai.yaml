@@ -1,6 +1,0 @@
-interface:
-  display_name: "Neo Architecture"
-  short_description: "Resolve system architecture decisions"
-  default_prompt: "Use $neo-architecture with the active Neo task handoff to resolve architecture."
-policy:
-  allow_implicit_invocation: false

@@ -1,6 +1,0 @@
-interface:
-  display_name: "Neo Delivery"
-  short_description: "Create verified vertical delivery slices"
-  default_prompt: "Use $neo-delivery with the active Neo task handoff to structure implementation."
-policy:
-  allow_implicit_invocation: false

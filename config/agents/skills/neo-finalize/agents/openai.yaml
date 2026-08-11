@@ -1,6 +1,0 @@
-interface:
-  display_name: "Neo Finalize"
-  short_description: "Consolidate and approve a Neo plan"
-  default_prompt: "Use $neo-finalize with the active Neo task handoff to produce the implementation brief."
-policy:
-  allow_implicit_invocation: false
