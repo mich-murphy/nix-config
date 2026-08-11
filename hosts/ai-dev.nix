@@ -2,6 +2,9 @@
   home = {
     username = "michael";
     homeDirectory = "/home/michael";
+
+    # /tmp is a quota-limited RAM tmpfs; agent scratch belongs on disk.
+    sessionVariables.TMPDIR = "/var/tmp/michael";
   };
 
   programs.fish.interactiveShellInit = lib.mkBefore ''
