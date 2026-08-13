@@ -19,7 +19,7 @@ hooks = [
 repo = "https://github.com/DavidAnson/markdownlint-cli2"
 rev = "v0.23.1"
 hooks = [
-  { id = "markdownlint-cli2" },
+  { id = "markdownlint-cli2", args = ["--config", "config/markdownlint-cli2.yaml"] },
 ]
 
 [[repos]]
