@@ -1,136 +1,38 @@
 ---
 name: tdd
-description: "Implement or repair predictable software behavior through disciplined test-driven development: a living behavioral test list, one meaningful failing test at a time, the smallest real passing change, optional green-state refactoring, and explicit evidence. Use for behavior changes, regression fixes, interface-driving examples, or a validated $ship behavior handoff. Do not use for pure refactoring, unsettled requirements or architecture, deployment, research, or behavior without a timely trustworthy executable oracle."
+description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
 ---
 
-# Develop One Behavior at a Time
+# Test-Driven Development
 
-Use TDD as a programming and local design-feedback discipline, not as a ritual
-or a complete quality strategy.
+TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.
 
-## Confirm TDD Fits
+When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
 
-Read [boundaries.md](references/boundaries.md). Continue only when:
+## What a good test is
 
-- intended inputs, outputs, state transitions, or effects are predictable;
-- one useful example can be checked automatically;
-- feedback can be made timely and sufficiently deterministic;
-- the required product and consequential architecture decisions are settled;
-  and
-- the tests can observe behavior without depending on private structure.
+Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification — "user can checkout with valid cart" tells you exactly what capability exists — and survives refactors because it doesn't care about internal structure.
 
-When these conditions fail, stop and name the missing oracle, decision, or
-separate verifier. Do not manufacture a unit seam or mock-shaped architecture
-merely to claim TDD.
+See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
 
-## Orient and Baseline
+## Seams — where tests go
 
-1. Read repository instructions, the approved behavior, relevant production
-   path, callers, and existing tests.
-2. State preserved behavior and non-TDD risks such as security, performance,
-   concurrency, compatibility, migration, or operations.
-3. Run the fastest relevant baseline checks. Separate pre-existing failures
-   from the new behavior.
-4. Identify the repository's normal focused and broader test commands.
+A **seam** is the public boundary you test at: the interface where you observe behavior without reaching inside. Tests live at seams, never against internals.
 
-## Build a Living Behavioral List
+**Test only at pre-agreed seams.** Before writing any test, write down the seams under test and confirm them with the user. No test is written at an unconfirmed seam. You can't test everything — agreeing the seams up front is how testing effort lands on the critical paths and complex logic instead of every edge case.
 
-List behavior, not classes or implementation tasks:
+Ask: "What's the public interface, and which seams should we test?"
 
-- basic success;
-- meaningful variants and boundaries;
-- rejected inputs and failures;
-- regressions and preserved behavior;
-- external effects, state transitions, and lifecycle events;
-- unanswered behavioral questions; and
-- design concerns discovered but not yet justified.
+When the shape of that interface is itself in question — how deep the module is, where the seam belongs, what the interface should expose — use the `/codebase-design` skill for the vocabulary. It is the shared source of the module, interface, depth, seam, adapter, leverage and locality terms, and it is a reference to consult, not a session to run.
 
-Keep implementation ideas separate. Add discoveries as they appear. Do not
-write the entire list as speculative test code.
+## Anti-patterns
 
-## Select One Informative Example
+- **Implementation-coupled** — mocks internal collaborators, tests private methods, or verifies through a side channel (querying the database instead of using the interface). The tell: the test breaks when you refactor but behavior hasn't changed.
+- **Tautological** — the assertion recomputes the expected value the way the code does (`expect(add(a, b)).toBe(a + b)`, a snapshot derived by hand the same way, a constant asserted equal to itself), so it passes by construction and can never disagree with the code. Expected values must come from an independent source of truth — a known-good literal, a worked example, the spec.
+- **Horizontal slicing** — writing all tests first, then all implementation. Bulk tests verify _imagined_ behavior: you test the _shape_ of things rather than user-facing behavior, the tests go insensitive to real changes, and you commit to test structure before understanding the implementation. Work in **vertical slices** instead — one test → one implementation → repeat, each test a **tracer bullet** that responds to what the last cycle taught you.
 
-Read [mechanics.md](references/mechanics.md). Choose one example that is small,
-caller-relevant, forces a useful interface decision, distinguishes a plausible
-wrong implementation, and can fail for a clear reason.
+## Rules of the loop
 
-Write setup, invocation, and an expected result derived independently of the
-production implementation. Prefer a meaningful behavioral boundary over one
-test per method, class, or branch.
-
-## Red
-
-1. Add exactly one concrete automated test.
-2. Run the narrowest command that exercises it.
-3. Confirm it fails because the intended behavior is absent.
-4. Record the command, failure, and why the failure is meaningful.
-
-If it passes, fails in setup, or fails for an unrelated reason, do not change
-production code. Determine whether behavior already exists, the test cannot
-observe it, the fixture is wrong, or the plan is stale.
-
-Never weaken an assertion, copy actual output into the expectation, disable a
-check, or accept a failure that does not test the named behavior.
-
-## Green
-
-1. Make the smallest real production change that satisfies the example.
-2. Run the focused test and all relevant prior tests.
-3. Prefer an obvious general implementation when it is clear.
-4. Use a narrow fake only as a temporary green step followed immediately by an
-   example that forces generalization.
-5. Add discoveries to the living list; do not silently expand scope.
-
-When the implementation overfits examples, use triangulation: name the
-simplifying assumption, add one example that breaks it, then generalize so both
-pass.
-
-## Refactor From Green
-
-Read [test-and-design-quality.md](references/test-and-design-quality.md).
-Refactoring is optional. Begin only from green, keep observable behavior fixed,
-make one structural transformation, and run fast checks after each microstep.
-
-Remove justified duplication or improve a named responsibility, dependency,
-representation, or interface. Do not add an abstraction without a current
-example or approved change pressure. Invoke `$refactor` for an unfamiliar,
-multi-step, legacy, or published-interface transformation.
-
-## Repeat or Stop
-
-At each green state choose deliberately:
-
-- refactor a justified structural issue;
-- select the next informative behavior;
-- run a broader non-TDD verifier;
-- stop because agreed behavior is complete; or
-- return for clarification because evidence invalidated the plan.
-
-Shrink the next step when failures are difficult to explain, feedback is slow,
-or several changes could explain the result. Reorder examples when repeated
-small steps create only test-specific production branches.
-
-## Hand Off Evidence
-
-Use [evidence.json](assets/evidence.json) as the output shape. Report:
-
-- behavior list with implemented, deferred, and discovered cases;
-- each meaningful red and corresponding green command/result;
-- interface and implementation-design decisions;
-- refactoring checkpoints;
-- focused and broader tests run;
-- test-quality limitations;
-- non-TDD verifiers and residual risks.
-
-Never claim that a green suite establishes architecture, security, performance,
-reliability, usability, or production safety outside its observation boundary.
-
-## Reference Route
-
-- [mechanics.md](references/mechanics.md): step sizing, green tactics,
-  triangulation, and stopping.
-- [test-and-design-quality.md](references/test-and-design-quality.md): test
-  quality, determinism, mocks, and testability signals.
-- [boundaries.md](references/boundaries.md): prerequisites and decisions TDD
-  cannot own.
-- [sources.md](references/sources.md): evidence provenance and limits.
+- **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features.
+- **One slice at a time.** One seam, one test, one minimal implementation per cycle.
+- **Refactoring is not part of the loop.** It belongs to the review stage (see the `code-review` skill), not the red → green implementation cycle.

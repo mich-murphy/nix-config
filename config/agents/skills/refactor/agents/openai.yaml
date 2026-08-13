@@ -1,4 +1,0 @@
-interface:
-  display_name: "Refactor"
-  short_description: "Review and refactor code for maintainability"
-  default_prompt: "Use $refactor to review this code and improve its design without changing observable behavior."
