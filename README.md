@@ -62,15 +62,13 @@ nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'
 ```
 
 Home Manager owns portable CLI tools, Fish, Starship, FZF, Git behavior, Hunk,
-Herdr configuration, Yazi, OpenCode, and shared agent instructions/skills.
-Ansible retains the operating-system bootstrap, stable agent installers, and
-vaulted ai-dev Git identity fragments. macOS keeps its Home Manager-owned
+Herdr configuration, Neovim, Yazi, OpenCode, and shared agent
+instructions/skills. Ansible retains the operating-system bootstrap, stable
+agent installers, and vaulted ai-dev Git identity fragments. It must not clone
+or otherwise manage `~/.config/nvim`; Home Manager deploys that path as a live
+link to this repository's `config/nvim`. macOS keeps its Home Manager-owned
 personal and BusinessCraft identities under `~/businesscraft/`; ai-dev selects
 its separate `0600` fragments under the same path.
-
-Neovim is the explicit Linux exception. Pacman installs Neovim and the current
-editor tools, while Ansible clones `~/.config/nvim` only when absent and never
-updates an existing checkout. Darwin continues to use `home/neovim.nix`.
 
 ## Commit hooks
 
@@ -133,10 +131,11 @@ Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the
 reload.
 
-On the Mac, Neovim is installed by Nix, but its external configuration must
-still be cloned to `~/.config/nvim` from
-`git@github.com:mich-murphy/neovim.git`. The Linux exception is described
-above. Both remain pending a separate Neovim/Mason review.
+On both hosts, Nix installs Neovim and its foundational runtime dependencies.
+Home Manager links `~/.config/nvim` directly to this checkout's `config/nvim`,
+while Mason owns the declared editor-only tools. Before the first activation of
+this model, move any existing `~/.config/nvim` directory out of the way so Home
+Manager can create the directory link.
 
 ## Homebrew warning
 

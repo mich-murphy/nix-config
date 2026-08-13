@@ -1,26 +1,17 @@
 # TODO
 
-Reviewed: 2026-07-25
+Reviewed: 2026-08-13
 
 This checklist contains only work that remains after the platform-aware Home
 Manager refactor.
 
 ## Configuration
 
-- [ ] **Make Neovim configuration reproducible**
-  - On Darwin, [`home/neovim.nix`](home/neovim.nix) loads `config.lazy`, but
-    the corresponding configuration must be cloned manually from
-    `git@github.com:mich-murphy/neovim.git` into `~/.config/nvim`.
-  - On ai-dev, Ansible deliberately keeps Neovim and its temporary editor tools
-    outside Home Manager and clones the public configuration only when absent.
-    Repair the Mason package skip list before consolidating this exception.
-  - Choose and document one supported provisioning model:
-    1. manage the configuration in this repository;
-    2. add the external repository as a pinned flake input; or
-    3. keep it external and provide a repeatable bootstrap step that validates
-       the expected checkout.
-  - The result should allow either host to reach a working Neovim configuration
-    without undocumented manual state or rewriting an existing checkout.
+- [ ] **Retire the ai-dev legacy Neovim bootstrap**
+  - This flake now installs Neovim and links `~/.config/nvim` to the
+    repository-owned configuration on both hosts.
+  - Update the external `home-infra` Ansible role so Pacman packages and the old
+    standalone configuration clone do not compete with Home Manager.
 
 - [ ] **Record the source revision in Darwin generations**
   - Set `system.configurationRevision` from the flake revision without passing
