@@ -1,5 +1,4 @@
 local wezterm = require("wezterm")
-local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
 local config = wezterm.config_builder()
 
 -- Show which key table is active in the status area
@@ -126,12 +125,5 @@ config.window_decorations = "RESIZE"
 config.adjust_window_size_when_changing_font_size = false
 config.window_close_confirmation = "NeverPrompt"
 config.enable_kitty_keyboard = false
-
-smart_splits.apply_to_config(config, {
-  direction_keys = { "h", "j", "k", "l" },
-  modifiers = {
-    move = "CTRL",
-  },
-})
 
 return config
