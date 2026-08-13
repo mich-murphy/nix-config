@@ -1,8 +1,10 @@
 .claude/
 .DS_Store
 node_modules/
+config/nvim/nvim.log
 config/karabiner/automatic_backups/
 config/karabiner/assets/complex_modifications/
 result
 result-*
 .markdownlint-cli2.yaml
+.scratch
