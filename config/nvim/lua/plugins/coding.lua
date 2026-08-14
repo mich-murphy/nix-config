@@ -98,6 +98,18 @@ return {
 	},
 
 	{
+		"nvim-treesitter/nvim-treesitter-context",
+		event = { "BufReadPost", "BufNewFile" },
+		opts = {
+			max_lines = 3,
+			mode = "cursor",
+		},
+		keys = {
+			{ "<leader>uC", "<cmd>TSContext toggle<cr>", desc = "Treesitter context" },
+		},
+	},
+
+	{
 		"nvim-treesitter/nvim-treesitter-textobjects",
 		branch = "main",
 		event = "VeryLazy",
