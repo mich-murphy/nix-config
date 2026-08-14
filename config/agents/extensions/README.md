@@ -15,9 +15,18 @@ for extension in config/agents/extensions/*/package-lock.json; do
 done
 ```
 
-The Home Manager declaration forcibly replaces the previously unmanaged
-extension directory on its first activation. Confirm every wanted extension is
-present here before switching the profile.
+Before the first Home Manager activation, preserve any previously unmanaged
+extension directory and then switch the profile:
+
+```sh
+mv ~/.pi/agent/extensions ~/.pi/agent/extensions.pre-home-manager
+home-manager switch --flake '.#michael@ai-dev'
+```
+
+Confirm every wanted extension is present here before migrating. The Home
+Manager `force` option can replace files and symbolic links, but not a real
+directory. Keep the preserved directory until the managed extensions have been
+verified.
 
 Use Pi's `/reload` command after editing extension source. Home Manager only
 needs to be rebuilt when the link declaration changes or the checkout moves.

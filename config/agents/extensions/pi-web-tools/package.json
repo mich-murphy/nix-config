@@ -1,0 +1,50 @@
+{
+  "name": "pi-web-tools",
+  "version": "0.1.0",
+  "description": "Hardened public web search and fetch tools for Pi",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "web-fetch",
+    "web-search"
+  ],
+  "scripts": {
+    "check": "npm run typecheck && npm run test",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@mozilla/readability": "0.6.0",
+    "html-to-text": "9.0.5",
+    "linkedom": "0.18.12",
+    "turndown": "7.2.0",
+    "turndown-plugin-gfm": "1.0.2",
+    "undici": "8.10.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "^0.84.0",
+    "@earendil-works/pi-coding-agent": "^0.84.0",
+    "@earendil-works/pi-tui": "^0.84.0",
+    "@types/node": "^24.5.2",
+    "@types/turndown": "^5.0.5",
+    "tsx": "^4.20.5",
+    "typebox": "^1.1.38",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

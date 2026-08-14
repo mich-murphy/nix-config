@@ -67,6 +67,13 @@
     };
     checks.x86_64-linux = {
       ai-dev-home = aiDev.activationPackage;
+      ai-dev-profile-command = (packagesFor "x86_64-linux").runCommand "ai-dev-profile-command" {} ''
+        if grep -q "profile install" ${aiDev.activationPackage}/activate; then
+          echo "ai-dev activation uses deprecated nix profile install" >&2
+          exit 1
+        fi
+        touch "$out"
+      '';
       hunk = hunk.packages.x86_64-linux.hunk;
       opencode = (packagesFor "x86_64-linux").opencode;
     };
