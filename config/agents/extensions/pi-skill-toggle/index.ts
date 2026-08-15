@@ -1,0 +1,234 @@
+import type {
+  BuildSystemPromptOptions,
+  ExtensionAPI,
+  ExtensionContext,
+} from "@earendil-works/pi-coding-agent";
+import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
+import { Container, SettingsList, Text } from "@earendil-works/pi-tui";
+import {
+  ContextPolicy,
+  type EffectivePolicy,
+  type PersistedPolicySnapshot,
+  type PolicyScope,
+  type PolicyStateAdapter,
+} from "./policy";
+import { applyPolicyToSystemPrompt } from "./prompt-filter";
+import { policyResourcesFromPrompt } from "./resources";
+import {
+  buildSettingItems,
+  formatApplyResult,
+  formatContextStatus,
+  formatPolicyPlan,
+  scopeDescription,
+  updateDraft,
+} from "./settings";
+import { SkillToggleStore } from "./state";
+
+const STATUS_KEY = "pi-skill-toggle";
+
+export default function skillToggle(pi: ExtensionAPI) {
+  registerSkillToggle(pi, new SkillToggleStore());
+}
+
+export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter): void {
+  const policy = new ContextPolicy(store);
+  let current: PersistedPolicySnapshot | undefined;
+  let lastRefreshFailure = "";
+  let lastPromptFailure = "";
+
+  function refresh(
+    ctx: ExtensionContext,
+    options?: BuildSystemPromptOptions,
+  ): PersistedPolicySnapshot | undefined {
+    const result = policy.refresh({
+      cwd: ctx.cwd,
+      skills: options?.skills,
+      legacyEntries: ctx.sessionManager.getBranch(),
+      sessionId: ctx.sessionManager.getSessionId(),
+    });
+    if (!result.ok) {
+      current = undefined;
+      renderStatus(ctx, undefined, true);
+      const failure = `${ctx.cwd}\n${result.error.message}`;
+      if (failure !== lastRefreshFailure) {
+        ctx.ui.notify(`Could not load context policy: ${result.error.message}\nThe prompt is unchanged; no cached policy was applied.`, "error");
+      }
+      lastRefreshFailure = failure;
+      return undefined;
+    }
+    current = result.policy;
+    lastRefreshFailure = "";
+    if (options) {
+      renderStatus(ctx, policy.resolve(current, policyResourcesFromPrompt(options)));
+    }
+    return current;
+  }
+
+  function resolve(options: BuildSystemPromptOptions): EffectivePolicy | undefined {
+    if (!current) return undefined;
+    return policy.resolve(current, policyResourcesFromPrompt(options));
+  }
+
+  function renderStatus(
+    ctx: ExtensionContext,
+    effective?: EffectivePolicy,
+    failed = false,
+  ): void {
+    if (failed) {
+      ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("error", "context !"));
+      return;
+    }
+    if (!effective) {
+      ctx.ui.setStatus(STATUS_KEY, undefined);
+      return;
+    }
+    const disabled = effective.instructions.filter((item) => item.visibility === "excluded").length
+      + effective.skills.filter((item) => item.visibility === "manual-only").length;
+    ctx.ui.setStatus(
+      STATUS_KEY,
+      disabled > 0 ? ctx.ui.theme.fg("warning", `context −${disabled}`) : undefined,
+    );
+  }
+
+  pi.registerCommand("context", {
+    description: "Configure global, directory, or session context policy",
+    handler: async (args, ctx) => {
+      if (args.trim()) {
+        ctx.ui.notify("Usage: /context", "error");
+        return;
+      }
+      if (ctx.mode !== "tui") {
+        ctx.ui.notify("/context requires TUI mode", "error");
+        return;
+      }
+      const options = ctx.getSystemPromptOptions();
+      const snapshot = refresh(ctx, options);
+      if (!snapshot) return;
+      const effective = resolve(options);
+      if (!effective) return;
+
+      const selected = await ctx.ui.select("Context policy scope", ["Global", "Directory", "Session"]);
+      if (!selected) return;
+      const scope = selected.toLowerCase() as PolicyScope;
+      const draft = policy.draft(scope, effective, snapshot);
+      const items = buildSettingItems(effective, draft);
+      if (items.length === 0) {
+        ctx.ui.notify(`No resources can be configured in ${scope} scope`, "info");
+        return;
+      }
+
+      await ctx.ui.custom((tui, theme, _keybindings, done) => {
+        const container = new Container();
+        container.addChild(new DynamicBorder((text: string) => theme.fg("accent", text)));
+        container.addChild(new Text(theme.fg("accent", theme.bold(`Context · ${selected}`)), 1, 0));
+        container.addChild(new Text(theme.fg("muted", scopeDescription(scope)), 1, 0));
+        const list = new SettingsList(
+          items,
+          Math.min(items.length + 2, 20),
+          getSettingsListTheme(),
+          (id, value) => updateDraft(draft, effective, id, value),
+          () => done(undefined),
+          { enableSearch: true },
+        );
+        container.addChild(list);
+        container.addChild(new Text(theme.fg("dim", "Close to review staged transitions · bulk rows affect all loaded matches"), 1, 0));
+        container.addChild(new DynamicBorder((text: string) => theme.fg("accent", text)));
+        return {
+          render: (width: number) => container.render(width),
+          invalidate: () => container.invalidate(),
+          handleInput: (data: string) => {
+            list.handleInput?.(data);
+            tui.requestRender();
+          },
+        };
+      });
+
+      const plan = policy.plan(draft, snapshot);
+      if (plan.changes.length === 0) return;
+      if (!(await ctx.ui.confirm("Apply context policy plan?", formatPolicyPlan(plan)))) {
+        ctx.ui.notify("Context policy changes discarded", "info");
+        return;
+      }
+
+      const result = policy.apply(plan);
+      if (result.snapshot) current = result.snapshot;
+      const nextEffective = current ? policy.resolve(current, policyResourcesFromPrompt(options)) : undefined;
+      renderStatus(ctx, nextEffective, result.errors.length > 0);
+      ctx.ui.notify(formatApplyResult(result), result.errors.length > 0 ? "error" : "info");
+    },
+  });
+
+  pi.registerCommand("context-status", {
+    description: "Show effective context policy and its resolution sources",
+    handler: async (_args, ctx) => {
+      const options = ctx.getSystemPromptOptions();
+      const snapshot = refresh(ctx, options);
+      if (!snapshot) return;
+      const effective = resolve(options)!;
+      renderStatus(ctx, effective);
+      ctx.ui.notify(formatContextStatus(effective, snapshot, policy.sessionOverrides()), "info");
+    },
+  });
+
+  pi.registerCommand("context-reset", {
+    description: "Reset context policy: global, directory, session, or all",
+    handler: async (args, ctx) => {
+      const scope = parseResetScope(args);
+      if (!scope) {
+        ctx.ui.notify("Usage: /context-reset [global|directory|session|all]", "error");
+        return;
+      }
+      if (ctx.hasUI && !(await ctx.ui.confirm("Reset context policy?", `Reset ${scope} policy${scope === "all" ? " everywhere" : ""}?`))) return;
+      const result = policy.reset(scope, ctx.cwd);
+      current = result.snapshot;
+      const options = ctx.getSystemPromptOptions();
+      if (!current) current = refresh(ctx, options);
+      const effective = resolve(options);
+      renderStatus(ctx, effective, result.errors.length > 0);
+      ctx.ui.notify(formatApplyResult(result), result.errors.length > 0 ? "error" : "info");
+    },
+  });
+
+  pi.on("session_start", async (_event, ctx) => {
+    policy.clearSession();
+    current = undefined;
+    lastRefreshFailure = "";
+    lastPromptFailure = "";
+    refresh(ctx);
+  });
+  pi.on("session_tree", async (_event, ctx) => {
+    current = undefined;
+    refresh(ctx);
+  });
+  pi.on("session_shutdown", async (_event, ctx) => {
+    policy.clearSession();
+    current = undefined;
+    lastRefreshFailure = "";
+    lastPromptFailure = "";
+    ctx.ui.setStatus(STATUS_KEY, undefined);
+  });
+
+  pi.on("before_agent_start", async (event, ctx) => {
+    const snapshot = refresh(ctx, event.systemPromptOptions);
+    if (!snapshot) return;
+    const effective = resolve(event.systemPromptOptions)!;
+    const result = applyPolicyToSystemPrompt(event.systemPrompt, event.systemPromptOptions, effective);
+    const failure = result.failures.join(",");
+    renderStatus(ctx, effective, failure.length > 0);
+    if (failure && failure !== lastPromptFailure) {
+      ctx.ui.notify(
+        `Context policy could not be applied to: ${result.failures.join(", ")}. Pi's prompt format may have changed.`,
+        "error",
+      );
+    }
+    lastPromptFailure = failure;
+    return { systemPrompt: result.systemPrompt };
+  });
+}
+
+function parseResetScope(args: string): PolicyScope | "all" | undefined {
+  const value = args.trim() || "directory";
+  if (value === "context") return "directory";
+  if (value === "skills") return "global";
+  return value === "global" || value === "directory" || value === "session" || value === "all" ? value : undefined;
+}
