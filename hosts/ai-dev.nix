@@ -3,6 +3,8 @@
   lib,
   ...
 }: {
+  imports = [./ai-dev-maintenance.nix];
+
   home = {
     username = "michael";
     homeDirectory = "/home/michael";

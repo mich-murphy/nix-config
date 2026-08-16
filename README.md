@@ -62,13 +62,22 @@ nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'
 ```
 
 Home Manager owns portable CLI tools, Fish, Starship, FZF, Git behavior, Hunk,
-Herdr configuration, Neovim, Yazi, OpenCode, and shared agent
-instructions/skills. Ansible retains the operating-system bootstrap, stable
-agent installers, and vaulted ai-dev Git identity fragments. It must not clone
-or otherwise manage `~/.config/nvim`; Home Manager deploys that path as a live
-link to this repository's `config/nvim`. macOS keeps its Home Manager-owned
-personal and BusinessCraft identities under `~/businesscraft/`; ai-dev selects
-its separate `0600` fragments under the same path.
+Herdr configuration, Neovim, Yazi, OpenCode, shared agent instructions/skills,
+the Moshi user unit, and `ai-dev-maintenance`. Ansible retains operating-system
+provisioning, invokes `ai-dev-maintenance ensure-present` to repair missing
+mutable tools, and writes vaulted ai-dev Git identity fragments. Ongoing agent
+updates are deliberate host-local operations:
+
+```sh
+ai-dev-maintenance update
+ai-dev-maintenance status
+```
+
+Ansible must not clone or otherwise manage `~/.config/nvim`; Home Manager
+deploys that path as a live link to this repository's `config/nvim`. macOS
+keeps its Home Manager-owned personal and BusinessCraft identities under
+`~/businesscraft/`; ai-dev selects its separate `0600` fragments under the same
+path.
 
 ## Commit hooks
 
