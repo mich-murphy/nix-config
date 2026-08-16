@@ -34,7 +34,7 @@
       ];
     };
     aiDev = home-manager.lib.homeManagerConfiguration {
-      pkgs = packagesFor "x87_64-linux";
+      pkgs = packagesFor "x86_64-linux";
       extraSpecialArgs = {
         inherit hunk;
         repoRoot = "/home/michael/dev/nix-config";
