@@ -7,7 +7,7 @@ The `.out-of-scope/` directory in a repo stores persistent records of rejected f
 
 ## Directory structure
 
-```
+```text
 .out-of-scope/
 ├── dark-mode.md
 ├── plugin-system.md
@@ -51,7 +51,8 @@ interface ThemeConfig {
 - #42 — "Add dark mode support"
 - #87 — "Night theme for accessibility"
 - #134 — "Dark theme option"
-```
+
+```text
 
 ### Naming the file
 

@@ -51,7 +51,7 @@ Keep it beautiful but restrained: clean typography, generous spacing, one accent
 
 ### 4. Hand it over
 
-Send them the file, or open it for them. They'll click through the walkthroughs and free-play whenever they get to it; the interesting moments are when they say "wait, that shouldn't be possible" or "huh, I assumed X would be different" — those are the bugs in the _idea_, which is the whole point. If they want new actions or a new scenario, add them. Prototypes evolve.
+Send them the file, or open it for them. They'll click through the walkthroughs and free-play whenever they get to it; the interesting moments are when they say "wait, that shouldn't be possible" or "huh, I assumed X would be different" — those are the bugs in the *idea*, which is the whole point. If they want new actions or a new scenario, add them. Prototypes evolve.
 
 ### 5. Capture the answer and the prototype
 

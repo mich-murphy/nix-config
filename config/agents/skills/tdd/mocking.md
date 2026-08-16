@@ -17,7 +17,7 @@ Don't mock:
 
 At system boundaries, design interfaces that are easy to mock:
 
-**1. Use dependency injection**
+### 1. Use dependency injection
 
 Pass external dependencies in rather than creating them internally:
 
@@ -34,7 +34,7 @@ function processPayment(order) {
 }
 ```
 
-**2. Prefer SDK-style interfaces over generic fetchers**
+### 2. Prefer SDK-style interfaces over generic fetchers
 
 Create specific functions for each external operation instead of one generic function with conditional logic:
 
@@ -53,6 +53,7 @@ const api = {
 ```
 
 The SDK approach means:
+
 - Each mock returns one specific shape
 - No conditional logic in test setup
 - Easier to see which endpoints a test exercises

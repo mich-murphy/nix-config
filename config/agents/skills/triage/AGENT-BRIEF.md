@@ -199,6 +199,7 @@ The function around line 150 has the issue.
 ```
 
 This is bad because:
+
 - No category
 - Vague description ("the triage thing is broken")
 - References file paths and line numbers that will go stale
