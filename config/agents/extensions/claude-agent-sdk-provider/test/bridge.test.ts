@@ -1,39 +1,52 @@
 import { describe, expect, test } from "bun:test";
 import type { Context, Model } from "@earendil-works/pi-ai";
-import { buildAgentRequest, createAgentSdkStream, serializeConversation, type BridgeEvent } from "../bridge";
-import { planContinuation } from "../continuation";
+import { buildAgentRequest, createAgentSdkStream, serializeConversation, type AgentRequest, type BridgeEvent } from "../bridge";
 import {
   agentSdkTurnOptions,
+  createClaudeAgentSdkRunner,
   createDeferredPiCallHandler,
   subscriptionEnvironment,
   translateSdkStreamEvent,
+  type RunSdkQuery,
 } from "../sdk-runner";
 
 describe("serializeConversation", () => {
-  test("resumes an append-only SDK session with only entries added after Pi's mirrored assistant response", () => {
-    const previous = {
-      sessionId: "11111111-1111-4111-8111-111111111111",
-      modelKey: "claude-agent-sdk/sonnet",
-      systemPrompt: "stable system prompt",
-      toolDescription: "stable tools",
-      conversationEntries: ['{"role":"user","content":[{"type":"text","text":"Read package.json"}]}'],
+  test("starts each Pi turn in a stateless SDK session with the complete transcript", async () => {
+    const sdkRequests: Array<Parameters<RunSdkQuery>[0]> = [];
+    const runSdkQuery = (params: (typeof sdkRequests)[number]) => {
+      sdkRequests.push(params);
+      return (async function* () {})();
     };
-    const request = {
-      systemPrompt: previous.systemPrompt,
-      prompt: "unused full prompt",
-      toolDescription: previous.toolDescription,
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const model = {
+      api: "claude-agent-sdk",
+      provider: "claude-agent-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-agent-sdk">;
+    const firstRequest: AgentRequest = {
+      systemPrompt: "stable system prompt",
+      prompt: "complete transcript: first turn",
+      toolDescription: "stable tools",
       toolNames: ["read"],
+      conversationEntries: ['{"role":"user","content":"Read package.json"}'],
+    };
+    const secondRequest: AgentRequest = {
+      ...firstRequest,
+      prompt: "complete transcript: second turn",
       conversationEntries: [
-        ...previous.conversationEntries,
+        ...firstRequest.conversationEntries,
         '{"role":"assistant","content":[{"type":"toolCall","id":"call-1","name":"read","arguments":{"path":"package.json"}}]}',
         '{"role":"toolResult","toolCallId":"call-1","toolName":"read","isError":false,"content":[{"type":"text","text":"{}"}]}',
       ],
     };
 
-    expect(planContinuation(previous, request, previous.modelKey)).toEqual({
-      resumeSessionId: previous.sessionId,
-      conversationEntries: [request.conversationEntries[2]],
-    });
+    for await (const _event of runner(firstRequest, model)) {}
+    for await (const _event of runner(secondRequest, model)) {}
+
+    expect(sdkRequests.map(({ prompt }) => prompt)).toEqual([firstRequest.prompt, secondRequest.prompt]);
+    expect(sdkRequests.map(({ options }) => options?.persistSession)).toEqual([false, false]);
+    expect(sdkRequests.every(({ options }) => options?.resume === undefined)).toBe(true);
+    expect(sdkRequests.every(({ options }) => options?.sessionId === undefined)).toBe(true);
   });
 
   test("preserves text, tool calls, and tool results as a JSONL transcript", () => {

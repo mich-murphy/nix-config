@@ -3,11 +3,8 @@ import type { Api, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AgentRequest, AgentSdkRun, BridgeEvent } from "./bridge";
-import {
-  conversationPrompt,
-  planContinuation,
-  type AgentSdkContinuation,
-} from "./continuation";
+
+export type RunSdkQuery = (params: Parameters<typeof query>[0]) => AsyncIterable<unknown>;
 
 const NON_SUBSCRIPTION_AUTH_VARIABLES = [
   "ANTHROPIC_API_KEY",
@@ -117,26 +114,12 @@ export function createDeferredPiCallHandler(
   };
 }
 
-export function createClaudeAgentSdkRunner(): AgentSdkRun {
-  let continuation: AgentSdkContinuation | undefined;
-
+export function createClaudeAgentSdkRunner(runSdkQuery: RunSdkQuery = query): AgentSdkRun {
   return async function* runClaudeAgentSdk(
     request: AgentRequest,
     model: Model<Api>,
     options?: SimpleStreamOptions,
   ): AsyncGenerator<BridgeEvent> {
-    const modelKey = `${model.provider}/${model.id}`;
-    const plan = planContinuation(continuation, request, modelKey);
-    const sdkSessionId = plan.resumeSessionId ?? randomUUID();
-    const rememberContinuation = () => {
-      continuation = {
-        sessionId: sdkSessionId,
-        modelKey,
-        systemPrompt: request.systemPrompt,
-        toolDescription: request.toolDescription,
-        conversationEntries: request.conversationEntries,
-      };
-    };
     const abortController = new AbortController();
     const onAbort = () => abortController.abort();
     options?.signal?.addEventListener("abort", onAbort, { once: true });
@@ -164,10 +147,8 @@ export function createClaudeAgentSdkRunner(): AgentSdkRun {
   const server = createSdkMcpServer({ name: "pi", version: "0.1.0", tools: [piCall], alwaysLoad: true });
 
   try {
-    const sdkQuery = query({
-      prompt: plan.resumeSessionId
-        ? conversationPrompt(plan.conversationEntries)
-        : request.prompt,
+    const sdkQuery = runSdkQuery({
+      prompt: request.prompt,
       options: {
         abortController,
         cwd: process.cwd(),
@@ -175,10 +156,7 @@ export function createClaudeAgentSdkRunner(): AgentSdkRun {
         effort: effortFor(options?.reasoning),
         includePartialMessages: true,
         ...agentSdkTurnOptions(),
-        persistSession: true,
-        ...(plan.resumeSessionId
-          ? { resume: plan.resumeSessionId }
-          : { sessionId: sdkSessionId }),
+        persistSession: false,
         systemPrompt: request.systemPrompt,
         settingSources: [],
         tools: [],
@@ -211,7 +189,6 @@ export function createClaudeAgentSdkRunner(): AgentSdkRun {
       for await (const message of sdkQuery) {
         if (deferredError) throw deferredError;
         if (deferredToolCall) {
-          rememberContinuation();
           yield deferredToolCall;
           return;
         }
@@ -221,7 +198,6 @@ export function createClaudeAgentSdkRunner(): AgentSdkRun {
     } catch (error) {
       if (deferredError) throw deferredError;
       if (deferredToolCall) {
-        rememberContinuation();
         yield deferredToolCall;
         return;
       }
@@ -230,14 +206,11 @@ export function createClaudeAgentSdkRunner(): AgentSdkRun {
 
     if (deferredError) throw deferredError;
     if (deferredToolCall) {
-      rememberContinuation();
       yield deferredToolCall;
       return;
     }
-    rememberContinuation();
     yield { type: "done" };
   } catch (error) {
-    continuation = undefined;
     throw error;
   } finally {
     abortController.abort();
