@@ -1,0 +1,5 @@
+interface:
+  display_name: "Herdr"
+  short_description: "Control Herdr tabs, panes and agents"
+policy:
+  allow_implicit_invocation: true
