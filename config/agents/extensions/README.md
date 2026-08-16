@@ -1,19 +1,14 @@
 # Pi extensions
 
-This directory is the live source for global Pi coding-agent extensions. Home
-Manager links it to `~/.pi/agent/extensions`, matching the shared skills setup.
-Pi discovers top-level TypeScript files and subdirectories containing an
-`index.ts` entry point.
+This directory contains the source for global Pi coding-agent extensions. Home
+Manager packages extensions with npm dependencies and links the resulting
+immutable directory to `~/.pi/agent/extensions`. Pi discovers top-level
+TypeScript files and subdirectories containing an `index.ts` entry point.
 
 Keep source, tests, package manifests, and lockfiles here. Do not commit
-`node_modules` or credentials. Extensions with npm dependencies need a local
-install after a fresh checkout or lockfile change:
-
-```sh
-for extension in config/agents/extensions/*/package-lock.json; do
-  npm ci --prefix "$(dirname "$extension")"
-done
-```
+`node_modules` or credentials. Each packaged extension pins its npm dependency
+closure with `npmDepsHash` in `home/coding-agents.nix`. Update that hash when its
+lockfile changes.
 
 Before the first Home Manager activation, preserve any previously unmanaged
 extension directory and then switch the profile:
@@ -28,5 +23,5 @@ Manager `force` option can replace files and symbolic links, but not a real
 directory. Keep the preserved directory until the managed extensions have been
 verified.
 
-Use Pi's `/reload` command after editing extension source. Home Manager only
-needs to be rebuilt when the link declaration changes or the checkout moves.
+Rebuild and activate Home Manager after changing extension source or lockfiles,
+then restart Pi or use its `/reload` command.

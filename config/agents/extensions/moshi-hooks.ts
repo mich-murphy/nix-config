@@ -98,6 +98,7 @@ function send(eventName: string, event: unknown, ctx: unknown, extra: Record<str
       stdio: ["pipe", "ignore", "ignore"],
       detached: true,
     })
+    child.on("error", () => {})
     child.stdin.end(JSON.stringify(payload))
     child.unref()
   } catch {

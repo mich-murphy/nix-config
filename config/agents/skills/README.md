@@ -7,6 +7,9 @@ Skills I use daily for code work.
 Reachable only when you type them (Claude Code: `disable-model-invocation: true`; Codex: `policy.allow_implicit_invocation: false` in `agents/openai.yaml`).
 
 - **[ask-matt](./ask-matt/SKILL.md)** — Ask which skill or flow fits your situation. A router over the user-invoked skills in this repo.
+- **[plannotator-annotate](./plannotator-annotate/SKILL.md)** — Open Plannotator's annotation UI for a file, folder, or URL.
+- **[plannotator-last](./plannotator-last/SKILL.md)** — Annotate the latest assistant response in Plannotator.
+- **[plannotator-review](./plannotator-review/SKILL.md)** — Review worktree changes or a pull request in Plannotator.
 - **[grill-with-docs](./grill-with-docs/SKILL.md)** — Grilling session that also builds your project's domain model, sharpening terminology and updating `CONTEXT.md` and ADRs inline.
 - **[triage](./triage/SKILL.md)** — Move issues through a state machine of triage roles.
 - **[improve-codebase-architecture](./improve-codebase-architecture/SKILL.md)** — Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.
