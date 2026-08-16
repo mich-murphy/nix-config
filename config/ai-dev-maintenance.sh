@@ -145,7 +145,8 @@ reconcile_integrations() {
 
   if [[ ${tool_failed[herdr]:-0} == 0 ]] && command -v herdr >/dev/null 2>&1; then
     local target
-    for target in claude codex pi opencode; do
+    # Pi's Herdr extension is already supplied by Home Manager's managed link farm.
+    for target in claude codex opencode; do
       if [[ $target != opencode && ${tool_failed[$target]:-0} == 1 ]]; then
         printf 'SKIPPED: Herdr integration: %s (tool update failed)\n' "$target"
         continue
