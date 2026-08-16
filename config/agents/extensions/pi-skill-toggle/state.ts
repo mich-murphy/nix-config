@@ -231,13 +231,13 @@ function readStoredState(path: string, cwd: string): ReadResult {
   try {
     value = JSON.parse(content);
   } catch (error) {
-    throw new Error(`Malformed Pi skill-toggle state at ${path}. Fix or move the file, then run /context-status. ${errorMessage(error)}`);
+    throw new Error(`Malformed Pi skill-toggle state at ${path}. Fix or move the file, then run /skill-status. ${errorMessage(error)}`);
   }
   if (isStoredStateV3(value)) return { state: normalizeState(value), needsWrite: false, exists: true };
   if (isStoredStateV2(value)) return { state: migrateV2(value), needsWrite: true, exists: true };
   if (isLegacyState(value)) return { state: migrateLegacy(value, cwd), needsWrite: true, exists: true };
   const version = isRecord(value) && "version" in value ? String(value.version) : "missing";
-  throw new Error(`Invalid Pi skill-toggle state at ${path} (version ${version}). Fix or move the file, then run /context-status.`);
+  throw new Error(`Invalid Pi skill-toggle state at ${path} (version ${version}). Fix or move the file, then run /skill-status.`);
 }
 
 function migrateV2(value: StoredStateV2): StoredStateV3 {

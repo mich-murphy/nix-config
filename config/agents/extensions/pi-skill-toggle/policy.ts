@@ -117,7 +117,7 @@ export interface PolicyStateAdapter {
   reset(scope: PolicyScope | "all", cwd: string): ApplyResult;
 }
 
-export class ContextPolicy {
+export class SkillPolicy {
   private session: SessionPolicy = { skills: {}, instructions: {} };
 
   constructor(private readonly state: PolicyStateAdapter) {}

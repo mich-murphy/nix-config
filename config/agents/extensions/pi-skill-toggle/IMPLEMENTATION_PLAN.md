@@ -120,7 +120,7 @@ transformer must consume the same resolved policy.
 A suitable initial interface is:
 
 ```ts
-interface ContextPolicy {
+interface SkillPolicy {
   resolve(input: PolicyInput): EffectivePolicy;
   plan(scope: PolicyScope, draft: PolicyDraft): PolicyPlan;
   apply(plan: PolicyPlan): ApplyResult;
@@ -147,7 +147,7 @@ from a previous directory or session.
 - Make refresh return an explicit success or failure result.
 - Associate every loaded snapshot with its canonical directory identifier.
 - Never apply a snapshot belonging to another directory after refresh fails.
-- On failure, leave the current prompt unchanged and display `context !`.
+- On failure, leave the current prompt unchanged and display `skills !`.
 - Notify only when the failure changes, avoiding repeated notifications per
   model turn.
 - A last-known-good snapshot may be reused only when it belongs to the same
@@ -166,7 +166,7 @@ type PolicyRefreshResult =
 
 - A malformed state file never causes another directory's exclusions to apply.
 - Failed refresh leaves the prompt unchanged.
-- The footer shows `context !` while refresh is unhealthy.
+- The footer shows `skills !` while refresh is unhealthy.
 - Recovery on a later turn clears the failure state.
 - The same error does not notify on every turn.
 
@@ -274,7 +274,7 @@ normalization and migration simpler. Preserve deterministic serialization.
 Keep session state in memory; do not persist it in the JSON store or session
 history unless a later requirement explicitly asks for resume behavior.
 
-Initial UX should expose session scope through `/context`. Do not wrap the Pi
+Initial UX should expose session scope through `/skill-toggle`. Do not wrap the Pi
 editor or implement numbered hotkeys in this phase.
 
 Define lifecycle behavior explicitly:
@@ -286,7 +286,7 @@ Define lifecycle behavior explicitly:
 
 ### P1.3 Add scope-aware context UI
 
-The `/context` UI should make scope explicit rather than mixing settings with
+The `/skill-toggle` UI should make scope explicit rather than mixing settings with
 hidden persistence rules.
 
 Recommended scopes:
@@ -348,7 +348,7 @@ individual change.
 
 ### P1.6 Improve status output
 
-Extend `/context-status` to distinguish persistent and temporary policy:
+Extend `/skill-status` to distinguish persistent and temporary policy:
 
 ```text
 Directory     /work/project

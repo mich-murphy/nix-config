@@ -6,7 +6,7 @@ import type {
 import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
 import { Container, SettingsList, Text } from "@earendil-works/pi-tui";
 import {
-  ContextPolicy,
+  SkillPolicy,
   type EffectivePolicy,
   type PersistedPolicySnapshot,
   type PolicyScope,
@@ -17,7 +17,7 @@ import { policyResourcesFromPrompt } from "./resources";
 import {
   buildSettingItems,
   formatApplyResult,
-  formatContextStatus,
+  formatSkillStatus,
   formatPolicyPlan,
   scopeDescription,
   updateDraft,
@@ -31,7 +31,7 @@ export default function skillToggle(pi: ExtensionAPI) {
 }
 
 export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter): void {
-  const policy = new ContextPolicy(store);
+  const policy = new SkillPolicy(store);
   let current: PersistedPolicySnapshot | undefined;
   let lastRefreshFailure = "";
   let lastPromptFailure = "";
@@ -51,7 +51,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       renderStatus(ctx, undefined, true);
       const failure = `${ctx.cwd}\n${result.error.message}`;
       if (failure !== lastRefreshFailure) {
-        ctx.ui.notify(`Could not load context policy: ${result.error.message}\nThe prompt is unchanged; no cached policy was applied.`, "error");
+        ctx.ui.notify(`Could not load skill policy: ${result.error.message}\nThe prompt is unchanged; no cached policy was applied.`, "error");
       }
       lastRefreshFailure = failure;
       return undefined;
@@ -75,7 +75,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     failed = false,
   ): void {
     if (failed) {
-      ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("error", "context !"));
+      ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("error", "skills !"));
       return;
     }
     if (!effective) {
@@ -86,19 +86,19 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       + effective.skills.filter((item) => item.visibility === "manual-only").length;
     ctx.ui.setStatus(
       STATUS_KEY,
-      disabled > 0 ? ctx.ui.theme.fg("warning", `context −${disabled}`) : undefined,
+      disabled > 0 ? ctx.ui.theme.fg("warning", `skills −${disabled}`) : undefined,
     );
   }
 
-  pi.registerCommand("context", {
-    description: "Configure global, directory, or session context policy",
+  pi.registerCommand("skill-toggle", {
+    description: "Configure global, directory, or session skill policy",
     handler: async (args, ctx) => {
       if (args.trim()) {
-        ctx.ui.notify("Usage: /context", "error");
+        ctx.ui.notify("Usage: /skill-toggle", "error");
         return;
       }
       if (ctx.mode !== "tui") {
-        ctx.ui.notify("/context requires TUI mode", "error");
+        ctx.ui.notify("/skill-toggle requires TUI mode", "error");
         return;
       }
       const options = ctx.getSystemPromptOptions();
@@ -107,7 +107,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       const effective = resolve(options);
       if (!effective) return;
 
-      const selected = await ctx.ui.select("Context policy scope", ["Global", "Directory", "Session"]);
+      const selected = await ctx.ui.select("Skill policy scope", ["Global", "Directory", "Session"]);
       if (!selected) return;
       const scope = selected.toLowerCase() as PolicyScope;
       const draft = policy.draft(scope, effective, snapshot);
@@ -120,7 +120,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       await ctx.ui.custom((tui, theme, _keybindings, done) => {
         const container = new Container();
         container.addChild(new DynamicBorder((text: string) => theme.fg("accent", text)));
-        container.addChild(new Text(theme.fg("accent", theme.bold(`Context · ${selected}`)), 1, 0));
+        container.addChild(new Text(theme.fg("accent", theme.bold(`Skill Toggle · ${selected}`)), 1, 0));
         container.addChild(new Text(theme.fg("muted", scopeDescription(scope)), 1, 0));
         const list = new SettingsList(
           items,
@@ -145,8 +145,8 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
 
       const plan = policy.plan(draft, snapshot);
       if (plan.changes.length === 0) return;
-      if (!(await ctx.ui.confirm("Apply context policy plan?", formatPolicyPlan(plan)))) {
-        ctx.ui.notify("Context policy changes discarded", "info");
+      if (!(await ctx.ui.confirm("Apply skill policy plan?", formatPolicyPlan(plan)))) {
+        ctx.ui.notify("Skill policy changes discarded", "info");
         return;
       }
 
@@ -158,28 +158,27 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     },
   });
 
-  pi.registerCommand("context-status", {
-    description: "Show effective context policy and its resolution sources",
+  pi.registerCommand("skill-status", {
+    description: "Show effective skill policy and its resolution sources",
     handler: async (_args, ctx) => {
       const options = ctx.getSystemPromptOptions();
       const snapshot = refresh(ctx, options);
       if (!snapshot) return;
       const effective = resolve(options)!;
       renderStatus(ctx, effective);
-      ctx.ui.notify(formatContextStatus(effective, snapshot, policy.sessionOverrides()), "info");
+      ctx.ui.notify(formatSkillStatus(effective, snapshot, policy.sessionOverrides()), "info");
     },
   });
 
-  pi.registerCommand("context-reset", {
-    description: "Reset context policy: global, directory, session, or all",
+  pi.registerCommand("skill-reset", {
+    description: "Reset the skill policy for this directory",
     handler: async (args, ctx) => {
-      const scope = parseResetScope(args);
-      if (!scope) {
-        ctx.ui.notify("Usage: /context-reset [global|directory|session|all]", "error");
+      if (args.trim()) {
+        ctx.ui.notify("Usage: /skill-reset", "error");
         return;
       }
-      if (ctx.hasUI && !(await ctx.ui.confirm("Reset context policy?", `Reset ${scope} policy${scope === "all" ? " everywhere" : ""}?`))) return;
-      const result = policy.reset(scope, ctx.cwd);
+      if (ctx.hasUI && !(await ctx.ui.confirm("Reset skill policy?", "Reset directory policy?"))) return;
+      const result = policy.reset("directory", ctx.cwd);
       current = result.snapshot;
       const options = ctx.getSystemPromptOptions();
       if (!current) current = refresh(ctx, options);
@@ -217,18 +216,11 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     renderStatus(ctx, effective, failure.length > 0);
     if (failure && failure !== lastPromptFailure) {
       ctx.ui.notify(
-        `Context policy could not be applied to: ${result.failures.join(", ")}. Pi's prompt format may have changed.`,
+        `Skill policy could not be applied to: ${result.failures.join(", ")}. Pi's prompt format may have changed.`,
         "error",
       );
     }
     lastPromptFailure = failure;
     return { systemPrompt: result.systemPrompt };
   });
-}
-
-function parseResetScope(args: string): PolicyScope | "all" | undefined {
-  const value = args.trim() || "directory";
-  if (value === "context") return "directory";
-  if (value === "skills") return "global";
-  return value === "global" || value === "directory" || value === "session" || value === "all" ? value : undefined;
 }

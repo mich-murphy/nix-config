@@ -142,7 +142,7 @@ export function formatApplyResult(result: ApplyResult): string {
   return parts.join(" · ");
 }
 
-export function formatContextStatus(
+export function formatSkillStatus(
   effective: EffectivePolicy,
   snapshot: PersistedPolicySnapshot,
   session: SessionPolicy,

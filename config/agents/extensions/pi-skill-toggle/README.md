@@ -4,13 +4,11 @@ Layered control over the instruction files and skills advertised to Pi's model.
 
 ## Commands
 
-- `/context` — choose Global, Directory, or Session scope, stage changes, review
-  exact transitions, and apply them.
-- `/context-status` — show effective visibility, resolution sources, persistent
+- `/skill-toggle` — choose Global, Directory, or Session scope, stage changes,
+  review exact transitions, and apply them.
+- `/skill-status` — show effective visibility, resolution sources, persistent
   directory overrides, and temporary session overrides.
-- `/context-reset [global|directory|session|all]` — reset one policy layer.
-  The legacy `context` and `skills` arguments remain aliases for `directory`
-  and `global`.
+- `/skill-reset` — reset the policy for the current directory.
 
 Global policy applies to skills in every directory. Sparse directory policy can
 make a globally manual-only skill visible, make a globally visible skill
@@ -40,14 +38,14 @@ manual-only.
 
 Running sessions refresh policy before every model turn. If state cannot be
 loaded, the prompt is left unchanged, no snapshot from another directory is
-used, the footer shows `context !`, and repeated identical failures notify only
+used, the footer shows `skills !`, and repeated identical failures notify only
 once. Recovery on a later turn clears the failure. Prompt replacement remains
 exact and section-specific; instruction or skill prompt-format drift is
 reported rather than hidden.
 
 Malformed state is never treated as empty policy. The diagnostic names the
 state path and tells the user to fix or move it before running
-`/context-status` again.
+`/skill-status` again.
 
 ## Maintainer invariants
 

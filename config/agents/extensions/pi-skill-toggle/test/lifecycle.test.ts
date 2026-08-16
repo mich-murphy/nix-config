@@ -29,13 +29,16 @@ function snapshot(cwd: string, hidden = false): PersistedPolicySnapshot {
 
 function harness(store: PolicyStateAdapter) {
   const handlers = new Map<string, Array<(event: any, ctx: any) => any>>();
+  const commands = new Map<string, unknown>();
   const statuses: Array<string | undefined> = [];
   const notifications: string[] = [];
   const pi = {
     on(name: string, handler: (event: any, ctx: any) => any) {
       handlers.set(name, [...(handlers.get(name) ?? []), handler]);
     },
-    registerCommand() {},
+    registerCommand(name: string, command: unknown) {
+      commands.set(name, command);
+    },
   };
   const ctx: any = {
     cwd: "/work/one",
@@ -57,10 +60,19 @@ function harness(store: PolicyStateAdapter) {
     for (const handler of handlers.get(name) ?? []) result = await handler(event, ctx);
     return result;
   };
-  return { ctx, emit, statuses, notifications };
+  return { commands, ctx, emit, statuses, notifications };
 }
 
 describe("extension lifecycle", () => {
+  test("registers the skill command family", () => {
+    const test = harness({
+      load: ({ cwd }) => snapshot(cwd),
+      apply: () => ({ applied: [], skipped: [], errors: [] }),
+      reset: () => ({ applied: [], skipped: [], errors: [] }),
+    });
+    expect([...test.commands.keys()]).toEqual(["skill-toggle", "skill-status", "skill-reset"]);
+  });
+
   test("never applies another directory's snapshot after refresh failure and deduplicates errors", async () => {
     let unhealthy = false;
     const store: PolicyStateAdapter = {
@@ -83,7 +95,7 @@ describe("extension lifecycle", () => {
     result = await test.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
     expect(result).toBeUndefined();
     expect(unchanged).toContain("Deploy software");
-    expect(test.statuses.at(-1)).toBe("context !");
+    expect(test.statuses.at(-1)).toBe("skills !");
     const notificationCount = test.notifications.length;
     await test.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
     expect(test.notifications).toHaveLength(notificationCount);

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
-  ContextPolicy,
+  SkillPolicy,
   resolveEffectivePolicy,
   type PersistedPolicySnapshot,
   type PolicyResources,
@@ -80,7 +80,7 @@ describe("effective policy resolution", () => {
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     };
-    const policy = new ContextPolicy(adapter);
+    const policy = new SkillPolicy(adapter);
     for (const scope of ["global", "directory", "session"] as const) {
       const draft = policy.draft(scope, effective, stored);
       draft.skills.locked = "visible";
@@ -90,7 +90,7 @@ describe("effective policy resolution", () => {
 
   test("session overrides are in memory and clear on replacement", () => {
     const stored = snapshot();
-    const policy = new ContextPolicy({
+    const policy = new SkillPolicy({
       load: () => stored,
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
@@ -107,7 +107,7 @@ describe("effective policy resolution", () => {
   test("refresh failure has no policy payload that can cross directories", () => {
     const good = snapshot();
     let fail = false;
-    const policy = new ContextPolicy({
+    const policy = new SkillPolicy({
       load: (input) => {
         if (fail) throw new Error(`bad state for ${input.cwd}`);
         return good;

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { ContextPolicy, resolveEffectivePolicy, type PersistedPolicySnapshot, type PolicyResources } from "../policy";
+import { SkillPolicy, resolveEffectivePolicy, type PersistedPolicySnapshot, type PolicyResources } from "../policy";
 import {
   buildSettingItems,
-  formatContextStatus,
+  formatSkillStatus,
   formatPolicyPlan,
   updateDraft,
 } from "../settings";
@@ -48,7 +48,7 @@ const adapter = {
 describe("scope-aware settings", () => {
   test("shows effective value, selected-scope value, canonical provenance, path, and locks", () => {
     const effective = resolveEffectivePolicy(snapshot, { skills: {}, instructions: {} }, resources);
-    const policy = new ContextPolicy(adapter);
+    const policy = new SkillPolicy(adapter);
     const draft = policy.draft("directory", effective, snapshot);
     const items = buildSettingItems(effective, draft);
 
@@ -62,7 +62,7 @@ describe("scope-aware settings", () => {
 
   test("keeps unloaded policy names manageable", () => {
     const effective = resolveEffectivePolicy(snapshot, { skills: {}, instructions: {} }, resources);
-    const policy = new ContextPolicy(adapter);
+    const policy = new SkillPolicy(adapter);
     const draft = policy.draft("global", effective, snapshot);
     const item = buildSettingItems(effective, draft).find(({ id }) => id === "skill:unloaded");
     expect(item).toMatchObject({ label: "unloaded · not loaded", currentValue: "manual-only" });
@@ -70,7 +70,7 @@ describe("scope-aware settings", () => {
 
   test("bulk operations stage through the same draft and plan path", () => {
     const effective = resolveEffectivePolicy(snapshot, { skills: {}, instructions: {} }, resources);
-    const policy = new ContextPolicy(adapter);
+    const policy = new SkillPolicy(adapter);
     const draft = policy.draft("directory", effective, snapshot);
     updateDraft(draft, effective, "bulk:skills", "manual-only");
     updateDraft(draft, effective, "bulk:instructions", "included");
@@ -85,7 +85,7 @@ describe("scope-aware settings", () => {
   test("formats resolution and persistent versus temporary override counts", () => {
     const session = { skills: { research: "manual-only" as const }, instructions: {} };
     const effective = resolveEffectivePolicy(snapshot, session, resources);
-    expect(formatContextStatus(effective, snapshot, session)).toBe(
+    expect(formatSkillStatus(effective, snapshot, session)).toBe(
       "Directory     /work/project\n" +
       "Instructions  0 included · 1 excluded\n" +
       "Skills        0 visible · 2 manual-only\n" +
