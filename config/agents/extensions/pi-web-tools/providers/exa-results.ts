@@ -173,12 +173,14 @@ function stripRepeatedLeadingTitle(snippet: string, title: string): string {
 	return current.trim();
 }
 
+const EMPTY_METADATA_VALUES = new Set(["n/a", "na", "none", "null", "undefined", "unknown"]);
+
 function normalizeMetadataValue(value: string): string | undefined {
 	const normalized = value.trim();
 	if (!normalized) return undefined;
 
 	const lowered = normalized.toLowerCase();
-	if (["n/a", "na", "none", "null", "undefined", "unknown"].includes(lowered)) {
+	if (EMPTY_METADATA_VALUES.has(lowered)) {
 		return undefined;
 	}
 

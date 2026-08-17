@@ -52,10 +52,12 @@ function serializeMessage(message: Message): object | undefined {
 }
 
 export function serializeConversationEntries(context: Context): string[] {
-  return context.messages
-    .map(serializeMessage)
-    .filter((message): message is object => message !== undefined)
-    .map((message) => JSON.stringify(message));
+  const entries: string[] = [];
+  for (const message of context.messages) {
+    const serialized = serializeMessage(message);
+    if (serialized !== undefined) entries.push(JSON.stringify(serialized));
+  }
+  return entries;
 }
 
 export function serializeConversation(context: Context): string {

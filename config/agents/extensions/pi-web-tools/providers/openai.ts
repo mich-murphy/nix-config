@@ -40,9 +40,10 @@ export class OpenAISearchProvider implements SearchProvider {
 			"Content-Type": "application/json",
 			"OpenAI-Beta": "responses=experimental",
 		};
-		const codex = auth.provider === "openai-codex" || isCodexJwt(auth.apiKey);
+		const decodedJwt = decodeJwt(auth.apiKey);
+		const codex = auth.provider === "openai-codex" || isCodexJwt(decodedJwt);
 		if (codex) {
-			const accountId = extractAccountId(auth.apiKey);
+			const accountId = extractAccountId(decodedJwt);
 			if (accountId) headers["chatgpt-account-id"] = accountId;
 			headers.originator = "pi";
 		}
@@ -253,12 +254,12 @@ function decodeJwt(token: string): Record<string, unknown> | undefined {
 	}
 }
 
-function isCodexJwt(token: string): boolean {
-	return Boolean(decodeJwt(token)?.["https://api.openai.com/auth"]);
+function isCodexJwt(decodedJwt: Record<string, unknown> | undefined): boolean {
+	return Boolean(decodedJwt?.["https://api.openai.com/auth"]);
 }
 
-function extractAccountId(token: string): string | undefined {
-	const auth = decodeJwt(token)?.["https://api.openai.com/auth"];
+function extractAccountId(decodedJwt: Record<string, unknown> | undefined): string | undefined {
+	const auth = decodedJwt?.["https://api.openai.com/auth"];
 	if (!isRecord(auth)) return undefined;
 	const value = auth.chatgpt_account_id;
 	return typeof value === "string" && value.trim() ? value.trim() : undefined;

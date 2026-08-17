@@ -356,8 +356,9 @@ function copyState(state: StoredStateV3): StoredStateV3 {
   return JSON.parse(JSON.stringify(state)) as StoredStateV3;
 }
 
+/** `state` must already be normalized; the only caller (`snapshot`) guarantees this. */
 function generation(state: StoredStateV3): string {
-  return createHash("sha256").update(JSON.stringify(normalizeState(state))).digest("hex").slice(0, 16);
+  return createHash("sha256").update(JSON.stringify(state)).digest("hex").slice(0, 16);
 }
 
 function readLegacyStateFromBranch(entries: Iterable<unknown>): LegacyState {

@@ -196,10 +196,8 @@ function extractReadableRoot(document: Document): Element {
 	}
 
 	const body = document.querySelector("body") ?? document.documentElement;
-	const fallbackCandidates = [
-		...Array.from(body.querySelectorAll("article, main, section, div")),
-		body,
-	];
+	const fallbackCandidates = Array.from(body.querySelectorAll("article, main, section, div"));
+	fallbackCandidates.push(body);
 	return cloneElement(pickBestCandidate(fallbackCandidates) ?? body);
 }
 

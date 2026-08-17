@@ -5,13 +5,14 @@ import { resourcePathId } from "./prompt-filter";
 
 export function policyResourcesFromPrompt(options: BuildSystemPromptOptions): PolicyResources {
   const cwd = resourcePathId(options.cwd, options.cwd);
+  const agentDirectory = resourcePathId(getAgentDir(), cwd);
   return {
     instructions: (options.contextFiles ?? []).map((file) => {
       const path = resourcePathId(file.path, cwd);
       return {
         kind: "instruction" as const,
         path,
-        provenance: instructionProvenance(path, cwd),
+        provenance: instructionProvenance(path, cwd, agentDirectory),
       };
     }),
     skills: (options.skills ?? []).map((skill) => ({
@@ -30,9 +31,8 @@ export function policyResourcesFromPrompt(options: BuildSystemPromptOptions): Po
   };
 }
 
-function instructionProvenance(path: string, cwd: string): ResourceProvenance {
+function instructionProvenance(path: string, cwd: string, agentDirectory: string): ResourceProvenance {
   const parent = dirname(path);
-  const agentDirectory = resourcePathId(getAgentDir(), cwd);
   const scope = parent === agentDirectory
     ? "user"
     : parent === cwd

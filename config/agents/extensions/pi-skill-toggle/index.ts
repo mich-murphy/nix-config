@@ -35,6 +35,16 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
   let current: PersistedPolicySnapshot | undefined;
   let lastRefreshFailure = "";
   let lastPromptFailure = "";
+  // Callers consistently resolve() with the same options reference right after
+  // refresh() already resolved it once (e.g. before_agent_start); reuse that
+  // result instead of recomputing policyResourcesFromPrompt/policy.resolve.
+  // Safety depends on two invariants, since policy.resolve() also reads
+  // SkillPolicy.session state that policy.apply() mutates in place for
+  // scope=session: refresh() always produces a brand-new snapshot object, and
+  // every resolve(options) is synchronously preceded by a refresh(ctx, options)
+  // call with that same options reference. Do not resolve() twice around a
+  // session-scoped apply() without an intervening refresh().
+  let resolvedCache: { snapshot: PersistedPolicySnapshot; options: BuildSystemPromptOptions; effective: EffectivePolicy } | undefined;
 
   function refresh(
     ctx: ExtensionContext,
@@ -59,14 +69,19 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     current = result.policy;
     lastRefreshFailure = "";
     if (options) {
-      renderStatus(ctx, policy.resolve(current, policyResourcesFromPrompt(options)));
+      renderStatus(ctx, resolve(options));
     }
     return current;
   }
 
   function resolve(options: BuildSystemPromptOptions): EffectivePolicy | undefined {
     if (!current) return undefined;
-    return policy.resolve(current, policyResourcesFromPrompt(options));
+    if (resolvedCache && resolvedCache.snapshot === current && resolvedCache.options === options) {
+      return resolvedCache.effective;
+    }
+    const effective = policy.resolve(current, policyResourcesFromPrompt(options));
+    resolvedCache = { snapshot: current, options, effective };
+    return effective;
   }
 
   function renderStatus(

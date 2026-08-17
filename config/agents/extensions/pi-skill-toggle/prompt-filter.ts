@@ -43,19 +43,21 @@ export function filterSystemPrompt(
   const enabledContextFiles = contextFiles.filter(
     (file) => !selection.disabledContextPaths.has(resourcePathId(file.path, options.cwd)),
   );
+  const originalContext = renderProjectContext(contextFiles);
   const contextResult = replaceLastExact(
     systemPrompt,
-    renderProjectContext(contextFiles),
-    renderProjectContext(enabledContextFiles),
+    originalContext,
+    enabledContextFiles.length === contextFiles.length ? originalContext : renderProjectContext(enabledContextFiles),
   );
   if (!contextResult.matched) failures.push("instructions");
 
   const skills = options.skills ?? [];
   const enabledSkills = skills.filter((skill) => !selection.hiddenSkillNames.has(skill.name));
+  const originalSkills = formatSkillsForPrompt(skills);
   const skillResult = replaceLastExact(
     contextResult.value,
-    formatSkillsForPrompt(skills),
-    formatSkillsForPrompt(enabledSkills),
+    originalSkills,
+    enabledSkills.length === skills.length ? originalSkills : formatSkillsForPrompt(enabledSkills),
   );
   if (!skillResult.matched) failures.push("skills");
   return { systemPrompt: skillResult.value, failures };
