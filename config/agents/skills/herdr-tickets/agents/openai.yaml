@@ -1,5 +1,0 @@
-interface:
-  display_name: "Herdr Tickets"
-  short_description: "Run the ticket frontier as one Herdr tab per ticket"
-policy:
-  allow_implicit_invocation: false
