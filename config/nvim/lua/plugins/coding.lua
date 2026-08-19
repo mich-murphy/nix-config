@@ -50,7 +50,8 @@ return {
 	{
 		"nvim-treesitter/nvim-treesitter",
 		branch = "main",
-		lazy = false,
+		event = { "BufReadPre", "BufNewFile" },
+		cmd = { "TSUpdate", "TSInstall" },
 		build = ":TSUpdate",
 		config = function()
 			local treesitter = require("nvim-treesitter")
@@ -211,7 +212,7 @@ return {
 	{
 		"saghen/blink.cmp",
 		version = "1.*",
-		event = { "InsertEnter", "CmdlineEnter", "VeryLazy" },
+		event = { "InsertEnter", "CmdlineEnter" },
 		dependencies = { "rafamadriz/friendly-snippets" },
 		opts = {
 			snippets = { preset = "default" },

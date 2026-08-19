@@ -154,7 +154,6 @@ return {
 	{
 		"gbprod/yanky.nvim",
 		dependencies = { "folke/snacks.nvim" },
-		event = { "BufReadPost", "BufNewFile" },
 		opts = {
 			system_clipboard = { sync_with_ring = not vim.env.SSH_CONNECTION },
 			highlight = { timer = 150 },
@@ -180,7 +179,6 @@ return {
 	{
 		"lmilojevicc/herdr-splits.nvim",
 		cond = vim.env.HERDR_ENV == "1",
-		lazy = false,
 		opts = { at_edge = "stop", nav_at_edge = "stop", unzoom_on_nav = true },
 		keys = {
 			{
