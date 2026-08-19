@@ -14,31 +14,6 @@
       runHook postInstall
     '';
   };
-
-  owncloudClient = pkgs.owncloud-client.overrideAttrs (old: {
-    # Desktop 7 dropped support for ownCloud Classic. Nixpkgs provides 6.0.3,
-    # but its Darwin build requires Sparkle even though auto-updates are off,
-    # and its optional Finder extension cannot be built in the Nix sandbox.
-    postPatch =
-      (old.postPatch or "")
-      + ''
-        substituteInPlace CMakeLists.txt \
-          --replace-fail "find_package(Sparkle REQUIRED)" "find_package(Sparkle)"
-      '';
-    cmakeFlags = (old.cmakeFlags or []) ++ ["-DBUILD_SHELL_INTEGRATION=OFF"];
-    postFixup =
-      (old.postFixup or "")
-      + ''
-        # qtWrapperArgs also wraps executable plugin bundles on Darwin. Restore
-        # the real Mach-O bundles so QPluginLoader can load the VFS plugins.
-        for plugin in "$out/Applications/KDE/owncloud.app/Contents/PlugIns/"*.so; do
-          wrapped="$(dirname "$plugin")/.$(basename "$plugin")-wrapped"
-          if [ -f "$wrapped" ]; then
-            mv -f "$wrapped" "$plugin"
-          fi
-        done
-      '';
-  });
 in {
   environment.variables.HOMEBREW_NO_ENV_HINTS = "1";
 
@@ -49,7 +24,6 @@ in {
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
-    owncloudClient
     plannotator
   ];
 
@@ -94,7 +68,7 @@ in {
       "winbox"
       "xcodes-app"
       "linearmouse"
-      "wispr-flow"
+      "kitlangton-hex"
     ];
     brews = [
       "herdr"
