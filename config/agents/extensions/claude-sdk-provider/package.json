@@ -1,5 +1,5 @@
 {
-  "name": "pi-claude-agent-sdk-provider",
+  "name": "pi-claude-sdk-provider",
   "version": "0.1.0",
   "private": true,
   "type": "module",

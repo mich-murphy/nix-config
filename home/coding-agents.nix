@@ -46,10 +46,10 @@
       path = piExtensionSources + "/moshi-hooks.ts";
     }
     {
-      name = "claude-agent-sdk-provider";
+      name = "claude-sdk-provider";
       path = packagePiExtension {
-        directory = "claude-agent-sdk-provider";
-        npmDepsHash = "sha256-hpMOlhp2A5PxKIDWWzvnkzfPk3OSpYtUNm39ZSWQ1YI=";
+        directory = "claude-sdk-provider";
+        npmDepsHash = "sha256-zOby8sfbCko7W1qmTYkEGxgTVQwZ2EjCMuQ+mpJiXvA=";
       };
     }
     {
