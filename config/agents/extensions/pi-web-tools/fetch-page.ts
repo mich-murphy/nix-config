@@ -97,7 +97,7 @@ export class FetchPage {
 		}
 
 		const decoded = decodeTextBuffer(response.value.body, parsedContentType.charset);
-		const converted = convertText(decoded.text, response.value.finalUrl, parsedContentType.kind, input.format);
+		const converted = await convertText(decoded.text, response.value.finalUrl, parsedContentType.kind, input.format);
 		if (converted._tag === "err") {
 			return converted;
 		}
@@ -150,19 +150,19 @@ export function shouldRetryWithFallbackUserAgent(response: Pick<Response, "statu
 	return response.status === 403 && response.headers.get("cf-mitigated") === "challenge";
 }
 
-function convertText(
+async function convertText(
 	text: string,
 	baseUrl: PublicHttpUrl,
 	kind: "html" | "text" | "svg",
 	format: WebFetchFormat,
-): Result<string, FetchPageError> {
+): Promise<Result<string, FetchPageError>> {
 	try {
 		if (kind === "html" && format === "markdown") {
-			const markdown = htmlToMarkdown(text, baseUrl);
-			return ok(isPoorMarkdownConversion(markdown) ? htmlToText(text, baseUrl) : markdown);
+			const markdown = await htmlToMarkdown(text, baseUrl);
+			return ok(isPoorMarkdownConversion(markdown) ? await htmlToText(text, baseUrl) : markdown);
 		}
 		if (kind === "html" && format === "text") {
-			return ok(htmlToText(text, baseUrl));
+			return ok(await htmlToText(text, baseUrl));
 		}
 		return ok(text);
 	} catch (cause: unknown) {

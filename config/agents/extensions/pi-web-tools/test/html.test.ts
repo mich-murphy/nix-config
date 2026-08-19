@@ -2,35 +2,35 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { htmlToMarkdown, htmlToText, isPoorMarkdownConversion, sanitizeHtml } from "../html.ts";
 
-test("html pipeline removes head and skipped elements without leaking title", () => {
+test("html pipeline removes head and skipped elements without leaking title", async () => {
 	const input = `
 		<html>
 			<head><title>TITLE</title><script>bad()</script></head>
 			<body>start<script>bad()</script><noscript>fallback</noscript><p>end</p></body>
 		</html>
 	`;
-	assert.equal(htmlToText(input, "https://example.com/page"), "start\n\nend");
-	assert.equal(htmlToMarkdown(input, "https://example.com/page"), "start\n\nend");
+	assert.equal(await htmlToText(input, "https://example.com/page"), "start\n\nend");
+	assert.equal(await htmlToMarkdown(input, "https://example.com/page"), "start\n\nend");
 });
 
-test("html text conversion preserves direct tail text after skipped elements", () => {
+test("html text conversion preserves direct tail text after skipped elements", async () => {
 	const input = `<html><body>start<script>bad()</script>tail</body></html>`;
-	assert.equal(htmlToText(input, "https://example.com/page"), "starttail");
+	assert.equal(await htmlToText(input, "https://example.com/page"), "starttail");
 });
 
-test("html text conversion preserves block boundaries", () => {
+test("html text conversion preserves block boundaries", async () => {
 	const input = `<html><body><div>one</div><div>two</div><p>three <span>four</span></p><p>five</p></body></html>`;
-	assert.equal(htmlToText(input, "https://example.com/page"), "one\ntwo\n\nthree four\n\nfive");
+	assert.equal(await htmlToText(input, "https://example.com/page"), "one\ntwo\n\nthree four\n\nfive");
 });
 
-test("sanitizeHtml absolutizes relative links and images", () => {
+test("sanitizeHtml absolutizes relative links and images", async () => {
 	const input = `<html><body><a href="/docs">Docs</a><img src="./image.png"></body></html>`;
-	const sanitized = sanitizeHtml(input, "https://example.com/base/index.html");
+	const sanitized = await sanitizeHtml(input, "https://example.com/base/index.html");
 	assert.match(sanitized, /https:\/\/example\.com\/docs/);
 	assert.match(sanitized, /https:\/\/example\.com\/base\/image\.png/);
 });
 
-test("sanitizeHtml prefers likely main content over surrounding site chrome", () => {
+test("sanitizeHtml prefers likely main content over surrounding site chrome", async () => {
 	const input = `
 		<html>
 			<body>
@@ -45,19 +45,19 @@ test("sanitizeHtml prefers likely main content over surrounding site chrome", ()
 			</body>
 		</html>
 	`;
-	const sanitized = sanitizeHtml(input, "https://example.com/post");
+	const sanitized = await sanitizeHtml(input, "https://example.com/post");
 	assert.match(sanitized, /Article title/);
 	assert.match(sanitized, /Useful content\./);
 	assert.doesNotMatch(sanitized, /Login/);
 	assert.doesNotMatch(sanitized, /Footer links/);
 });
 
-test("html markdown conversion normalizes heading links that wrap block content", () => {
+test("html markdown conversion normalizes heading links that wrap block content", async () => {
 	const input = `<html><body><a href="/story"><h2>Story title</h2></a></body></html>`;
-	assert.equal(htmlToMarkdown(input, "https://example.com/"), "## [Story title](https://example.com/story)");
+	assert.equal(await htmlToMarkdown(input, "https://example.com/"), "## [Story title](https://example.com/story)");
 });
 
-test("html markdown conversion flattens layout tables instead of returning raw table markup", () => {
+test("html markdown conversion flattens layout tables instead of returning raw table markup", async () => {
 	const input = `
 		<html>
 			<body>
@@ -70,7 +70,7 @@ test("html markdown conversion flattens layout tables instead of returning raw t
 			</body>
 		</html>
 	`;
-	const markdown = htmlToMarkdown(input, "https://news.ycombinator.com/");
+	const markdown = await htmlToMarkdown(input, "https://news.ycombinator.com/");
 	assert.match(markdown, /Item title/);
 	assert.match(markdown, /123 points by alice/);
 	assert.doesNotMatch(markdown, /<table|<tr|<td/i);

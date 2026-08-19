@@ -1,6 +1,9 @@
 import { lookup } from "node:dns/promises";
 import { isIP, type LookupFunction } from "node:net";
-import { Agent, fetch as undiciFetch } from "undici";
+// undici is only needed for the DNS-pinned fetch path (blockPrivateHosts),
+// which only runs once a webfetch/websearch call actually goes out to the
+// network. Importing it lazily keeps it off the extension load path.
+import type { Agent as AgentCtor, fetch as UndiciFetch } from "undici";
 import { err, ok, type Result } from "./result.ts";
 import { parsePublicHttpUrl, type ContentKind, type ParsePublicHttpUrlError, type ParsedContentType, type PublicHttpUrl } from "./types.ts";
 import type { PublicWebClient, PublicWebError, PublicWebRequest, PublicWebResponse } from "./public-web-client.ts";
@@ -18,7 +21,16 @@ const TEXT_MIME_TYPES = new Set([
 	"image/svg+xml",
 ]);
 const RASTER_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
-const responseDispatchers = new WeakMap<Response, Agent>();
+const responseDispatchers = new WeakMap<Response, AgentCtor>();
+
+let undiciModule: Promise<{ Agent: typeof AgentCtor; fetch: typeof UndiciFetch }> | undefined;
+
+function loadUndici(): Promise<{ Agent: typeof AgentCtor; fetch: typeof UndiciFetch }> {
+	if (!undiciModule) {
+		undiciModule = import("undici");
+	}
+	return undiciModule;
+}
 
 export interface FetchWithRedirectsOptions {
 	headers: Record<string, string>;
@@ -561,6 +573,7 @@ async function fetchPinnedPublicUrl(url: URL, headers: Record<string, string>, s
 	if (checked._tag === "err") throw new PublicAddressError(checked.error);
 	const addresses = checked.value;
 	const lookupPinned = createPinnedLookup(addresses);
+	const { Agent, fetch: undiciFetch } = await loadUndici();
 	const dispatcher = new Agent({ connect: { lookup: lookupPinned } });
 	try {
 		const response = await undiciFetch(url, { method: "GET", headers, signal, redirect: "manual", dispatcher });

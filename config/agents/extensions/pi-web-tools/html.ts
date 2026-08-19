@@ -1,9 +1,13 @@
-import { convert as convertHtmlToText, compile as compileHtmlToText } from "html-to-text";
-import { Readability } from "@mozilla/readability";
-import { parseHTML } from "linkedom";
-import TurndownService from "turndown";
+// Readability, linkedom, turndown, turndown-plugin-gfm, and html-to-text are
+// only needed once a page is actually converted, and together cost tens of ms
+// to import. Loading them lazily keeps extension startup from paying that
+// cost when webfetch is never invoked in a session.
+import type { convert as ConvertHtmlToText } from "html-to-text";
+import type { Readability as ReadabilityCtor } from "@mozilla/readability";
+import type { parseHTML as ParseHtml } from "linkedom";
+import type TurndownServiceCtor from "turndown";
 // turndown-plugin-gfm does not ship ESM-friendly typings.
-import { gfm } from "turndown-plugin-gfm";
+import type { gfm as Gfm } from "turndown-plugin-gfm";
 
 const REMOVAL_SELECTOR = [
 	"head",
@@ -65,31 +69,67 @@ const PREFERRED_CONTENT_SELECTORS = [
 	".story",
 ];
 
+// Matching each selector above against the whole document separately costs
+// one full-document traversal per selector even when it matches nothing.
+// Querying the union once and re-partitioning it with `.matches()` (cheap:
+// only runs against the union's own, typically tiny, element set) keeps the
+// exact per-selector candidate lists — and therefore the exact selection
+// result — while paying for a single document traversal instead of one per
+// selector.
+const COMBINED_PREFERRED_CONTENT_SELECTOR = PREFERRED_CONTENT_SELECTORS.join(", ");
+
 const BOILERPLATE_TOKEN_RE =
 	/(^|[-_\s])(nav(?:igation)?|header|footer|sidebar|aside|menu|dialog|modal|cookie|consent|promo|advert|social|share|breadcrumb|pagination|pager|toolbar|search|newsletter|subscribe|signup|login|banner|related|recommendation)s?($|[-_\s])/i;
 
 const RAW_HTML_BLOCK_TAG_RE = /<(table|tbody|thead|tfoot|tr|td|th|div|section|article|main|header|footer|nav|aside)\b/gi;
 
-const turndown = createTurndownService();
-const compiledHtmlToText = compileHtmlToText({
-	baseElements: {
-		selectors: ["body", "main", "article", "div"],
-		returnDomByDefault: true,
-	},
-	wordwrap: false,
-	selectors: [
-		{ selector: "img", format: "skip" },
-		{ selector: "table", format: "dataTable", options: { uppercaseHeaderCells: false } },
-		{ selector: "h1", options: { uppercase: false } },
-		{ selector: "h2", options: { uppercase: false } },
-		{ selector: "h3", options: { uppercase: false } },
-		{ selector: "h4", options: { uppercase: false } },
-		{ selector: "h5", options: { uppercase: false } },
-		{ selector: "h6", options: { uppercase: false } },
-	],
-});
+interface HtmlDeps {
+	readonly parseHTML: typeof ParseHtml;
+	readonly Readability: typeof ReadabilityCtor;
+	readonly turndown: TurndownServiceCtor;
+	readonly convertHtmlToText: typeof ConvertHtmlToText;
+	readonly htmlToTextConverter: (html: string) => string;
+}
 
-export function sanitizeHtml(rawHtml: string, baseUrl: string): string {
+let htmlDeps: Promise<HtmlDeps> | undefined;
+
+function loadHtmlDeps(): Promise<HtmlDeps> {
+	if (!htmlDeps) {
+		htmlDeps = Promise.all([
+			import("linkedom"),
+			import("@mozilla/readability"),
+			import("turndown"),
+			import("turndown-plugin-gfm"),
+			import("html-to-text"),
+		]).then(([linkedom, readability, turndownModule, gfmModule, htmlToTextModule]) => ({
+			parseHTML: linkedom.parseHTML,
+			Readability: readability.Readability,
+			turndown: createTurndownService(turndownModule.default, gfmModule.gfm),
+			convertHtmlToText: htmlToTextModule.convert,
+			htmlToTextConverter: htmlToTextModule.compile({
+				baseElements: {
+					selectors: ["body", "main", "article", "div"],
+					returnDomByDefault: true,
+				},
+				wordwrap: false,
+				selectors: [
+					{ selector: "img", format: "skip" },
+					{ selector: "table", format: "dataTable", options: { uppercaseHeaderCells: false } },
+					{ selector: "h1", options: { uppercase: false } },
+					{ selector: "h2", options: { uppercase: false } },
+					{ selector: "h3", options: { uppercase: false } },
+					{ selector: "h4", options: { uppercase: false } },
+					{ selector: "h5", options: { uppercase: false } },
+					{ selector: "h6", options: { uppercase: false } },
+				],
+			}),
+		}));
+	}
+	return htmlDeps;
+}
+
+export async function sanitizeHtml(rawHtml: string, baseUrl: string): Promise<string> {
+	const { parseHTML } = await loadHtmlDeps();
 	const { document } = parseHTML(rawHtml);
 	const root = extractReadableRoot(document);
 
@@ -135,19 +175,22 @@ export function sanitizeHtml(rawHtml: string, baseUrl: string): string {
 	return `<div>${root.innerHTML}</div>`;
 }
 
-export function htmlToMarkdown(rawHtml: string, baseUrl: string): string {
-	const sanitizedHtml = sanitizeHtml(extractReadableHtml(rawHtml, baseUrl), baseUrl);
-	const markdown = turndown.turndown(sanitizedHtml);
+export async function htmlToMarkdown(rawHtml: string, baseUrl: string): Promise<string> {
+	const deps = await loadHtmlDeps();
+	const sanitizedHtml = await sanitizeHtml(await extractReadableHtml(rawHtml, baseUrl, deps), baseUrl);
+	const markdown = deps.turndown.turndown(sanitizedHtml);
 	return cleanupMarkdown(markdown);
 }
 
-export function htmlToText(rawHtml: string, baseUrl: string): string {
-	const sanitizedHtml = sanitizeHtml(extractReadableHtml(rawHtml, baseUrl), baseUrl);
-	const text = htmlToTextConverter(sanitizedHtml);
+export async function htmlToText(rawHtml: string, baseUrl: string): Promise<string> {
+	const deps = await loadHtmlDeps();
+	const sanitizedHtml = await sanitizeHtml(await extractReadableHtml(rawHtml, baseUrl, deps), baseUrl);
+	const text = deps.htmlToTextConverter(sanitizedHtml);
 	return cleanupText(text);
 }
 
-export function htmlToTextFallback(rawHtml: string): string {
+export async function htmlToTextFallback(rawHtml: string): Promise<string> {
+	const { convertHtmlToText } = await loadHtmlDeps();
 	return cleanupText(convertHtmlToText(rawHtml, { wordwrap: false }));
 }
 
@@ -158,7 +201,8 @@ export function isPoorMarkdownConversion(markdown: string): boolean {
 	return false;
 }
 
-function extractReadableHtml(rawHtml: string, baseUrl: string): string {
+async function extractReadableHtml(rawHtml: string, baseUrl: string, deps?: HtmlDeps): Promise<string> {
+	const { parseHTML, Readability } = deps ?? (await loadHtmlDeps());
 	try {
 		const { document } = parseHTML(rawHtml);
 		const parsed = new Readability(document, { charThreshold: 200 }).parse();
@@ -171,11 +215,7 @@ function extractReadableHtml(rawHtml: string, baseUrl: string): string {
 	return rawHtml;
 }
 
-function htmlToTextConverter(html: string): string {
-	return compiledHtmlToText(html);
-}
-
-function createTurndownService(): TurndownService {
+function createTurndownService(TurndownService: typeof TurndownServiceCtor, gfm: typeof Gfm): TurndownServiceCtor {
 	const service = new TurndownService({
 		headingStyle: "atx",
 		hr: "---",
@@ -188,8 +228,10 @@ function createTurndownService(): TurndownService {
 }
 
 function extractReadableRoot(document: Document): Element {
+	const preferredCandidatePool = Array.from(document.querySelectorAll(COMBINED_PREFERRED_CONTENT_SELECTOR));
 	for (const selector of PREFERRED_CONTENT_SELECTORS) {
-		const match = pickBestCandidate(Array.from(document.querySelectorAll(selector)));
+		const matched = preferredCandidatePool.filter((element) => matchesAnySelector(element, selector));
+		const match = pickBestCandidate(matched);
 		if (match) {
 			return cloneElement(match);
 		}
@@ -220,13 +262,31 @@ function scoreContentCandidate(element: Element): number {
 	const textLength = getNormalizedText(element).length;
 	if (textLength === 0) return Number.NEGATIVE_INFINITY;
 
-	const linkTextLength = Array.from(element.querySelectorAll("a"))
-		.map((link) => getNormalizedText(link).length)
-		.reduce((total, value) => total + value, 0);
-	const paragraphCount = element.querySelectorAll("p").length;
-	const listItemCount = element.querySelectorAll("li").length;
+	// One combined query + a tagName switch replaces four separate subtree
+	// scans (a, p, li, table); pickBestCandidate can run this per-candidate
+	// scoring over hundreds of elements when a page has no recognized
+	// content container, so each scan saved here is saved that many times.
+	let linkTextLength = 0;
+	let paragraphCount = 0;
+	let listItemCount = 0;
+	let tableCount = 0;
+	for (const node of element.querySelectorAll("a, p, li, table")) {
+		switch (node.tagName) {
+			case "A":
+				linkTextLength += getNormalizedText(node).length;
+				break;
+			case "P":
+				paragraphCount++;
+				break;
+			case "LI":
+				listItemCount++;
+				break;
+			case "TABLE":
+				tableCount++;
+				break;
+		}
+	}
 	const headingCount = element.querySelectorAll("h1, h2, h3, h4, h5, h6").length;
-	const tableCount = element.querySelectorAll("table").length;
 	const ownPenalty = isBoilerplateElement(element) ? 800 : 0;
 	const linkDensity = textLength > 0 ? linkTextLength / textLength : 1;
 
