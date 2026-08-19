@@ -4,6 +4,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   utimesSync,
@@ -112,7 +113,7 @@ describe("SkillToggleStore", () => {
       { kind: "instruction", id: join(alias, "AGENTS.md"), before: "inherit", after: "excluded" },
     ]));
     expect(state.store.load({ cwd: project }).directoryInstructions).toEqual({
-      [join(project, "AGENTS.md")]: "excluded",
+      [realpathSync.native(join(project, "AGENTS.md"))]: "excluded",
     });
   });
 

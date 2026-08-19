@@ -1,10 +1,11 @@
+import { basename } from "node:path";
 import type {
   BuildSystemPromptOptions,
   ExtensionAPI,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
-import { Container, SettingsList, Text } from "@earendil-works/pi-tui";
+import { Container, SettingsList, Text, visibleWidth } from "@earendil-works/pi-tui";
 import {
   SkillPolicy,
   type EffectivePolicy,
@@ -25,6 +26,19 @@ import {
 import { SkillToggleStore } from "./state";
 
 const STATUS_KEY = "pi-skill-toggle";
+const CONTEXT_FILE_NAMES = new Set(["CLAUDE.md", "AGENTS.md"]);
+
+// Right-aligns a single line of pre-themed text above the editor, matching
+// the footer's own right-aligned model/stats line.
+function rightAlignedWidget(text: string) {
+  return {
+    render(width: number): string[] {
+      const padding = Math.max(0, width - visibleWidth(text) - 1);
+      return [" ".repeat(padding) + text];
+    },
+    invalidate(): void {},
+  };
+}
 
 export default function skillToggle(pi: ExtensionAPI) {
   registerSkillToggle(pi, new SkillToggleStore());
@@ -90,18 +104,29 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     failed = false,
   ): void {
     if (failed) {
-      ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("error", "skills !"));
+      ctx.ui.setWidget(
+        STATUS_KEY,
+        (_tui, theme) => rightAlignedWidget(theme.fg("error", "skills !")),
+        { placement: "aboveEditor" },
+      );
       return;
     }
     if (!effective) {
-      ctx.ui.setStatus(STATUS_KEY, undefined);
+      ctx.ui.setWidget(STATUS_KEY, undefined);
       return;
     }
-    const disabled = effective.instructions.filter((item) => item.visibility === "excluded").length
-      + effective.skills.filter((item) => item.visibility === "manual-only").length;
-    ctx.ui.setStatus(
+    const contextFile = effective.instructions.find(
+      (item) => item.visibility === "included" && CONTEXT_FILE_NAMES.has(basename(item.path)),
+    );
+    const loadedSkills = effective.skills.filter((item) => item.visibility === "visible").length;
+    ctx.ui.setWidget(
       STATUS_KEY,
-      disabled > 0 ? ctx.ui.theme.fg("warning", `skills −${disabled}`) : undefined,
+      (_tui, theme) => {
+        const parts = contextFile ? [basename(contextFile.path)] : [];
+        parts.push(`skills ${loadedSkills}`);
+        return rightAlignedWidget(theme.fg("dim", parts.join(" ")));
+      },
+      { placement: "aboveEditor" },
     );
   }
 
@@ -219,7 +244,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     current = undefined;
     lastRefreshFailure = "";
     lastPromptFailure = "";
-    ctx.ui.setStatus(STATUS_KEY, undefined);
+    ctx.ui.setWidget(STATUS_KEY, undefined);
   });
 
   pi.on("before_agent_start", async (event, ctx) => {

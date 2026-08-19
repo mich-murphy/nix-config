@@ -32,6 +32,7 @@ function harness(store: PolicyStateAdapter) {
   const commands = new Map<string, unknown>();
   const statuses: Array<string | undefined> = [];
   const notifications: string[] = [];
+  const widgetPlacements: Array<"aboveEditor" | "belowEditor" | undefined> = [];
   const pi = {
     on(name: string, handler: (event: any, ctx: any) => any) {
       handlers.set(name, [...(handlers.get(name) ?? []), handler]);
@@ -40,6 +41,7 @@ function harness(store: PolicyStateAdapter) {
       commands.set(name, command);
     },
   };
+  const themeMock = { fg: (_color: string, text: string) => text };
   const ctx: any = {
     cwd: "/work/one",
     mode: "tui",
@@ -49,8 +51,21 @@ function harness(store: PolicyStateAdapter) {
       getSessionId: () => "session",
     },
     ui: {
-      theme: { fg: (_color: string, text: string) => text },
-      setStatus: (_key: string, value: string | undefined) => statuses.push(value),
+      theme: themeMock,
+      setWidget: (
+        _key: string,
+        content: string[] | ((tui: unknown, theme: typeof themeMock) => { render(width: number): string[] }) | undefined,
+        options?: { placement?: "aboveEditor" | "belowEditor" },
+      ) => {
+        if (content === undefined) {
+          statuses.push(undefined);
+          widgetPlacements.push(undefined);
+          return;
+        }
+        const lines = typeof content === "function" ? content(undefined, themeMock).render(200) : content;
+        statuses.push(lines[0]?.trim());
+        widgetPlacements.push(options?.placement);
+      },
       notify: (message: string) => notifications.push(message),
     },
   };
@@ -60,7 +75,7 @@ function harness(store: PolicyStateAdapter) {
     for (const handler of handlers.get(name) ?? []) result = await handler(event, ctx);
     return result;
   };
-  return { commands, ctx, emit, statuses, notifications };
+  return { commands, ctx, emit, statuses, notifications, widgetPlacements };
 }
 
 describe("extension lifecycle", () => {
@@ -103,7 +118,9 @@ describe("extension lifecycle", () => {
     unhealthy = false;
     result = await test.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
     expect(result.systemPrompt).toBe(unchanged);
-    expect(test.statuses.at(-1)).toBeUndefined();
+    // Recovery in /work/two resolves "deploy" as visible (not hidden there), so
+    // the widget now reports the loaded-skill count instead of being cleared.
+    expect(test.statuses.at(-1)).toBe("skills 1");
   });
 
   test.each(["new", "resume", "fork", "reload"])("clears status across %s session replacement", async (reason) => {
