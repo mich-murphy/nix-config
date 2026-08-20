@@ -12,11 +12,35 @@ Do not send a commentary/status message before running the command. The command
 targets the latest rendered assistant response, so a preamble can mistakenly become the
 thing being annotated.
 
-Run:
+When running under Pi, use `PI_SESSION_FILE` to select the invoking session
+explicitly. Extract the most recent assistant message that contains rendered text and
+pass it on stdin, bypassing Plannotator's ambiguous project-wide mtime lookup:
 
 ```bash
-plannotator last
+if [[ -n "${PI_SESSION_FILE:-}" && -f "$PI_SESSION_FILE" ]]; then
+  message=$(jq -rs '
+    [ .[]
+      | select(.type == "message" and .message.role == "assistant")
+      | [ .message.content[]? | select(.type == "text") | .text ]
+      | join("\n\n")
+      | select(length > 0)
+    ]
+    | last // empty
+  ' "$PI_SESSION_FILE")
+  if [[ -z "$message" ]]; then
+    echo "No rendered assistant message found in $PI_SESSION_FILE" >&2
+    exit 1
+  fi
+  printf '%s\n' "$message" | plannotator last --stdin
+else
+  plannotator last
+fi
 ```
+
+Do not simplify the Pi branch to `plannotator last`: when several Pi processes are
+open in related directories, Plannotator may otherwise choose another process's session
+by modification time. The fallback is for harnesses that do not expose
+`PI_SESSION_FILE`.
 
 Behavior:
 
