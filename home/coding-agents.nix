@@ -49,7 +49,7 @@
       name = "claude-sdk-provider";
       path = packagePiExtension {
         directory = "claude-sdk-provider";
-        npmDepsHash = "sha256-zOby8sfbCko7W1qmTYkEGxgTVQwZ2EjCMuQ+mpJiXvA=";
+        npmDepsHash = "sha256-ep5H2levq+9BUi7ihSzUpXb0iAiYTgC5Pw3e51Pb0XA=";
       };
     }
     {

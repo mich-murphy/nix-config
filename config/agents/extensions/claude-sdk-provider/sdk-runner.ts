@@ -3,6 +3,7 @@ import type { HookCallback, SDKUserMessage } from "@anthropic-ai/claude-agent-sd
 import type { Api, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { z } from "zod";
 import type { AgentRequest, AgentSdkRun, BridgeEvent, ImageAttachment, PromptBlock } from "./bridge";
+import { cacheDiagnosticsFromEnvironment, type CacheDiagnosticTracker } from "./cache-diagnostics";
 
 // query()'s plain-string `prompt` path (see node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs,
 // function IT: `t.write(fe({type:"user",...,message:{role:"user",content:[{type:"text",text:r}]}})...)`)
@@ -290,7 +291,10 @@ export function createPreToolUseHook(
   };
 }
 
-export function createClaudeAgentSdkRunner(runSdkQuery: RunSdkQuery = query): AgentSdkRun {
+export function createClaudeAgentSdkRunner(
+  runSdkQuery: RunSdkQuery = query,
+  cacheDiagnostics: CacheDiagnosticTracker | undefined = cacheDiagnosticsFromEnvironment(),
+): AgentSdkRun {
   return async function* runClaudeAgentSdk(
     request: AgentRequest,
     model: Model<Api>,
@@ -300,6 +304,8 @@ export function createClaudeAgentSdkRunner(runSdkQuery: RunSdkQuery = query): Ag
     const onAbort = () => abortController.abort();
     options?.signal?.addEventListener("abort", onAbort, { once: true });
 
+    const diagnosticTurn = cacheDiagnostics?.request(`${model.provider}/${model.id}`, request.promptBlocks);
+    let latestUsage: Extract<BridgeEvent, { type: "usage" }> | undefined;
     const availableTools = new Set(request.toolNames);
     const deferredCalls = new Map<string, DeferredCall>();
     let deferredError: Error | undefined;
@@ -343,6 +349,7 @@ export function createClaudeAgentSdkRunner(runSdkQuery: RunSdkQuery = query): Ag
             continue;
           }
           const translated = translateSdkStreamEvent(message);
+          if (translated?.type === "usage") latestUsage = translated;
           if (translated) yield translated;
         }
       } catch (error) {
@@ -352,6 +359,7 @@ export function createClaudeAgentSdkRunner(runSdkQuery: RunSdkQuery = query): Ag
         if (deferredCalls.size === 0) throw error;
       }
 
+      if (diagnosticTurn !== undefined && latestUsage) cacheDiagnostics?.usage(diagnosticTurn, latestUsage);
       if (deferredError) throw deferredError;
       if (outcome?.isError) throw new Error(outcome.errorMessage);
       if (deferredCalls.size > 0) {
