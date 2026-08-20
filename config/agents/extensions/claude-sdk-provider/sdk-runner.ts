@@ -210,9 +210,40 @@ interface DeferredPiCallInput {
 // every turn instead of re-deriving it on every call to
 // createClaudeAgentSdkRunner()'s generator.
 const PI_CALL_INPUT_SCHEMA = {
-  name: z.string().describe("Exact Pi tool name from the available-tools catalog"),
+  name: z
+    .string()
+    .describe('Exact Pi tool name from the available-tools catalog — never "pi_call" itself, which is this gateway\'s own name'),
   arguments: z.record(z.string(), z.unknown()).describe("Arguments matching that Pi tool's input schema"),
 };
+
+// A short, concrete sample instead of the whole catalog keeps the deny
+// reason readable while still giving the model real names to retry with.
+function sampleToolNames(availableTools: ReadonlySet<string>): string {
+  const names = [...availableTools].slice(0, 5);
+  return names.length > 0 ? names.join(", ") : "(no Pi tools are available this turn)";
+}
+
+// "pi_call" is the gateway's own top-level tool name; a model that passes it
+// back as the *inner* name is recursing on itself, not naming a real Pi
+// tool. That's a recognizable, recurring confusion mode (it killed a real
+// production turn — see sdk-runner.ts's PreToolUse hook comment), so it gets
+// its own targeted correction instead of a generic "unknown tool" message.
+function invalidDeferredCallMessage(
+  availableTools: ReadonlySet<string>,
+  requestedName: string,
+  hasArguments: boolean,
+): string {
+  if (requestedName === "pi_call") {
+    return (
+      `Invalid Pi tool call: "pi_call" is this gateway's own name, not a Pi tool — do not pass it as ` +
+      `the "name" field. Pass the target Pi tool's name instead, e.g. ${sampleToolNames(availableTools)}.`
+    );
+  }
+  if (!hasArguments) {
+    return `Invalid Pi tool call: "arguments" must be an object matching "${requestedName || "<missing>"}"'s input schema.`;
+  }
+  return `Invalid Pi tool call: "${requestedName || "<missing>"}" is not a recognized Pi tool. Available tools: ${sampleToolNames(availableTools)}.`;
+}
 
 function validateDeferredCall(
   availableTools: ReadonlySet<string>,
@@ -221,13 +252,13 @@ function validateDeferredCall(
   const fields = record(input);
   const requestedName = typeof fields?.name === "string" ? fields.name : "";
   const requestedArguments = record(fields?.arguments);
-  if (!availableTools.has(requestedName) || !requestedArguments) {
-    return {
-      ok: false,
-      error: new Error(`Claude requested an invalid Pi tool call: ${requestedName || "<missing>"}`),
-    };
+  if (availableTools.has(requestedName) && requestedArguments) {
+    return { ok: true, call: { name: requestedName, arguments: requestedArguments } };
   }
-  return { ok: true, call: { name: requestedName, arguments: requestedArguments } };
+  return {
+    ok: false,
+    error: new Error(invalidDeferredCallMessage(availableTools, requestedName, requestedArguments !== undefined)),
+  };
 }
 
 // tool() requires a handler, but PreToolUse defer normally resolves the call
@@ -256,11 +287,20 @@ const DEFERRED_PI_CALL_HANDLER = createDeferredPiCallHandler();
 
 // permissionDecision: "defer" ends query() cleanly (terminal_reason:
 // "tool_deferred") with no abort needed — the query finishes once every
-// pending tool_use in the turn is resolved. Any other tool name is denied.
+// pending tool_use in the turn is resolved. Any other top-level tool name,
+// and an invalid pi_call request (unknown inner name, the self-referential
+// "pi_call", or missing/malformed arguments), are merely denied with a
+// corrective reason: the deny round-trips to the model as a tool result and
+// the SDK's own loop keeps running, so one bad request doesn't kill the
+// turn and the model can retry within the same query(). onInvalidCall only
+// records the failure; it is the caller's job (see
+// createClaudeAgentSdkRunner) to decide whether repeated failures should
+// eventually become fatal — this hook never ends the turn on its own for an
+// invalid inner call.
 export function createPreToolUseHook(
   availableTools: ReadonlySet<string>,
   onToolCall: (toolCall: DeferredCall) => void,
-  onError: (error: Error) => void,
+  onInvalidCall: (error: Error) => void,
 ): HookCallback {
   return async (input) => {
     if (input.hook_event_name !== "PreToolUse") return {};
@@ -276,7 +316,7 @@ export function createPreToolUseHook(
 
     const validated = validateDeferredCall(availableTools, input.tool_input);
     if (!validated.ok) {
-      onError(validated.error);
+      onInvalidCall(validated.error);
       return {
         hookSpecificOutput: {
           hookEventName: "PreToolUse",
@@ -312,7 +352,20 @@ export function createClaudeAgentSdkRunner(
     const onToolCall = (call: DeferredCall) => {
       if (!deferredCalls.has(call.id)) deferredCalls.set(call.id, call);
     };
-    const onError = (error: Error) => {
+    // An invalid pi_call request is denied, not fatal, on its own (see
+    // createPreToolUseHook) — the SDK's own loop keeps running so the model
+    // can retry within this same query(). Cap repeated failures anyway: 3
+    // invalid attempts is enough for an ordinary self-correction (the model
+    // sees the deny reason and fixes its next call) but stops a model stuck
+    // resubmitting the same broken request from spinning the turn forever.
+    // Only once the cap is exceeded does this become the fatal error thrown
+    // below, mirroring the pre-existing deferredError contract for a
+    // transport-level failure.
+    const MAX_INVALID_PI_CALLS = 3;
+    let invalidCallCount = 0;
+    const onInvalidCall = (error: Error) => {
+      invalidCallCount += 1;
+      if (invalidCallCount <= MAX_INVALID_PI_CALLS) return;
       deferredError ??= error;
     };
 
@@ -335,14 +388,19 @@ export function createClaudeAgentSdkRunner(
           tools: [],
           mcpServers: { pi: server },
           env: subscriptionEnvironment(),
-          hooks: { PreToolUse: [{ hooks: [createPreToolUseHook(availableTools, onToolCall, onError)] }] },
+          hooks: { PreToolUse: [{ hooks: [createPreToolUseHook(availableTools, onToolCall, onInvalidCall)] }] },
         },
       });
 
       let outcome: ResultOutcome | undefined;
       try {
         for await (const message of sdkQuery) {
-          if (deferredError) throw deferredError;
+          // The cap-exceeded error only becomes fatal if the turn ends with
+          // nothing to show for it. A valid pi_call captured alongside (or
+          // before) the invalid attempts that tripped the cap is real
+          // progress the invalid attempts don't undo — see the post-loop
+          // check below for the full precedence this mirrors.
+          if (deferredError && deferredCalls.size === 0) throw deferredError;
           const asRecord = record(message);
           if (asRecord?.type === "result") {
             outcome = resultOutcome(asRecord);
@@ -354,14 +412,19 @@ export function createClaudeAgentSdkRunner(
         }
       } catch (error) {
         // A hook-deferred call ends the query on its own; only rethrow if
-        // nothing was captured (e.g. a transport error).
-        if (deferredError) throw deferredError;
+        // nothing was captured (e.g. a transport error, or the cap-exceeded
+        // error thrown above when no valid pi_call was ever captured).
+        if (deferredError && deferredCalls.size === 0) throw deferredError;
         if (deferredCalls.size === 0) throw error;
       }
 
       if (diagnosticTurn !== undefined && latestUsage) cacheDiagnostics?.usage(diagnosticTurn, latestUsage);
-      if (deferredError) throw deferredError;
+      // A disagreeing SDK result always wins, checked ahead of the cap.
       if (outcome?.isError) throw new Error(outcome.errorMessage);
+      // Cap ranks below both a disagreeing SDK result and any captured
+      // call: it only surfaces when the turn produced no valid pi_call at
+      // all, i.e. the model spent the whole turn failing to make one.
+      if (deferredError && deferredCalls.size === 0) throw deferredError;
       if (deferredCalls.size > 0) {
         for (const call of deferredCalls.values()) yield { type: "tool_call", ...call };
         return;

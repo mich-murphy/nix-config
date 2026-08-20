@@ -440,7 +440,9 @@ describe("serializeConversation", () => {
     expect(capturedError).toBeUndefined();
     expect(secondTurnEvents).toEqual([{ type: "tool_call", id: "toolu_b", name: "write", arguments: {} }]);
 
-    // And a tool name valid in turn one but not turn two must still be rejected in turn two.
+    // And a tool name valid in turn one but not turn two must still be denied in turn
+    // two — but denial alone is non-fatal (see the invalid-pi_call contract below), so
+    // this ends the turn cleanly with "done" rather than throwing.
     const thirdRunner = createClaudeAgentSdkRunner(makeRun("toolu_c", "read"));
     const thirdRequest: AgentRequest = {
       systemPrompt: "s",
@@ -450,12 +452,263 @@ describe("serializeConversation", () => {
       conversationEntries: [],
     };
     const thirdEvents: BridgeEvent[] = [];
+    for await (const event of thirdRunner(thirdRequest, model)) thirdEvents.push(event);
+    expect(thirdEvents).toEqual([{ type: "done", reason: "stop" }]);
+  });
+
+  test("lets the model retry after an invalid pi_call within the same query instead of ending the turn", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "Use tools when needed.",
+      promptBlocks: [{ text: "Read package.json" }],
+      toolDescription: "stable tools",
+      toolNames: ["read"],
+      conversationEntries: [],
+    };
+    const model = {
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-sdk">;
+
+    const runSdkQuery: RunSdkQuery = async function* (params) {
+      const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
+      if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
+      // First attempt: the recognizable "pi_call as its own inner name" mistake.
+      await hook(
+        {
+          hook_event_name: "PreToolUse",
+          tool_name: "mcp__pi__pi_call",
+          tool_use_id: "toolu_bad",
+          tool_input: { name: "pi_call", arguments: {} },
+        } as Parameters<typeof hook>[0],
+        "toolu_bad",
+        { signal: new AbortController().signal },
+      );
+      // The model corrects itself later in the same query() call.
+      await hook(
+        {
+          hook_event_name: "PreToolUse",
+          tool_name: "mcp__pi__pi_call",
+          tool_use_id: "toolu_good",
+          tool_input: { name: "read", arguments: { path: "package.json" } },
+        } as Parameters<typeof hook>[0],
+        "toolu_good",
+        { signal: new AbortController().signal },
+      );
+      yield { type: "result", is_error: false, stop_reason: null, terminal_reason: "tool_deferred" };
+    };
+
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const events: BridgeEvent[] = [];
+    for await (const event of runner(request, model)) events.push(event);
+
+    expect(events).toEqual([{ type: "tool_call", id: "toolu_good", name: "read", arguments: { path: "package.json" } }]);
+  });
+
+  test("caps repeated invalid pi_call attempts instead of letting the model loop forever, then surfaces a real error", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "Use tools when needed.",
+      promptBlocks: [{ text: "Read package.json" }],
+      toolDescription: "stable tools",
+      toolNames: ["read"],
+      conversationEntries: [],
+    };
+    const model = {
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-sdk">;
+
+    const runSdkQuery: RunSdkQuery = async function* (params) {
+      const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
+      if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
+      // One more than MAX_INVALID_PI_CALLS (3) in createClaudeAgentSdkRunner — the
+      // model never self-corrects, so this must eventually become a real error
+      // instead of denying forever.
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        await hook(
+          {
+            hook_event_name: "PreToolUse",
+            tool_name: "mcp__pi__pi_call",
+            tool_use_id: `toolu_bad_${attempt}`,
+            tool_input: { name: "pi_call", arguments: {} },
+          } as Parameters<typeof hook>[0],
+          `toolu_bad_${attempt}`,
+          { signal: new AbortController().signal },
+        );
+      }
+      yield { type: "result", is_error: false, stop_reason: null, terminal_reason: "tool_deferred" };
+    };
+
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const events: BridgeEvent[] = [];
     await expect(
       (async () => {
-        for await (const event of thirdRunner(thirdRequest, model)) thirdEvents.push(event);
+        for await (const event of runner(request, model)) events.push(event);
       })(),
-    ).rejects.toThrow("Claude requested an invalid Pi tool call: read");
-    expect(thirdEvents).toEqual([]);
+    ).rejects.toThrow(/pi_call.*is this gateway's own name/);
+    expect(events).toEqual([]);
+  });
+
+  test("tolerates exactly MAX_INVALID_PI_CALLS invalid attempts before a valid one — the cap is inclusive, not exclusive", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "Use tools when needed.",
+      promptBlocks: [{ text: "Read package.json" }],
+      toolDescription: "stable tools",
+      toolNames: ["read"],
+      conversationEntries: [],
+    };
+    const model = {
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-sdk">;
+
+    const runSdkQuery: RunSdkQuery = async function* (params) {
+      const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
+      if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
+      // Exactly MAX_INVALID_PI_CALLS (3) invalid attempts — one short of the
+      // cap trip point — followed by a valid request in the same query().
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await hook(
+          {
+            hook_event_name: "PreToolUse",
+            tool_name: "mcp__pi__pi_call",
+            tool_use_id: `toolu_bad_${attempt}`,
+            tool_input: { name: "pi_call", arguments: {} },
+          } as Parameters<typeof hook>[0],
+          `toolu_bad_${attempt}`,
+          { signal: new AbortController().signal },
+        );
+      }
+      await hook(
+        {
+          hook_event_name: "PreToolUse",
+          tool_name: "mcp__pi__pi_call",
+          tool_use_id: "toolu_good",
+          tool_input: { name: "read", arguments: { path: "package.json" } },
+        } as Parameters<typeof hook>[0],
+        "toolu_good",
+        { signal: new AbortController().signal },
+      );
+      yield { type: "result", is_error: false, stop_reason: null, terminal_reason: "tool_deferred" };
+    };
+
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const events: BridgeEvent[] = [];
+    for await (const event of runner(request, model)) events.push(event);
+
+    expect(events).toEqual([{ type: "tool_call", id: "toolu_good", name: "read", arguments: { path: "package.json" } }]);
+  });
+
+  test("hands a captured valid pi_call to Pi even when other invalid attempts in the same turn exceed the cap", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "Use tools when needed.",
+      promptBlocks: [{ text: "Read package.json" }],
+      toolDescription: "stable tools",
+      toolNames: ["read"],
+      conversationEntries: [],
+    };
+    const model = {
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-sdk">;
+
+    const runSdkQuery: RunSdkQuery = async function* (params) {
+      const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
+      if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
+      // 4 invalid attempts — one past MAX_INVALID_PI_CALLS (3) — plus a
+      // valid request batched into the same turn (e.g. parallel tool use).
+      // The cap trips, but the valid call was already captured, so it must
+      // still reach Pi instead of the turn hard-erroring.
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        await hook(
+          {
+            hook_event_name: "PreToolUse",
+            tool_name: "mcp__pi__pi_call",
+            tool_use_id: `toolu_bad_${attempt}`,
+            tool_input: { name: "pi_call", arguments: {} },
+          } as Parameters<typeof hook>[0],
+          `toolu_bad_${attempt}`,
+          { signal: new AbortController().signal },
+        );
+      }
+      await hook(
+        {
+          hook_event_name: "PreToolUse",
+          tool_name: "mcp__pi__pi_call",
+          tool_use_id: "toolu_good",
+          tool_input: { name: "read", arguments: { path: "package.json" } },
+        } as Parameters<typeof hook>[0],
+        "toolu_good",
+        { signal: new AbortController().signal },
+      );
+      yield { type: "result", is_error: false, stop_reason: null, terminal_reason: "tool_deferred" };
+    };
+
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const events: BridgeEvent[] = [];
+    for await (const event of runner(request, model)) events.push(event);
+
+    expect(events).toEqual([{ type: "tool_call", id: "toolu_good", name: "read", arguments: { path: "package.json" } }]);
+  });
+
+  // The "tolerates exactly MAX_INVALID_PI_CALLS..." test above (3 invalid +
+  // 1 valid) cannot pin the cap value 3 on its own: once a valid call is
+  // captured, "captured calls win over the cap" (the test right above this
+  // one) makes that scenario succeed under ANY cap value, not just 3. This
+  // test isolates the fencepost by never capturing a valid call at all, so
+  // the cap's own pass/fail boundary is the only thing that can end the
+  // turn cleanly. Paired with the existing "caps repeated invalid pi_call
+  // attempts..." test above (4 invalid, 0 valid, expects a throw), the two
+  // together pin the cap at exactly 3: this test fails if the cap drops to
+  // 2 (3 invalid attempts would then exceed it and throw instead of ending
+  // cleanly), and that test fails if the cap rises to 4 (4 invalid attempts
+  // would then no longer exceed it, so it would end cleanly instead of
+  // throwing). Verified both directions by hand — see the round-3 fix
+  // report for the constant-swap evidence.
+  test("ends a turn cleanly at exactly MAX_INVALID_PI_CALLS invalid attempts with no valid pi_call ever captured", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "Use tools when needed.",
+      promptBlocks: [{ text: "Read package.json" }],
+      toolDescription: "stable tools",
+      toolNames: ["read"],
+      conversationEntries: [],
+    };
+    const model = {
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-sdk">;
+
+    const runSdkQuery: RunSdkQuery = async function* (params) {
+      const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
+      if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
+      // Exactly MAX_INVALID_PI_CALLS (3) invalid attempts, at the boundary,
+      // not past it — and no valid pi_call at all this turn. The query
+      // then ends the ordinary way (a normal, non-error, non-defer
+      // result), never signaling a cap trip on its own.
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await hook(
+          {
+            hook_event_name: "PreToolUse",
+            tool_name: "mcp__pi__pi_call",
+            tool_use_id: `toolu_bad_${attempt}`,
+            tool_input: { name: "pi_call", arguments: {} },
+          } as Parameters<typeof hook>[0],
+          `toolu_bad_${attempt}`,
+          { signal: new AbortController().signal },
+        );
+      }
+      yield { type: "result", is_error: false, stop_reason: "end_turn", terminal_reason: "completed" };
+    };
+
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const events: BridgeEvent[] = [];
+    for await (const event of runner(request, model)) events.push(event);
+
+    expect(events).toEqual([{ type: "done", reason: "stop" }]);
   });
 
   test("fails loudly instead of faking a successful defer when the SDK invokes the MCP gateway directly", async () => {
@@ -515,7 +768,7 @@ describe("serializeConversation", () => {
     });
   });
 
-  test("denies and reports an invalid pi_call request from the PreToolUse hook", async () => {
+  test("denies (not fatally) an unknown inner tool name from the PreToolUse hook, naming real tools to retry with", async () => {
     let capturedError: Error | undefined;
     const hook = createPreToolUseHook(new Set(["read"]), () => {}, (error) => {
       capturedError = error;
@@ -532,7 +785,64 @@ describe("serializeConversation", () => {
       { signal: new AbortController().signal },
     );
 
-    expect(capturedError?.message).toBe("Claude requested an invalid Pi tool call: missing_tool");
+    expect(capturedError?.message).toBe(
+      'Invalid Pi tool call: "missing_tool" is not a recognized Pi tool. Available tools: read.',
+    );
+    expect(output).toMatchObject({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: capturedError?.message,
+      },
+    });
+  });
+
+  test("gives a targeted correction when the model passes pi_call as its own inner name", async () => {
+    let capturedError: Error | undefined;
+    const hook = createPreToolUseHook(new Set(["read", "write"]), () => {}, (error) => {
+      capturedError = error;
+    });
+
+    const output = await hook(
+      {
+        hook_event_name: "PreToolUse",
+        tool_name: "mcp__pi__pi_call",
+        tool_use_id: "toolu_4",
+        tool_input: { name: "pi_call", arguments: {} },
+      } as Parameters<typeof hook>[0],
+      "toolu_4",
+      { signal: new AbortController().signal },
+    );
+
+    expect(capturedError?.message).toBe(
+      'Invalid Pi tool call: "pi_call" is this gateway\'s own name, not a Pi tool — do not pass it as the "name" field. ' +
+        "Pass the target Pi tool's name instead, e.g. read, write.",
+    );
+    expect(output).toMatchObject({
+      hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny" },
+    });
+  });
+
+  test("reports missing/malformed arguments distinctly from an unknown tool name", async () => {
+    let capturedError: Error | undefined;
+    const hook = createPreToolUseHook(new Set(["read"]), () => {}, (error) => {
+      capturedError = error;
+    });
+
+    const output = await hook(
+      {
+        hook_event_name: "PreToolUse",
+        tool_name: "mcp__pi__pi_call",
+        tool_use_id: "toolu_5",
+        tool_input: { name: "read" },
+      } as Parameters<typeof hook>[0],
+      "toolu_5",
+      { signal: new AbortController().signal },
+    );
+
+    expect(capturedError?.message).toBe(
+      'Invalid Pi tool call: "arguments" must be an object matching "read"\'s input schema.',
+    );
     expect(output).toMatchObject({
       hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny" },
     });
