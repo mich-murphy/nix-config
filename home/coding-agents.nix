@@ -32,50 +32,25 @@
       '';
     };
   in "${package}/lib/node_modules/${manifest.name}";
-  piExtensions = pkgs.linkFarm "pi-extensions" [
-    {
-      name = "README.md";
-      path = piExtensionSources + "/README.md";
-    }
-    {
-      name = "herdr-agent-state.ts";
-      path = piExtensionSources + "/herdr-agent-state.ts";
-    }
-    {
-      name = "moshi-hooks.ts";
-      path = piExtensionSources + "/moshi-hooks.ts";
-    }
-    {
-      name = "claude-sdk-provider";
-      path = packagePiExtension {
-        directory = "claude-sdk-provider";
-        npmDepsHash = "sha256-ep5H2levq+9BUi7ihSzUpXb0iAiYTgC5Pw3e51Pb0XA=";
-      };
-    }
-    {
-      name = "pi-skill-toggle";
-      path = piExtensionSources + "/pi-skill-toggle";
-    }
-    {
-      name = "pi-web-tools";
-      path = packagePiExtension {
-        directory = "pi-web-tools";
-        npmDepsHash = "sha256-RKSaPsQMsPErKFUogSIzHawWCkiepBPD+r0B0pq25hU=";
-      };
-    }
-    {
-      name = "pi-subagent";
-      path = piExtensionSources + "/pi-subagent";
-    }
-  ];
+  claudeSdkProvider = packagePiExtension {
+    directory = "claude-sdk-provider";
+    npmDepsHash = "sha256-ep5H2levq+9BUi7ihSzUpXb0iAiYTgC5Pw3e51Pb0XA=";
+  };
+  piWebTools = packagePiExtension {
+    directory = "pi-web-tools";
+    npmDepsHash = "sha256-RKSaPsQMsPErKFUogSIzHawWCkiepBPD+r0B0pq25hU=";
+  };
 in {
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     ".claude/skills".source = liveLink "${agentConfig}/skills";
-    ".pi/agent/extensions" = {
-      source = piExtensions;
-      force = true;
-    };
+    # Manage repository-owned entries individually so external integration
+    # installers can add and update their own files in the containing directory.
+    ".pi/agent/extensions/README.md".source = piExtensionSources + "/README.md";
+    ".pi/agent/extensions/claude-sdk-provider".source = claudeSdkProvider;
+    ".pi/agent/extensions/pi-skill-toggle".source = piExtensionSources + "/pi-skill-toggle";
+    ".pi/agent/extensions/pi-web-tools".source = piWebTools;
+    ".pi/agent/extensions/pi-subagent".source = piExtensionSources + "/pi-subagent";
     ".pi/agent/agents".source = liveLink "${agentConfig}/pi-agents";
   };
 }
