@@ -63,6 +63,10 @@
         npmDepsHash = "sha256-RKSaPsQMsPErKFUogSIzHawWCkiepBPD+r0B0pq25hU=";
       };
     }
+    {
+      name = "pi-subagent";
+      path = piExtensionSources + "/pi-subagent";
+    }
   ];
 in {
   home.file = {
@@ -72,5 +76,6 @@ in {
       source = piExtensions;
       force = true;
     };
+    ".pi/agent/agents".source = liveLink "${agentConfig}/pi-agents";
   };
 }
