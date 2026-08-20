@@ -1,22 +1,4 @@
-{pkgs, ...}: let
-  maintenance = pkgs.writeShellApplication {
-    name = "ai-dev-maintenance";
-    runtimeInputs = [
-      pkgs.bash
-      pkgs.coreutils
-      pkgs.curl
-      pkgs.gawk
-      pkgs.gnugrep
-      pkgs.iproute2
-      pkgs.jq
-      pkgs.systemd
-      pkgs.util-linux
-    ];
-    text = builtins.readFile ../config/ai-dev-maintenance.sh;
-  };
-in {
-  home.packages = [maintenance];
-
+{...}: {
   xdg.configFile."fish/conf.d/coding-agent-aliases.fish" = {
     force = true;
     text = ''

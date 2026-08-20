@@ -63,10 +63,10 @@ nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'
 
 Home Manager owns portable CLI tools, Fish, Starship, FZF, Git behavior, Hunk,
 Herdr configuration, Neovim, Yazi, OpenCode, shared agent instructions/skills,
-the Moshi user unit, and `ai-dev-maintenance`. Ansible retains operating-system
-provisioning, invokes `ai-dev-maintenance ensure-present` to repair missing
-mutable tools, and writes vaulted ai-dev Git identity fragments. Ongoing agent
-updates are deliberate host-local operations:
+and the Moshi user unit. The `home-infra` Ansible role owns and deploys
+`ai-dev-maintenance`, invokes its `ensure-present` mode to repair missing mutable
+tools, and writes vaulted ai-dev Git identity fragments. Ongoing agent updates
+are deliberate host-local operations:
 
 ```sh
 ai-dev-maintenance update

@@ -3,7 +3,7 @@
   lib,
   ...
 }: {
-  imports = [./ai-dev-maintenance.nix];
+  imports = [./ai-dev-runtime.nix];
 
   home = {
     username = "michael";

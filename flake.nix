@@ -74,46 +74,6 @@
         fi
         touch "$out"
       '';
-      ai-dev-maintenance-interface = (packagesFor "x86_64-linux").runCommand "ai-dev-maintenance-interface" {} ''
-        maintenance=${aiDev.config.home.path}/bin/ai-dev-maintenance
-        test -x "$maintenance"
-        if HOME="$TMPDIR/empty-home" "$maintenance" status >status.log 2>&1; then
-          echo "status unexpectedly passed without installed tools" >&2
-          exit 1
-        fi
-        for tool in Claude Codex Pi Herdr Moshi OpenCode; do
-          grep -q "$tool" status.log
-        done
-
-        fake_home="$TMPDIR/fake-home"
-        fake_bin="$fake_home/.local/bin"
-        mkdir -p "$fake_bin"
-        cat >"$fake_bin/fake-tool" <<'SCRIPT'
-        #!/usr/bin/env bash
-        case "$(basename "$0")" in
-          herdr)
-            [[ ''${1:-} == integration ]] && { echo "integrations ready"; exit 0; }
-            ;;
-          moshi-hook)
-            [[ ''${1:-} == status ]] && { echo '{}'; exit 0; }
-            ;;
-          systemctl)
-            exit 0
-            ;;
-          ss)
-            echo "LISTEN 0 128 127.0.0.1:24543 0.0.0.0:*"
-            exit 0
-            ;;
-        esac
-        echo "$(basename "$0") 1.0.0"
-        SCRIPT
-        chmod +x "$fake_bin/fake-tool"
-        for command in node claude codex pi herdr moshi-hook opencode systemctl ss; do
-          ln -s fake-tool "$fake_bin/$command"
-        done
-        HOME="$fake_home" "$maintenance" status >healthy-status.log
-        touch "$out"
-      '';
       hunk = hunk.packages.x86_64-linux.hunk;
       opencode = (packagesFor "x86_64-linux").opencode;
     };
