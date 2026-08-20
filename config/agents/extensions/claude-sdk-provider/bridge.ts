@@ -276,11 +276,28 @@ export function buildAgentRequest(context: Context): AgentRequest {
   // an entry ride along on its PromptBlock (see ImageAttachment) rather than in
   // the entry's JSON text, so that text stays byte-identical across turns.
   const lastEntryIndex = entries.length - 1;
+  // Second, slower-moving breakpoint on long transcripts. The tail breakpoint
+  // alone leaves the whole transcript exposed when the tail region churns —
+  // e.g. output-safety's sanitizeContextMessages rewriting an *older* bash
+  // result invalidates every block after it, and the next request would then
+  // re-write the entire transcript at cache-write rates. An extra breakpoint
+  // anchored >= one stride before the tail caps that re-write to the suffix.
+  // The index is quantized to a stride multiple so it stays on the same entry
+  // (byte-identical prefix) for ~stride/2 turns instead of moving — and
+  // re-writing — on every request. Breakpoint budget: Anthropic allows 4 per
+  // request; we use 2 here, leaving room for the CLI's own system-prompt and
+  // auto-inserted trailing breakpoints (confirmed live: it adds one trailing
+  // breakpoint one block past ours).
+  const STABLE_BREAKPOINT_STRIDE = 20;
+  const stableBreakpointIndex =
+    entries.length > STABLE_BREAKPOINT_STRIDE * 2
+      ? Math.floor((lastEntryIndex - STABLE_BREAKPOINT_STRIDE) / STABLE_BREAKPOINT_STRIDE) * STABLE_BREAKPOINT_STRIDE
+      : -1;
   const promptBlocks: PromptBlock[] = [
     { text: "Complete prior Pi conversation (JSONL). Each following block is one transcript entry." },
     ...entries.map((entry, index) => ({
       text: entry.text,
-      cacheBreakpoint: index === lastEntryIndex,
+      cacheBreakpoint: index === lastEntryIndex || index === stableBreakpointIndex,
       images: entry.images.length > 0 ? entry.images : undefined,
     })),
     { text: "Continue from the final conversation entry above." },

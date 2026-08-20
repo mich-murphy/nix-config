@@ -13,6 +13,12 @@ export interface CacheRequestDiagnostic {
   commonPrefixCharacters: number;
   contentFingerprint: string;
   reusablePrefixFingerprint?: string;
+  // Wall-clock gap since the previous request in this tracker. Anthropic's
+  // default cache TTL is 5 minutes (1h only with the extended-cache-ttl beta),
+  // so this field lets a log reader separate TTL-expiry misses (large gap,
+  // commonPrefixBlocks high) from prefix-invalidation misses (small gap,
+  // commonPrefixBlocks low) without correlating external timestamps.
+  msSincePreviousRequest?: number;
 }
 
 export interface CacheUsageDiagnostic {
@@ -53,9 +59,13 @@ export interface CacheDiagnosticTracker {
 export function createCacheDiagnosticTracker(sink: CacheDiagnosticSink): CacheDiagnosticTracker {
   let turn = 0;
   let previousPayloads: string[] = [];
+  let previousRequestAt: number | undefined;
   return {
     request(model, blocks) {
       turn += 1;
+      const now = Date.now();
+      const msSincePreviousRequest = previousRequestAt === undefined ? undefined : now - previousRequestAt;
+      previousRequestAt = now;
       const payloads = blocks.map(blockPayload);
       let commonPrefixBlocks = 0;
       while (
@@ -91,6 +101,7 @@ export function createCacheDiagnosticTracker(sink: CacheDiagnosticSink): CacheDi
         contentFingerprint: hash(payloads.join("\n")),
         reusablePrefixFingerprint:
           lastBreakpoint >= 0 ? hash(payloads.slice(0, lastBreakpoint + 1).join("\n")) : undefined,
+        msSincePreviousRequest,
       };
       sink(diagnostic);
       previousPayloads = payloads;

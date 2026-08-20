@@ -291,6 +291,38 @@ describe("serializeConversation", () => {
     expect(environment.CLAUDE_CODE_USE_FOUNDRY).toBeUndefined();
   });
 
+  test("pins the 1h prompt-cache TTL opt-in and beta header so the extended cache TTL is deterministic", () => {
+    const environment = subscriptionEnvironment({
+      FORCE_PROMPT_CACHING_5M: "1",
+      ENABLE_PROMPT_CACHING_1H: undefined,
+    });
+
+    expect(environment.ENABLE_PROMPT_CACHING_1H).toBe("1");
+    expect(environment.FORCE_PROMPT_CACHING_5M).toBeUndefined();
+    expect(environment.ANTHROPIC_BETAS).toBe("extended-cache-ttl-2025-04-11");
+  });
+
+  test("appends the extended-cache beta without clobbering existing betas or the experimental-betas opt-out", () => {
+    const environment = subscriptionEnvironment({
+      ANTHROPIC_BETAS: "context-1m-2025-08-07, extended-cache-ttl-2025-04-11",
+      CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS: "1",
+    });
+
+    expect(environment.ANTHROPIC_BETAS).toBe("context-1m-2025-08-07,extended-cache-ttl-2025-04-11");
+    expect(environment.CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS).toBe("1");
+  });
+
+  test("PI_CLAUDE_SDK_5M_CACHE=1 restores the CLI's own cache-TTL decision as an escape hatch", () => {
+    const environment = subscriptionEnvironment({
+      PI_CLAUDE_SDK_5M_CACHE: "1",
+      FORCE_PROMPT_CACHING_5M: "1",
+    });
+
+    expect(environment.ENABLE_PROMPT_CACHING_1H).toBeUndefined();
+    expect(environment.FORCE_PROMPT_CACHING_5M).toBe("1");
+    expect(environment.ANTHROPIC_BETAS).toBeUndefined();
+  });
+
   test("lets Pi own the multi-turn tool loop instead of capping each SDK query at one model turn", () => {
     expect(agentSdkTurnOptions()).toEqual({});
   });
@@ -945,7 +977,7 @@ describe("serializeConversation", () => {
     expect(request.toolDescription).toContain('\"required\":[\"path\"]');
   });
 
-  test("marks only the last conversation entry as a cache breakpoint, never the trailing instruction block", () => {
+  test("marks only the last conversation entry as a cache breakpoint on short transcripts, never the trailing instruction block", () => {
     const context = {
       systemPrompt: "s",
       messages: [
@@ -966,6 +998,33 @@ describe("serializeConversation", () => {
     expect(request.promptBlocks[1]?.cacheBreakpoint).toBeFalsy();
     expect(request.promptBlocks[2]?.cacheBreakpoint).toBe(true);
     expect(request.promptBlocks[3]?.cacheBreakpoint).toBeFalsy();
+  });
+
+  test("adds a second, slower-moving breakpoint on long transcripts that stays fixed across turns and jumps only at stride boundaries", () => {
+    const contextWithEntries = (count: number) =>
+      ({
+        systemPrompt: "s",
+        messages: Array.from({ length: count }, (_, index) => ({ role: "user", content: `entry ${index}` })),
+        tools: [],
+      }) as unknown as Context;
+    const breakpointIndexes = (count: number) =>
+      buildAgentRequest(contextWithEntries(count)).promptBlocks.flatMap((block, index) =>
+        block.cacheBreakpoint ? [index] : [],
+      );
+
+    // promptBlocks = [intro, entry 0..N-1 (entry index + 1), outro].
+    // At or below 2x the stride (40 entries) only the tail breakpoint exists.
+    expect(breakpointIndexes(40)).toEqual([40]);
+    // Above it, a stable breakpoint lands on a stride-multiple entry (entry 20
+    // -> block 21) at least one stride before the tail...
+    expect(breakpointIndexes(41)).toEqual([21, 41]);
+    // ...and stays on that same entry while the transcript grows, so the prefix
+    // it marks is byte-identical across turns...
+    expect(breakpointIndexes(50)).toEqual([21, 50]);
+    expect(breakpointIndexes(60)).toEqual([21, 60]);
+    // ...jumping one stride only when the tail crosses the next boundary.
+    expect(breakpointIndexes(61)).toEqual([41, 61]);
+    expect(breakpointIndexes(62)).toEqual([41, 62]);
   });
 
   test("keeps the stable transcript prefix byte-identical as new entries are appended, so a later turn can hit cache on it", () => {

@@ -86,6 +86,10 @@ export async function* buildPromptStream(promptBlocks: PromptBlock[]): AsyncGene
 
 export type RunSdkQuery = (params: Parameters<typeof query>[0]) => AsyncIterable<unknown>;
 
+// The beta header the API requires before honoring ttl: "1h" on a cache_control
+// block (see subscriptionEnvironment for why we pin it ourselves).
+const EXTENDED_CACHE_TTL_BETA = "extended-cache-ttl-2025-04-11";
+
 const NON_SUBSCRIPTION_AUTH_VARIABLES = [
   "ANTHROPIC_API_KEY",
   "ANTHROPIC_AUTH_TOKEN",
@@ -100,6 +104,40 @@ export function subscriptionEnvironment(
   const environment = { ...source };
   for (const name of NON_SUBSCRIPTION_AUTH_VARIABLES) delete environment[name];
   environment.CLAUDE_AGENT_SDK_CLIENT_APP = "pi-coding-agent-provider/0.1.0";
+  // Our cache breakpoint asks for ttl='1h' (see toContentBlocks), but the 1h TTL
+  // only takes effect when the request also carries the
+  // `extended-cache-ttl-2025-04-11` beta header — and the CLI attaches that header
+  // based on its *own* TTL decision (statsig gate + subscription-overage check),
+  // not on the ttl we put on the block. When the gate flips off, the API silently
+  // degrades the cache to the default 5 minutes: in a real 160-turn session every
+  // cache miss had a >5-minute gap from the previous turn and every hit was under
+  // ~5 minutes, including misses at 10- and 36-minute gaps that a working 1h TTL
+  // would have served. The CLI's decision function checks, in order:
+  //   1. FORCE_PROMPT_CACHING_5M — kill switch, forces 5m; must not leak in.
+  //   2. ENABLE_PROMPT_CACHING_1H — deterministic opt-in, bypasses the gate.
+  //   3. subscription auth + not-on-overage + statsig gate — nondeterministic.
+  // Pinning 2 knowingly overrides the CLI's deliberate "no 1h while on overage"
+  // cost guard: 1h cache writes bill at 2x base input (vs 1.25x for 5m), but one
+  // full-transcript re-write after a 5m expiry costs far more than the 2x premium
+  // on each turn's small new suffix, so the pin still wins on cost.
+  // The beta header itself is guaranteed via ANTHROPIC_BETAS — the CLI appends
+  // that comma-separated list to every request unconditionally — rather than by
+  // deleting CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS, which would silently
+  // re-enable every OTHER experimental beta the user opted out of, not just
+  // extended cache TTL.
+  // Escape hatch: PI_CLAUDE_SDK_5M_CACHE=1 skips all of this and restores the
+  // CLI's own TTL decision (including Anthropic's FORCE_PROMPT_CACHING_5M kill
+  // switch), so a misbehaving 1h-cache beta can be reverted without editing this
+  // file.
+  if (environment.PI_CLAUDE_SDK_5M_CACHE === "1") return environment;
+  delete environment.FORCE_PROMPT_CACHING_5M;
+  environment.ENABLE_PROMPT_CACHING_1H = "1";
+  const betas = (environment.ANTHROPIC_BETAS ?? "")
+    .split(",")
+    .map((beta) => beta.trim())
+    .filter(Boolean);
+  if (!betas.includes(EXTENDED_CACHE_TTL_BETA)) betas.push(EXTENDED_CACHE_TTL_BETA);
+  environment.ANTHROPIC_BETAS = betas.join(",");
   return environment;
 }
 

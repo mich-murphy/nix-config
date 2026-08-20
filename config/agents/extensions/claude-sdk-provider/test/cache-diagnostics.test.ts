@@ -64,6 +64,20 @@ describe("cache diagnostics", () => {
     );
   });
 
+  test("reports wall-clock gap since the previous request so TTL-expiry misses are distinguishable in logs", () => {
+    const events: CacheDiagnostic[] = [];
+    const tracker = createCacheDiagnosticTracker((event) => events.push(event));
+
+    tracker.request("claude-sdk/sonnet", [{ text: "first", cacheBreakpoint: true }]);
+    tracker.request("claude-sdk/sonnet", [{ text: "first" }, { text: "second", cacheBreakpoint: true }]);
+
+    const [first, second] = events;
+    if (first?.type !== "request" || second?.type !== "request") throw new Error("missing request diagnostics");
+    expect(first.msSincePreviousRequest).toBeUndefined();
+    expect(typeof second.msSincePreviousRequest).toBe("number");
+    expect(second.msSincePreviousRequest).toBeGreaterThanOrEqual(0);
+  });
+
   test("flags a large low-reuse turn as a possible cache collapse", () => {
     const events: CacheDiagnostic[] = [];
     const tracker = createCacheDiagnosticTracker((event) => events.push(event));
