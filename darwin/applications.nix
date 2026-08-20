@@ -68,7 +68,7 @@ in {
       "winbox"
       "xcodes-app"
       "linearmouse"
-      "kitlangton-hex"
+      "wispr-flow"
     ];
     brews = [
       "herdr"
