@@ -69,6 +69,7 @@ in {
       "xcodes-app"
       "linearmouse"
       "wispr-flow"
+      "chatgpt"
     ];
     brews = [
       "herdr"
