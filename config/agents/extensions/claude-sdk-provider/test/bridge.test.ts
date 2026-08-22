@@ -1000,7 +1000,7 @@ describe("serializeConversation", () => {
     expect(request.promptBlocks[3]?.cacheBreakpoint).toBeFalsy();
   });
 
-  test("adds a second, slower-moving breakpoint on long transcripts that stays fixed across turns and jumps only at stride boundaries", () => {
+  test("keeps one provider cache breakpoint on the transcript tail even after the transcript grows past 40 entries", () => {
     const contextWithEntries = (count: number) =>
       ({
         systemPrompt: "s",
@@ -1013,18 +1013,9 @@ describe("serializeConversation", () => {
       );
 
     // promptBlocks = [intro, entry 0..N-1 (entry index + 1), outro].
-    // At or below 2x the stride (40 entries) only the tail breakpoint exists.
     expect(breakpointIndexes(40)).toEqual([40]);
-    // Above it, a stable breakpoint lands on a stride-multiple entry (entry 20
-    // -> block 21) at least one stride before the tail...
-    expect(breakpointIndexes(41)).toEqual([21, 41]);
-    // ...and stays on that same entry while the transcript grows, so the prefix
-    // it marks is byte-identical across turns...
-    expect(breakpointIndexes(50)).toEqual([21, 50]);
-    expect(breakpointIndexes(60)).toEqual([21, 60]);
-    // ...jumping one stride only when the tail crosses the next boundary.
-    expect(breakpointIndexes(61)).toEqual([41, 61]);
-    expect(breakpointIndexes(62)).toEqual([41, 62]);
+    expect(breakpointIndexes(41)).toEqual([41]);
+    expect(breakpointIndexes(62)).toEqual([62]);
   });
 
   test("keeps the stable transcript prefix byte-identical as new entries are appended, so a later turn can hit cache on it", () => {
@@ -1220,6 +1211,52 @@ describe("unsupported image mime types", () => {
 });
 
 describe("buildPromptStream", () => {
+  test("leaves room for the SDK's three cache breakpoints so the API never receives five", async () => {
+    // The sanitized failing session had 41 ancestor messages at its first
+    // error, which was the old threshold for adding a second provider marker.
+    const request = buildAgentRequest({
+      systemPrompt: "s",
+      messages: Array.from({ length: 41 }, (_, index) => ({ role: "user", content: `entry ${index}` })),
+      tools: [],
+    } as unknown as Context);
+    const model = {
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    } as unknown as Model<"claude-sdk">;
+    const runSdkQuery: RunSdkQuery = async function* ({ prompt }) {
+      const [message] = await drain(prompt as AsyncIterable<SDKUserMessage>);
+      const providerBreakpoints = (message?.message.content as unknown as Array<Record<string, unknown>>).filter(
+        (block) => block.cache_control !== undefined,
+      ).length;
+      const cacheControlBlocksAtApi = 3 + providerBreakpoints;
+      if (cacheControlBlocksAtApi > 4) {
+        throw new Error(
+          `API Error: 400 A maximum of 4 blocks with cache_control may be provided. Found ${cacheControlBlocksAtApi}.`,
+        );
+      }
+      yield { type: "result", is_error: false, stop_reason: "end_turn" };
+    };
+
+    const events = await drain(createClaudeAgentSdkRunner(runSdkQuery)(request, model));
+
+    expect(events).toEqual([{ type: "done", reason: "stop" }]);
+  });
+
+  test("keeps only the latest requested cache breakpoint when given multiple marked prompt blocks", async () => {
+    const messages = await drain(
+      buildPromptStream([
+        { text: "older prefix", cacheBreakpoint: true },
+        { text: "newer prefix", cacheBreakpoint: true },
+      ]),
+    );
+
+    expect(messages[0]?.message.content).toEqual([
+      { type: "text", text: "older prefix" },
+      { type: "text", text: "newer prefix", cache_control: { type: "ephemeral", ttl: "1h" } },
+    ]);
+  });
+
   test("sends the whole transcript as one SDK user message with one content block per prompt block", async () => {
     const messages = await drain(
       buildPromptStream([

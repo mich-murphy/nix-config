@@ -62,11 +62,11 @@ function toAnthropicContentBlock(image: ImageAttachment) {
 // on the *last* of those blocks: it marks "cache everything up to and including
 // this", which for an entry with images means the images (or their degraded notes)
 // too, not just the entry's text.
-function toContentBlocks(block: PromptBlock) {
+function toContentBlocks(block: PromptBlock, cacheBreakpoint: boolean) {
   const textBlock = { type: "text" as const, text: block.text };
   const imageBlocks = (block.images ?? []).map(toAnthropicContentBlock);
   const blocks = [textBlock, ...imageBlocks];
-  if (!block.cacheBreakpoint) return blocks;
+  if (!cacheBreakpoint) return blocks;
   const lastIndex = blocks.length - 1;
   return blocks.map((contentBlock, index) =>
     index === lastIndex
@@ -76,11 +76,26 @@ function toContentBlocks(block: PromptBlock) {
 }
 
 export async function* buildPromptStream(promptBlocks: PromptBlock[]): AsyncGenerator<SDKUserMessage> {
+  // The pinned Agent SDK's Claude Code 2.1.227 adds three cache breakpoints
+  // of its own. Anthropic accepts at most four per request, so this provider
+  // has a wire budget of one. Keep the latest requested breakpoint: it is the
+  // moving transcript-tail marker and therefore preserves the intended
+  // multi-turn cache prefix.
+  let cacheBreakpointIndex = -1;
+  for (let index = promptBlocks.length - 1; index >= 0; index -= 1) {
+    if (promptBlocks[index]?.cacheBreakpoint === true) {
+      cacheBreakpointIndex = index;
+      break;
+    }
+  }
   yield {
     type: "user",
     session_id: "",
     parent_tool_use_id: null,
-    message: { role: "user", content: promptBlocks.flatMap(toContentBlocks) },
+    message: {
+      role: "user",
+      content: promptBlocks.flatMap((block, index) => toContentBlocks(block, index === cacheBreakpointIndex)),
+    },
   };
 }
 
