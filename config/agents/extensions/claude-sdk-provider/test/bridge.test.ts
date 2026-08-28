@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
-import type { Context, Model } from "@earendil-works/pi-ai";
+import type { Context, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { buildAgentRequest, createAgentSdkStream, serializeConversation, type AgentRequest, type BridgeEvent } from "../bridge";
 import { models } from "../index";
 import {
@@ -71,6 +71,57 @@ describe("serializeConversation", () => {
     expect(sdkRequests.map(({ options }) => options?.persistSession)).toEqual([false, false]);
     expect(sdkRequests.every(({ options }) => options?.resume === undefined)).toBe(true);
     expect(sdkRequests.every(({ options }) => options?.sessionId === undefined)).toBe(true);
+  });
+
+  test("registers Haiku with its Agent SDK limits and without effort-based reasoning", () => {
+    const haiku = models.find((model) => model.id === "haiku");
+
+    expect(haiku).toMatchObject({
+      name: "Claude Haiku (official Agent SDK)",
+      reasoning: false,
+      input: ["text", "image"],
+      contextWindow: 200_000,
+      maxTokens: 64_000,
+    });
+  });
+
+  test("omits effort for Haiku regardless of the reasoning level supplied by a caller", async () => {
+    const sdkRequests: Array<Parameters<RunSdkQuery>[0]> = [];
+    const runSdkQuery: RunSdkQuery = (params) => {
+      sdkRequests.push(params);
+      return (async function* () {})();
+    };
+    const runner = createClaudeAgentSdkRunner(runSdkQuery);
+    const haiku = models.find((model) => model.id === "haiku");
+    expect(haiku).toBeDefined();
+    const model = {
+      ...haiku,
+      api: "claude-sdk",
+      provider: "claude-sdk",
+    } as unknown as Model<"claude-sdk">;
+    const request: AgentRequest = {
+      systemPrompt: "stable system prompt",
+      promptBlocks: [{ text: "hello" }],
+      toolDescription: "stable tools",
+      toolNames: [],
+      conversationEntries: [],
+    };
+    const reasoningLevels: Array<NonNullable<SimpleStreamOptions["reasoning"]>> = [
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max",
+    ];
+
+    for (const reasoning of reasoningLevels) await drain(runner(request, model, { reasoning }));
+
+    expect(sdkRequests).toHaveLength(reasoningLevels.length);
+    for (const { options } of sdkRequests) {
+      expect(options?.model).toBe("haiku");
+      expect(options === undefined ? false : "effort" in options).toBe(false);
+    }
   });
 
   test("preserves text, tool calls, and tool results as a JSONL transcript", () => {

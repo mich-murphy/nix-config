@@ -26,6 +26,7 @@ Open `/model` and select one of:
 - `claude-sdk/sonnet`
 - `claude-sdk/opus`
 - `claude-sdk/fable`
+- `claude-sdk/haiku`
 
 This provider is experimental. For cache-sensitive or API-billed work, select Pi's standard `anthropic/...` provider until the Agent SDK path has accumulated stable cache diagnostics.
 
@@ -61,7 +62,8 @@ Each request emits a `[claude-sdk-cache]` JSON line on stderr. Consecutive reque
 ## Current boundaries
 
 - Image input is limited to Anthropic's JPEG, PNG, GIF, and WebP formats. Unsupported images become deterministic text notes so they cannot permanently break transcript replay.
-- Model IDs use Claude Code's documented moving aliases (`sonnet`, `opus`, and `fable`), so the underlying model can change when Anthropic updates an alias.
+- Model IDs use Claude Code's documented moving aliases (`sonnet`, `opus`, `fable`, and `haiku`), so the underlying model can change when Anthropic updates an alias.
+- Haiku is declared with its current 200K context window and 64K maximum output. Haiku 4.5 does not support the Agent SDK's `effort` option, so the provider omits effort-based reasoning settings for every Haiku request, including requests from headless callers and Pi sub-agents.
 - Pi records subscription cost as zero. Token usage is retained when the SDK reports it, but Pi cannot infer the monetary value of an included subscription allocation.
 - Reasoning/thinking deltas are streamed to Pi as a `thinking` content block, but the block is dropped (not replayed) when a later turn re-serializes the transcript — thinking is ephemeral, not part of the durable Pi conversation.
 - An SDK `result` that ends in an error (`is_error: true`) is surfaced as a real provider error instead of a silent empty response; a `max_tokens` stop is reported to Pi as a `length` stop reason.

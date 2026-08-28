@@ -4,13 +4,14 @@ import { inspectBashCommand, sanitizeBashContent, sanitizeContextMessages } from
 import { createClaudeAgentSdkRunner } from "./sdk-runner";
 
 export const models = [
-  { id: "sonnet", name: "Claude Sonnet (official Agent SDK)" },
-  { id: "opus", name: "Claude Opus (official Agent SDK)" },
-  { id: "fable", name: "Claude Fable (official Agent SDK)" },
-].map(({ id, name }) => ({
+  { id: "sonnet", name: "Claude Sonnet (official Agent SDK)", reasoning: true },
+  { id: "opus", name: "Claude Opus (official Agent SDK)", reasoning: true },
+  { id: "fable", name: "Claude Fable (official Agent SDK)", reasoning: true },
+  { id: "haiku", name: "Claude Haiku (official Agent SDK)", reasoning: false },
+].map(({ id, name, reasoning }) => ({
   id,
   name,
-  reasoning: true,
+  reasoning,
   input: ["text", "image"] as ["text", "image"],
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   contextWindow: 200_000,
@@ -34,10 +35,15 @@ export default function (pi: ExtensionAPI) {
     if (event.toolName !== "bash") return;
     const sanitized = sanitizeBashContent(event.content);
     if (!sanitized.detected) return;
-    ctx.ui.notify(
-      `Quarantined ${sanitized.detected}-like bash output before it entered context. Compact or start a new session if similar output was recorded earlier.`,
-      "warning",
-    );
+    // Headless sub-agents (-p print mode) have no UI surface; the quarantine
+    // notice is already embedded in the sanitized tool-result content, so the
+    // model still sees it. Only the human-facing toast needs a UI.
+    if (ctx.hasUI) {
+      ctx.ui.notify(
+        `Quarantined ${sanitized.detected}-like bash output before it entered context. Compact or start a new session if similar output was recorded earlier.`,
+        "warning",
+      );
+    }
     return { content: sanitized.content };
   });
 
