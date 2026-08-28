@@ -7,10 +7,6 @@
 }: let
   agentConfig = "${repoRoot}/config/agents";
   piExtensionSources = ../config/agents/extensions;
-  piPackages = [
-    "npm:pi-subagents"
-    "npm:pi-web-access"
-  ];
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
   packagePiExtension = {
     directory,
@@ -41,34 +37,6 @@
     npmDepsHash = "sha256-ep5H2levq+9BUi7ihSzUpXb0iAiYTgC5Pw3e51Pb0XA=";
   };
 in {
-  # Third-party packages remain owned by Pi so their manifests, bundled skills,
-  # runtime dependencies, and updates keep working as designed. Home Manager
-  # only reconciles missing package registrations.
-  home.activation.installPiPackages = lib.hm.dag.entryAfter ["writeBoundary"] ''
-    piBin="$(command -v pi || true)"
-    if [[ -z "$piBin" && -x /opt/homebrew/bin/pi ]]; then
-      piBin=/opt/homebrew/bin/pi
-    fi
-
-    if [[ -n "$piBin" ]]; then
-      settings="$HOME/.pi/agent/settings.json"
-      ${lib.concatMapStringsSep "\n" (package: ''
-        if [[ ! -f "$settings" ]] || ! ${lib.getExe pkgs.jq} -e --arg source ${lib.escapeShellArg package} '
-          (.packages // []) | any(
-            if type == "string" then . == $source else .source == $source end
-          )
-        ' "$settings" >/dev/null; then
-          run "$piBin" install ${lib.escapeShellArg package}
-        fi
-      '')
-      piPackages}
-      unset settings
-    else
-      echo "Pi is not installed; skipping Pi package reconciliation" >&2
-    fi
-    unset piBin
-  '';
-
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     ".claude/skills".source = liveLink "${agentConfig}/skills";
