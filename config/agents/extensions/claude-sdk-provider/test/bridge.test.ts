@@ -1,8 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import type { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
-import type { Context, Model, SimpleStreamOptions } from "@earendil-works/pi-ai";
+import type { SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { buildAgentRequest, createAgentSdkStream, serializeConversation, type AgentRequest, type BridgeEvent } from "../bridge";
 import { models } from "../index";
+import {
+  contextFixture,
+  hookInputFixture,
+  modelFixture,
+  sdkContentRecords,
+  sdkPromptFixture,
+} from "./fixtures";
 import {
   agentSdkTurnOptions,
   buildPromptStream,
@@ -30,11 +37,11 @@ describe("serializeConversation", () => {
       return (async function* () {})();
     };
     const runner = createClaudeAgentSdkRunner(runSdkQuery);
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
     const firstRequest: AgentRequest = {
       systemPrompt: "stable system prompt",
       promptBlocks: [{ text: "complete transcript: first turn" }],
@@ -59,12 +66,18 @@ describe("serializeConversation", () => {
     for await (const _event of runner(secondRequest, model)) {}
 
     const drainedPrompts = await Promise.all(
-      sdkRequests.map(({ prompt }) => drain(prompt as AsyncIterable<SDKUserMessage>)),
+      sdkRequests.map(({ prompt }) => drain(sdkPromptFixture(prompt))),
     );
     expect(drainedPrompts.map((messages) => messages.length)).toEqual([1, 1]);
     const textsOf = (message: SDKUserMessage) =>
-      (message.message.content as Array<{ text: string }>).map((block) => block.text);
-    expect(drainedPrompts.map(([message]) => textsOf(message!))).toEqual([
+      sdkContentRecords(message).flatMap((block) => (typeof block.text === "string" ? [block.text] : []));
+    expect(
+      drainedPrompts.map((messages) => {
+        const message = messages[0];
+        if (!message) throw new Error("test setup: prompt stream did not yield a message");
+        return textsOf(message);
+      }),
+    ).toEqual([
       firstRequest.promptBlocks.map((block) => block.text),
       secondRequest.promptBlocks.map((block) => block.text),
     ]);
@@ -94,11 +107,11 @@ describe("serializeConversation", () => {
     const runner = createClaudeAgentSdkRunner(runSdkQuery);
     const haiku = models.find((model) => model.id === "haiku");
     expect(haiku).toBeDefined();
-    const model = {
+    const model = modelFixture({
       ...haiku,
       api: "claude-sdk",
       provider: "claude-sdk",
-    } as unknown as Model<"claude-sdk">;
+    });
     const request: AgentRequest = {
       systemPrompt: "stable system prompt",
       promptBlocks: [{ text: "hello" }],
@@ -125,7 +138,7 @@ describe("serializeConversation", () => {
   });
 
   test("preserves text, tool calls, and tool results as a JSONL transcript", () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Use Pi's tools.",
       messages: [
         { role: "user", content: "Read the package file" },
@@ -145,7 +158,7 @@ describe("serializeConversation", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
+    });
 
     expect(serializeConversation(context)).toBe(
       [
@@ -157,17 +170,17 @@ describe("serializeConversation", () => {
   });
 
   test("streams SDK text and usage through Pi's provider event contract", async () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Be concise.",
       messages: [{ role: "user", content: "Hello" }],
       tools: [],
-    } as unknown as Context;
-    const model = {
+    });
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    } as unknown as Model<"claude-sdk">;
+    });
     const run = async function* (): AsyncGenerator<BridgeEvent> {
       yield { type: "text_delta", text: "Hello" };
       yield { type: "text_delta", text: " from Claude" };
@@ -196,17 +209,17 @@ describe("serializeConversation", () => {
   });
 
   test("streams thinking deltas as a distinct content block", async () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Be concise.",
       messages: [{ role: "user", content: "Hello" }],
       tools: [],
-    } as unknown as Context;
-    const model = {
+    });
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    } as unknown as Model<"claude-sdk">;
+    });
     const run = async function* (): AsyncGenerator<BridgeEvent> {
       yield { type: "thinking_delta", text: "Let me " };
       yield { type: "thinking_delta", text: "think." };
@@ -238,17 +251,17 @@ describe("serializeConversation", () => {
   });
 
   test("ends the Pi turn with a deferred tool call from the SDK gateway", async () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Use tools when needed.",
       messages: [{ role: "user", content: "Read package.json" }],
       tools: [],
-    } as unknown as Context;
-    const model = {
+    });
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    } as unknown as Model<"claude-sdk">;
+    });
     const run = async function* (): AsyncGenerator<BridgeEvent> {
       yield { type: "tool_call", id: "tool-1", name: "read", arguments: { path: "package.json" } };
     };
@@ -268,17 +281,17 @@ describe("serializeConversation", () => {
   });
 
   test("keeps every tool call the model batches into one turn, not just the first", async () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Use tools when needed.",
       messages: [{ role: "user", content: "Read both files" }],
       tools: [],
-    } as unknown as Context;
-    const model = {
+    });
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    } as unknown as Model<"claude-sdk">;
+    });
     const run = async function* (): AsyncGenerator<BridgeEvent> {
       yield { type: "tool_call", id: "tool-1", name: "read", arguments: { path: "package.json" } };
       yield { type: "tool_call", id: "tool-2", name: "read", arguments: { path: "README.md" } };
@@ -299,17 +312,17 @@ describe("serializeConversation", () => {
   });
 
   test("reports a length stop reason when the SDK ends the turn at max_tokens", async () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Be concise.",
       messages: [{ role: "user", content: "Hello" }],
       tools: [],
-    } as unknown as Context;
-    const model = {
+    });
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
       cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-    } as unknown as Model<"claude-sdk">;
+    });
     const run = async function* (): AsyncGenerator<BridgeEvent> {
       yield { type: "text_delta", text: "Truncated" };
       yield { type: "done", reason: "length" };
@@ -378,7 +391,7 @@ describe("serializeConversation", () => {
     expect(agentSdkTurnOptions()).toEqual({});
   });
 
-  test("throws on an SDK result error even after the PreToolUse hook already captured a deferred call", async () => {
+  test("returns an SDK result error even after the hook captured a deferred call", async () => {
     const request: AgentRequest = {
       systemPrompt: "Use tools when needed.",
       promptBlocks: [{ text: "Read package.json" }],
@@ -386,22 +399,22 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
       if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
       await hook(
-        {
+        hookInputFixture({
           hook_event_name: "PreToolUse",
           tool_name: "mcp__pi__pi_call",
           tool_use_id: "toolu_err",
           tool_input: { name: "read", arguments: { path: "package.json" } },
-        } as Parameters<typeof hook>[0],
+        }),
         "toolu_err",
         { signal: new AbortController().signal },
       );
@@ -414,14 +427,77 @@ describe("serializeConversation", () => {
       };
     };
 
-    const runner = createClaudeAgentSdkRunner(runSdkQuery);
-    const events: BridgeEvent[] = [];
-    await expect(
-      (async () => {
-        for await (const event of runner(request, model)) events.push(event);
-      })(),
-    ).rejects.toThrow("the SDK could not honor the deferred tool call");
-    expect(events).toEqual([]);
+    const events = await drain(createClaudeAgentSdkRunner(runSdkQuery)(request, model));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]?.type).toBe("failed");
+    if (events[0]?.type === "failed") {
+      expect(events[0].error._tag).toBe("SdkResultError");
+      expect(events[0].error.message).toBe("the SDK could not honor the deferred tool call");
+    }
+  });
+
+  test("does not execute a captured tool call when SDK iteration fails", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "Use tools when needed.",
+      promptBlocks: [{ text: "Read package.json" }],
+      toolDescription: "stable tools",
+      toolNames: ["read"],
+      conversationEntries: [],
+    };
+    const model = modelFixture({
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    });
+    const runSdkQuery: RunSdkQuery = async function* (params) {
+      const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
+      if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
+      await hook(
+        hookInputFixture({
+          hook_event_name: "PreToolUse",
+          tool_name: "mcp__pi__pi_call",
+          tool_use_id: "toolu_unconfirmed",
+          tool_input: { name: "read", arguments: { path: "package.json" } },
+        }),
+        "toolu_unconfirmed",
+        { signal: new AbortController().signal },
+      );
+      throw new Error("transport disconnected");
+    };
+
+    const events = await drain(createClaudeAgentSdkRunner(runSdkQuery)(request, model));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]?.type).toBe("failed");
+    if (events[0]?.type === "failed") expect(events[0].error._tag).toBe("SdkQueryError");
+  });
+
+  test("does not start an SDK query for an already-aborted signal", async () => {
+    const request: AgentRequest = {
+      systemPrompt: "s",
+      promptBlocks: [{ text: "p" }],
+      toolDescription: "tools",
+      toolNames: [],
+      conversationEntries: [],
+    };
+    const model = modelFixture({
+      api: "claude-sdk",
+      provider: "claude-sdk",
+      id: "sonnet",
+    });
+    let queryStarted = false;
+    const runSdkQuery: RunSdkQuery = () => {
+      queryStarted = true;
+      return (async function* () {})();
+    };
+    const controller = new AbortController();
+    controller.abort("cancelled before start");
+
+    const events = await drain(createClaudeAgentSdkRunner(runSdkQuery)(request, model, { signal: controller.signal }));
+
+    expect(queryStarted).toBe(false);
+    expect(events[0]?.type).toBe("failed");
   });
 
   test("yields the hook-captured tool call once the SDK result confirms a clean defer", async () => {
@@ -432,22 +508,22 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
       if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
       await hook(
-        {
+        hookInputFixture({
           hook_event_name: "PreToolUse",
           tool_name: "mcp__pi__pi_call",
           tool_use_id: "toolu_ok",
           tool_input: { name: "read", arguments: { path: "package.json" } },
-        } as Parameters<typeof hook>[0],
+        }),
         "toolu_ok",
         { signal: new AbortController().signal },
       );
@@ -462,11 +538,11 @@ describe("serializeConversation", () => {
   });
 
   test("keeps each turn's allowed-tool set independent even though the MCP schema and handler are shared module singletons", async () => {
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const makeRun =
       (toolUseId: string, name: string): RunSdkQuery =>
@@ -474,12 +550,12 @@ describe("serializeConversation", () => {
         const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
         if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
         await hook(
-          {
+          hookInputFixture({
             hook_event_name: "PreToolUse",
             tool_name: "mcp__pi__pi_call",
             tool_use_id: toolUseId,
             tool_input: { name, arguments: {} },
-          } as Parameters<typeof hook>[0],
+          }),
           toolUseId,
           { signal: new AbortController().signal },
         );
@@ -518,7 +594,7 @@ describe("serializeConversation", () => {
     try {
       for await (const event of secondRunner(secondRequest, model)) secondTurnEvents.push(event);
     } catch (error) {
-      capturedError = error as Error;
+      capturedError = error instanceof Error ? error : new Error(String(error));
     }
     expect(capturedError).toBeUndefined();
     expect(secondTurnEvents).toEqual([{ type: "tool_call", id: "toolu_b", name: "write", arguments: {} }]);
@@ -547,34 +623,34 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
       if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
       // First attempt: the recognizable "pi_call as its own inner name" mistake.
       await hook(
-        {
+        hookInputFixture({
           hook_event_name: "PreToolUse",
           tool_name: "mcp__pi__pi_call",
           tool_use_id: "toolu_bad",
           tool_input: { name: "pi_call", arguments: {} },
-        } as Parameters<typeof hook>[0],
+        }),
         "toolu_bad",
         { signal: new AbortController().signal },
       );
       // The model corrects itself later in the same query() call.
       await hook(
-        {
+        hookInputFixture({
           hook_event_name: "PreToolUse",
           tool_name: "mcp__pi__pi_call",
           tool_use_id: "toolu_good",
           tool_input: { name: "read", arguments: { path: "package.json" } },
-        } as Parameters<typeof hook>[0],
+        }),
         "toolu_good",
         { signal: new AbortController().signal },
       );
@@ -596,11 +672,11 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
@@ -610,12 +686,12 @@ describe("serializeConversation", () => {
       // instead of denying forever.
       for (let attempt = 0; attempt < 4; attempt += 1) {
         await hook(
-          {
+          hookInputFixture({
             hook_event_name: "PreToolUse",
             tool_name: "mcp__pi__pi_call",
             tool_use_id: `toolu_bad_${attempt}`,
             tool_input: { name: "pi_call", arguments: {} },
-          } as Parameters<typeof hook>[0],
+          }),
           `toolu_bad_${attempt}`,
           { signal: new AbortController().signal },
         );
@@ -623,14 +699,14 @@ describe("serializeConversation", () => {
       yield { type: "result", is_error: false, stop_reason: null, terminal_reason: "tool_deferred" };
     };
 
-    const runner = createClaudeAgentSdkRunner(runSdkQuery);
-    const events: BridgeEvent[] = [];
-    await expect(
-      (async () => {
-        for await (const event of runner(request, model)) events.push(event);
-      })(),
-    ).rejects.toThrow(/pi_call.*is this gateway's own name/);
-    expect(events).toEqual([]);
+    const events = await drain(createClaudeAgentSdkRunner(runSdkQuery)(request, model));
+
+    expect(events).toHaveLength(1);
+    expect(events[0]?.type).toBe("failed");
+    if (events[0]?.type === "failed") {
+      expect(events[0].error._tag).toBe("InvalidDeferredCallLimitError");
+      expect(events[0].error.message).toMatch(/pi_call.*is this gateway's own name/);
+    }
   });
 
   test("tolerates exactly MAX_INVALID_PI_CALLS invalid attempts before a valid one — the cap is inclusive, not exclusive", async () => {
@@ -641,11 +717,11 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
@@ -654,23 +730,23 @@ describe("serializeConversation", () => {
       // cap trip point — followed by a valid request in the same query().
       for (let attempt = 0; attempt < 3; attempt += 1) {
         await hook(
-          {
+          hookInputFixture({
             hook_event_name: "PreToolUse",
             tool_name: "mcp__pi__pi_call",
             tool_use_id: `toolu_bad_${attempt}`,
             tool_input: { name: "pi_call", arguments: {} },
-          } as Parameters<typeof hook>[0],
+          }),
           `toolu_bad_${attempt}`,
           { signal: new AbortController().signal },
         );
       }
       await hook(
-        {
+        hookInputFixture({
           hook_event_name: "PreToolUse",
           tool_name: "mcp__pi__pi_call",
           tool_use_id: "toolu_good",
           tool_input: { name: "read", arguments: { path: "package.json" } },
-        } as Parameters<typeof hook>[0],
+        }),
         "toolu_good",
         { signal: new AbortController().signal },
       );
@@ -684,7 +760,7 @@ describe("serializeConversation", () => {
     expect(events).toEqual([{ type: "tool_call", id: "toolu_good", name: "read", arguments: { path: "package.json" } }]);
   });
 
-  test("hands a captured valid pi_call to Pi even when other invalid attempts in the same turn exceed the cap", async () => {
+  test("stops the query once invalid pi_call attempts exceed the cap", async () => {
     const request: AgentRequest = {
       systemPrompt: "Use tools when needed.",
       promptBlocks: [{ text: "Read package.json" }],
@@ -692,65 +768,52 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
       if (!hook) throw new Error("test setup: PreToolUse hook missing from SDK query options");
-      // 4 invalid attempts — one past MAX_INVALID_PI_CALLS (3) — plus a
-      // valid request batched into the same turn (e.g. parallel tool use).
-      // The cap trips, but the valid call was already captured, so it must
-      // still reach Pi instead of the turn hard-erroring.
+      // The fourth invalid attempt aborts the SDK query. A later valid call
+      // cannot turn the failed query into an executable Pi tool request.
       for (let attempt = 0; attempt < 4; attempt += 1) {
         await hook(
-          {
+          hookInputFixture({
             hook_event_name: "PreToolUse",
             tool_name: "mcp__pi__pi_call",
             tool_use_id: `toolu_bad_${attempt}`,
             tool_input: { name: "pi_call", arguments: {} },
-          } as Parameters<typeof hook>[0],
+          }),
           `toolu_bad_${attempt}`,
           { signal: new AbortController().signal },
         );
       }
       await hook(
-        {
+        hookInputFixture({
           hook_event_name: "PreToolUse",
           tool_name: "mcp__pi__pi_call",
           tool_use_id: "toolu_good",
           tool_input: { name: "read", arguments: { path: "package.json" } },
-        } as Parameters<typeof hook>[0],
+        }),
         "toolu_good",
         { signal: new AbortController().signal },
       );
       yield { type: "result", is_error: false, stop_reason: null, terminal_reason: "tool_deferred" };
     };
 
-    const runner = createClaudeAgentSdkRunner(runSdkQuery);
-    const events: BridgeEvent[] = [];
-    for await (const event of runner(request, model)) events.push(event);
+    const events = await drain(createClaudeAgentSdkRunner(runSdkQuery)(request, model));
 
-    expect(events).toEqual([{ type: "tool_call", id: "toolu_good", name: "read", arguments: { path: "package.json" } }]);
+    expect(events).toHaveLength(1);
+    expect(events[0]?.type).toBe("failed");
+    if (events[0]?.type === "failed") {
+      expect(events[0].error._tag).toBe("InvalidDeferredCallLimitError");
+    }
   });
 
-  // The "tolerates exactly MAX_INVALID_PI_CALLS..." test above (3 invalid +
-  // 1 valid) cannot pin the cap value 3 on its own: once a valid call is
-  // captured, "captured calls win over the cap" (the test right above this
-  // one) makes that scenario succeed under ANY cap value, not just 3. This
-  // test isolates the fencepost by never capturing a valid call at all, so
-  // the cap's own pass/fail boundary is the only thing that can end the
-  // turn cleanly. Paired with the existing "caps repeated invalid pi_call
-  // attempts..." test above (4 invalid, 0 valid, expects a throw), the two
-  // together pin the cap at exactly 3: this test fails if the cap drops to
-  // 2 (3 invalid attempts would then exceed it and throw instead of ending
-  // cleanly), and that test fails if the cap rises to 4 (4 invalid attempts
-  // would then no longer exceed it, so it would end cleanly instead of
-  // throwing). Verified both directions by hand — see the round-3 fix
-  // report for the constant-swap evidence.
+  // Together with the four-attempt failure, this pins the inclusive boundary at three.
   test("ends a turn cleanly at exactly MAX_INVALID_PI_CALLS invalid attempts with no valid pi_call ever captured", async () => {
     const request: AgentRequest = {
       systemPrompt: "Use tools when needed.",
@@ -759,11 +822,11 @@ describe("serializeConversation", () => {
       toolNames: ["read"],
       conversationEntries: [],
     };
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
 
     const runSdkQuery: RunSdkQuery = async function* (params) {
       const hook = params.options?.hooks?.PreToolUse?.[0]?.hooks?.[0];
@@ -774,12 +837,12 @@ describe("serializeConversation", () => {
       // result), never signaling a cap trip on its own.
       for (let attempt = 0; attempt < 3; attempt += 1) {
         await hook(
-          {
+          hookInputFixture({
             hook_event_name: "PreToolUse",
             tool_name: "mcp__pi__pi_call",
             tool_use_id: `toolu_bad_${attempt}`,
             tool_input: { name: "pi_call", arguments: {} },
-          } as Parameters<typeof hook>[0],
+          }),
           `toolu_bad_${attempt}`,
           { signal: new AbortController().signal },
         );
@@ -816,12 +879,12 @@ describe("serializeConversation", () => {
     );
 
     const output = await hook(
-      {
+      hookInputFixture({
         hook_event_name: "PreToolUse",
         tool_name: "mcp__pi__pi_call",
         tool_use_id: "toolu_1",
         tool_input: { name: "read", arguments: { path: "package.json" } },
-      } as Parameters<typeof hook>[0],
+      }),
       "toolu_1",
       { signal: new AbortController().signal },
     );
@@ -836,12 +899,12 @@ describe("serializeConversation", () => {
     const hook = createPreToolUseHook(new Set(["read"]), () => {}, () => {});
 
     const output = await hook(
-      {
+      hookInputFixture({
         hook_event_name: "PreToolUse",
         tool_name: "Bash",
         tool_use_id: "toolu_2",
         tool_input: { command: "ls" },
-      } as Parameters<typeof hook>[0],
+      }),
       "toolu_2",
       { signal: new AbortController().signal },
     );
@@ -858,12 +921,12 @@ describe("serializeConversation", () => {
     });
 
     const output = await hook(
-      {
+      hookInputFixture({
         hook_event_name: "PreToolUse",
         tool_name: "mcp__pi__pi_call",
         tool_use_id: "toolu_3",
         tool_input: { name: "missing_tool", arguments: {} },
-      } as Parameters<typeof hook>[0],
+      }),
       "toolu_3",
       { signal: new AbortController().signal },
     );
@@ -887,18 +950,18 @@ describe("serializeConversation", () => {
     });
 
     const output = await hook(
-      {
+      hookInputFixture({
         hook_event_name: "PreToolUse",
         tool_name: "mcp__pi__pi_call",
         tool_use_id: "toolu_4",
         tool_input: { name: "pi_call", arguments: {} },
-      } as Parameters<typeof hook>[0],
+      }),
       "toolu_4",
       { signal: new AbortController().signal },
     );
 
     expect(capturedError?.message).toBe(
-      'Invalid Pi tool call: "pi_call" is this gateway\'s own name, not a Pi tool — do not pass it as the "name" field. ' +
+      'Invalid Pi tool call: "pi_call" is this gateway\'s own name, not a Pi tool; do not pass it as the "name" field. ' +
         "Pass the target Pi tool's name instead, e.g. read, write.",
     );
     expect(output).toMatchObject({
@@ -913,12 +976,12 @@ describe("serializeConversation", () => {
     });
 
     const output = await hook(
-      {
+      hookInputFixture({
         hook_event_name: "PreToolUse",
         tool_name: "mcp__pi__pi_call",
         tool_use_id: "toolu_5",
         tool_input: { name: "read" },
-      } as Parameters<typeof hook>[0],
+      }),
       "toolu_5",
       { signal: new AbortController().signal },
     );
@@ -937,14 +1000,14 @@ describe("serializeConversation", () => {
         type: "stream_event",
         event: { type: "content_block_delta", delta: { type: "text_delta", text: "Hi" } },
       }),
-    ).toEqual({ type: "text_delta", text: "Hi" });
+    ).toEqual({ _tag: "ok", value: { type: "text_delta", text: "Hi" } });
 
     expect(
       translateSdkStreamEvent({
         type: "stream_event",
         event: { type: "content_block_delta", delta: { type: "thinking_delta", thinking: "Hmm" } },
       }),
-    ).toEqual({ type: "thinking_delta", text: "Hmm" });
+    ).toEqual({ _tag: "ok", value: { type: "thinking_delta", text: "Hmm" } });
 
     expect(
       translateSdkStreamEvent({
@@ -959,48 +1022,76 @@ describe("serializeConversation", () => {
           },
         },
       }),
-    ).toEqual({ type: "usage", input: 10, output: 2, cacheRead: 3, cacheWrite: 1 });
+    ).toEqual({
+      _tag: "ok",
+      value: { type: "usage", input: 10, output: 2, cacheRead: 3, cacheWrite: 1 },
+    });
+  });
+
+  test("rejects malformed SDK usage instead of reporting invented zero counts", () => {
+    const parsed = translateSdkStreamEvent({
+      type: "stream_event",
+      event: { type: "message_delta", usage: { output_tokens: "two" } },
+    });
+
+    expect(parsed._tag).toBe("err");
+    if (parsed._tag === "err") expect(parsed.error._tag).toBe("SdkProtocolError");
+  });
+
+  test("rejects an unknown SDK stop reason instead of treating it as a clean stop", () => {
+    const outcome = resultOutcome({ is_error: false, stop_reason: "new_unhandled_reason" });
+
+    expect(outcome._tag).toBe("malformed");
+    if (outcome._tag === "malformed") expect(outcome.error._tag).toBe("SdkProtocolError");
   });
 
   test("maps a clean SDK result to a stop or length reason", () => {
     expect(resultOutcome({ is_error: false, stop_reason: "end_turn" })).toEqual({
-      isError: false,
+      _tag: "success",
       stopReason: "stop",
+      terminalReason: undefined,
     });
     expect(resultOutcome({ is_error: false, stop_reason: "max_tokens" })).toEqual({
-      isError: false,
+      _tag: "success",
       stopReason: "length",
+      terminalReason: undefined,
     });
   });
 
   test("surfaces the SDK's own error result instead of silently reporting an empty stop", () => {
-    expect(
-      resultOutcome({ is_error: true, stop_reason: null, errors: ["context deadline exceeded"] }),
-    ).toEqual({
-      isError: true,
-      stopReason: "stop",
-      errorMessage: "context deadline exceeded",
+    const executionError = resultOutcome({
+      is_error: true,
+      stop_reason: null,
+      errors: ["context deadline exceeded"],
     });
+    expect(executionError._tag).toBe("failure");
+    if (executionError._tag === "failure") expect(executionError.error.message).toBe("context deadline exceeded");
 
-    expect(resultOutcome({ is_error: true, stop_reason: null, result: "The model refused to respond." })).toEqual({
-      isError: true,
-      stopReason: "stop",
-      errorMessage: "The model refused to respond.",
+    const refusal = resultOutcome({
+      is_error: true,
+      stop_reason: null,
+      result: "The model refused to respond.",
     });
+    expect(refusal._tag).toBe("failure");
+    if (refusal._tag === "failure") expect(refusal.error.message).toBe("The model refused to respond.");
   });
 
   test("treats terminal_reason tool_deferred_unavailable as an error even when is_error is false", () => {
-    expect(
-      resultOutcome({ is_error: false, stop_reason: null, terminal_reason: "tool_deferred_unavailable" }),
-    ).toEqual({
-      isError: true,
-      stopReason: "stop",
-      errorMessage: "Claude Agent SDK could not honor the deferred Pi tool call (terminal_reason: tool_deferred_unavailable)",
+    const outcome = resultOutcome({
+      is_error: false,
+      stop_reason: null,
+      terminal_reason: "tool_deferred_unavailable",
     });
+    expect(outcome._tag).toBe("failure");
+    if (outcome._tag === "failure") {
+      expect(outcome.error.message).toBe(
+        "Claude Agent SDK could not honor the deferred Pi tool call (terminal_reason: tool_deferred_unavailable)",
+      );
+    }
   });
 
   test("builds an honest Pi system prompt and a catalog for the deferred tool gateway", () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "Repository rule: run tests.",
       messages: [{ role: "user", content: "Inspect package.json" }],
       tools: [
@@ -1014,7 +1105,7 @@ describe("serializeConversation", () => {
           },
         },
       ],
-    } as unknown as Context;
+    });
 
     const request = buildAgentRequest(context);
 
@@ -1029,7 +1120,7 @@ describe("serializeConversation", () => {
   });
 
   test("marks only the last conversation entry as a cache breakpoint on short transcripts, never the trailing instruction block", () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "s",
       messages: [
         { role: "user", content: "Read package.json" },
@@ -1039,7 +1130,7 @@ describe("serializeConversation", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
+    });
 
     const request = buildAgentRequest(context);
 
@@ -1053,11 +1144,11 @@ describe("serializeConversation", () => {
 
   test("keeps one provider cache breakpoint on the transcript tail even after the transcript grows past 40 entries", () => {
     const contextWithEntries = (count: number) =>
-      ({
+      contextFixture({
         systemPrompt: "s",
         messages: Array.from({ length: count }, (_, index) => ({ role: "user", content: `entry ${index}` })),
         tools: [],
-      }) as unknown as Context;
+      });
     const breakpointIndexes = (count: number) =>
       buildAgentRequest(contextWithEntries(count)).promptBlocks.flatMap((block, index) =>
         block.cacheBreakpoint ? [index] : [],
@@ -1070,7 +1161,7 @@ describe("serializeConversation", () => {
   });
 
   test("keeps the stable transcript prefix byte-identical as new entries are appended, so a later turn can hit cache on it", () => {
-    const baseContext = {
+    const baseContext = contextFixture({
       systemPrompt: "s",
       messages: [
         { role: "user", content: "Read package.json" },
@@ -1080,8 +1171,8 @@ describe("serializeConversation", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
-    const grownContext = {
+    });
+    const grownContext = contextFixture({
       ...baseContext,
       messages: [
         ...baseContext.messages,
@@ -1093,7 +1184,7 @@ describe("serializeConversation", () => {
           content: [{ type: "text", text: "{}" }],
         },
       ],
-    } as unknown as Context;
+    });
 
     const before = buildAgentRequest(baseContext);
     const after = buildAgentRequest(grownContext);
@@ -1119,7 +1210,7 @@ describe("serializeConversation", () => {
   });
 
   test("forwards a user message's image bytes to the SDK as a real content block, not embedded in the JSONL text", () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "s",
       messages: [
         {
@@ -1131,7 +1222,7 @@ describe("serializeConversation", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
+    });
 
     const request = buildAgentRequest(context);
     const entryBlock = request.promptBlocks.find((block) => block.text.includes('"role":"user"'));
@@ -1145,7 +1236,7 @@ describe("serializeConversation", () => {
   });
 
   test("forwards a toolResult message's image bytes (e.g. a screenshot tool) the same way as user images", () => {
-    const context = {
+    const context = contextFixture({
       systemPrompt: "s",
       messages: [
         { role: "user", content: "Take a screenshot" },
@@ -1158,7 +1249,7 @@ describe("serializeConversation", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
+    });
 
     const request = buildAgentRequest(context);
     const entryBlock = request.promptBlocks.find((block) => block.text.includes('"role":"toolResult"'));
@@ -1172,7 +1263,7 @@ describe("serializeConversation", () => {
   });
 
   test("keeps the stable transcript prefix (text and images) byte-identical across turns when images are present", () => {
-    const baseContext = {
+    const baseContext = contextFixture({
       systemPrompt: "s",
       messages: [
         {
@@ -1188,8 +1279,8 @@ describe("serializeConversation", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
-    const grownContext = {
+    });
+    const grownContext = contextFixture({
       ...baseContext,
       messages: [
         ...baseContext.messages,
@@ -1201,7 +1292,7 @@ describe("serializeConversation", () => {
           content: [{ type: "text", text: "{}" }],
         },
       ],
-    } as unknown as Context;
+    });
 
     const before = buildAgentRequest(baseContext);
     const after = buildAgentRequest(grownContext);
@@ -1218,17 +1309,18 @@ describe("serializeConversation", () => {
 
 describe("unsupported image mime types", () => {
   test("an unsupported image kept in transcript history does not throw on a later turn", async () => {
-    const model = {
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
-    const runSdkQuery: RunSdkQuery = (() => (async function* () {
-      yield { type: "result", is_error: false, stop_reason: "end_turn" };
-    })()) as RunSdkQuery;
+    });
+    const runSdkQuery: RunSdkQuery = () =>
+      (async function* () {
+        yield { type: "result", is_error: false, stop_reason: "end_turn" };
+      })();
     const runner = createClaudeAgentSdkRunner(runSdkQuery);
 
-    const context = {
+    const context = contextFixture({
       systemPrompt: "s",
       messages: [
         {
@@ -1240,7 +1332,7 @@ describe("unsupported image mime types", () => {
         },
       ],
       tools: [],
-    } as unknown as Context;
+    });
 
     // Turn 1: the unsupported image is the newest (and only) entry.
     const firstRequest = buildAgentRequest(context);
@@ -1250,10 +1342,10 @@ describe("unsupported image mime types", () => {
 
     // Turn 2: the same message is now historical, re-serialized and resent
     // unchanged, alongside a new user message — this must not throw.
-    const grownContext = {
+    const grownContext = contextFixture({
       ...context,
       messages: [...context.messages, { role: "user", content: "Never mind, thanks" }],
-    } as unknown as Context;
+    });
     const secondRequest = buildAgentRequest(grownContext);
     const secondTurnEvents: BridgeEvent[] = [];
     for await (const event of runner(secondRequest, model)) secondTurnEvents.push(event);
@@ -1265,19 +1357,19 @@ describe("buildPromptStream", () => {
   test("leaves room for the SDK's three cache breakpoints so the API never receives five", async () => {
     // The sanitized failing session had 41 ancestor messages at its first
     // error, which was the old threshold for adding a second provider marker.
-    const request = buildAgentRequest({
+    const request = buildAgentRequest(contextFixture({
       systemPrompt: "s",
       messages: Array.from({ length: 41 }, (_, index) => ({ role: "user", content: `entry ${index}` })),
       tools: [],
-    } as unknown as Context);
-    const model = {
+    }));
+    const model = modelFixture({
       api: "claude-sdk",
       provider: "claude-sdk",
       id: "sonnet",
-    } as unknown as Model<"claude-sdk">;
+    });
     const runSdkQuery: RunSdkQuery = async function* ({ prompt }) {
-      const [message] = await drain(prompt as AsyncIterable<SDKUserMessage>);
-      const providerBreakpoints = (message?.message.content as unknown as Array<Record<string, unknown>>).filter(
+      const [message] = await drain(sdkPromptFixture(prompt));
+      const providerBreakpoints = sdkContentRecords(message).filter(
         (block) => block.cache_control !== undefined,
       ).length;
       const cacheControlBlocksAtApi = 3 + providerBreakpoints;
@@ -1366,7 +1458,7 @@ describe("buildPromptStream", () => {
     );
 
     const [message] = messages;
-    const content = message?.message.content as unknown as Array<Record<string, unknown>>;
+    const content = sdkContentRecords(message);
     expect(content).toHaveLength(3);
     expect(content[0]).not.toHaveProperty("cache_control");
     expect(content[1]).not.toHaveProperty("cache_control");
@@ -1428,7 +1520,7 @@ describe("buildPromptStream", () => {
     );
 
     const [message] = messages;
-    const content = message?.message.content as unknown as Array<Record<string, unknown>>;
+    const content = sdkContentRecords(message);
     expect(content).toHaveLength(3);
     expect(content[0]).not.toHaveProperty("cache_control");
     expect(content[1]).not.toHaveProperty("cache_control");

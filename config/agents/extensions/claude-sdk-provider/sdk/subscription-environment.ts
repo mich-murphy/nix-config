@@ -9,8 +9,14 @@ const NON_SUBSCRIPTION_AUTH_VARIABLES = [
   "CLAUDE_CODE_USE_FOUNDRY",
 ] as const;
 
+/**
+ * Build the sanitized environment used by the subscription-authenticated SDK subprocess.
+ *
+ * @param source - Startup environment to copy and sanitize.
+ * @returns A fresh environment with non-subscription credentials removed.
+ */
 export function subscriptionEnvironment(
-  source: Record<string, string | undefined> = process.env,
+  source: Readonly<Record<string, string | undefined>> = process.env,
 ): Record<string, string | undefined> {
   const environment = { ...source };
   for (const name of NON_SUBSCRIPTION_AUTH_VARIABLES) delete environment[name];

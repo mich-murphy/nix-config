@@ -5,10 +5,13 @@ import {
   type AssistantMessage,
   type AssistantMessageEventStream,
   type Context,
+  type ImageContent,
   type Message,
   type Model,
   type SimpleStreamOptions,
+  type TextContent,
 } from "@earendil-works/pi-ai";
+import { SdkQueryError, type SdkRunError } from "./sdk/errors";
 
 // Raw image bytes never go into the JSONL transcript text: embedding base64 there
 // would make the "note" placeholder below the only stable part while the payload
@@ -19,22 +22,24 @@ import {
 // per-message index (0, 1, ...), not a global counter, so it stays deterministic
 // regardless of what other messages in the transcript do.
 export interface ImageAttachment {
-  data: string;
-  mediaType: string;
+  /** Base64-encoded image bytes. */
+  readonly data: string;
+  /** Image media type supplied by Pi. */
+  readonly mediaType: string;
 }
 
 interface SerializedMessage {
-  json: object;
-  images: ImageAttachment[];
+  readonly json: object;
+  readonly images: ReadonlyArray<ImageAttachment>;
 }
 
 function serializeImageBlocks(
-  content: ReadonlyArray<{ type: string; text?: string; data?: string; mimeType?: string }>,
-): { content: object[]; images: ImageAttachment[] } {
+  content: ReadonlyArray<TextContent | ImageContent>,
+): { readonly content: ReadonlyArray<object>; readonly images: ReadonlyArray<ImageAttachment> } {
   const images: ImageAttachment[] = [];
   const serialized = content.map((block) => {
     if (block.type === "text") return { type: "text", text: block.text };
-    images.push({ data: block.data ?? "", mediaType: block.mimeType ?? "" });
+    images.push({ data: block.data, mediaType: block.mimeType });
     return { type: "image", mediaType: block.mimeType, imageRef: images.length - 1 };
   });
   return { content: serialized, images };
@@ -77,11 +82,20 @@ function serializeMessage(message: Message): SerializedMessage | undefined {
   return undefined;
 }
 
+/** One deterministic JSONL transcript entry and its extracted image payloads. */
 export interface TranscriptEntry {
-  text: string;
-  images: ImageAttachment[];
+  /** Serialized JSONL text. */
+  readonly text: string;
+  /** Images referenced by this entry. */
+  readonly images: ReadonlyArray<ImageAttachment>;
 }
 
+/**
+ * Serialize Pi messages into stable transcript entries.
+ *
+ * @param context - Current Pi provider context.
+ * @returns Entries in conversation order.
+ */
 export function serializeConversationEntries(context: Context): TranscriptEntry[] {
   const entries: TranscriptEntry[] = [];
   for (const message of context.messages) {
@@ -91,19 +105,39 @@ export function serializeConversationEntries(context: Context): TranscriptEntry[
   return entries;
 }
 
+/**
+ * Serialize the Pi conversation as JSONL text.
+ *
+ * @param context - Current Pi provider context.
+ * @returns JSONL transcript without extracted image bytes.
+ */
 export function serializeConversation(context: Context): string {
   return serializeConversationEntries(context)
     .map((entry) => entry.text)
     .join("\n");
 }
 
+/** Events exchanged between the SDK adapter and Pi stream adapter. */
 export type BridgeEvent =
-  | { type: "text_delta"; text: string }
-  | { type: "thinking_delta"; text: string }
-  | { type: "tool_call"; id: string; name: string; arguments: Record<string, unknown> }
-  | { type: "usage"; input: number; output: number; cacheRead: number; cacheWrite: number }
-  | { type: "done"; reason: "stop" | "length" };
+  | { readonly type: "text_delta"; readonly text: string }
+  | { readonly type: "thinking_delta"; readonly text: string }
+  | {
+      readonly type: "tool_call";
+      readonly id: string;
+      readonly name: string;
+      readonly arguments: Readonly<Record<string, unknown>>;
+    }
+  | {
+      readonly type: "usage";
+      readonly input: number;
+      readonly output: number;
+      readonly cacheRead: number;
+      readonly cacheWrite: number;
+    }
+  | { readonly type: "done"; readonly reason: "stop" | "length" }
+  | { readonly type: "failed"; readonly error: SdkRunError };
 
+/** Stateless SDK operation used by the Pi stream adapter. */
 export type AgentSdkRun = (
   request: AgentRequest,
   model: Model<Api>,
@@ -115,19 +149,37 @@ export type AgentSdkRun = (
 // block asks the API to cache everything up to and including it, and to serve
 // that same prefix from cache on a later request that reproduces it byte-for-byte.
 export interface PromptBlock {
-  text: string;
-  cacheBreakpoint?: boolean;
-  images?: ImageAttachment[];
+  /** Text sent in this SDK content block. */
+  readonly text: string;
+  /** Whether this block requests the provider-owned cache marker. */
+  readonly cacheBreakpoint?: boolean;
+  /** Image blocks expanded immediately after the text block. */
+  readonly images?: ReadonlyArray<ImageAttachment>;
 }
 
+/** Parsed request passed from the Pi adapter to the SDK runner. */
 export interface AgentRequest {
-  systemPrompt: string;
-  promptBlocks: PromptBlock[];
-  toolDescription: string;
-  toolNames: string[];
-  conversationEntries: string[];
+  /** Complete system prompt for the turn. */
+  readonly systemPrompt: string;
+  /** Stable prompt blocks in wire order. */
+  readonly promptBlocks: ReadonlyArray<PromptBlock>;
+  /** Per-turn deferred Pi tool catalog. */
+  readonly toolDescription: string;
+  /** Pi tool names allowed during this turn. */
+  readonly toolNames: ReadonlyArray<string>;
+  /** Serialized conversation entries used by diagnostics and tests. */
+  readonly conversationEntries: ReadonlyArray<string>;
 }
 
+/**
+ * Adapt typed SDK bridge events to Pi's assistant-message event stream.
+ *
+ * @param model - Selected Pi model.
+ * @param context - Current Pi conversation and tool context.
+ * @param options - Pi stream options, including cancellation.
+ * @param run - SDK operation to execute.
+ * @returns Pi assistant-message event stream.
+ */
 export function createAgentSdkStream(
   model: Model<Api>,
   context: Context,
@@ -228,19 +280,29 @@ export function createAgentSdkStream(
           stream.push({ type: "done", reason: output.stopReason, message: output });
           stream.end();
           return;
+        } else if (event.type === "failed") {
+          closeOpenBlocks();
+          output.stopReason = options?.signal?.aborted ? "aborted" : "error";
+          output.errorMessage = event.error.message;
+          stream.push({ type: "error", reason: output.stopReason, error: output });
+          stream.end();
+          return;
         }
       }
-      // A deferred-tool turn ends once every pending call in the message has
-      // been yielded, with no separate terminal "done" event.
       if (sawToolCall) {
         stream.push({ type: "done", reason: "toolUse", message: output });
         stream.end();
         return;
       }
-      throw new Error("Claude Agent SDK stream ended without a terminal event");
-    } catch (error) {
+      const error = new SdkQueryError("terminal-result", "bridge stream ended without a terminal event");
       output.stopReason = options?.signal?.aborted ? "aborted" : "error";
-      output.errorMessage = error instanceof Error ? error.message : String(error);
+      output.errorMessage = error.message;
+      stream.push({ type: "error", reason: output.stopReason, error: output });
+      stream.end();
+    } catch (cause) {
+      const error = new SdkQueryError("iterate", cause);
+      output.stopReason = options?.signal?.aborted ? "aborted" : "error";
+      output.errorMessage = error.message;
       stream.push({ type: "error", reason: output.stopReason, error: output });
       stream.end();
     }
@@ -249,6 +311,12 @@ export function createAgentSdkStream(
   return stream;
 }
 
+/**
+ * Build the stateless SDK request from Pi's typed provider context.
+ *
+ * @param context - Current Pi provider context.
+ * @returns Parsed request with a stable transcript and deferred-tool catalog.
+ */
 export function buildAgentRequest(context: Context): AgentRequest {
   const tools = (context.tools ?? []).map((tool) => ({
     name: tool.name,
@@ -282,10 +350,10 @@ export function buildAgentRequest(context: Context): AgentRequest {
   // the one-marker wire budget defensively for hand-built AgentRequests.
   const promptBlocks: PromptBlock[] = [
     { text: "Complete prior Pi conversation (JSONL). Each following block is one transcript entry." },
-    ...entries.map((entry, index) => ({
+    ...entries.map((entry, index): PromptBlock => ({
       text: entry.text,
       cacheBreakpoint: index === lastEntryIndex,
-      images: entry.images.length > 0 ? entry.images : undefined,
+      ...(entry.images.length > 0 ? { images: entry.images } : {}),
     })),
     { text: "Continue from the final conversation entry above." },
   ];

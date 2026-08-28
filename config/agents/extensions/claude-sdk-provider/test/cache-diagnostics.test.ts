@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import type { Context } from "@earendil-works/pi-ai";
 import { buildAgentRequest } from "../bridge";
 import { cacheDiagnosticsFromEnvironment, createCacheDiagnosticTracker, type CacheDiagnostic } from "../cache-diagnostics";
 import { buildPromptStream } from "../sdk-runner";
+import { contextFixture, sdkContentRecords } from "./fixtures";
 
 async function drain<T>(iterable: AsyncIterable<T>): Promise<T[]> {
   const values: T[] = [];
@@ -13,7 +13,7 @@ async function drain<T>(iterable: AsyncIterable<T>): Promise<T[]> {
 describe("cache diagnostics", () => {
   test("reports a byte-identical common prefix for long transcripts containing images without logging content", async () => {
     const longOutput = "stable build output\n".repeat(5_000);
-    const base = {
+    const base = contextFixture({
       systemPrompt: "stable system",
       tools: [],
       messages: [
@@ -32,8 +32,8 @@ describe("cache diagnostics", () => {
           content: [{ type: "text", text: longOutput }],
         },
       ],
-    } as unknown as Context;
-    const grown = { ...base, messages: [...base.messages, { role: "user", content: "continue" }] } as unknown as Context;
+    });
+    const grown = contextFixture({ ...base, messages: [...base.messages, { role: "user", content: "continue" }] });
     const first = buildAgentRequest(base);
     const second = buildAgentRequest(grown);
     const events: CacheDiagnostic[] = [];
@@ -53,8 +53,8 @@ describe("cache diagnostics", () => {
 
     const firstWire = await drain(buildPromptStream(first.promptBlocks));
     const secondWire = await drain(buildPromptStream(second.promptBlocks));
-    const firstContent = firstWire[0]?.message.content as unknown as Array<Record<string, unknown>>;
-    const secondContent = secondWire[0]?.message.content as unknown as Array<Record<string, unknown>>;
+    const firstContent = sdkContentRecords(firstWire[0]);
+    const secondContent = sdkContentRecords(secondWire[0]);
     const withoutCacheMetadata = (block: Record<string, unknown>) => {
       const { cache_control: _cacheControl, ...content } = block;
       return content;

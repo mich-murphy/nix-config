@@ -1,25 +1,36 @@
-import { isToolCallEventType, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+  isToolCallEventType,
+  type ExtensionAPI,
+  type ProviderModelConfig,
+} from "@earendil-works/pi-coding-agent";
 import { createAgentSdkStream } from "./bridge";
+import { cacheDiagnosticsFromEnvironment } from "./cache-diagnostics";
 import { inspectBashCommand, sanitizeBashContent, sanitizeContextMessages } from "./output-safety";
 import { createClaudeAgentSdkRunner } from "./sdk-runner";
 
-export const models = [
+/** Models exposed by the official Claude Agent SDK provider. */
+export const models: ReadonlyArray<ProviderModelConfig> = [
   { id: "sonnet", name: "Claude Sonnet (official Agent SDK)", reasoning: true },
   { id: "opus", name: "Claude Opus (official Agent SDK)", reasoning: true },
   { id: "fable", name: "Claude Fable (official Agent SDK)", reasoning: true },
   { id: "haiku", name: "Claude Haiku (official Agent SDK)", reasoning: false },
-].map(({ id, name, reasoning }) => ({
+].map<ProviderModelConfig>(({ id, name, reasoning }) => ({
   id,
   name,
   reasoning,
-  input: ["text", "image"] as ["text", "image"],
+  input: ["text", "image"],
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   contextWindow: 200_000,
   maxTokens: 64_000,
 }));
 
-export default function (pi: ExtensionAPI) {
-  const runClaudeAgentSdk = createClaudeAgentSdkRunner();
+/**
+ * Register the Claude Agent SDK provider and bash-output safety hooks.
+ *
+ * @param pi - Pi extension API supplied at startup.
+ */
+export default function registerClaudeSdkProvider(pi: ExtensionAPI): void {
+  const runClaudeAgentSdk = createClaudeAgentSdkRunner(undefined, cacheDiagnosticsFromEnvironment());
 
   pi.on("before_agent_start", (event) => ({
     systemPrompt: `${event.systemPrompt}\n\nBash output safety: never cat an executable or print raw binary/base64 data. Use file, otool, or strings for executables, and inspect encoded files via metadata instead of stdout.`,
@@ -54,7 +65,7 @@ export default function (pi: ExtensionAPI) {
     baseUrl: "agent-sdk://local-claude-code",
     apiKey: "claude-sdk-managed-auth",
     api: "claude-sdk",
-    models,
+    models: [...models],
     streamSimple: (model, context, options) =>
       createAgentSdkStream(model, context, options, runClaudeAgentSdk),
   });

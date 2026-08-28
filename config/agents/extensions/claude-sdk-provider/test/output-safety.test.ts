@@ -50,6 +50,7 @@ describe("bash output safety", () => {
     ];
 
     const sanitized = sanitizeContextMessages(messages);
+    // SAFETY: The second fixture entry is the bash tool result, and this test only inspects its sanitized text content.
     const toolResult = sanitized[1] as unknown as { content: Array<{ type: string; text: string }> };
     expect(toolResult.content[0]?.text).toContain("Binary-like bash output quarantined");
     expect(toolResult.content[0]?.text?.length).toBeLessThan(1_000);

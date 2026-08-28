@@ -3,11 +3,16 @@ import type { ImageAttachment, PromptBlock } from "../bridge";
 
 // Anthropic's vision input accepts these four raster formats. Unsupported
 // historical images become deterministic text notes so replay keeps working.
-const SUPPORTED_IMAGE_MEDIA_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
-type AnthropicImageMediaType = (typeof SUPPORTED_IMAGE_MEDIA_TYPES)[number];
+const SUPPORTED_IMAGE_MEDIA_TYPES: ReadonlySet<string> = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+type AnthropicImageMediaType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
 function isSupportedImageMediaType(mediaType: string): mediaType is AnthropicImageMediaType {
-  return (SUPPORTED_IMAGE_MEDIA_TYPES as readonly string[]).includes(mediaType);
+  return SUPPORTED_IMAGE_MEDIA_TYPES.has(mediaType);
 }
 
 function toAnthropicContentBlock(image: ImageAttachment) {
@@ -38,7 +43,15 @@ function toContentBlocks(block: PromptBlock, cacheBreakpoint: boolean) {
   );
 }
 
-export async function* buildPromptStream(promptBlocks: PromptBlock[]): AsyncGenerator<SDKUserMessage> {
+/**
+ * Build the single-message streaming prompt consumed by the Claude Agent SDK.
+ *
+ * @param promptBlocks - Stable transcript blocks in wire order.
+ * @returns An async stream containing one SDK user message.
+ */
+export async function* buildPromptStream(
+  promptBlocks: ReadonlyArray<PromptBlock>,
+): AsyncGenerator<SDKUserMessage> {
   // The pinned Agent SDK's Claude Code adds three cache breakpoints of its own.
   // Anthropic accepts four, so retain only our latest transcript-tail marker.
   let cacheBreakpointIndex = -1;
