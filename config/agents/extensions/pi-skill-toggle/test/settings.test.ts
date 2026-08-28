@@ -40,7 +40,7 @@ const resources: PolicyResources = {
   ],
 };
 const adapter = {
-  load: () => snapshot,
+  load: () => ({ _tag: "ok" as const, value: snapshot }),
   apply: () => ({ applied: [], skipped: [], errors: [] }),
   reset: () => ({ applied: [], skipped: [], errors: [] }),
 };
@@ -80,6 +80,18 @@ describe("scope-aware settings", () => {
       { scope: "directory", kind: "instruction", id: "/work/project/AGENTS.md", before: "excluded", after: "included" },
     ]);
     expect(formatPolicyPlan(plan)).toContain("research             directory: visible -> manual-only");
+  });
+
+  test("rejects invalid settings values without mutating the draft", () => {
+    const effective = resolveEffectivePolicy(snapshot, { skills: {}, instructions: {} }, resources);
+    const policy = new SkillPolicy(adapter);
+    const draft = policy.draft("global", effective, snapshot);
+    const before = { ...draft.skills };
+
+    const result = updateDraft(draft, effective, "skill:research", "excluded");
+
+    expect(result).toMatchObject({ _tag: "err" });
+    expect(draft.skills).toEqual(before);
   });
 
   test("formats resolution and persistent versus temporary override counts", () => {

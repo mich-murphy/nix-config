@@ -6,8 +6,9 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { filterSystemPrompt } from "../prompt-filter";
 
+const userInstructionPath = "/home/me/.pi/agent/AGENTS.md";
 const contextFiles = [
-  { path: "/home/me/.pi/agent/AGENTS.md", content: "Always be careful." },
+  { path: userInstructionPath, content: "Always be careful." },
   { path: "/work/project/AGENTS.md", content: "Run project tests." },
 ];
 
@@ -61,7 +62,7 @@ describe("filterSystemPrompt", () => {
     const prompt = `base instructions${renderContext(contextFiles)}${formatSkillsForPrompt(skills)}\nCurrent working directory: /work/project`;
 
     const result = filterSystemPrompt(prompt, options, {
-      disabledContextPaths: new Set([contextFiles[0]!.path]),
+      disabledContextPaths: new Set([userInstructionPath]),
       hiddenSkillNames: new Set(["deploy"]),
     });
 
@@ -70,9 +71,7 @@ describe("filterSystemPrompt", () => {
     expect(result.systemPrompt).toContain("Run project tests.");
     expect(result.systemPrompt).toContain("research");
     expect(result.systemPrompt).not.toContain("Deploy software");
-    expect(result.systemPrompt).toEndWith(
-      "Current working directory: /work/project",
-    );
+    expect(result.systemPrompt).toEndWith("Current working directory: /work/project");
   });
 
   test("reports prompt-format drift instead of silently claiming success", () => {
@@ -83,7 +82,7 @@ describe("filterSystemPrompt", () => {
     };
 
     const result = filterSystemPrompt("an incompatible prompt", options, {
-      disabledContextPaths: new Set([contextFiles[0]!.path]),
+      disabledContextPaths: new Set([userInstructionPath]),
       hiddenSkillNames: new Set(["deploy"]),
     });
 
@@ -100,7 +99,7 @@ describe("filterSystemPrompt", () => {
     const skillSection = formatSkillsForPrompt(skills);
     const prompt = `earlier extension text\n${skillSection}`;
     const result = filterSystemPrompt(prompt, options, {
-      disabledContextPaths: new Set([contextFiles[0]!.path]),
+      disabledContextPaths: new Set([userInstructionPath]),
       hiddenSkillNames: new Set(["deploy"]),
     });
     expect(result.failures).toEqual(["instructions"]);
@@ -112,10 +111,25 @@ describe("filterSystemPrompt", () => {
     const options: BuildSystemPromptOptions = { cwd: "/work/project", contextFiles, skills };
     const prompt = `prefix${renderContext(contextFiles)}incompatible skills`;
     const result = filterSystemPrompt(prompt, options, {
-      disabledContextPaths: new Set([contextFiles[0]!.path]),
+      disabledContextPaths: new Set([userInstructionPath]),
       hiddenSkillNames: new Set(["deploy"]),
     });
     expect(result.failures).toEqual(["skills"]);
     expect(result.systemPrompt).not.toContain("Always be careful.");
+  });
+
+  test("does not expect a skill section when the read tool is inactive", () => {
+    const options: BuildSystemPromptOptions = {
+      cwd: "/work/project",
+      selectedTools: ["bash"],
+      contextFiles,
+      skills,
+    };
+    const prompt = `base${renderContext(contextFiles)}\nCurrent working directory: /work/project`;
+    const result = filterSystemPrompt(prompt, options, {
+      disabledContextPaths: new Set(),
+      hiddenSkillNames: new Set(["deploy"]),
+    });
+    expect(result).toEqual({ systemPrompt: prompt, failures: [] });
   });
 });

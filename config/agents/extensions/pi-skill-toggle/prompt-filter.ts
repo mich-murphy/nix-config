@@ -1,16 +1,17 @@
-import { realpathSync } from "node:fs";
-import { normalize, resolve } from "node:path";
 import {
   formatSkillsForPrompt,
   type BuildSystemPromptOptions,
 } from "@earendil-works/pi-coding-agent";
 import type { EffectivePolicy } from "./policy";
+import { resourcePathId } from "./resource-path";
 
+/** Result of applying effective policy to Pi's current system prompt. */
 export interface PromptPolicyResult {
-  systemPrompt: string;
-  failures: Array<"instructions" | "skills">;
+  readonly systemPrompt: string;
+  readonly failures: ReadonlyArray<"instructions" | "skills">;
 }
 
+/** Apply effective resource visibility to a model-facing system prompt. */
 export function applyPolicyToSystemPrompt(
   systemPrompt: string,
   options: BuildSystemPromptOptions,
@@ -28,17 +29,19 @@ export function applyPolicyToSystemPrompt(
   });
 }
 
+/** Canonical resource identifiers to remove from a system prompt. */
 export interface SkillToggleSelection {
-  disabledContextPaths: ReadonlySet<string>;
-  hiddenSkillNames: ReadonlySet<string>;
+  readonly disabledContextPaths: ReadonlySet<string>;
+  readonly hiddenSkillNames: ReadonlySet<string>;
 }
 
+/** Filter Pi-rendered instruction and skill sections with exact replacement. */
 export function filterSystemPrompt(
   systemPrompt: string,
   options: BuildSystemPromptOptions,
   selection: SkillToggleSelection,
 ): PromptPolicyResult {
-  const failures: PromptPolicyResult["failures"] = [];
+  const failures: Array<"instructions" | "skills"> = [];
   const contextFiles = options.contextFiles ?? [];
   const enabledContextFiles = contextFiles.filter(
     (file) => !selection.disabledContextPaths.has(resourcePathId(file.path, options.cwd)),
@@ -50,6 +53,9 @@ export function filterSystemPrompt(
     enabledContextFiles.length === contextFiles.length ? originalContext : renderProjectContext(enabledContextFiles),
   );
   if (!contextResult.matched) failures.push("instructions");
+
+  const skillsCanRender = options.selectedTools === undefined || options.selectedTools.includes("read");
+  if (!skillsCanRender) return { systemPrompt: contextResult.value, failures };
 
   const skills = options.skills ?? [];
   const enabledSkills = skills.filter((skill) => !selection.hiddenSkillNames.has(skill.name));
@@ -63,17 +69,10 @@ export function filterSystemPrompt(
   return { systemPrompt: skillResult.value, failures };
 }
 
+/** One instruction file supplied in Pi's system-prompt options. */
 export type ContextFile = NonNullable<BuildSystemPromptOptions["contextFiles"]>[number];
 
-export function resourcePathId(path: string, cwd = process.cwd()): string {
-  const absolute = normalize(resolve(cwd, path));
-  try {
-    return realpathSync.native(absolute);
-  } catch {
-    return absolute;
-  }
-}
-
+/** Render Pi's current project-context section for exact prompt replacement. */
 export function renderProjectContext(contextFiles: readonly ContextFile[]): string {
   if (contextFiles.length === 0) return "";
   const instructions = contextFiles.map(({ path, content }) =>

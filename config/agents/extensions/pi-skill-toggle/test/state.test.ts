@@ -13,7 +13,13 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
-import type { PolicyChange, PolicyPlan } from "../policy";
+import type {
+  DirectoryPolicyPlan,
+  GlobalPolicyPlan,
+  PersistedPolicySnapshot,
+  PolicyLoadInput,
+  PolicyLoadResult,
+} from "../policy";
 import { SkillToggleStore } from "../state";
 
 const temporaryDirectories: string[] = [];
@@ -28,39 +34,61 @@ function context(options = {}) {
   return { directory, path, store: new SkillToggleStore(path, undefined, options) };
 }
 
-function plan(cwd: string, generation: string, scope: "global" | "directory", changes: Omit<PolicyChange, "scope">[]): PolicyPlan {
-  return { cwd, generation, scope, changes: changes.map((change) => ({ ...change, scope })) };
+function loaded(result: PolicyLoadResult): PersistedPolicySnapshot {
+  expect(result._tag).toBe("ok");
+  if (result._tag === "err") throw result.error;
+  return result.value;
+}
+
+function load(store: SkillToggleStore, input: PolicyLoadInput): PersistedPolicySnapshot {
+  return loaded(store.load(input));
+}
+
+function globalPlan(
+  cwd: string,
+  generation: string,
+  changes: GlobalPolicyPlan["changes"],
+): GlobalPolicyPlan {
+  return { cwd, generation, scope: "global", changes };
+}
+
+function directoryPlan(
+  cwd: string,
+  generation: string,
+  changes: DirectoryPolicyPlan["changes"],
+): DirectoryPolicyPlan {
+  return { cwd, generation, scope: "directory", changes };
 }
 
 describe("SkillToggleStore", () => {
   test("starts with empty layered policy", () => {
     const { store } = context();
-    const loaded = store.load({ cwd: "/work/project" });
-    expect(loaded.cwd).toBe("/work/project");
-    expect(loaded.globalSkills).toEqual({});
-    expect(loaded.directorySkills).toEqual({});
-    expect(loaded.directoryInstructions).toEqual({});
-    expect(loaded.generation).toHaveLength(16);
+    const current = load(store, { cwd: "/work/project" });
+    expect(current.cwd).toBe("/work/project");
+    expect(current.globalSkills).toEqual({});
+    expect(current.directorySkills).toEqual({});
+    expect(current.directoryInstructions).toEqual({});
+    expect(current.generation).toHaveLength(16);
   });
 
   test("keeps global skills shared and directory overrides sparse", () => {
     const { store } = context();
-    const first = store.load({ cwd: "/work/one" });
-    store.apply(plan("/work/one", first.generation, "global", [
-      { kind: "skill", id: "research", before: "visible", after: "manual-only" },
+    const first = load(store, { cwd: "/work/one" });
+    store.apply(globalPlan("/work/one", first.generation, [
+      { scope: "global", kind: "skill", id: "research", before: "visible", after: "manual-only" },
     ]));
-    const directory = store.load({ cwd: "/work/one" });
-    store.apply(plan("/work/one", directory.generation, "directory", [
-      { kind: "skill", id: "research", before: "inherit", after: "visible" },
-      { kind: "instruction", id: "/work/one/AGENTS.md", before: "inherit", after: "excluded" },
+    const directory = load(store, { cwd: "/work/one" });
+    store.apply(directoryPlan("/work/one", directory.generation, [
+      { scope: "directory", kind: "skill", id: "research", before: "inherit", after: "visible" },
+      { scope: "directory", kind: "instruction", id: "/work/one/AGENTS.md", before: "inherit", after: "excluded" },
     ]));
 
-    expect(store.load({ cwd: "/work/one" })).toMatchObject({
+    expect(load(store, { cwd: "/work/one" })).toMatchObject({
       globalSkills: { research: "manual-only" },
       directorySkills: { research: "visible" },
       directoryInstructions: { "/work/one/AGENTS.md": "excluded" },
     });
-    expect(store.load({ cwd: "/work/two" })).toMatchObject({
+    expect(load(store, { cwd: "/work/two" })).toMatchObject({
       globalSkills: { research: "manual-only" },
       directorySkills: {},
       directoryInstructions: {},
@@ -69,34 +97,34 @@ describe("SkillToggleStore", () => {
 
   test("returning an override to inherit removes it from persisted output", () => {
     const { store, path } = context();
-    let loaded = store.load({ cwd: "/work/project" });
-    store.apply(plan(loaded.cwd, loaded.generation, "directory", [
-      { kind: "skill", id: "deploy", before: "inherit", after: "manual-only" },
+    let current = load(store, { cwd: "/work/project" });
+    store.apply(directoryPlan(current.cwd, current.generation, [
+      { scope: "directory", kind: "skill", id: "deploy", before: "inherit", after: "manual-only" },
     ]));
-    loaded = store.load({ cwd: "/work/project" });
-    store.apply(plan(loaded.cwd, loaded.generation, "directory", [
-      { kind: "skill", id: "deploy", before: "manual-only", after: "inherit" },
+    current = load(store, { cwd: "/work/project" });
+    store.apply(directoryPlan(current.cwd, current.generation, [
+      { scope: "directory", kind: "skill", id: "deploy", before: "manual-only", after: "inherit" },
     ]));
 
-    expect(store.load({ cwd: "/work/project" }).directorySkills).toEqual({});
+    expect(load(store, { cwd: "/work/project" }).directorySkills).toEqual({});
     expect(JSON.parse(readFileSync(path, "utf8")).skillPolicyByDirectory).toEqual({});
   });
 
   test("independent store instances merge stale plans while conflicting transitions are skipped", () => {
     const { store, path } = context();
     const otherStore = new SkillToggleStore(path);
-    const loaded = store.load({ cwd: "/work/project" });
-    const a = plan(loaded.cwd, loaded.generation, "directory", [
-      { kind: "skill", id: "a", before: "inherit", after: "manual-only" },
+    const current = load(store, { cwd: "/work/project" });
+    const a = directoryPlan(current.cwd, current.generation, [
+      { scope: "directory", kind: "skill", id: "a", before: "inherit", after: "manual-only" },
     ]);
-    const b = plan(loaded.cwd, loaded.generation, "directory", [
-      { kind: "skill", id: "b", before: "inherit", after: "visible" },
+    const b = directoryPlan(current.cwd, current.generation, [
+      { scope: "directory", kind: "skill", id: "b", before: "inherit", after: "visible" },
     ]);
     expect(store.apply(a).applied).toHaveLength(1);
     expect(otherStore.apply(b).applied).toHaveLength(1);
 
-    const conflict = plan(loaded.cwd, loaded.generation, "directory", [
-      { kind: "skill", id: "a", before: "inherit", after: "visible" },
+    const conflict = directoryPlan(current.cwd, current.generation, [
+      { scope: "directory", kind: "skill", id: "a", before: "inherit", after: "visible" },
     ]);
     expect(store.apply(conflict)).toMatchObject({ applied: [], skipped: conflict.changes });
   });
@@ -108,11 +136,11 @@ describe("SkillToggleStore", () => {
     mkdirSync(project);
     writeFileSync(join(project, "AGENTS.md"), "rules");
     symlinkSync(project, alias);
-    const loaded = state.store.load({ cwd: alias });
-    state.store.apply(plan(alias, loaded.generation, "directory", [
-      { kind: "instruction", id: join(alias, "AGENTS.md"), before: "inherit", after: "excluded" },
+    const current = load(state.store, { cwd: alias });
+    state.store.apply(directoryPlan(alias, current.generation, [
+      { scope: "directory", kind: "instruction", id: join(alias, "AGENTS.md"), before: "inherit", after: "excluded" },
     ]));
-    expect(state.store.load({ cwd: project }).directoryInstructions).toEqual({
+    expect(load(state.store, { cwd: project }).directoryInstructions).toEqual({
       [realpathSync.native(join(project, "AGENTS.md"))]: "excluded",
     });
   });
@@ -128,7 +156,7 @@ describe("SkillToggleStore", () => {
       migratedLegacySessionIds: [],
     }));
 
-    expect(store.load({ cwd: "/work/project" })).toMatchObject({
+    expect(load(store, { cwd: "/work/project" })).toMatchObject({
       globalSkills: { research: "manual-only" },
       directoryInstructions: { "/work/project/AGENTS.md": "excluded" },
     });
@@ -148,11 +176,11 @@ describe("SkillToggleStore", () => {
       migratedLegacySessionIds: [],
     }));
     const store = new SkillToggleStore(path, legacyPath);
-    expect(store.load({ cwd: "/work/project" }).globalSkills).toEqual({ research: "manual-only" });
+    expect(load(store, { cwd: "/work/project" }).globalSkills).toEqual({ research: "manual-only" });
     expect(existsSync(path)).toBe(true);
   });
 
-  test("recovers a stale lock and times out on a live lock", () => {
+  test("recovers a stale lock and returns a typed error for a live lock", () => {
     const stale = context({ staleLockMs: 1, lockTimeoutMs: 30 });
     mkdirSync(join(stale.path, ".."), { recursive: true });
     writeFileSync(`${stale.path}.lock`, "");
@@ -162,24 +190,32 @@ describe("SkillToggleStore", () => {
     const live = context({ staleLockMs: 60_000, lockTimeoutMs: 10 });
     mkdirSync(join(live.path, ".."), { recursive: true });
     writeFileSync(`${live.path}.lock`, "");
-    expect(() => live.store.reset("all", "/work/project")).toThrow("Timed out waiting");
+    const result = live.store.reset("all", "/work/project");
+    expect(result.errors[0]).toMatchObject({ _tag: "PolicyStateError", operation: "reset" });
+    expect(result.errors[0]?.message).toContain("Timed out waiting");
   });
 
-  test("cleans up atomic temporary files after a failed write", () => {
+  test("returns write failures and cleans up atomic temporary files", () => {
     const failed = context({ beforeRename: () => { throw new Error("injected rename failure"); } });
-    expect(() => failed.store.reset("all", "/work/project")).toThrow("injected rename failure");
+    const result = failed.store.reset("all", "/work/project");
+    expect(result.errors[0]).toMatchObject({ _tag: "PolicyStateError", operation: "reset" });
+    expect(result.errors[0]?.message).toContain("injected rename failure");
     expect(readdirSync(join(failed.path, "..")).filter((name) => name.endsWith(".tmp"))).toEqual([]);
   });
 
-  test("rejects malformed and unsupported state with recovery guidance", () => {
+  test("returns malformed and unsupported state errors with recovery guidance", () => {
     const malformed = context();
     mkdirSync(join(malformed.path, ".."), { recursive: true });
     writeFileSync(malformed.path, "{broken");
-    expect(() => malformed.store.load({ cwd: "/work/project" })).toThrow("Fix or move the file");
+    const malformedResult = malformed.store.load({ cwd: "/work/project" });
+    expect(malformedResult._tag).toBe("err");
+    if (malformedResult._tag === "err") expect(malformedResult.error.message).toContain("Fix or move the file");
 
     const unsupported = context();
     mkdirSync(join(unsupported.path, ".."), { recursive: true });
-    writeFileSync(unsupported.path, '{"version":99}');
-    expect(() => unsupported.store.load({ cwd: "/work/project" })).toThrow("version 99");
+    writeFileSync(unsupported.path, "{\"version\":99}");
+    const unsupportedResult = unsupported.store.load({ cwd: "/work/project" });
+    expect(unsupportedResult._tag).toBe("err");
+    if (unsupportedResult._tag === "err") expect(unsupportedResult.error.message).toContain("version 99");
   });
 });

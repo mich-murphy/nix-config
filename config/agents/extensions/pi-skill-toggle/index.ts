@@ -5,7 +5,7 @@ import type {
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { DynamicBorder, getSettingsListTheme } from "@earendil-works/pi-coding-agent";
-import { Container, SettingsList, Text, visibleWidth } from "@earendil-works/pi-tui";
+import { Container, SettingsList, Text, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import {
   SkillPolicy,
   type EffectivePolicy,
@@ -28,22 +28,26 @@ import { SkillToggleStore } from "./state";
 const STATUS_KEY = "pi-skill-toggle";
 const CONTEXT_FILE_NAMES = new Set(["CLAUDE.md", "AGENTS.md"]);
 
-// Right-aligns a single line of pre-themed text above the editor, matching
-// the footer's own right-aligned model/stats line.
-function rightAlignedWidget(text: string) {
+// Right-align a status string while preserving the TUI's width contract. Theme
+// styling happens during every render, so invalidation cannot retain old colors.
+function rightAlignedWidget(text: string, style: (value: string) => string) {
   return {
     render(width: number): string[] {
-      const padding = Math.max(0, width - visibleWidth(text) - 1);
-      return [" ".repeat(padding) + text];
+      const availableWidth = Math.max(0, width - 1);
+      const visibleText = truncateToWidth(text, availableWidth, "…");
+      const padding = Math.max(0, availableWidth - visibleWidth(visibleText));
+      return [" ".repeat(padding) + style(visibleText)];
     },
     invalidate(): void {},
   };
 }
 
-export default function skillToggle(pi: ExtensionAPI) {
+/** Register the skill-toggle extension with its default persistent store. */
+export default function skillToggle(pi: ExtensionAPI): void {
   registerSkillToggle(pi, new SkillToggleStore());
 }
 
+/** Register skill-toggle commands and lifecycle handlers with an injected store. */
 export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter): void {
   const policy = new SkillPolicy(store);
   let current: PersistedPolicySnapshot | undefined;
@@ -64,13 +68,14 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     ctx: ExtensionContext,
     options?: BuildSystemPromptOptions,
   ): PersistedPolicySnapshot | undefined {
+    const skills = options?.skills?.map(({ name, filePath }) => ({ name, filePath }));
     const result = policy.refresh({
       cwd: ctx.cwd,
-      skills: options?.skills,
+      ...(skills === undefined ? {} : { skills }),
       legacyEntries: ctx.sessionManager.getBranch(),
       sessionId: ctx.sessionManager.getSessionId(),
     });
-    if (!result.ok) {
+    if (result._tag === "err") {
       current = undefined;
       renderStatus(ctx, undefined, true);
       const failure = `${ctx.cwd}\n${result.error.message}`;
@@ -80,7 +85,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       lastRefreshFailure = failure;
       return undefined;
     }
-    current = result.policy;
+    current = result.value;
     lastRefreshFailure = "";
     if (options) {
       renderStatus(ctx, resolve(options));
@@ -106,7 +111,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     if (failed) {
       ctx.ui.setWidget(
         STATUS_KEY,
-        (_tui, theme) => rightAlignedWidget(theme.fg("error", "skills !")),
+        (_tui, theme) => rightAlignedWidget("skills !", (text) => theme.fg("error", text)),
         { placement: "aboveEditor" },
       );
       return;
@@ -126,7 +131,7 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
         const status = contextFile
           ? `${basename(contextFile.path)} • ${skillSummary}`
           : skillSummary;
-        return rightAlignedWidget(theme.fg("dim", status));
+        return rightAlignedWidget(status, (text) => theme.fg("dim", text));
       },
       { placement: "aboveEditor" },
     );
@@ -151,7 +156,11 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
 
       const selected = await ctx.ui.select("Skill policy scope", ["Global", "Directory", "Session"]);
       if (!selected) return;
-      const scope = selected.toLowerCase() as PolicyScope;
+      const scope = parsePolicyScope(selected);
+      if (!scope) {
+        ctx.ui.notify(`Unsupported skill policy scope: ${selected}`, "error");
+        return;
+      }
       const draft = policy.draft(scope, effective, snapshot);
       const items = buildSettingItems(effective, draft);
       if (items.length === 0) {
@@ -162,22 +171,37 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       await ctx.ui.custom((tui, theme, _keybindings, done) => {
         const container = new Container();
         container.addChild(new DynamicBorder((text: string) => theme.fg("accent", text)));
-        container.addChild(new Text(theme.fg("accent", theme.bold(`Skill Toggle · ${selected}`)), 1, 0));
-        container.addChild(new Text(theme.fg("muted", scopeDescription(scope)), 1, 0));
+        const title = new Text("", 1, 0);
+        const description = new Text("", 1, 0);
+        const help = new Text("", 1, 0);
+        const updateThemedText = (): void => {
+          title.setText(theme.fg("accent", theme.bold(`Skill Toggle · ${selected}`)));
+          description.setText(theme.fg("muted", scopeDescription(scope)));
+          help.setText(theme.fg("dim", "Close to review staged transitions · bulk rows affect all loaded matches"));
+        };
+        updateThemedText();
+        container.addChild(title);
+        container.addChild(description);
         const list = new SettingsList(
           items,
           Math.min(items.length + 2, 20),
           getSettingsListTheme(),
-          (id, value) => updateDraft(draft, effective, id, value),
+          (id, value) => {
+            const update = updateDraft(draft, effective, id, value);
+            if (update._tag === "err") ctx.ui.notify(update.error.message, "error");
+          },
           () => done(undefined),
           { enableSearch: true },
         );
         container.addChild(list);
-        container.addChild(new Text(theme.fg("dim", "Close to review staged transitions · bulk rows affect all loaded matches"), 1, 0));
+        container.addChild(help);
         container.addChild(new DynamicBorder((text: string) => theme.fg("accent", text)));
         return {
           render: (width: number) => container.render(width),
-          invalidate: () => container.invalidate(),
+          invalidate: () => {
+            updateThemedText();
+            container.invalidate();
+          },
           handleInput: (data: string) => {
             list.handleInput?.(data);
             tui.requestRender();
@@ -206,7 +230,8 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
       const options = ctx.getSystemPromptOptions();
       const snapshot = refresh(ctx, options);
       if (!snapshot) return;
-      const effective = resolve(options)!;
+      const effective = resolve(options);
+      if (!effective) return;
       renderStatus(ctx, effective);
       ctx.ui.notify(formatSkillStatus(effective, snapshot, policy.sessionOverrides()), "info");
     },
@@ -252,7 +277,8 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
   pi.on("before_agent_start", async (event, ctx) => {
     const snapshot = refresh(ctx, event.systemPromptOptions);
     if (!snapshot) return;
-    const effective = resolve(event.systemPromptOptions)!;
+    const effective = resolve(event.systemPromptOptions);
+    if (!effective) return;
     const result = applyPolicyToSystemPrompt(event.systemPrompt, event.systemPromptOptions, effective);
     const failure = result.failures.join(",");
     renderStatus(ctx, effective, failure.length > 0);
@@ -265,4 +291,11 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     lastPromptFailure = failure;
     return { systemPrompt: result.systemPrompt };
   });
+}
+
+function parsePolicyScope(value: string): PolicyScope | undefined {
+  if (value === "Global") return "global";
+  if (value === "Directory") return "directory";
+  if (value === "Session") return "session";
+  return undefined;
 }

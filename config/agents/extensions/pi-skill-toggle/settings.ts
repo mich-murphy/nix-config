@@ -12,6 +12,32 @@ import type {
 
 const DESCRIPTION_LIMIT = 180;
 
+/** Failure to parse a settings-list update into a valid policy draft transition. */
+export class DraftUpdateError extends Error {
+  /** Stable discriminator for settings-list parse failures. */
+  readonly _tag = "DraftUpdateError" as const;
+
+  /** Setting identifier that could not be parsed. */
+  readonly id: string;
+
+  /** Raw settings-list value that could not be parsed. */
+  readonly value: string;
+
+  /** Create an error for an unsupported setting value or identifier. */
+  constructor(id: string, value: string) {
+    super(`Unsupported skill-toggle setting update: ${id} = ${value}`);
+    this.name = "DraftUpdateError";
+    this.id = id;
+    this.value = value;
+  }
+}
+
+/** Result of parsing and applying one settings-list update. */
+export type DraftUpdateResult =
+  | { readonly _tag: "ok" }
+  | { readonly _tag: "err"; readonly error: DraftUpdateError };
+
+/** Build scope-aware settings rows from effective policy and an editable draft. */
 export function buildSettingItems(
   effective: EffectivePolicy,
   draft: PolicyDraft,
@@ -69,7 +95,7 @@ export function buildSettingItems(
       id: `skill:${name}`,
       label: `${name} · not loaded`,
       description: "Policy exists for this skill name, but Pi did not load it in this directory",
-      currentValue: draft.skills[name]!,
+      currentValue: draft.skills[name] ?? (draft.scope === "global" ? "visible" : "inherit"),
       values: draft.scope === "global"
         ? ["visible", "manual-only"]
         : ["inherit", "visible", "manual-only"],
@@ -108,40 +134,71 @@ export function buildSettingItems(
   return items;
 }
 
+/** Parse a settings-list update and apply it to the mutable draft. */
 export function updateDraft(
   draft: PolicyDraft,
   effective: EffectivePolicy,
   id: string,
   value: string,
-): void {
+): DraftUpdateResult {
   if (id.startsWith("instruction:")) {
-    draft.instructions[id.slice("instruction:".length)] = value as PolicyDraft["instructions"][string];
-  } else if (id.startsWith("skill:")) {
-    draft.skills[id.slice("skill:".length)] = value as PolicyDraft["skills"][string];
-  } else if (id === "bulk:skills" && value !== "no change") {
-    for (const skill of effective.skills) if (!skill.sourceLocked) draft.skills[skill.name] = value as PolicyDraft["skills"][string];
-  } else if (id === "bulk:instructions" && value !== "no change") {
-    for (const instruction of effective.instructions) draft.instructions[instruction.path] = value as PolicyDraft["instructions"][string];
-  } else if (id === "bulk:reset" && value === "reset") {
+    const parsed = parseInstructionOverride(value);
+    if (parsed === undefined || draft.scope === "global") return draftUpdateFailure(id, value);
+    draft.instructions[id.slice("instruction:".length)] = parsed;
+    return { _tag: "ok" };
+  }
+  if (id.startsWith("skill:")) {
+    const parsed = parseSkillOverride(value, draft.scope);
+    if (parsed === undefined) return draftUpdateFailure(id, value);
+    draft.skills[id.slice("skill:".length)] = parsed;
+    return { _tag: "ok" };
+  }
+  if (id === "bulk:skills") {
+    if (value === "no change") return { _tag: "ok" };
+    const parsed = parseSkillOverride(value, draft.scope);
+    if (parsed === undefined) return draftUpdateFailure(id, value);
+    for (const skill of effective.skills) {
+      if (!skill.sourceLocked) draft.skills[skill.name] = parsed;
+    }
+    return { _tag: "ok" };
+  }
+  if (id === "bulk:instructions") {
+    if (value === "no change") return { _tag: "ok" };
+    const parsed = parseInstructionOverride(value);
+    if (parsed === undefined || draft.scope === "global") return draftUpdateFailure(id, value);
+    for (const instruction of effective.instructions) draft.instructions[instruction.path] = parsed;
+    return { _tag: "ok" };
+  }
+  if (id === "bulk:reset") {
+    if (value === "no change") return { _tag: "ok" };
+    if (value !== "reset") return draftUpdateFailure(id, value);
     const skillValue = draft.scope === "global" ? "visible" : "inherit";
     for (const name of Object.keys(draft.skills)) draft.skills[name] = skillValue;
     for (const path of Object.keys(draft.instructions)) draft.instructions[path] = "inherit";
+    return { _tag: "ok" };
   }
+  return draftUpdateFailure(id, value);
 }
 
+/** Format exact staged transitions for confirmation. */
 export function formatPolicyPlan(plan: PolicyPlan): string {
   return plan.changes.map((change) =>
     `${displayId(change.id).padEnd(20)} ${change.scope}: ${change.before} -> ${change.after}`,
   ).join("\n");
 }
 
+/** Format counts and diagnostics from a policy apply operation. */
 export function formatApplyResult(result: ApplyResult): string {
   const parts = [`Applied ${result.applied.length}`];
   if (result.skipped.length > 0) parts.push(`skipped ${result.skipped.length}`);
   if (result.errors.length > 0) parts.push(`errors ${result.errors.length}`);
-  return parts.join(" · ");
+  const summary = parts.join(" · ");
+  return result.errors.length === 0
+    ? summary
+    : `${summary}\n${result.errors.map((error) => error.message).join("\n")}`;
 }
 
+/** Format effective policy and resolution-source counts for user display. */
 export function formatSkillStatus(
   effective: EffectivePolicy,
   snapshot: PersistedPolicySnapshot,
@@ -177,10 +234,27 @@ export function formatSkillStatus(
   return lines.join("\n");
 }
 
+/** Describe the lifetime and capability of a policy scope. */
 export function scopeDescription(scope: PolicyScope): string {
   if (scope === "global") return "Skills only · applies in every directory";
   if (scope === "directory") return "Persistent instruction and skill overrides for this directory";
   return "Temporary overrides · cleared on session replacement, reload, and restart";
+}
+
+function parseSkillOverride(
+  value: string,
+  scope: PolicyScope,
+): PolicyDraft["skills"][string] | undefined {
+  if (value === "visible" || value === "manual-only") return value;
+  return scope !== "global" && value === "inherit" ? value : undefined;
+}
+
+function parseInstructionOverride(value: string): PolicyDraft["instructions"][string] | undefined {
+  return value === "inherit" || value === "included" || value === "excluded" ? value : undefined;
+}
+
+function draftUpdateFailure(id: string, value: string): DraftUpdateResult {
+  return { _tag: "err", error: new DraftUpdateError(id, value) };
 }
 
 function provenanceText(provenance: { scope: string; origin: string; source: string }): string {

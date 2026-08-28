@@ -1,8 +1,9 @@
 import { dirname } from "node:path";
 import { getAgentDir, type BuildSystemPromptOptions } from "@earendil-works/pi-coding-agent";
 import type { PolicyResources, ResourceProvenance } from "./policy";
-import { resourcePathId } from "./prompt-filter";
+import { resourcePathId } from "./resource-path";
 
+/** Convert Pi's structured prompt options into canonical policy resources. */
 export function policyResourcesFromPrompt(options: BuildSystemPromptOptions): PolicyResources {
   const cwd = resourcePathId(options.cwd, options.cwd);
   const agentDirectory = resourcePathId(getAgentDir(), cwd);

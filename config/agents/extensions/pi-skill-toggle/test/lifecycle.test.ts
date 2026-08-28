@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { formatSkillsForPrompt, type BuildSystemPromptOptions, type Skill } from "@earendil-works/pi-coding-agent";
+import {
+  formatSkillsForPrompt,
+  type BuildSystemPromptOptions,
+  type ExtensionAPI,
+  type Skill,
+} from "@earendil-works/pi-coding-agent";
 import { registerSkillToggle } from "../index";
-import type { PersistedPolicySnapshot, PolicyStateAdapter } from "../policy";
+import { PolicyStateError, type PersistedPolicySnapshot, type PolicyStateAdapter } from "../policy";
 
 const deploy: Skill = {
   name: "deploy",
@@ -12,6 +17,8 @@ const deploy: Skill = {
   disableModelInvocation: false,
 };
 const options: BuildSystemPromptOptions = { cwd: "/work/one", skills: [deploy] };
+
+type TestHandler = (event: unknown, context: unknown) => unknown | Promise<unknown>;
 
 function promptFor(promptOptions: BuildSystemPromptOptions): string {
   const contextFiles = promptOptions.contextFiles ?? [];
@@ -33,14 +40,28 @@ function snapshot(cwd: string, hidden = false): PersistedPolicySnapshot {
   };
 }
 
+function loaded(cwd: string, hidden = false) {
+  return { _tag: "ok" as const, value: snapshot(cwd, hidden) };
+}
+
+function systemPromptResult(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "object" || value === null || !("systemPrompt" in value)) {
+    throw new Error("Expected a before_agent_start result");
+  }
+  const systemPrompt = value.systemPrompt;
+  if (typeof systemPrompt !== "string") throw new Error("Expected a string system prompt");
+  return systemPrompt;
+}
+
 function harness(store: PolicyStateAdapter) {
-  const handlers = new Map<string, Array<(event: any, ctx: any) => any>>();
+  const handlers = new Map<string, TestHandler[]>();
   const commands = new Map<string, unknown>();
   const statuses: Array<string | undefined> = [];
   const notifications: string[] = [];
   const widgetPlacements: Array<"aboveEditor" | "belowEditor" | undefined> = [];
-  const pi = {
-    on(name: string, handler: (event: any, ctx: any) => any) {
+  const piMock = {
+    on(name: string, handler: TestHandler) {
       handlers.set(name, [...(handlers.get(name) ?? []), handler]);
     },
     registerCommand(name: string, command: unknown) {
@@ -48,7 +69,7 @@ function harness(store: PolicyStateAdapter) {
     },
   };
   const themeMock = { fg: (_color: string, text: string) => text };
-  const ctx: any = {
+  const ctx = {
     cwd: "/work/one",
     mode: "tui",
     hasUI: true,
@@ -61,7 +82,7 @@ function harness(store: PolicyStateAdapter) {
       setWidget: (
         _key: string,
         content: string[] | ((tui: unknown, theme: typeof themeMock) => { render(width: number): string[] }) | undefined,
-        options?: { placement?: "aboveEditor" | "belowEditor" },
+        widgetOptions?: { placement?: "aboveEditor" | "belowEditor" },
       ) => {
         if (content === undefined) {
           statuses.push(undefined);
@@ -70,14 +91,15 @@ function harness(store: PolicyStateAdapter) {
         }
         const lines = typeof content === "function" ? content(undefined, themeMock).render(200) : content;
         statuses.push(lines[0]?.trim());
-        widgetPlacements.push(options?.placement);
+        widgetPlacements.push(widgetOptions?.placement);
       },
       notify: (message: string) => notifications.push(message),
     },
   };
-  registerSkillToggle(pi as never, store);
-  const emit = async (name: string, event: any = {}) => {
-    let result;
+  // SAFETY: The extension only calls on() and registerCommand() during registration. This test double implements those methods and captures their arguments; handlers receive the separately constructed runtime context below.
+  registerSkillToggle(piMock as unknown as ExtensionAPI, store);
+  const emit = async (name: string, event: unknown = {}): Promise<unknown> => {
+    let result: unknown;
     for (const handler of handlers.get(name) ?? []) result = await handler(event, ctx);
     return result;
   };
@@ -86,52 +108,58 @@ function harness(store: PolicyStateAdapter) {
 
 describe("extension lifecycle", () => {
   test("registers the skill command family", () => {
-    const test = harness({
-      load: ({ cwd }) => snapshot(cwd),
+    const testHarness = harness({
+      load: ({ cwd }) => loaded(cwd),
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     });
-    expect([...test.commands.keys()]).toEqual(["skill-toggle", "skill-status", "skill-reset"]);
+    expect([...testHarness.commands.keys()]).toEqual(["skill-toggle", "skill-status", "skill-reset"]);
   });
 
   test("never applies another directory's snapshot after refresh failure and deduplicates errors", async () => {
     let unhealthy = false;
     const store: PolicyStateAdapter = {
-      load: ({ cwd }) => {
-        if (unhealthy) throw new Error(`malformed state for ${cwd}`);
-        return snapshot(cwd, cwd === "/work/one");
-      },
+      load: ({ cwd }) => unhealthy
+        ? { _tag: "err", error: new PolicyStateError("load", `malformed state for ${cwd}`) }
+        : loaded(cwd, cwd === "/work/one"),
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     };
-    const test = harness(store);
-    await test.emit("session_start", { reason: "startup" });
-    let result = await test.emit("before_agent_start", { systemPrompt: promptFor(options), systemPromptOptions: options });
-    expect(result.systemPrompt).not.toContain("Deploy software");
+    const testHarness = harness(store);
+    await testHarness.emit("session_start", { reason: "startup" });
+    let result = await testHarness.emit("before_agent_start", {
+      systemPrompt: promptFor(options),
+      systemPromptOptions: options,
+    });
+    expect(systemPromptResult(result)).not.toContain("Deploy software");
 
     unhealthy = true;
-    test.ctx.cwd = "/work/two";
+    testHarness.ctx.cwd = "/work/two";
     const otherOptions = { ...options, cwd: "/work/two" };
     const unchanged = promptFor(otherOptions);
-    result = await test.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
+    result = await testHarness.emit("before_agent_start", {
+      systemPrompt: unchanged,
+      systemPromptOptions: otherOptions,
+    });
     expect(result).toBeUndefined();
     expect(unchanged).toContain("Deploy software");
-    expect(test.statuses.at(-1)).toBe("skills !");
-    const notificationCount = test.notifications.length;
-    await test.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
-    expect(test.notifications).toHaveLength(notificationCount);
+    expect(testHarness.statuses.at(-1)).toBe("skills !");
+    const notificationCount = testHarness.notifications.length;
+    await testHarness.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
+    expect(testHarness.notifications).toHaveLength(notificationCount);
 
     unhealthy = false;
-    result = await test.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
-    expect(result.systemPrompt).toBe(unchanged);
-    // Recovery in /work/two resolves "deploy" as visible (not hidden there), so
-    // the widget now reports the loaded-skill count instead of being cleared.
-    expect(test.statuses.at(-1)).toBe("skills 1");
+    result = await testHarness.emit("before_agent_start", {
+      systemPrompt: unchanged,
+      systemPromptOptions: otherOptions,
+    });
+    expect(systemPromptResult(result)).toBe(unchanged);
+    expect(testHarness.statuses.at(-1)).toBe("skills 1");
   });
 
   test("separates the loaded context file from the skill count with a bullet", async () => {
-    const test = harness({
-      load: ({ cwd }) => snapshot(cwd),
+    const testHarness = harness({
+      load: ({ cwd }) => loaded(cwd),
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     });
@@ -140,37 +168,40 @@ describe("extension lifecycle", () => {
       contextFiles: [{ path: "/work/one/AGENTS.md", content: "Run tests." }],
     };
 
-    await test.emit("before_agent_start", {
+    await testHarness.emit("before_agent_start", {
       systemPrompt: promptFor(contextOptions),
       systemPromptOptions: contextOptions,
     });
 
-    expect(test.statuses.at(-1)).toBe("AGENTS.md • skills 1");
+    expect(testHarness.statuses.at(-1)).toBe("AGENTS.md • skills 1");
   });
 
   test.each(["new", "resume", "fork", "reload"])("clears status across %s session replacement", async (reason) => {
-    const test = harness({
-      load: ({ cwd }) => snapshot(cwd),
+    const testHarness = harness({
+      load: ({ cwd }) => loaded(cwd),
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     });
-    await test.emit("session_start", { reason: "startup" });
-    await test.emit("session_shutdown", { reason });
-    expect(test.statuses.at(-1)).toBeUndefined();
-    await test.emit("session_start", { reason });
+    await testHarness.emit("session_start", { reason: "startup" });
+    await testHarness.emit("session_shutdown", { reason });
+    expect(testHarness.statuses.at(-1)).toBeUndefined();
+    await testHarness.emit("session_start", { reason });
   });
 
   test("refreshes on tree navigation and clears state on shutdown", async () => {
     let loads = 0;
-    const test = harness({
-      load: ({ cwd }) => { loads += 1; return snapshot(cwd); },
+    const testHarness = harness({
+      load: ({ cwd }) => {
+        loads += 1;
+        return loaded(cwd);
+      },
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     });
-    await test.emit("session_start", { reason: "startup" });
-    await test.emit("session_tree", {});
+    await testHarness.emit("session_start", { reason: "startup" });
+    await testHarness.emit("session_tree", {});
     expect(loads).toBe(2);
-    await test.emit("session_shutdown", { reason: "quit" });
-    expect(test.statuses.at(-1)).toBeUndefined();
+    await testHarness.emit("session_shutdown", { reason: "quit" });
+    expect(testHarness.statuses.at(-1)).toBeUndefined();
   });
 });

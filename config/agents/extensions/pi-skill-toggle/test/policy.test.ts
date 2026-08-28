@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  PolicyStateError,
   SkillPolicy,
   resolveEffectivePolicy,
   type PersistedPolicySnapshot,
@@ -53,7 +54,9 @@ describe("effective policy resolution", () => {
     ["directory", snapshot({ globalSkills: { research: "manual-only" }, directorySkills: { research: "visible" } }), noSession, "visible", "directory"],
     ["session", snapshot({ directorySkills: { research: "manual-only" } }), { skills: { research: "visible" }, instructions: {} }, "visible", "session"],
   ] as const)("resolves %s skill precedence", (_name, stored, session, visibility, source) => {
-    const skill = resolveEffectivePolicy(stored, session, resources).skills[0]!;
+    const skill = resolveEffectivePolicy(stored, session, resources).skills[0];
+    expect(skill).toBeDefined();
+    if (!skill) throw new Error("Expected research skill fixture");
     expect([skill.visibility, skill.resolvedFrom]).toEqual([visibility, source]);
   });
 
@@ -62,7 +65,9 @@ describe("effective policy resolution", () => {
     [snapshot({ directoryInstructions: { "/work/project/AGENTS.md": "excluded" } }), noSession, "excluded", "directory"],
     [snapshot({ directoryInstructions: { "/work/project/AGENTS.md": "excluded" } }), { skills: {}, instructions: { "/work/project/AGENTS.md": "included" } }, "included", "session"],
   ] as const)("resolves instruction precedence", (stored, session, visibility, source) => {
-    const instruction = resolveEffectivePolicy(stored, session, resources).instructions[0]!;
+    const instruction = resolveEffectivePolicy(stored, session, resources).instructions[0];
+    expect(instruction).toBeDefined();
+    if (!instruction) throw new Error("Expected instruction fixture");
     expect([instruction.visibility, instruction.resolvedFrom]).toEqual([visibility, source]);
   });
 
@@ -76,7 +81,7 @@ describe("effective policy resolution", () => {
     expect(effective.skills[1]).toMatchObject({ visibility: "manual-only", resolvedFrom: "source", sourceLocked: true });
 
     const adapter = {
-      load: () => stored,
+      load: () => ({ _tag: "ok" as const, value: stored }),
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     };
@@ -91,7 +96,7 @@ describe("effective policy resolution", () => {
   test("session overrides are in memory and clear on replacement", () => {
     const stored = snapshot();
     const policy = new SkillPolicy({
-      load: () => stored,
+      load: () => ({ _tag: "ok" as const, value: stored }),
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     });
@@ -108,15 +113,20 @@ describe("effective policy resolution", () => {
     const good = snapshot();
     let fail = false;
     const policy = new SkillPolicy({
-      load: (input) => {
-        if (fail) throw new Error(`bad state for ${input.cwd}`);
-        return good;
-      },
+      load: (input) => fail
+        ? {
+            _tag: "err" as const,
+            error: new PolicyStateError("load", `bad state for ${input.cwd}`),
+          }
+        : { _tag: "ok" as const, value: good },
       apply: () => ({ applied: [], skipped: [], errors: [] }),
       reset: () => ({ applied: [], skipped: [], errors: [] }),
     });
-    expect(policy.refresh({ cwd: "/work/project" }).ok).toBe(true);
+    expect(policy.refresh({ cwd: "/work/project" })._tag).toBe("ok");
     fail = true;
-    expect(policy.refresh({ cwd: "/other/project" })).toEqual({ ok: false, error: new Error("bad state for /other/project") });
+    expect(policy.refresh({ cwd: "/other/project" })).toEqual({
+      _tag: "err",
+      error: new PolicyStateError("load", "bad state for /other/project"),
+    });
   });
 });

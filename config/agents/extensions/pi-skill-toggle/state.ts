@@ -11,23 +11,28 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import { PolicyConflictError, PolicyStateError } from "./policy";
 import type {
   ApplyResult,
   InstructionVisibility,
   PersistedPolicySnapshot,
   PolicyChange,
   PolicyLoadInput,
+  PolicyLoadResult,
   PolicyPlan,
   PolicyScope,
   PolicyStateAdapter,
   SkillVisibility,
 } from "./policy";
-import { resourcePathId } from "./prompt-filter";
+import { resourcePathId } from "./resource-path";
 
 const STATE_VERSION = 3;
 const LEGACY_STATE_TYPE = "context-control-state";
 
+/** Default path for persisted skill-toggle policy. */
 export const DEFAULT_STATE_PATH = join(getAgentDir(), "pi-skill-toggle.json");
+
+/** Previous extension state path used as a migration source. */
 export const LEGACY_STATE_PATH = join(getAgentDir(), "context-control.json");
 
 interface StoredStateV3 {
@@ -53,16 +58,24 @@ interface LegacyState {
   migratedLegacySessionIds?: string[];
 }
 
+/** File-store timing and test seam options. */
 export interface SkillToggleStoreOptions {
-  lockTimeoutMs?: number;
-  staleLockMs?: number;
-  beforeRename?: (temporaryPath: string, destinationPath: string) => void;
+  /** Maximum time spent waiting to acquire the state lock. */
+  readonly lockTimeoutMs?: number;
+
+  /** Age after which an abandoned lock file can be removed. */
+  readonly staleLockMs?: number;
+
+  /** Test seam invoked after writing a temporary file and before atomic rename. */
+  readonly beforeRename?: (temporaryPath: string, destinationPath: string) => void;
 }
 
+/** Locked, atomically replaced JSON policy store. */
 export class SkillToggleStore implements PolicyStateAdapter {
   private readonly lockTimeoutMs: number;
   private readonly staleLockMs: number;
 
+  /** Create a store for the supplied current and optional legacy state paths. */
   constructor(
     private readonly path = DEFAULT_STATE_PATH,
     private readonly legacyPath = path === DEFAULT_STATE_PATH ? LEGACY_STATE_PATH : undefined,
@@ -72,7 +85,43 @@ export class SkillToggleStore implements PolicyStateAdapter {
     this.staleLockMs = options.staleLockMs ?? 30_000;
   }
 
-  load(input: PolicyLoadInput): PersistedPolicySnapshot {
+  /** Load and, when needed, migrate policy state without throwing expected I/O failures. */
+  load(input: PolicyLoadInput): PolicyLoadResult {
+    try {
+      return { _tag: "ok", value: this.loadUnsafe(input) };
+    } catch (cause) {
+      return { _tag: "err", error: stateError("load", this.path, cause) };
+    }
+  }
+
+  /** Apply a persistent plan without throwing expected I/O or lock failures. */
+  apply(plan: PolicyPlan): ApplyResult {
+    if (plan.scope === "session") {
+      const error = new PolicyStateError("apply", "Session policy is not persisted");
+      return { applied: [], skipped: plan.changes, errors: [error] };
+    }
+    try {
+      return this.applyUnsafe(plan);
+    } catch (cause) {
+      return {
+        applied: [],
+        skipped: plan.changes,
+        errors: [stateError("apply", this.path, cause)],
+      };
+    }
+  }
+
+  /** Reset persistent policy without throwing expected I/O or lock failures. */
+  reset(scope: PolicyScope | "all", cwd: string): ApplyResult {
+    if (scope === "session") return { applied: [], skipped: [], errors: [] };
+    try {
+      return this.resetUnsafe(scope, cwd);
+    } catch (cause) {
+      return { applied: [], skipped: [], errors: [stateError("reset", this.path, cause)] };
+    }
+  }
+
+  private loadUnsafe(input: PolicyLoadInput): PersistedPolicySnapshot {
     const initial = this.readState(input.cwd);
     const prepared = prepareState(initial.state, input);
     if (!initial.needsWrite && !prepared.changed) return snapshot(prepared.state, input.cwd);
@@ -85,10 +134,7 @@ export class SkillToggleStore implements PolicyStateAdapter {
     });
   }
 
-  apply(plan: PolicyPlan): ApplyResult {
-    if (plan.scope === "session") {
-      return { applied: [], skipped: plan.changes, errors: [{ message: "Session policy is not persisted" }] };
-    }
+  private applyUnsafe(plan: PolicyPlan): ApplyResult {
     return this.withLock(() => {
       const state = this.readState(plan.cwd).state;
       const directory = directoryId(plan.cwd);
@@ -109,17 +155,13 @@ export class SkillToggleStore implements PolicyStateAdapter {
       return {
         applied,
         skipped,
-        errors: skipped.map((change) => ({
-          change,
-          message: `Concurrent change detected for ${change.kind} ${change.id}`,
-        })),
+        errors: skipped.map((change) => new PolicyConflictError(change)),
         snapshot: snapshot(state, plan.cwd),
       };
     });
   }
 
-  reset(scope: PolicyScope | "all", cwd: string): ApplyResult {
-    if (scope === "session") return { applied: [], skipped: [], errors: [] };
+  private resetUnsafe(scope: Exclude<PolicyScope, "session"> | "all", cwd: string): ApplyResult {
     return this.withLock(() => {
       const state = this.readState(cwd).state;
       const directory = directoryId(cwd);
@@ -278,20 +320,34 @@ function snapshot(state: StoredStateV3, cwd: string): PersistedPolicySnapshot {
 
 function scopedValue(state: StoredStateV3, directory: string, change: PolicyChange): string {
   if (change.scope === "global") return state.globalSkillPolicy[change.id] ?? "visible";
-  const values = change.kind === "skill" ? state.skillPolicyByDirectory[directory] : state.instructionPolicyByDirectory[directory];
-  return values?.[change.id] ?? "inherit";
+  if (change.kind === "skill") return state.skillPolicyByDirectory[directory]?.[change.id] ?? "inherit";
+  return state.instructionPolicyByDirectory[directory]?.[change.id] ?? "inherit";
 }
 
 function applyChange(state: StoredStateV3, directory: string, change: PolicyChange): void {
   if (change.scope === "global") {
     if (change.after === "visible") delete state.globalSkillPolicy[change.id];
-    else state.globalSkillPolicy[normalizeName(change.id)] = change.after as SkillVisibility;
+    else state.globalSkillPolicy[normalizeName(change.id)] = change.after;
     return;
   }
-  const policies = change.kind === "skill" ? state.skillPolicyByDirectory : state.instructionPolicyByDirectory;
-  const current = policies[directory] ?? {};
+  if (change.kind === "skill") {
+    const current = state.skillPolicyByDirectory[directory] ?? {};
+    if (change.after === "inherit") delete current[change.id];
+    else current[normalizeName(change.id)] = change.after;
+    setSparseDirectoryPolicy(state.skillPolicyByDirectory, directory, current);
+    return;
+  }
+  const current = state.instructionPolicyByDirectory[directory] ?? {};
   if (change.after === "inherit") delete current[change.id];
-  else current[change.kind === "skill" ? normalizeName(change.id) : resourcePathId(change.id, directory)] = change.after as never;
+  else current[resourcePathId(change.id, directory)] = change.after;
+  setSparseDirectoryPolicy(state.instructionPolicyByDirectory, directory, current);
+}
+
+function setSparseDirectoryPolicy<T extends string>(
+  policies: Record<string, Record<string, T>>,
+  directory: string,
+  current: Record<string, T>,
+): void {
   if (Object.keys(current).length > 0) policies[directory] = current;
   else delete policies[directory];
 }
@@ -353,7 +409,7 @@ function emptyState(): StoredStateV3 {
 }
 
 function copyState(state: StoredStateV3): StoredStateV3 {
-  return JSON.parse(JSON.stringify(state)) as StoredStateV3;
+  return structuredClone(state);
 }
 
 /** `state` must already be normalized; the only caller (`snapshot`) guarantees this. */
@@ -429,4 +485,15 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 }
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function stateError(
+  operation: "load" | "apply" | "reset",
+  path: string,
+  cause: unknown,
+): PolicyStateError {
+  const message = cause instanceof PolicyStateError
+    ? cause.message
+    : `Could not ${operation} Pi skill-toggle state at ${path}: ${errorMessage(cause)}`;
+  return new PolicyStateError(operation, message, cause);
 }
