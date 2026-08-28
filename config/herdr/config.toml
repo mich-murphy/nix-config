@@ -59,3 +59,8 @@ delay_seconds = 2
 
 [ui.sound]
 enabled = false
+
+# Pass Kitty graphics through to Ghostty so snacks.image can render
+# mermaid diagrams and images inline in Neovim. Experimental in Herdr.
+[experimental]
+kitty_graphics = true

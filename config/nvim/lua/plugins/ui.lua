@@ -81,6 +81,10 @@ return {
 		"MeanderingProgrammer/render-markdown.nvim",
 		ft = { "markdown", "markdown.mdx" },
 		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-mini/mini.icons" },
-		opts = {},
+		opts = {
+			-- `hide` conceals fence lines, which swallows the virtual lines
+			-- snacks.image uses to render mermaid diagrams below the block.
+			code = { border = "thin" },
+		},
 	},
 }
