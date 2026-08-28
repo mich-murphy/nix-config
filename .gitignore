@@ -1,6 +1,12 @@
 .claude/
 .DS_Store
 node_modules/
+npm-debug.log*
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
 config/nvim/nvim.log
 config/karabiner/automatic_backups/
 config/karabiner/assets/complex_modifications/
