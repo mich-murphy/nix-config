@@ -1,6 +1,6 @@
 ---
 name: typescript
-description: Correct-by-construction TypeScript standards. Use for TypeScript engineering or when another skill needs the user's coding standards.
+description: Correct-by-construction TypeScript standards. Use when creating or editing typescript files.
 ---
 These standards describe how to design and write TypeScript code. They are intended for agents: inspect existing code before adding patterns, libraries, Adapters, or abstractions, but apply these standards to all new and refactored behavior. Follow existing conventions only when they are compatible with these standards.
 
