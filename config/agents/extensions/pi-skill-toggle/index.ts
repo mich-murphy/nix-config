@@ -122,9 +122,11 @@ export function registerSkillToggle(pi: ExtensionAPI, store: PolicyStateAdapter)
     ctx.ui.setWidget(
       STATUS_KEY,
       (_tui, theme) => {
-        const parts = contextFile ? [basename(contextFile.path)] : [];
-        parts.push(`skills ${loadedSkills}`);
-        return rightAlignedWidget(theme.fg("dim", parts.join(" ")));
+        const skillSummary = `skills ${loadedSkills}`;
+        const status = contextFile
+          ? `${basename(contextFile.path)} • ${skillSummary}`
+          : skillSummary;
+        return rightAlignedWidget(theme.fg("dim", status));
       },
       { placement: "aboveEditor" },
     );

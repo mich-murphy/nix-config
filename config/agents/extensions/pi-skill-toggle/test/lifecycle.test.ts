@@ -14,7 +14,13 @@ const deploy: Skill = {
 const options: BuildSystemPromptOptions = { cwd: "/work/one", skills: [deploy] };
 
 function promptFor(promptOptions: BuildSystemPromptOptions): string {
-  return `base${formatSkillsForPrompt(promptOptions.skills ?? [])}`;
+  const contextFiles = promptOptions.contextFiles ?? [];
+  const context = contextFiles.length === 0
+    ? ""
+    : `\n\n<project_context>\n\nProject-specific instructions and guidelines:\n\n${contextFiles
+      .map(({ path, content }) => `<project_instructions path="${path}">\n${content}\n</project_instructions>\n\n`)
+      .join("")}</project_context>\n`;
+  return `base${context}${formatSkillsForPrompt(promptOptions.skills ?? [])}`;
 }
 
 function snapshot(cwd: string, hidden = false): PersistedPolicySnapshot {
@@ -121,6 +127,25 @@ describe("extension lifecycle", () => {
     // Recovery in /work/two resolves "deploy" as visible (not hidden there), so
     // the widget now reports the loaded-skill count instead of being cleared.
     expect(test.statuses.at(-1)).toBe("skills 1");
+  });
+
+  test("separates the loaded context file from the skill count with a bullet", async () => {
+    const test = harness({
+      load: ({ cwd }) => snapshot(cwd),
+      apply: () => ({ applied: [], skipped: [], errors: [] }),
+      reset: () => ({ applied: [], skipped: [], errors: [] }),
+    });
+    const contextOptions: BuildSystemPromptOptions = {
+      ...options,
+      contextFiles: [{ path: "/work/one/AGENTS.md", content: "Run tests." }],
+    };
+
+    await test.emit("before_agent_start", {
+      systemPrompt: promptFor(contextOptions),
+      systemPromptOptions: contextOptions,
+    });
+
+    expect(test.statuses.at(-1)).toBe("AGENTS.md • skills 1");
   });
 
   test.each(["new", "resume", "fork", "reload"])("clears status across %s session replacement", async (reason) => {
