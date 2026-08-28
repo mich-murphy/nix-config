@@ -84,7 +84,8 @@ return {
 		opts = {
 			-- `hide` conceals fence lines, which swallows the virtual lines
 			-- snacks.image uses to render mermaid diagrams below the block.
-			code = { border = "thin" },
+			code = { border = "thin", sign = false },
+			heading = { sign = false },
 		},
 	},
 }
