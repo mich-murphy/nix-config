@@ -1,0 +1,29 @@
+{
+  "name": "pi-vim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "check": "tsc --noEmit"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.84.3",
+    "@earendil-works/pi-tui": "0.84.3",
+    "@types/bun": "latest",
+    "bun": "1.4.0",
+    "typescript": "latest"
+  },
+  "allowScripts": {
+    "bun@1.4.0": true
+  }
+}

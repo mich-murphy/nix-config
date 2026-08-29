@@ -49,5 +49,6 @@ in {
     ".pi/agent/extensions/claude-sdk-provider".source = claudeSdkProvider;
     ".pi/agent/extensions/no-sleep".source = piExtensionSources + "/no-sleep";
     ".pi/agent/extensions/pi-skill-toggle".source = piExtensionSources + "/pi-skill-toggle";
+    ".pi/agent/extensions/pi-vim".source = piExtensionSources + "/pi-vim";
   };
 }
