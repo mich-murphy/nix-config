@@ -114,7 +114,7 @@ describe("VimEditor", () => {
     editor.handleInput("0");
     expect(editor.getCursor()).toEqual({ line: 0, col: 0 });
     editor.handleInput("w");
-    expect(editor.getCursor().col).toBe(3);
+    expect(editor.getCursor().col).toBe(4);
     editor.handleInput("$");
     expect(editor.getCursor().col).toBe(6);
     editor.handleInput("h");
@@ -122,6 +122,18 @@ describe("VimEditor", () => {
     editor.handleInput("l");
     editor.handleInput("l");
     expect(editor.getCursor().col).toBe(6);
+  });
+
+  test("moves w to the next word across whitespace", () => {
+    const editor = createEditor();
+    enterNormalMode(editor, "one   two\n  three");
+
+    editor.handleInput("k");
+    editor.handleInput("0");
+    editor.handleInput("w");
+    expect(editor.getCursor()).toEqual({ line: 0, col: 6 });
+    editor.handleInput("w");
+    expect(editor.getCursor()).toEqual({ line: 1, col: 2 });
   });
 
   test("supports insert commands and opening lines", () => {
@@ -155,7 +167,7 @@ describe("VimEditor", () => {
     deleteToEnd.handleInput("0");
     deleteToEnd.handleInput("w");
     deleteToEnd.handleInput("D");
-    expect(deleteToEnd.getText()).toBe("one");
+    expect(deleteToEnd.getText()).toBe("one ");
 
     const changeToEnd = createEditor();
     enterNormalMode(changeToEnd, "one two");
@@ -164,7 +176,7 @@ describe("VimEditor", () => {
     changeToEnd.handleInput("C");
     changeToEnd.handleInput("!");
     expectMode(changeToEnd, "INSERT");
-    expect(changeToEnd.getText()).toBe("one!");
+    expect(changeToEnd.getText()).toBe("one !");
   });
 
   test("supports dd and cc without a general operator engine", () => {

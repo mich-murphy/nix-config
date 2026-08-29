@@ -90,8 +90,7 @@ class VimEditor extends CustomEditor {
         this.moveNormalCursorRight();
         return;
       case "w":
-        super.handleInput(INPUT_WORD_RIGHT);
-        this.clampNormalCursor();
+        this.moveWordForward();
         return;
       case "b":
         super.handleInput(INPUT_WORD_LEFT);
@@ -252,6 +251,26 @@ class VimEditor extends CustomEditor {
     const text = this.getLines()[line] ?? "";
     if (col >= text.length) return;
     super.handleInput(INPUT_RIGHT);
+    this.clampNormalCursor();
+  }
+
+  private moveWordForward(): void {
+    const { line, col } = this.getCursor();
+    const current = (this.getLines()[line] ?? "").slice(col, col + 1);
+    if (characterClass(current) !== "whitespace") {
+      super.handleInput(INPUT_WORD_RIGHT);
+    }
+
+    while (true) {
+      const cursor = this.getCursor();
+      const lines = this.getLines();
+      const text = lines[cursor.line] ?? "";
+      if (cursor.col < text.length && characterClass(text.slice(cursor.col, cursor.col + 1)) !== "whitespace") {
+        break;
+      }
+      if (cursor.col >= text.length && cursor.line >= lines.length - 1) break;
+      super.handleInput(INPUT_RIGHT);
+    }
     this.clampNormalCursor();
   }
 
