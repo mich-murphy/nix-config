@@ -6,7 +6,8 @@
   ...
 }: let
   agentConfig = "${repoRoot}/config/agents";
-  piExtensionSources = ../config/agents/extensions;
+  agentConfigSources = ../config/agents;
+  piExtensionSources = agentConfigSources + "/extensions";
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
   packagePiExtension = {
     directory,
@@ -40,6 +41,8 @@ in {
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     ".claude/skills".source = liveLink "${agentConfig}/skills";
+    ".pi/agent/AGENTS.md".source = agentConfigSources + "/AGENTS.md";
+    ".pi/agent/agents/Explore.md".source = agentConfigSources + "/agents/Explore.md";
     # Manage repository-owned entries individually so external integration
     # installers can add and update their own files in the containing directory.
     ".pi/agent/extensions/README.md".source = piExtensionSources + "/README.md";
