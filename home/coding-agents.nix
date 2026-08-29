@@ -47,6 +47,7 @@ in {
     # installers can add and update their own files in the containing directory.
     ".pi/agent/extensions/README.md".source = piExtensionSources + "/README.md";
     ".pi/agent/extensions/claude-sdk-provider".source = claudeSdkProvider;
+    ".pi/agent/extensions/no-sleep".source = piExtensionSources + "/no-sleep";
     ".pi/agent/extensions/pi-skill-toggle".source = piExtensionSources + "/pi-skill-toggle";
   };
 }
