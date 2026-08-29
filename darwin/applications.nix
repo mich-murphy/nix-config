@@ -1,10 +1,10 @@
 {pkgs, ...}: let
   plannotator = pkgs.stdenvNoCC.mkDerivation {
     pname = "plannotator";
-    version = "0.24.1";
+    version = "0.27.9";
     src = pkgs.fetchurl {
-      url = "https://github.com/backnotprop/plannotator/releases/download/v0.24.1/plannotator-darwin-arm64";
-      hash = "sha256-FzObDbw4fXLIMzeifzmyOQfNK90jYd5TXHpaYzjwzZE=";
+      url = "https://github.com/backnotprop/plannotator/releases/download/v0.27.9/plannotator-darwin-arm64";
+      hash = "sha256-PK8OY7qR+a9FTdtA6/sF9o2g2bpYi+/+2XTpiz4zrvU=";
     };
     dontUnpack = true;
     dontStrip = true;
