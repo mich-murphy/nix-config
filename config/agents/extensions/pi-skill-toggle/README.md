@@ -1,61 +1,58 @@
 # Pi Skill Toggle
 
-Layered control over the instruction files and skills advertised to Pi's model.
+Controls which user-managed instruction files and skills Pi advertises to the
+model.
 
-## Commands
+## Command
 
-- `/skill-toggle` — choose Global, Directory, or Session scope, stage changes,
-  review exact transitions, and apply them.
-- `/skill-status` — show effective visibility, resolution sources, persistent
-  directory overrides, and temporary session overrides.
-- `/skill-reset` — reset the policy for the current directory.
+Run `/skill-toggle` to open one settings list. Changes apply immediately and
+persist across projects and sessions.
 
-Global policy applies to skills in every directory. Sparse directory policy can
-make a globally manual-only skill visible, make a globally visible skill
-manual-only, and include or exclude instruction files. Session policy has the
-same override capabilities but stays in memory and resets on `/new`, resume,
-fork, clone, reload, process restart, and shutdown. Returning a directory or
-session value to `inherit` removes that override.
+Resources are ordered by hierarchy:
 
-The UI shows each resource's effective value, selected-scope value, resolution
-source, canonical Pi provenance, and path. It also provides bulk rows for
-skills, instructions, and scope reset. Edits remain isolated in a draft until
-an exact transition plan is confirmed. Apply reports distinguish applied,
-skipped, and failed transitions; a concurrent change to the same resource is
-skipped instead of overwritten.
+1. Global instructions
+2. Global skills
+3. Project and inherited instructions
+4. Project skills
 
-Persistent changes are stored deterministically in
-`~/.pi/agent/pi-skill-toggle.json` using a lock and atomic replacement. Version
-2 state, `context-control.json`, path-based state, and earlier session-local
-state migrate automatically.
+Each row is labelled `[global]` or `[project]`. Origin affects ordering and
+explanation only. Every editable instruction uses `enabled` or `disabled`, and
+every editable skill uses the same values.
 
-A skill set to `manual-only` remains available through `/skill:name`; only
-automatic model discovery is hidden. Skills marked
-`disable-model-invocation: true` in source are read-only and always
-manual-only.
+Pi may load `AGENTS.override.md`, `AGENTS.md`, or `CLAUDE.md`. The extension
+shows whichever files Pi loaded. It includes only user-managed global and
+project resources. Package, extension-provided, internal, and temporary CLI
+skills are outside its scope.
+
+A disabled skill remains available through `/skill:name`; the extension only
+removes it from automatic model discovery. A skill that declares
+`disable-model-invocation: true` already requires explicit invocation, so it
+appears as a read-only `manual only` row.
+
+## State
+
+Disabled resources are stored by absolute discovery path in
+`~/.pi/agent/pi-skill-toggle.json`, or the agent directory selected by Pi's
+configuration. Paths prevent collisions between projects or same-named skills.
+
+Version 3 and older state is discarded when first loaded. Version 4 keeps only
+disabled resources. Writes use a cross-process lock and atomic replacement.
+Settings for existing files remain unchanged. Entries whose source path no
+longer exists are removed during a successful state load.
 
 ## Failure behavior
 
-Running sessions refresh policy before every model turn. If state cannot be
-loaded, the prompt is left unchanged, no snapshot from another directory is
-used, the footer shows `skills !`, and repeated identical failures notify only
-once. Recovery on a later turn clears the failure. Prompt replacement remains
-exact and section-specific; instruction or skill prompt-format drift is
-reported rather than hidden.
-
-Malformed state is never treated as empty policy. The diagnostic names the
-state path and tells the user to fix or move it before running
-`/skill-status` again.
+If state cannot be loaded, the prompt remains unchanged. Prompt replacement is
+exact and section-specific. If Pi changes the relevant prompt format while a
+resource is disabled, the extension reports the affected section instead of
+silently claiming success.
 
 ## Maintainer invariants
 
-- Never edit `AGENTS.md`, `CLAUDE.md`, `SKILL.md`, or another resource source.
-- Never override source-level manual-only policy.
-- Never apply policy from another directory after refresh failure.
+- Never edit an instruction file or `SKILL.md`.
+- Never override source-level `disable-model-invocation`.
 - Preserve manual `/skill:name` invocation.
-- Persist sparse overrides and remove entries returned to `inherit`.
-- Serialize state deterministically and update it under a lock with atomic
-  replacement.
-- Report prompt drift visibly and by section.
-- Use Pi's canonical resources and `sourceInfo`; do not independently discover
-  skills.
+- Use Pi's loaded resources rather than independently discovering skills.
+- Keep global resources before project resources in the menu.
+- Identify resources by path, never by display or project name.
+- Preserve unrelated state during updates and cleanup.

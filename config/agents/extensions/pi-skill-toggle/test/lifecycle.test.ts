@@ -1,207 +1,151 @@
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
   formatSkillsForPrompt,
+  getAgentDir,
   type BuildSystemPromptOptions,
   type ExtensionAPI,
   type Skill,
 } from "@earendil-works/pi-coding-agent";
 import { registerSkillToggle } from "../index";
-import { PolicyStateError, type PersistedPolicySnapshot, type PolicyStateAdapter } from "../policy";
+import { resourcePathId } from "../resource-path";
+import {
+  SkillToggleStateError,
+  type SkillToggleState,
+  type SkillToggleStateStore,
+} from "../state";
 
-const deploy: Skill = {
-  name: "deploy",
-  description: "Deploy software",
-  filePath: "/skills/deploy/SKILL.md",
-  baseDir: "/skills/deploy",
-  sourceInfo: { path: "/skills/deploy/SKILL.md", source: "test", scope: "user", origin: "top-level" },
+const skillPath = join(getAgentDir(), "skills/research/SKILL.md");
+const research: Skill = {
+  name: "research",
+  description: "Research primary sources",
+  filePath: skillPath,
+  baseDir: join(skillPath, ".."),
+  sourceInfo: {
+    path: skillPath,
+    source: "local",
+    scope: "user",
+    origin: "top-level",
+  },
   disableModelInvocation: false,
 };
-const options: BuildSystemPromptOptions = { cwd: "/work/one", skills: [deploy] };
+const options: BuildSystemPromptOptions = { cwd: "/work/project", skills: [research] };
 
 type TestHandler = (event: unknown, context: unknown) => unknown | Promise<unknown>;
 
-function promptFor(promptOptions: BuildSystemPromptOptions): string {
-  const contextFiles = promptOptions.contextFiles ?? [];
-  const context = contextFiles.length === 0
-    ? ""
-    : `\n\n<project_context>\n\nProject-specific instructions and guidelines:\n\n${contextFiles
-      .map(({ path, content }) => `<project_instructions path="${path}">\n${content}\n</project_instructions>\n\n`)
-      .join("")}</project_context>\n`;
-  return `base${context}${formatSkillsForPrompt(promptOptions.skills ?? [])}`;
+function state(resources: SkillToggleState["resources"] = {}): SkillToggleState {
+  return { version: 4, resources };
 }
 
-function snapshot(cwd: string, hidden = false): PersistedPolicySnapshot {
-  return {
-    cwd,
-    generation: `generation-${cwd}`,
-    globalSkills: hidden ? { deploy: "manual-only" } : {},
-    directorySkills: {},
-    directoryInstructions: {},
-  };
-}
-
-function loaded(cwd: string, hidden = false) {
-  return { _tag: "ok" as const, value: snapshot(cwd, hidden) };
-}
-
-function systemPromptResult(value: unknown): string | undefined {
-  if (value === undefined) return undefined;
-  if (typeof value !== "object" || value === null || !("systemPrompt" in value)) {
-    throw new Error("Expected a before_agent_start result");
-  }
-  const systemPrompt = value.systemPrompt;
-  if (typeof systemPrompt !== "string") throw new Error("Expected a string system prompt");
-  return systemPrompt;
-}
-
-function harness(store: PolicyStateAdapter) {
+function harness(store: SkillToggleStateStore) {
   const handlers = new Map<string, TestHandler[]>();
-  const commands = new Map<string, unknown>();
-  const statuses: Array<string | undefined> = [];
+  const commands: string[] = [];
   const notifications: string[] = [];
-  const widgetPlacements: Array<"aboveEditor" | "belowEditor" | undefined> = [];
   const piMock = {
     on(name: string, handler: TestHandler) {
       handlers.set(name, [...(handlers.get(name) ?? []), handler]);
     },
-    registerCommand(name: string, command: unknown) {
-      commands.set(name, command);
+    registerCommand(name: string) {
+      commands.push(name);
     },
   };
-  const themeMock = { fg: (_color: string, text: string) => text };
   const ctx = {
-    cwd: "/work/one",
-    mode: "tui",
-    hasUI: true,
-    sessionManager: {
-      getBranch: () => [],
-      getSessionId: () => "session",
-    },
+    cwd: "/work/project",
     ui: {
-      theme: themeMock,
-      setWidget: (
-        _key: string,
-        content: string[] | ((tui: unknown, theme: typeof themeMock) => { render(width: number): string[] }) | undefined,
-        widgetOptions?: { placement?: "aboveEditor" | "belowEditor" },
-      ) => {
-        if (content === undefined) {
-          statuses.push(undefined);
-          widgetPlacements.push(undefined);
-          return;
-        }
-        const lines = typeof content === "function" ? content(undefined, themeMock).render(200) : content;
-        statuses.push(lines[0]?.trim());
-        widgetPlacements.push(widgetOptions?.placement);
-      },
       notify: (message: string) => notifications.push(message),
     },
   };
-  // SAFETY: The extension only calls on() and registerCommand() during registration. This test double implements those methods and captures their arguments; handlers receive the separately constructed runtime context below.
+  // SAFETY: Registration uses only on() and registerCommand(). The test double captures both and supplies a separate event context to handlers.
   registerSkillToggle(piMock as unknown as ExtensionAPI, store);
-  const emit = async (name: string, event: unknown = {}): Promise<unknown> => {
+  const emit = async (name: string, event: unknown): Promise<unknown> => {
     let result: unknown;
     for (const handler of handlers.get(name) ?? []) result = await handler(event, ctx);
     return result;
   };
-  return { commands, ctx, emit, statuses, notifications, widgetPlacements };
+  return { commands, emit, notifications };
 }
 
 describe("extension lifecycle", () => {
-  test("registers the skill command family", () => {
+  test("registers only the skill-toggle command", () => {
     const testHarness = harness({
-      load: ({ cwd }) => loaded(cwd),
-      apply: () => ({ applied: [], skipped: [], errors: [] }),
-      reset: () => ({ applied: [], skipped: [], errors: [] }),
+      load: () => ({ _tag: "ok", value: state() }),
+      setValue: () => ({ _tag: "ok", value: state() }),
     });
-    expect([...testHarness.commands.keys()]).toEqual(["skill-toggle", "skill-status", "skill-reset"]);
+
+    expect(testHarness.commands).toEqual(["skill-toggle"]);
   });
 
-  test("never applies another directory's snapshot after refresh failure and deduplicates errors", async () => {
-    let unhealthy = false;
-    const store: PolicyStateAdapter = {
-      load: ({ cwd }) => unhealthy
-        ? { _tag: "err", error: new PolicyStateError("load", `malformed state for ${cwd}`) }
-        : loaded(cwd, cwd === "/work/one"),
-      apply: () => ({ applied: [], skipped: [], errors: [] }),
-      reset: () => ({ applied: [], skipped: [], errors: [] }),
+  test("applies persisted path toggles before the model starts", async () => {
+    const disabled = {
+      [skillPath]: {
+        kind: "skill" as const,
+        origin: "global" as const,
+        owner: resourcePathId(join(getAgentDir(), "skills")),
+        enabled: false as const,
+      },
     };
-    const testHarness = harness(store);
-    await testHarness.emit("session_start", { reason: "startup" });
-    let result = await testHarness.emit("before_agent_start", {
-      systemPrompt: promptFor(options),
+    const testHarness = harness({
+      load: () => ({ _tag: "ok", value: state(disabled) }),
+      setValue: () => ({ _tag: "ok", value: state(disabled) }),
+    });
+
+    const result = await testHarness.emit("before_agent_start", {
+      systemPrompt: `base${formatSkillsForPrompt([research])}`,
       systemPromptOptions: options,
     });
-    expect(systemPromptResult(result)).not.toContain("Deploy software");
 
-    unhealthy = true;
-    testHarness.ctx.cwd = "/work/two";
-    const otherOptions = { ...options, cwd: "/work/two" };
-    const unchanged = promptFor(otherOptions);
-    result = await testHarness.emit("before_agent_start", {
-      systemPrompt: unchanged,
-      systemPromptOptions: otherOptions,
-    });
-    expect(result).toBeUndefined();
-    expect(unchanged).toContain("Deploy software");
-    expect(testHarness.statuses.at(-1)).toBe("skills !");
-    const notificationCount = testHarness.notifications.length;
-    await testHarness.emit("before_agent_start", { systemPrompt: unchanged, systemPromptOptions: otherOptions });
-    expect(testHarness.notifications).toHaveLength(notificationCount);
-
-    unhealthy = false;
-    result = await testHarness.emit("before_agent_start", {
-      systemPrompt: unchanged,
-      systemPromptOptions: otherOptions,
-    });
-    expect(systemPromptResult(result)).toBe(unchanged);
-    expect(testHarness.statuses.at(-1)).toBe("skills 1");
+    expect(result).toEqual({ systemPrompt: "base" });
   });
 
-  test("separates the loaded context file from the skill count with a bullet", async () => {
+  test("does not apply stale state to package or other excluded resources", async () => {
+    const packagePath = "/packages/research/SKILL.md";
+    const packageSkill: Skill = {
+      ...research,
+      filePath: packagePath,
+      baseDir: "/packages/research",
+      sourceInfo: {
+        path: packagePath,
+        source: "npm:example",
+        scope: "user",
+        origin: "package",
+      },
+    };
+    const stale = {
+      [packagePath]: {
+        kind: "skill" as const,
+        origin: "global" as const,
+        owner: resourcePathId("/packages"),
+        enabled: false as const,
+      },
+    };
     const testHarness = harness({
-      load: ({ cwd }) => loaded(cwd),
-      apply: () => ({ applied: [], skipped: [], errors: [] }),
-      reset: () => ({ applied: [], skipped: [], errors: [] }),
+      load: () => ({ _tag: "ok", value: state(stale) }),
+      setValue: () => ({ _tag: "ok", value: state(stale) }),
     });
-    const contextOptions: BuildSystemPromptOptions = {
-      ...options,
-      contextFiles: [{ path: "/work/one/AGENTS.md", content: "Run tests." }],
+    const prompt = `base${formatSkillsForPrompt([packageSkill])}`;
+
+    const result = await testHarness.emit("before_agent_start", {
+      systemPrompt: prompt,
+      systemPromptOptions: { cwd: "/work/project", skills: [packageSkill] },
+    });
+
+    expect(result).toEqual({ systemPrompt: prompt });
+  });
+
+  test("leaves the prompt unchanged and deduplicates state failures", async () => {
+    const error = new SkillToggleStateError("load", "broken state");
+    const testHarness = harness({
+      load: () => ({ _tag: "err", error }),
+      setValue: () => ({ _tag: "err", error }),
+    });
+    const event = {
+      systemPrompt: `base${formatSkillsForPrompt([research])}`,
+      systemPromptOptions: options,
     };
 
-    await testHarness.emit("before_agent_start", {
-      systemPrompt: promptFor(contextOptions),
-      systemPromptOptions: contextOptions,
-    });
-
-    expect(testHarness.statuses.at(-1)).toBe("AGENTS.md • skills 1");
-  });
-
-  test.each(["new", "resume", "fork", "reload"])("clears status across %s session replacement", async (reason) => {
-    const testHarness = harness({
-      load: ({ cwd }) => loaded(cwd),
-      apply: () => ({ applied: [], skipped: [], errors: [] }),
-      reset: () => ({ applied: [], skipped: [], errors: [] }),
-    });
-    await testHarness.emit("session_start", { reason: "startup" });
-    await testHarness.emit("session_shutdown", { reason });
-    expect(testHarness.statuses.at(-1)).toBeUndefined();
-    await testHarness.emit("session_start", { reason });
-  });
-
-  test("refreshes on tree navigation and clears state on shutdown", async () => {
-    let loads = 0;
-    const testHarness = harness({
-      load: ({ cwd }) => {
-        loads += 1;
-        return loaded(cwd);
-      },
-      apply: () => ({ applied: [], skipped: [], errors: [] }),
-      reset: () => ({ applied: [], skipped: [], errors: [] }),
-    });
-    await testHarness.emit("session_start", { reason: "startup" });
-    await testHarness.emit("session_tree", {});
-    expect(loads).toBe(2);
-    await testHarness.emit("session_shutdown", { reason: "quit" });
-    expect(testHarness.statuses.at(-1)).toBeUndefined();
+    expect(await testHarness.emit("before_agent_start", event)).toBeUndefined();
+    expect(await testHarness.emit("before_agent_start", event)).toBeUndefined();
+    expect(testHarness.notifications).toHaveLength(1);
+    expect(testHarness.notifications[0]).toContain("prompt was left unchanged");
   });
 });

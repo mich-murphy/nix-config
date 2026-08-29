@@ -1,99 +1,137 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, test } from "bun:test";
 import {
-  mkdirSync,
-  mkdtempSync,
-  realpathSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { afterEach, describe, expect, test } from "bun:test";
-import { getAgentDir, type BuildSystemPromptOptions, type Skill } from "@earendil-works/pi-coding-agent";
-import { policyResourcesFromPrompt } from "../resources";
+  getAgentDir,
+  type BuildSystemPromptOptions,
+  type Skill,
+} from "@earendil-works/pi-coding-agent";
+import { resourcePathId } from "../resource-path";
+import { toggleResourcesFromPrompt } from "../resources";
 
-const temporaryDirectories: string[] = [];
-afterEach(() => {
-  for (const directory of temporaryDirectories.splice(0)) {
-    rmSync(directory, { recursive: true, force: true });
-  }
-});
-
-function temporaryDirectory(): string {
-  const directory = mkdtempSync(join(tmpdir(), "pi-skill-toggle-resources-"));
-  temporaryDirectories.push(directory);
-  return directory;
+function skill(
+  name: string,
+  filePath: string,
+  sourceInfo: Skill["sourceInfo"],
+  disableModelInvocation = false,
+): Skill {
+  return {
+    name,
+    description: `${name} description`,
+    filePath,
+    baseDir: join(filePath, ".."),
+    sourceInfo,
+    disableModelInvocation,
+  };
 }
 
-describe("policyResourcesFromPrompt", () => {
-  test("projects Pi provenance and classifies instruction ownership", () => {
-    const root = temporaryDirectory();
-    const project = join(root, "project");
-    mkdirSync(project);
-    const projectInstructions = join(project, "AGENTS.md");
-    const inheritedInstructions = join(root, "AGENTS.md");
-    writeFileSync(projectInstructions, "project rules");
-    writeFileSync(inheritedInstructions, "inherited rules");
-
+describe("toggleResourcesFromPrompt", () => {
+  test("groups global resources before project resources and sorts skills by name", () => {
     const options: BuildSystemPromptOptions = {
-      cwd: project,
+      cwd: "/work/project/src",
       contextFiles: [
-        { path: join(getAgentDir(), "AGENTS.md"), content: "user rules" },
-        { path: projectInstructions, content: "project rules" },
-        { path: inheritedInstructions, content: "inherited rules" },
+        { path: join(getAgentDir(), "AGENTS.md"), content: "global" },
+        { path: "/work/AGENTS.md", content: "parent" },
+        { path: "/work/project/CLAUDE.md", content: "project" },
+      ],
+      skills: [
+        skill("zeta", join(homedir(), ".agents/skills/zeta/SKILL.md"), {
+          path: join(homedir(), ".agents/skills/zeta/SKILL.md"),
+          source: "local",
+          scope: "user",
+          origin: "top-level",
+        }),
+        skill("alpha", join(getAgentDir(), "skills/alpha/SKILL.md"), {
+          path: join(getAgentDir(), "skills/alpha/SKILL.md"),
+          source: "local",
+          scope: "user",
+          origin: "top-level",
+        }),
+        skill("deploy", "/work/project/.agents/skills/deploy/SKILL.md", {
+          path: "/work/project/.agents/skills/deploy/SKILL.md",
+          source: "local",
+          scope: "project",
+          origin: "top-level",
+        }),
       ],
     };
 
-    const resources = policyResourcesFromPrompt(options);
-
-    expect(resources.instructions.map(({ provenance }) => provenance.scope)).toEqual([
-      "user",
-      "project",
-      "inherited",
+    expect(toggleResourcesFromPrompt(options).map(({ origin, kind, label }) =>
+      `${origin}:${kind}:${label}`,
+    )).toEqual([
+      "global:instruction:AGENTS.md",
+      "global:skill:alpha",
+      "global:skill:zeta",
+      "project:instruction:AGENTS.md",
+      "project:instruction:CLAUDE.md",
+      "project:skill:deploy",
     ]);
-    expect(resources.instructions[1]?.path).toBe(realpathSync.native(projectInstructions));
   });
 
-  test("retains canonical skill provenance and resolves symlinked paths", () => {
-    const root = temporaryDirectory();
-    const project = join(root, "project");
-    const skillDirectory = join(root, "skills", "research");
-    const skillFile = join(skillDirectory, "SKILL.md");
-    const alias = join(root, "research-skill.md");
-    mkdirSync(project);
-    mkdirSync(skillDirectory, { recursive: true });
-    writeFileSync(skillFile, "skill body");
-    symlinkSync(skillFile, alias);
+  test("deduplicates repeated discovery paths", () => {
+    const path = join(getAgentDir(), "AGENTS.md");
+    const resources = toggleResourcesFromPrompt({
+      cwd: "/work/project",
+      contextFiles: [
+        { path, content: "first" },
+        { path, content: "duplicate" },
+      ],
+    });
 
-    const skill: Skill = {
-      name: " research ",
-      description: "Research primary sources",
-      filePath: alias,
-      baseDir: dirname(alias),
-      sourceInfo: {
-        path: alias,
-        source: "test-package",
-        scope: "temporary",
-        origin: "package",
-      },
-      disableModelInvocation: true,
+    expect(resources).toHaveLength(1);
+    expect(resources[0]?.id).toBe(resourcePathId(path));
+  });
+
+  test("preserves the discovery path when a global instruction is symlinked elsewhere", () => {
+    const path = join(getAgentDir(), "AGENTS.md");
+    const resources = toggleResourcesFromPrompt({
+      cwd: "/work/project",
+      contextFiles: [{ path, content: "rules" }],
+    });
+
+    expect(resources[0]).toMatchObject({ id: path, origin: "global", label: "AGENTS.md" });
+  });
+
+  test("excludes packages, temporary skills, and skills outside standard roots", () => {
+    const options: BuildSystemPromptOptions = {
+      cwd: "/work/project",
+      skills: [
+        skill("package-skill", "/packages/skill/SKILL.md", {
+          path: "/packages/skill/SKILL.md",
+          source: "npm:test",
+          scope: "user",
+          origin: "package",
+        }),
+        skill("temporary", "/tmp/skill/SKILL.md", {
+          path: "/tmp/skill/SKILL.md",
+          source: "cli",
+          scope: "temporary",
+          origin: "top-level",
+        }),
+        skill("extension-skill", join(getAgentDir(), "extensions/example/skill/SKILL.md"), {
+          path: join(getAgentDir(), "extensions/example/index.ts"),
+          source: "local",
+          scope: "user",
+          origin: "top-level",
+        }),
+      ],
     };
 
-    const resources = policyResourcesFromPrompt({ cwd: project, skills: [skill] });
-    const projected = resources.skills[0];
+    expect(toggleResourcesFromPrompt(options)).toEqual([]);
+  });
 
-    expect(projected).toBeDefined();
-    expect(projected).toMatchObject({
-      name: "research",
-      description: "Research primary sources",
-      filePath: realpathSync.native(skillFile),
-      sourceManualOnly: true,
-      provenance: {
-        path: realpathSync.native(skillFile),
-        source: "test-package",
-        scope: "temporary",
-        origin: "package",
-      },
+  test("marks source-authored manual-only skills as read-only", () => {
+    const path = join(getAgentDir(), "skills/manual/SKILL.md");
+    const resources = toggleResourcesFromPrompt({
+      cwd: "/work/project",
+      skills: [skill("manual", path, {
+        path,
+        source: "local",
+        scope: "user",
+        origin: "top-level",
+      }, true)],
     });
+
+    expect(resources[0]?.editability).toBe("manual-only");
   });
 });
