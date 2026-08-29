@@ -11,15 +11,15 @@ const INPUT_RIGHT = "\x1b[C";
 const INPUT_UP = "\x1b[A";
 const INPUT_DOWN = "\x1b[B";
 const INPUT_DELETE = "\x1b[3~";
-const INPUT_WORD_LEFT = "\x1bb";
-const INPUT_WORD_RIGHT = "\x1bf";
-const INPUT_DELETE_WORD_RIGHT = "\x1bd";
+const INPUT_WORD_LEFT = "\x1b[1;3D";
+const INPUT_WORD_RIGHT = "\x1b[1;3C";
+const INPUT_DELETE_WORD_RIGHT = "\x1b[3;3~";
 const INPUT_LINE_START = "\x01";
 const INPUT_LINE_END = "\x05";
 const INPUT_DELETE_TO_LINE_END = "\x0b";
 const INPUT_UNDO = "\x1f";
 
-type PendingCommand = "none" | "delete" | "change" | "change-inner";
+type PendingCommand = "none" | "delete" | "delete-inner" | "change" | "change-inner";
 type ActivePendingCommand = Exclude<PendingCommand, "none">;
 type VimState =
   | { readonly mode: "insert" }
@@ -169,6 +169,10 @@ class VimEditor extends CustomEditor {
 
   private handlePending(pending: ActivePendingCommand, key: string): void {
     if (pending === "delete") {
+      if (key === "i") {
+        this.vimState = { mode: "normal", pending: "delete-inner" };
+        return;
+      }
       this.vimState = { mode: "normal", pending: "none" };
       if (key === "d") this.deleteLine();
       else if (key === "w") this.deleteVimWordForward();
@@ -186,7 +190,12 @@ class VimEditor extends CustomEditor {
     }
 
     this.vimState = { mode: "normal", pending: "none" };
-    if (key === "w") this.changeInnerWord();
+    if (key !== "w") return;
+    if (pending === "delete-inner") {
+      this.deleteInnerWord();
+      return;
+    }
+    this.changeInnerWord();
   }
 
   private deleteLine(): void {
@@ -212,7 +221,17 @@ class VimEditor extends CustomEditor {
     this.enterInsertMode();
   }
 
+  private deleteInnerWord(): void {
+    this.deleteInnerWordContent();
+    this.clampNormalCursor();
+  }
+
   private changeInnerWord(): void {
+    this.deleteInnerWordContent();
+    this.enterInsertMode();
+  }
+
+  private deleteInnerWordContent(): void {
     const { line, col } = this.getCursor();
     const text = this.getLines()[line] ?? "";
     const current = text.slice(col, col + 1);
@@ -226,7 +245,6 @@ class VimEditor extends CustomEditor {
       super.handleInput(INPUT_WORD_LEFT);
     }
     super.handleInput(INPUT_DELETE_WORD_RIGHT);
-    this.enterInsertMode();
   }
 
   private openLineBelow(): void {
@@ -289,6 +307,7 @@ class VimEditor extends CustomEditor {
   private pendingLabel(pending: ActivePendingCommand): string {
     switch (pending) {
       case "delete": return "d";
+      case "delete-inner": return "di";
       case "change": return "c";
       case "change-inner": return "ci";
     }

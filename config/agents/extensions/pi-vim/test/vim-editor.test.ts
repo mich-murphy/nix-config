@@ -7,6 +7,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import {
   KeybindingsManager,
+  setKittyProtocolActive,
   TUI_KEYBINDINGS,
   type EditorTheme,
   type TUI,
@@ -202,13 +203,22 @@ describe("VimEditor", () => {
     expectMode(change, "INSERT");
   });
 
-  test("supports dw, cw, and ciw with Pi word boundaries", () => {
+  test("supports dw, diw, cw, and ciw with Pi word boundaries", () => {
     const deletion = createEditor();
     enterNormalMode(deletion, "one two");
     deletion.handleInput("0");
     deletion.handleInput("d");
     deletion.handleInput("w");
     expect(deletion.getText()).toBe(" two");
+
+    const deleteInner = createEditor();
+    enterNormalMode(deleteInner, "one two");
+    deleteInner.handleInput("h");
+    deleteInner.handleInput("d");
+    deleteInner.handleInput("i");
+    deleteInner.handleInput("w");
+    expect(deleteInner.getText()).toBe("one ");
+    expectMode(deleteInner, "NORMAL");
 
     const changeForward = createEditor();
     enterNormalMode(changeForward, "one two");
@@ -226,6 +236,45 @@ describe("VimEditor", () => {
     changeInner.handleInput("w");
     changeInner.handleInput("red");
     expect(changeInner.getText()).toBe("one red");
+  });
+
+  test("supports word edits while the Kitty keyboard protocol is active", () => {
+    setKittyProtocolActive(true);
+    try {
+      const deletion = createEditor();
+      enterNormalMode(deletion, "one two");
+      deletion.handleInput("0");
+      deletion.handleInput("d");
+      deletion.handleInput("w");
+      expect(deletion.getText()).toBe(" two");
+
+      const deleteInner = createEditor();
+      enterNormalMode(deleteInner, "one two");
+      deleteInner.handleInput("h");
+      deleteInner.handleInput("d");
+      deleteInner.handleInput("i");
+      deleteInner.handleInput("w");
+      expect(deleteInner.getText()).toBe("one ");
+
+      const changeForward = createEditor();
+      enterNormalMode(changeForward, "one two");
+      changeForward.handleInput("0");
+      changeForward.handleInput("c");
+      changeForward.handleInput("w");
+      changeForward.handleInput("red");
+      expect(changeForward.getText()).toBe("red two");
+
+      const changeInner = createEditor();
+      enterNormalMode(changeInner, "one two");
+      changeInner.handleInput("h");
+      changeInner.handleInput("c");
+      changeInner.handleInput("i");
+      changeInner.handleInput("w");
+      changeInner.handleInput("red");
+      expect(changeInner.getText()).toBe("one red");
+    } finally {
+      setKittyProtocolActive(false);
+    }
   });
 
   test("cancels pending commands with escape", () => {

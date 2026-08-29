@@ -11,7 +11,7 @@ mode.
 
 - Movement: `h`, `j`, `k`, `l`, `w`, `b`, `0`, `$`
 - Insert: `i`, `a`, `A`, `I`, `o`, `O`
-- Editing: `x`, `D`, `C`, `u`, `dd`, `dw`, `cc`, `cw`, `ciw`
+- Editing: `x`, `D`, `C`, `u`, `dd`, `dw`, `diw`, `cc`, `cw`, `ciw`
 
 Normal-mode `Esc` retains Pi's interrupt behavior. Other Pi application
 shortcuts continue to use the configured Pi keybindings.
