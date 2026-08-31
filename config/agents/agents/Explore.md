@@ -1,7 +1,8 @@
 ---
 name: Explore
-description: Fast read-only codebase search. Follow the parent session's subagent model-selection instructions.
+description: Fast read-only codebase search.
 tools: read, bash, grep, find, ls
+max_turns: 8
 prompt_mode: replace
 ---
 
