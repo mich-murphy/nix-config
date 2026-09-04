@@ -70,6 +70,7 @@ in {
       "linearmouse"
       "wispr-flow"
       "chatgpt"
+      "nextcloud"
     ];
     brews = [
       "herdr"
