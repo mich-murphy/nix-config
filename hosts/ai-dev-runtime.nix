@@ -26,4 +26,24 @@
     };
     Install.WantedBy = ["default.target"];
   };
+
+  # Weekly store garbage collection. Determinate Nix owns the binary, so call it
+  # by its profile path rather than pulling a second nix into the closure.
+  systemd.user.services.nix-gc = {
+    Unit.Description = "Nix garbage collection";
+    Service = {
+      Type = "oneshot";
+      ExecStart = "/nix/var/nix/profiles/default/bin/nix-collect-garbage --delete-older-than 30d";
+    };
+  };
+
+  systemd.user.timers.nix-gc = {
+    Unit.Description = "Weekly Nix garbage collection";
+    Timer = {
+      OnCalendar = "weekly";
+      Persistent = true;
+      RandomizedDelaySec = "1h";
+    };
+    Install.WantedBy = ["timers.target"];
+  };
 }
