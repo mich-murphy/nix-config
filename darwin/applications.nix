@@ -1,20 +1,4 @@
-{pkgs, ...}: let
-  plannotator = pkgs.stdenvNoCC.mkDerivation {
-    pname = "plannotator";
-    version = "0.27.9";
-    src = pkgs.fetchurl {
-      url = "https://github.com/backnotprop/plannotator/releases/download/v0.27.9/plannotator-darwin-arm64";
-      hash = "sha256-PK8OY7qR+a9FTdtA6/sF9o2g2bpYi+/+2XTpiz4zrvU=";
-    };
-    dontUnpack = true;
-    dontStrip = true;
-    installPhase = ''
-      runHook preInstall
-      install -Dm755 "$src" "$out/bin/plannotator"
-      runHook postInstall
-    '';
-  };
-in {
+{pkgs, ...}: {
   environment.variables.HOMEBREW_NO_ENV_HINTS = "1";
 
   environment.systemPackages = [
@@ -24,7 +8,6 @@ in {
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
-    plannotator
   ];
 
   fonts.packages = [

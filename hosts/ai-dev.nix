@@ -9,15 +9,8 @@
     username = "michael";
     homeDirectory = "/home/michael";
 
-    sessionVariables = {
-      # /tmp is a quota-limited RAM tmpfs; agent scratch belongs on disk.
-      TMPDIR = "/var/tmp/michael";
-
-      # Plannotator reviews are reached through SSH-managed client adapters.
-      PLANNOTATOR_REMOTE = "1";
-      PLANNOTATOR_PORT = "19432";
-      PLANNOTATOR_SHARE = "disabled";
-    };
+    # /tmp is a quota-limited RAM tmpfs; agent scratch belongs on disk.
+    sessionVariables.TMPDIR = "/var/tmp/michael";
   };
 
   # Home Manager still uses the deprecated `nix profile install` alias.

@@ -5,19 +5,6 @@
     settings = {
       "ai-dev" = {
         User = "michael";
-        LocalForward = [
-          {
-            bind = {
-              address = "127.0.0.1";
-              port = 19432;
-            };
-            host = {
-              address = "127.0.0.1";
-              port = 19432;
-            };
-          }
-        ];
-        ExitOnForwardFailure = true;
       };
 
       # configure 1password ssh agent
