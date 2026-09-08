@@ -1,0 +1,12 @@
+[package]
+name = "domain"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+serde.workspace = true
+sha2.workspace = true
+
+[lints]
+workspace = true

@@ -75,6 +75,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "domain"
+version = "0.2.0"
+dependencies = [
+ "serde",
+ "sha2",
+]
+
+[[package]]
 name = "epic-control"
 version = "0.1.0"
 dependencies = [
