@@ -24,7 +24,7 @@ EPIC_CTL="$CARGO_TARGET_DIR/release/epic-control"
 ```
 
 The script derives the cache root as
-`${XDG_CACHE_HOME:-$HOME/.cache}/holy-ai-agents-batman`; build output and the
+`${XDG_CACHE_HOME:-$HOME/.cache}/no-mistakes`; build output and the
 pinned toolchain stay below it. Each request is a JSON object supplied through
 `--input <file>` or stdin. Do
 not include `command` inside JSON. `status`, `next`, and `drive` need no input.

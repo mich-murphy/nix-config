@@ -17,7 +17,7 @@ source, dependencies, tests, the Rust xtask or policy:
 
 The Cargo workspace contains the controller and a Rust `xtask` gate runner.
 `controller/env.sh` derives the cache root as
-`${XDG_CACHE_HOME:-$HOME/.cache}/holy-ai-agents-batman`, exports its `target`
+`${XDG_CACHE_HOME:-$HOME/.cache}/no-mistakes`, exports its `target`
 directory as `CARGO_TARGET_DIR`, and prepends its pinned toolchain to `PATH`.
 The xtask independently derives the same paths and reads the Rust version from
 `controller/quality-gates.json`. It invokes Cargo, rustc, rustfmt and Clippy from

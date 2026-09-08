@@ -9,7 +9,7 @@ in {
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     ".claude/skills".source = liveLink "${agentConfig}/skills";
-    ".codex/skills/holy-ai-agents-batman".source =
-      liveLink "${agentConfig}/skills/holy-ai-agents-batman";
+    ".codex/skills/no-mistakes".source =
+      liveLink "${agentConfig}/skills/no-mistakes";
   };
 }

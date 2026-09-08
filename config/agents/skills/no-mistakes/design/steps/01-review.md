@@ -16,7 +16,7 @@ withdrawn: Cargo config does not expand `~` or environment variables, so it
 cannot express "outside the tree" portably. Required shape:
 
 1. Derive one cache root at runtime from
-   `${XDG_CACHE_HOME:-$HOME/.cache}/holy-ai-agents-batman`. Nothing tracked
+   `${XDG_CACHE_HOME:-$HOME/.cache}/no-mistakes`. Nothing tracked
    contains the expansion.
 2. Delete `.cargo/config.toml` and the `controller/.cargo/config.toml` symlink.
 3. Provide one small sourceable script, `controller/env.sh`, that exports

@@ -27,7 +27,7 @@ fn cache() -> Result<PathBuf> {
         Some(path) => PathBuf::from(path),
         None => PathBuf::from(std::env::var_os("HOME").context("HOME is required")?).join(".cache"),
     };
-    Ok(home.join("holy-ai-agents-batman"))
+    Ok(home.join("no-mistakes"))
 }
 
 fn toolchain(cache: &Path, version: &str) -> Result<PathBuf> {

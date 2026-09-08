@@ -1,11 +1,9 @@
 ---
-name: holy-ai-agents-batman
+name: no-mistakes
 description: Deliver a BusinessCraft Jira epic sequentially through implementation, independent Codex review, verified PR merge, and Jira synchronization. Use for an autonomous epic delivery run or resuming its ledger, not merely inspecting, planning, or editing an epic.
 ---
 
-<!-- markdownlint-disable MD026 -->
-
-# Holy AI agents, Batman!
+# No mistakes
 
 Run the selected epic one implementation task at a time. Optimize subscription
 usage per successfully completed task, including repairs and review, without
@@ -15,7 +13,7 @@ correction, and verify its effect before continuing.
 Example invocation:
 
 ```text
-Use $holy-ai-agents-batman
+Use $no-mistakes
 EPIC: <Jira epic URL>
 ```
 
@@ -32,7 +30,7 @@ or resuming a run, including its
 [progress and feedback contract](references/progress-and-feedback.md). Build the
 bundled `controller/` crate by sourcing `controller/env.sh`, then running
 `cargo build --release --locked` with its manifest path. The script uses
-`${XDG_CACHE_HOME:-$HOME/.cache}/holy-ai-agents-batman` as the cache root. Use
+`${XDG_CACHE_HOME:-$HOME/.cache}/no-mistakes` as the cache root. Use
 `$CARGO_TARGET_DIR/release/epic-control` throughout this workflow. Do not
 reimplement its counters or state in prose.
 

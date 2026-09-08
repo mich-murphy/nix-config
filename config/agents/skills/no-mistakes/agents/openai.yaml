@@ -1,0 +1,4 @@
+interface:
+  display_name: "No mistakes"
+  short_description: "Deliver epics with measured progress and bounded review"
+  default_prompt: "Use $no-mistakes to deliver EPIC: <Jira epic URL> through verified merge and Jira synchronization."

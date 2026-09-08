@@ -68,7 +68,7 @@ would replay unrelated delivery work.
 The canonical gate passed under Rust 1.98.0:
 
 ```text
-cargo run --locked --manifest-path /home/michael/.codex/skills/holy-ai-agents-batman/controller/Cargo.toml -p xtask -- quality
+cargo run --locked --manifest-path /home/michael/.codex/skills/no-mistakes/controller/Cargo.toml -p xtask -- quality
 Rust quality gates passed.
 ```
 

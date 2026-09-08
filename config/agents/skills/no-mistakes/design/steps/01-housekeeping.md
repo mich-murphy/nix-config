@@ -20,7 +20,7 @@ no build output and no toolchain, and the build and quality gate still pass.
    `references/rust-quality-gates.md`. Report what you find before deleting
    anything.
 2. Add `controller/.cargo/config.toml` with a `target-dir` outside the skill
-   tree, for example `/home/michael/.cache/holy-ai-agents-batman/target`.
+   tree, for example `/home/michael/.cache/no-mistakes/target`.
    Prefer this over requiring every caller to set `CARGO_TARGET_DIR`. If the
    xtask or the toolchain resolution needs a home outside the tree too, give it
    one under the same cache root and make the change in the xtask.

@@ -2,7 +2,7 @@
 
 Status: proposal, revision 2, not yet implemented.
 Date: 2026-09-08.
-Scope: the `holy-ai-agents-batman` skill and its bundled Rust controller.
+Scope: the `no-mistakes` skill and its bundled Rust controller.
 
 This document collates the review findings, the decisions taken on them, and the
 resulting design. It is the reference for the rebuild. It supersedes the earlier
@@ -759,7 +759,7 @@ enum StructuredOutput {
 - Reviewer isolation on pi is `--tools` restriction rather than a sandbox mode.
   Weaker than Codex `sandbox_mode`. Recorded as an explicit capability in the
   `Harness` trait, printed by `status`, never treated as equivalent.
-- Skill location. Moving to `~/.agents/skills/holy-ai-agents-batman/` makes it
+- Skill location. Moving to `~/.agents/skills/no-mistakes/` makes it
   shared across pi and Codex, with nix-config managing it as live configuration
   under `config/`.
 
