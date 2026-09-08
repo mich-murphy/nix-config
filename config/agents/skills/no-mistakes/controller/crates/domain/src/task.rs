@@ -84,6 +84,7 @@ pub struct PlannedWork {
     pub base: Sha,
     pub snapshot: Option<crate::acceptance::Snapshot>,
     pub plan: Option<Plan>,
+    pub feedback: Vec<crate::command::Lesson>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -7,6 +7,13 @@ use std::{
     process::Command,
 };
 
+#[derive(Debug, Deserialize)]
+pub struct Dispatch {
+    pub path: String,
+    pub function: String,
+    pub reason: String,
+}
+
 #[derive(Deserialize)]
 struct Score {
     sum: f64,
@@ -41,11 +48,11 @@ fn measure(
     space: &Space,
     path: &Path,
     limit: u32,
-    dispatches: &[String],
+    dispatches: &[Dispatch],
     scores: &mut Vec<f64>,
     failures: &mut Vec<String>,
 ) {
-    if space.kind == "function" && !dispatches.contains(&space.name) {
+    if space.kind == "function" && !dispatch_exempt(dispatches, path, space) {
         let own = space.metrics.cyclomatic.sum
             - space
                 .spaces
@@ -67,6 +74,14 @@ fn measure(
     }
 }
 
+fn dispatch_exempt(dispatches: &[Dispatch], path: &Path, space: &Space) -> bool {
+    dispatches.iter().any(|dispatch| {
+        !dispatch.reason.trim().is_empty()
+            && path.ends_with(&dispatch.path)
+            && dispatch.function == space.name
+    })
+}
+
 fn parse_check(source: &Path, analyzer: &Path) -> Result<()> {
     let errors = super::output(
         Command::new(analyzer)
@@ -86,7 +101,7 @@ fn parse_check(source: &Path, analyzer: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn check(source: &Path, analyzer: &Path, limit: u32, dispatches: &[String]) -> Result<()> {
+pub fn check(source: &Path, analyzer: &Path, limit: u32, dispatches: &[Dispatch]) -> Result<()> {
     let source = source.canonicalize()?;
     let expected = files(&source, "rs")?;
     ensure!(!expected.is_empty(), "No Rust source files found");
@@ -123,7 +138,7 @@ fn collect(
     directory: &Path,
     expected: &BTreeSet<PathBuf>,
     limit: u32,
-    dispatches: &[String],
+    dispatches: &[Dispatch],
 ) -> Result<(BTreeSet<PathBuf>, Vec<f64>, Vec<String>)> {
     let mut seen = BTreeSet::new();
     let mut scores = Vec::new();
@@ -138,4 +153,45 @@ fn collect(
         measure(&space, &path, limit, dispatches, &mut scores, &mut failures);
     }
     Ok((seen, scores, failures))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn space() -> Space {
+        Space {
+            name: "apply".into(),
+            kind: "function".into(),
+            start_line: 1,
+            metrics: Metrics {
+                cyclomatic: Score { sum: 20.0 },
+            },
+            spaces: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn dispatch_exception_is_path_scoped() {
+        let dispatch = Dispatch {
+            path: "domain/src/state/apply.rs".into(),
+            function: "apply".into(),
+            reason: "exhaustive fold".into(),
+        };
+        assert!(dispatch_exempt(
+            &[dispatch],
+            Path::new("/repo/domain/src/state/apply.rs"),
+            &space()
+        ));
+        let other = Dispatch {
+            path: "domain/src/state/apply.rs".into(),
+            function: "apply".into(),
+            reason: "exhaustive fold".into(),
+        };
+        assert!(!dispatch_exempt(
+            &[other],
+            Path::new("/repo/other/src/apply.rs"),
+            &space()
+        ));
+    }
 }

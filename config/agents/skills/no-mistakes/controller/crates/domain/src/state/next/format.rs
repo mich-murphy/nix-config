@@ -1,5 +1,8 @@
 use crate::{
-    command::{NextAction, serde_placeholder::Schema},
+    command::{
+        NextAction,
+        schema::{Schema, Template},
+    },
     ids::TaskId,
 };
 use std::collections::BTreeMap;
@@ -147,6 +150,111 @@ pub(super) fn command_for(action: &NextAction) -> (String, Schema) {
     (command, schema(fields))
 }
 
+pub(super) fn template_for(action: &NextAction) -> Template {
+    let mut values = BTreeMap::from([("run".into(), "<absolute-ignored-run-directory>".into())]);
+    if let Some(task) = action_task(action) {
+        values.insert("task".into(), task.to_string());
+    }
+    match action {
+        NextAction::Implement { .. } => insert(&mut values, "role", "implementer"),
+        NextAction::Review { snapshot, .. } => {
+            insert(&mut values, "role", "reviewer");
+            insert(&mut values, "snapshot.base", snapshot.base.as_ref());
+            insert(&mut values, "snapshot.head", snapshot.head.as_ref());
+            insert(
+                &mut values,
+                "snapshot.requirements",
+                snapshot.requirements.as_ref(),
+            );
+        }
+        NextAction::Repair { findings, .. } | NextAction::Disposition { findings, .. } => {
+            insert(&mut values, "findings", &join(findings));
+        }
+        NextAction::ResolveGaps { gaps, .. } => insert(&mut values, "gaps", &gaps.join(" | ")),
+        NextAction::RecordProof { missing, .. }
+        | NextAction::OpenDelivery {
+            remaining: missing, ..
+        } => {
+            insert(&mut values, "criteria", &join(missing));
+        }
+        NextAction::Publish { step, .. } => {
+            insert(&mut values, "step", &format!("{step:?}").to_lowercase())
+        }
+        NextAction::AwaitChecks { pr, deadline, .. } => {
+            insert(&mut values, "pr", &pr.0.to_string());
+            insert(&mut values, "deadline", &deadline.to_string());
+            insert(&mut values, "wait", "true");
+        }
+        NextAction::FinalVerify { commit, .. } => insert(&mut values, "commit", commit.as_ref()),
+        NextAction::Cleanup { slot, .. } => insert(&mut values, "slot", slot.as_ref()),
+        NextAction::SyncStatus { target, .. } => insert(&mut values, "target", target.as_ref()),
+        NextAction::ObserveStatus { issue, .. } => insert(&mut values, "issue", issue.as_ref()),
+        NextAction::MonitorLaunch { launch } => {
+            insert(&mut values, "launch", &launch.0.to_string())
+        }
+        NextAction::SettleOperation { operation } => {
+            insert(&mut values, "operation", &operation.0.to_string())
+        }
+        NextAction::Checkpoint { launch, .. } => {
+            insert(&mut values, "launch", &launch.0.to_string())
+        }
+        NextAction::Hold { reason, .. } => insert(&mut values, "reason", &format!("{reason:?}")),
+        NextAction::Claim { .. }
+        | NextAction::RecoverUnfinished { .. }
+        | NextAction::AnswerQuestions { .. }
+        | NextAction::Report { .. }
+        | NextAction::Brief { .. }
+        | NextAction::BindSlot { .. }
+        | NextAction::Plan { .. }
+        | NextAction::AwaitHumanReview { .. }
+        | NextAction::Complete { .. } => {}
+    }
+    Template { values }
+}
+
+fn action_task(action: &NextAction) -> Option<&TaskId> {
+    match action {
+        NextAction::Claim { task }
+        | NextAction::SyncStatus { task, .. }
+        | NextAction::ObserveStatus { task, .. }
+        | NextAction::Brief { task }
+        | NextAction::BindSlot { task }
+        | NextAction::Plan { task }
+        | NextAction::Implement { task, .. }
+        | NextAction::Checkpoint { task, .. }
+        | NextAction::RecordProof { task, .. }
+        | NextAction::Review { task, .. }
+        | NextAction::Disposition { task, .. }
+        | NextAction::Repair { task, .. }
+        | NextAction::ResolveGaps { task, .. }
+        | NextAction::Publish { task, .. }
+        | NextAction::AwaitChecks { task, .. }
+        | NextAction::AwaitHumanReview { task, .. }
+        | NextAction::FinalVerify { task, .. }
+        | NextAction::Complete { task }
+        | NextAction::Cleanup { task, .. }
+        | NextAction::Hold { task, .. }
+        | NextAction::OpenDelivery { task, .. } => Some(task),
+        NextAction::RecoverUnfinished { .. }
+        | NextAction::AnswerQuestions { .. }
+        | NextAction::Report { .. }
+        | NextAction::MonitorLaunch { .. }
+        | NextAction::SettleOperation { .. } => None,
+    }
+}
+
+fn insert(values: &mut BTreeMap<String, String>, name: &str, value: &str) {
+    values.insert(name.into(), value.into());
+}
+
+fn join<T: ToString>(values: &[T]) -> String {
+    values
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 fn agent(task: &TaskId, role: &'static str) -> (String, Vec<(&'static str, &'static str)>) {
     (
         input("run-agent", task),
@@ -177,6 +285,8 @@ fn schema(fields: Vec<(&str, &str)>) -> Schema {
         properties.insert(name.to_owned(), description.to_owned());
     }
     Schema {
+        kind: "object".into(),
+        additional_properties: false,
         required,
         properties,
     }

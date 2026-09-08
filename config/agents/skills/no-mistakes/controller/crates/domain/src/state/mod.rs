@@ -31,6 +31,7 @@ pub struct State {
     pub operations: Vec<Operation>,
     pub lessons: Vec<(TaskId, Lesson)>,
     pub human_reviews: BTreeMap<TaskId, (Snapshot, Digest)>,
+    pub check_deadlines: BTreeMap<String, crate::Instant>,
     pub completed: BTreeSet<TaskId>,
     pub frozen: bool,
 }
@@ -52,6 +53,7 @@ impl State {
             operations: Vec::new(),
             lessons: Vec::new(),
             human_reviews: BTreeMap::new(),
+            check_deadlines: BTreeMap::new(),
             completed: BTreeSet::new(),
             frozen: false,
         }

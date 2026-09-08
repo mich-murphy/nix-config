@@ -197,17 +197,9 @@ impl App<'_> {
         })?;
         validate_check(self, &task, &input)?;
         let id = next_operation(&state);
-        let operation = Operation {
-            id,
-            task: task.clone(),
-            delivery: delivery.id,
-            action: GitHubAction::Check {
-                argv: input.argv.clone(),
-                cwd: input.cwd.clone(),
-            },
-            status: OperationStatus::Running,
-        };
+        let request = check_request(&input);
         if check {
+            let operation = check_operation(&task, delivery.id, id, &input, None);
             return self.commit(
                 "run-check",
                 Some(&task),
@@ -215,13 +207,19 @@ impl App<'_> {
                 true,
             );
         }
+        let process =
+            self.services.process.start(&request).map_err(|error| {
+                self.error("run-check", Some(&task), Rejection::External(error.0))
+            })?;
+        let operation = check_operation(&task, delivery.id, id, &input, Some(process.identity()));
         let mut records = self.write(
             "run-check",
             Some(&task),
             vec![Event::OperationStarted { operation }],
             false,
         )?;
-        let result = execute_check(self, input);
+        let artifact = self.store.root().join(format!("check-{}.json", id.0));
+        let result = execute_check(process, artifact);
         records.extend(self.write(
             "run-check",
             Some(&task),
@@ -257,35 +255,90 @@ fn validate_check(app: &App<'_>, task: &TaskId, input: &CheckInput) -> Result<()
     }
 }
 
-fn execute_check(app: &App<'_>, input: CheckInput) -> (OperationStatus, Observation) {
-    let request = ProcessRequest {
+fn check_request(input: &CheckInput) -> ProcessRequest {
+    ProcessRequest {
         program: input.argv[0].clone(),
         args: input.argv[1..].to_vec(),
-        cwd: input.cwd,
+        cwd: input.cwd.clone(),
         stdin: None,
         env: BTreeMap::new(),
         remove_env: Vec::new(),
-    };
-    match app.services.process.run(&request) {
-        Ok(output) if output.code == Some(0) => (
-            OperationStatus::Confirmed,
-            Observation::Check {
-                exit: 0,
-                artifact: PathBuf::new(),
-            },
-        ),
-        Ok(output) => (
-            OperationStatus::Failed,
-            Observation::Check {
-                exit: output.code.unwrap_or(-1),
-                artifact: PathBuf::new(),
-            },
-        ),
-        Err(error) => (
-            OperationStatus::Failed,
-            Observation::Failure { reason: error.0 },
-        ),
+        timeout_seconds: input.timeout_seconds,
     }
+}
+
+fn check_operation(
+    task: &TaskId,
+    delivery: DeliveryId,
+    id: domain::ids::OperationId,
+    input: &CheckInput,
+    process: Option<domain::ports::ProcessIdentity>,
+) -> Operation {
+    Operation {
+        id,
+        task: task.clone(),
+        delivery,
+        action: GitHubAction::Check {
+            argv: input.argv.clone(),
+            cwd: input.cwd.clone(),
+            timeout_seconds: input.timeout_seconds,
+        },
+        status: OperationStatus::Running,
+        process,
+        timeout_seconds: input.timeout_seconds,
+    }
+}
+
+fn execute_check(
+    process: Box<dyn adapters::process::RunningProcess>,
+    artifact: PathBuf,
+) -> (OperationStatus, Observation) {
+    match process.finish() {
+        Ok(output) => check_output(output, artifact),
+        Err(error) => {
+            let _result = std::fs::write(&artifact, &error.0);
+            (
+                OperationStatus::Failed,
+                Observation::Failure { reason: error.0 },
+            )
+        }
+    }
+}
+
+fn check_output(
+    output: adapters::ProcessOutput,
+    artifact: PathBuf,
+) -> (OperationStatus, Observation) {
+    #[derive(serde::Serialize)]
+    struct Receipt<'a> {
+        exit: i32,
+        stdout: &'a str,
+        stderr: &'a str,
+    }
+    let exit = output.code.unwrap_or(-1);
+    let receipt = Receipt {
+        exit,
+        stdout: &output.stdout,
+        stderr: &output.stderr,
+    };
+    let status = if exit == 0 {
+        OperationStatus::Confirmed
+    } else {
+        OperationStatus::Failed
+    };
+    if serde_json::to_vec(&receipt)
+        .ok()
+        .and_then(|bytes| std::fs::write(&artifact, bytes).ok())
+        .is_none()
+    {
+        return (
+            OperationStatus::Failed,
+            Observation::Failure {
+                reason: "failed to write check evidence".into(),
+            },
+        );
+    }
+    (status, Observation::Check { exit, artifact })
 }
 
 fn validate_artifacts(

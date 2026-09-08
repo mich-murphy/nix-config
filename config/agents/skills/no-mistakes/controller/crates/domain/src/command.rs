@@ -288,7 +288,8 @@ pub enum RecoveryTarget {
 pub struct ActionEnvelope {
     pub action: NextAction,
     pub command: String,
-    pub schema: serde_placeholder::Schema,
+    pub template: schema::Template,
+    pub schema: schema::Schema,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -391,4 +392,4 @@ pub enum NextAction {
     },
 }
 
-pub mod serde_placeholder;
+pub mod schema;

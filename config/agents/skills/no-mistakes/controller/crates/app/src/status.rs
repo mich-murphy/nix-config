@@ -1,4 +1,6 @@
-use crate::delivery_support::{current_sync, get_task, next_operation};
+use crate::delivery_support::{
+    current_sync, get_task, next_operation, review_snapshot, verify_proof,
+};
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
     command::Transition,
@@ -166,5 +168,21 @@ fn validate_done(
             Rejection::Invalid("unrecorded subtask".into()),
         ));
     }
+    let delivery = task.deliveries.last().ok_or_else(|| {
+        app.error(
+            "set-status",
+            Some(id),
+            Rejection::Evidence("verified task has no delivery".into()),
+        )
+    })?;
+    let snapshot = review_snapshot(delivery).ok_or_else(|| {
+        app.error(
+            "set-status",
+            Some(id),
+            Rejection::Evidence("verified task has no review snapshot".into()),
+        )
+    })?;
+    verify_proof(task, delivery, snapshot)
+        .map_err(|message| app.error("set-status", Some(id), Rejection::Evidence(message)))?;
     Ok(())
 }

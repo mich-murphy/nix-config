@@ -5,23 +5,13 @@ use crate::task_support::{
 use crate::{AgentError, App, Output, Rejection};
 use domain::{
     acceptance::{self, Snapshot},
-    budget::BudgetKind,
-    command::AgentRole,
     delivery::{Delivery, DeliveryKind, Outcome},
     event::Event,
-    ids::{AuthorityId, CriterionId, IssueKey, JiraStatus, SlotId, TaskId},
+    ids::{AuthorityId, CriterionId, IssueKey, JiraStatus, SlotId, TaskId, UseId},
     risk::Tier,
     task::{Criterion, Phase, Plan, SlotBinding, SlotOrigin, Subtask},
 };
 use std::path::PathBuf;
-
-pub(super) struct CheckpointInput {
-    pub advanced: bool,
-    pub observation: String,
-    pub next: String,
-    pub outside_paths: Vec<String>,
-    pub scope_reason: Option<String>,
-}
 
 pub(super) struct SubtaskInput {
     pub issue: IssueKey,
@@ -39,6 +29,25 @@ pub(super) struct CheckInput {
     pub implementation: Vec<String>,
 }
 
+fn selected_lessons(
+    state: &domain::state::State,
+    families: &[String],
+) -> Vec<domain::command::Lesson> {
+    state
+        .lessons
+        .iter()
+        .map(|(_, lesson)| lesson)
+        .filter(|lesson| {
+            lesson.accepted
+                && lesson
+                    .families
+                    .iter()
+                    .any(|family| family == "*" || families.contains(family))
+        })
+        .cloned()
+        .collect()
+}
+
 impl App<'_> {
     pub(super) fn brief(
         &mut self,
@@ -48,7 +57,11 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("brief")?;
         let value = task_ref(&state, &task, "brief", self)?;
-        if !matches!(value.phase, Phase::Claimed) || criteria.is_empty() {
+        let active = matches!(
+            value.phase,
+            Phase::Claimed | Phase::Planned { .. } | Phase::InFlight { .. }
+        );
+        if !active || criteria.is_empty() {
             return Err(self.error(
                 "brief",
                 Some(&task),
@@ -66,13 +79,26 @@ impl App<'_> {
             ..domain::risk::Signals::default()
         };
         let tier = domain::risk::classify(&signals);
-        let events = vec![Event::Briefed {
+        let changed = requirements != value.spec.requirements;
+        let mut events = vec![Event::Briefed {
             task: task.clone(),
             criteria,
             requirements,
             tier,
             provisional: true,
         }];
+        if changed {
+            events.extend(
+                value
+                    .deliveries
+                    .last()
+                    .map(|delivery| Event::ProofInvalidated {
+                        task: task.clone(),
+                        delivery: delivery.id,
+                        cause: "requirements changed".into(),
+                    }),
+            );
+        }
         self.commit("brief", Some(&task), events, check)
     }
 
@@ -101,79 +127,17 @@ impl App<'_> {
                 Rejection::Evidence("replanning cannot change baselines".into()),
             ));
         }
+        let feedback = selected_lessons(&state, &plan.lesson_families);
         self.commit(
             "plan",
             Some(&task),
             vec![Event::Planned {
                 task: task.clone(),
                 plan,
+                feedback,
             }],
             check,
         )
-    }
-
-    pub(super) fn checkpoint(
-        &mut self,
-        task: TaskId,
-        input: CheckpointInput,
-        check: bool,
-    ) -> Result<Output, AgentError> {
-        let state = self.state("checkpoint")?;
-        let value = task_ref(&state, &task, "checkpoint", self)?;
-        let launch = state
-            .launches
-            .iter()
-            .rev()
-            .find(|launch| {
-                launch.task == task
-                    && launch.role == AgentRole::Implementer
-                    && launch.session.is_some()
-            })
-            .map(|launch| launch.id)
-            .ok_or_else(|| {
-                self.error(
-                    "checkpoint",
-                    Some(&task),
-                    Rejection::Conflict("checkpoint requires a terminal implementer turn".into()),
-                )
-            })?;
-        if state.checkpoints.get(&task) == Some(&launch) {
-            return Err(self.error(
-                "checkpoint",
-                Some(&task),
-                Rejection::Conflict("implementation turn is already checkpointed".into()),
-            ));
-        }
-        if !input.outside_paths.is_empty()
-            && input.scope_reason.as_deref().is_none_or(str::is_empty)
-        {
-            return Err(self.error(
-                "checkpoint",
-                Some(&task),
-                Rejection::Invalid("out-of-plan paths need a scope reason".into()),
-            ));
-        }
-        let stalled = if input.advanced {
-            0
-        } else {
-            value.budgets.stalled_checkpoints.saturating_add(1)
-        };
-        let mut events = vec![Event::Checkpointed {
-            task: task.clone(),
-            launch,
-            advanced: input.advanced,
-            stalled,
-            observation: input.observation,
-            next: input.next,
-        }];
-        if stalled >= domain::budget::Limits::for_tier(value.tier.current).stalled {
-            events.push(Event::Held {
-                task: task.clone(),
-                reason: domain::task::HoldReason::BudgetExhausted(BudgetKind::Stalled),
-                at: self.services.clock.now(),
-            });
-        }
-        self.commit("checkpoint", Some(&task), events, check)
     }
 
     pub(super) fn bind_slot(
@@ -193,14 +157,14 @@ impl App<'_> {
                 Rejection::Conflict("bind requires the claimed task and a task branch".into()),
             ));
         }
-        validate_slot(&state, &task, &slot, authority).map_err(|message| {
+        let reuse = validate_slot(&state, &task, &slot, authority).map_err(|message| {
             self.error("bind-slot", Some(&task), Rejection::Authority(message))
         })?;
         let base =
             self.services.vcs.head("origin/main").map_err(|error| {
                 self.error("bind-slot", Some(&task), Rejection::External(error.0))
             })?;
-        bind_worktree(self, &task, &slot, &branch, check)?;
+        bind_worktree(self, &task, &slot, &branch, reuse, check)?;
         let binding = SlotBinding {
             slot,
             origin: authority.map_or(SlotOrigin::Fresh, |authority| SlotOrigin::Reused {
@@ -213,6 +177,7 @@ impl App<'_> {
             base: base.clone(),
             snapshot: None,
             plan: None,
+            feedback: Vec::new(),
         };
         let delivery = Delivery {
             id: next_delivery(value),
@@ -239,6 +204,13 @@ impl App<'_> {
             branch,
             base,
         }];
+        if let Some(authority) = authority {
+            events.push(Event::GrantUsed {
+                task: task.clone(),
+                authority,
+                by: UseId(next_delivery(value).0),
+            });
+        }
         if value.deliveries.is_empty() {
             events.push(Event::DeliveryOpened {
                 task: task.clone(),

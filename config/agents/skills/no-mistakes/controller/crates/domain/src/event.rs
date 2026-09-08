@@ -9,7 +9,7 @@ use crate::{
         AuthorityId, CriterionId, DeliveryId, FindingId, IssueKey, JiraStatus, LaunchId,
         OperationId, Sha, SlotId, TaskId, TransitionId, UseId,
     },
-    ports::Tokens,
+    ports::{ProcessIdentity, Tokens},
     review::Disposition,
     risk::{Profile, Tier},
     sync::Sync,
@@ -94,6 +94,7 @@ pub enum Event {
     Planned {
         task: TaskId,
         plan: Plan,
+        feedback: Vec<Lesson>,
     },
     Snapshotted {
         task: TaskId,
@@ -239,6 +240,7 @@ pub struct Launch {
     pub prompt: PathBuf,
     pub session: Option<String>,
     pub counted: bool,
+    pub process: Option<ProcessIdentity>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -257,6 +259,8 @@ pub struct Operation {
     pub delivery: DeliveryId,
     pub action: GitHubAction,
     pub status: OperationStatus,
+    pub process: Option<ProcessIdentity>,
+    pub timeout_seconds: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -282,6 +286,7 @@ pub enum GitHubAction {
     Check {
         argv: Vec<String>,
         cwd: PathBuf,
+        timeout_seconds: u64,
     },
     BindSlot {
         slot: SlotId,

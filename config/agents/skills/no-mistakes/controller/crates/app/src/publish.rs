@@ -1,7 +1,7 @@
 use crate::delivery::PublishInput;
 use crate::delivery_support::{
-    current_snapshot, execute_publish, get_task, next_operation, publish_action, publish_ready,
-    validate_closed,
+    append_acceptance_hold, current_snapshot, execute_publish, get_task, next_operation,
+    publish_action, publish_ready, validate_closed,
 };
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
@@ -38,12 +38,12 @@ impl App<'_> {
         publish_ready(&state, value, delivery, &input)
             .map_err(|message| self.error("publish", Some(&task), Rejection::Evidence(message)))?;
         let operation = publish_operation(self, &state, &task, delivery, snapshot, &input)?;
-        self.execute_publish_flow(&task, delivery, snapshot, &input, operation, check)
+        self.execute_publish_flow(value, delivery, snapshot, &input, operation, check)
     }
 
     fn execute_publish_flow(
         &mut self,
-        task: &TaskId,
+        task: &domain::task::Task,
         delivery: &domain::delivery::Delivery,
         snapshot: &domain::acceptance::Snapshot,
         input: &PublishInput,
@@ -53,7 +53,7 @@ impl App<'_> {
         if check {
             return self.commit(
                 "publish",
-                Some(task),
+                Some(&task.id),
                 vec![Event::OperationStarted { operation }],
                 true,
             );
@@ -61,14 +61,15 @@ impl App<'_> {
         let id = operation.id;
         let mut records = self.write(
             "publish",
-            Some(task),
+            Some(&task.id),
             vec![Event::OperationStarted { operation }],
             false,
         )?;
-        let observed = execute_publish(self, delivery, snapshot, input)
-            .map_err(|message| self.error("publish", Some(task), Rejection::External(message)))?;
-        let events = publish_events(self, task, delivery.id, id, observed)?;
-        records.extend(self.write("publish", Some(task), events, false)?);
+        let observed = execute_publish(self, delivery, snapshot, input).map_err(|message| {
+            self.error("publish", Some(&task.id), Rejection::External(message))
+        })?;
+        let events = publish_events(self, task, delivery, id, observed)?;
+        records.extend(self.write("publish", Some(&task.id), events, false)?);
         Ok(Output {
             events: records,
             result: ResultData::Applied,
@@ -96,7 +97,7 @@ impl App<'_> {
         if delivery::closed(delivery) {
             return validate_closed_output(self, &task, delivery, &observation);
         }
-        let events = observation_events(self, &task, delivery.id, pr, observation)?;
+        let events = observation_events(self, value, delivery, pr, observation)?;
         self.commit("observe-pr", Some(&task), events, check)
     }
 
@@ -205,13 +206,10 @@ impl App<'_> {
             .iter()
             .any(|item| item.required && item.state == CheckState::Pending);
         if pending && wait {
-            let deadline = value
-                .hold
-                .as_ref()
-                .and_then(|hold| match hold.reason {
-                    HoldReason::CiPending { deadline, .. } => Some(deadline),
-                    _ => None,
-                })
+            let deadline = state
+                .check_deadlines
+                .get(&format!("{}:{}", task, pr.head))
+                .copied()
                 .unwrap_or_else(|| self.services.clock.now().saturating_add(1800));
             events.push(Event::Held {
                 task: task.clone(),
@@ -243,13 +241,15 @@ fn publish_operation(
         delivery: delivery.id,
         action,
         status: OperationStatus::Running,
+        process: None,
+        timeout_seconds: 300,
     })
 }
 
 fn publish_events(
     app: &App<'_>,
-    task: &TaskId,
-    delivery: domain::ids::DeliveryId,
+    task: &domain::task::Task,
+    delivery: &domain::delivery::Delivery,
     operation: domain::ids::OperationId,
     observed: domain::delivery::PullRequest,
 ) -> Result<Vec<Event>, AgentError> {
@@ -260,13 +260,14 @@ fn publish_events(
             observation: Observation::PullRequest(observed.clone()),
         },
         Event::PrObserved {
-            task: task.clone(),
-            delivery,
+            task: task.id.clone(),
+            delivery: delivery.id,
             pr: observed.clone(),
         },
     ];
-    if let Some(event) = merged_event(app, task, delivery, &observed, "publish")? {
+    if let Some(event) = merged_event(app, &task.id, delivery.id, &observed, "publish")? {
         events.push(event);
+        append_acceptance_hold(app, task, delivery, &mut events);
     }
     Ok(events)
 }
@@ -313,21 +314,22 @@ fn observed_delivery<'a>(
 
 fn observation_events(
     app: &App<'_>,
-    task: &TaskId,
-    delivery: domain::ids::DeliveryId,
+    task: &domain::task::Task,
+    delivery: &domain::delivery::Delivery,
     pr: PrNumber,
     observation: domain::delivery::PullRequest,
 ) -> Result<Vec<Event>, AgentError> {
     let mut events = vec![Event::PrObserved {
-        task: task.clone(),
-        delivery,
+        task: task.id.clone(),
+        delivery: delivery.id,
         pr: observation.clone(),
     }];
-    if let Some(event) = merged_event(app, task, delivery, &observation, "observe-pr")? {
+    if let Some(event) = merged_event(app, &task.id, delivery.id, &observation, "observe-pr")? {
         events.push(event);
+        append_acceptance_hold(app, task, delivery, &mut events);
     } else if observation.state == PrState::Closed {
         events.push(Event::Held {
-            task: task.clone(),
+            task: task.id.clone(),
             reason: HoldReason::SupersededPr {
                 pr,
                 replacement: None,

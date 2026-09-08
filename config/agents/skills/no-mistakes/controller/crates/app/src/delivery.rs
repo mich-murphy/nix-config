@@ -58,6 +58,7 @@ impl App<'_> {
         })?;
         validate_authority_file(&authority)
             .map_err(|message| self.error("grant", Some(&task), Rejection::Authority(message)))?;
+        validate_grant_paths(self, "grant", &task, &authority)?;
         if authority.requirements != value.spec.requirements {
             return Err(self.error(
                 "grant",
@@ -167,6 +168,41 @@ impl App<'_> {
     }
 }
 
+fn validate_grant_paths(
+    app: &App<'_>,
+    command: &str,
+    task: &TaskId,
+    authority: &Authority,
+) -> Result<(), AgentError> {
+    let Some(paths) = authority::paths(&authority.grant) else {
+        return Ok(());
+    };
+    let repo = app
+        .state(command)?
+        .config
+        .ok_or_else(|| {
+            app.error(
+                command,
+                Some(task),
+                Rejection::Internal("config missing".into()),
+            )
+        })?
+        .repo;
+    let valid = paths.iter().all(|path| {
+        let file = repo.join(path);
+        file.is_file() && !file.is_symlink()
+    });
+    if valid {
+        Ok(())
+    } else {
+        Err(app.error(
+            command,
+            Some(task),
+            Rejection::Authority("path scope must name existing regular Markdown files".into()),
+        ))
+    }
+}
+
 fn repurposed_authority(
     task: &domain::task::Task,
     authority: &Authority,
@@ -189,6 +225,7 @@ fn validate_open_authority(
         .map_err(|message| app.error("open-delivery", Some(id), Rejection::Authority(message)))?;
     validate_delivery_grant(authority, kind)
         .map_err(|message| app.error("open-delivery", Some(id), Rejection::Authority(message)))?;
+    validate_grant_paths(app, "open-delivery", id, authority)?;
     authority::validate_use(authority, &task.spec.requirements).map_err(|error| {
         app.error(
             "open-delivery",

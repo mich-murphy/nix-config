@@ -120,11 +120,30 @@ pub(super) fn brief(
     provisional: bool,
 ) {
     with_task(state, task, |value| {
+        if value.spec.requirements != *requirements {
+            invalidate_plan(value);
+        }
         value.spec.criteria = criteria.to_vec();
         value.spec.requirements = requirements.clone();
         value.tier.current = raise(value.tier.current, tier);
         value.tier.provisional = provisional;
     });
+}
+
+fn invalidate_plan(task: &mut Task) {
+    if let Some(delivery) = task.deliveries.last_mut()
+        && let Some(work) = delivery.work.as_mut()
+    {
+        work.plan = None;
+        work.snapshot = None;
+    }
+    match &mut task.phase {
+        Phase::Planned { work } | Phase::InFlight { work, .. } => {
+            work.plan = None;
+            work.snapshot = None;
+        }
+        _ => {}
+    }
 }
 
 pub(super) fn raise_tier(
@@ -157,6 +176,7 @@ pub(super) fn bind(
         base: base.clone(),
         snapshot: None,
         plan: None,
+        feedback: Vec::new(),
     };
     with_task(state, task, |value| {
         if let Some(delivery) = value.deliveries.last_mut()
@@ -174,11 +194,17 @@ pub(super) fn release(state: &mut State, task: &TaskId) {
     }
 }
 
-pub(super) fn plan(state: &mut State, task: &TaskId, plan: &crate::task::Plan) {
+pub(super) fn plan(
+    state: &mut State,
+    task: &TaskId,
+    plan: &crate::task::Plan,
+    feedback: &[crate::command::Lesson],
+) {
     with_task(state, task, |value| {
         match &mut value.phase {
             Phase::Planned { work } | Phase::InFlight { work, .. } => {
                 work.plan = Some(plan.clone());
+                work.feedback = feedback.to_vec();
             }
             _ => {}
         }
@@ -188,6 +214,7 @@ pub(super) fn plan(state: &mut State, task: &TaskId, plan: &crate::task::Plan) {
             .and_then(|delivery| delivery.work.as_mut())
         {
             work.plan = Some(plan.clone());
+            work.feedback = feedback.to_vec();
         }
     });
 }

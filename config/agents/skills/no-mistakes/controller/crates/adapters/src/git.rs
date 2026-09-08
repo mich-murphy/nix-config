@@ -1,7 +1,7 @@
 use crate::{Process, ProcessRequest, success};
 use domain::{
     ids::{Sha, SlotId, TaskId},
-    ports::{PortError, Vcs},
+    ports::{PortError, SlotState, Vcs},
 };
 use std::{
     collections::BTreeMap,
@@ -29,6 +29,7 @@ impl<P: Process> Git<P> {
             stdin: None,
             env: BTreeMap::new(),
             remove_env: Vec::new(),
+            timeout_seconds: 300,
         };
         success(self.process.run(&request)?)
     }
@@ -52,6 +53,7 @@ impl<P: Process> Vcs for Git<P> {
             stdin: None,
             env: BTreeMap::new(),
             remove_env: Vec::new(),
+            timeout_seconds: 300,
         };
         Ok(self.process.run(&request)?.code == Some(0))
     }
@@ -97,6 +99,7 @@ impl<P: Process> Vcs for Git<P> {
             stdin: None,
             env: BTreeMap::new(),
             remove_env: Vec::new(),
+            timeout_seconds: 300,
         };
         Ok(self.process.run(&request)?.code == Some(0))
     }
@@ -112,8 +115,26 @@ impl<P: Process> Vcs for Git<P> {
             stdin: None,
             env: BTreeMap::new(),
             remove_env: Vec::new(),
+            timeout_seconds: 300,
         };
         Ok(self.process.run(&request)?.code == Some(0))
+    }
+
+    fn inspect_slot(&self, slot: &SlotId) -> Result<SlotState, PortError> {
+        let path = self.repo.join(".worktrees").join(slot.as_ref());
+        if let Some(state) = slot_path_state(&path)? {
+            return Ok(state);
+        }
+        let root = self.git(&["rev-parse", "--show-toplevel"], &path)?;
+        if !same_path(Path::new(root.trim()), &path)? {
+            return Ok(SlotState::Unsafe("slot is a foreign checkout".into()));
+        }
+        let clean = self
+            .git(&["status", "--porcelain"], &path)?
+            .trim()
+            .is_empty();
+        let head = parse_sha(self.git(&["rev-parse", "HEAD"], &path)?.trim())?;
+        Ok(SlotState::Checkout { clean, head })
     }
 
     fn bind_slot(&self, _task: &TaskId, slot: &SlotId, branch: &str) -> Result<(), PortError> {
@@ -123,6 +144,14 @@ impl<P: Process> Vcs for Git<P> {
             &["worktree", "add", "-b", branch, &path_text, "origin/main"],
             &self.repo,
         )?;
+        Ok(())
+    }
+
+    fn reuse_slot(&self, slot: &SlotId, branch: &str) -> Result<(), PortError> {
+        let path = self.repo.join(".worktrees").join(slot.as_ref());
+        self.git(&["switch", "-C", branch, "origin/main"], &path)?;
+        self.git(&["reset", "--hard", "origin/main"], &path)?;
+        self.git(&["clean", "-fd"], &path)?;
         Ok(())
     }
 
@@ -137,6 +166,27 @@ impl<P: Process> Vcs for Git<P> {
         }
         Ok(())
     }
+}
+
+fn slot_path_state(path: &Path) -> Result<Option<SlotState>, PortError> {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_dir() => Ok(Some(
+            SlotState::Unsafe("slot path is redirected or not a directory".into()),
+        )),
+        Ok(_) => Ok(None),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Some(SlotState::Missing)),
+        Err(error) => Err(PortError(error.to_string())),
+    }
+}
+
+fn same_path(actual: &Path, expected: &Path) -> Result<bool, PortError> {
+    let actual = actual
+        .canonicalize()
+        .map_err(|error| PortError(error.to_string()))?;
+    let expected = expected
+        .canonicalize()
+        .map_err(|error| PortError(error.to_string()))?;
+    Ok(actual == expected)
 }
 
 fn line_change(line: &str) -> u32 {

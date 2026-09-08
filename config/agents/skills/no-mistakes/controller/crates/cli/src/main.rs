@@ -11,7 +11,7 @@ use std::{path::Path, process::ExitCode};
 
 mod args;
 
-use args::{Args, command, parse_args, parse_toml, print_help, required_value};
+use args::{Args, command, parse_args, parse_toml, print_help, required_value, validate_init};
 
 fn main() -> ExitCode {
     let raw = std::env::args().skip(1).collect::<Vec<_>>();
@@ -75,6 +75,7 @@ fn run() -> Result<(app::Output, bool), AgentError> {
 }
 
 fn init(args: &Args) -> Result<app::Output, AgentError> {
+    validate_init(args)?;
     let config_path = required_value(args, "config")?;
     let profile_path = required_value(args, "profile")?;
     let config: RunConfig = parse_toml(Path::new(config_path), "config")?;

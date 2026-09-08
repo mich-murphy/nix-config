@@ -1,8 +1,8 @@
 use crate::{Process, ProcessRequest, success};
 use domain::{
     ports::{
-        Capabilities, Harness, Isolation, LaunchRequest, LaunchResult, PortError, StructuredOutput,
-        Tokens,
+        Capabilities, Harness, Isolation, LaunchRequest, LaunchResult, PortError, ProcessIdentity,
+        StructuredOutput, Tokens,
     },
     risk::{Effort, HarnessKind},
 };
@@ -31,8 +31,14 @@ impl<P: Process> Harness for Pi<P> {
         }
     }
 
-    fn run(&self, launch: &LaunchRequest) -> Result<LaunchResult, PortError> {
-        let output = success(self.process.run(&request(launch))?)?;
+    fn run(
+        &self,
+        launch: &LaunchRequest,
+        started: &mut dyn FnMut(ProcessIdentity) -> Result<(), PortError>,
+    ) -> Result<LaunchResult, PortError> {
+        let process = self.process.start(&request(launch))?;
+        started(process.identity())?;
+        let output = success(process.finish()?)?;
         parse(&output, launch.session.as_deref())
     }
 }
@@ -62,6 +68,7 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         stdin: None,
         env: BTreeMap::new(),
         remove_env: Vec::new(),
+        timeout_seconds: 3600,
     }
 }
 
@@ -139,14 +146,33 @@ mod tests {
     use std::{cell::RefCell, path::PathBuf, str::FromStr};
 
     struct Fake(RefCell<Vec<ProcessRequest>>);
+    struct FakeRunning(crate::ProcessOutput);
+    impl crate::process::RunningProcess for FakeRunning {
+        fn identity(&self) -> ProcessIdentity {
+            ProcessIdentity {
+                pid: 1,
+                start_ticks: 2,
+                group: 1,
+            }
+        }
+        fn finish(self: Box<Self>) -> Result<crate::ProcessOutput, PortError> {
+            Ok(self.0)
+        }
+    }
     impl Process for Fake {
         fn run(&self, request: &ProcessRequest) -> Result<crate::ProcessOutput, PortError> {
+            self.start(request)?.finish()
+        }
+        fn start(
+            &self,
+            request: &ProcessRequest,
+        ) -> Result<Box<dyn crate::process::RunningProcess>, PortError> {
             self.0.borrow_mut().push(request.clone());
-            Ok(crate::ProcessOutput {
+            Ok(Box::new(FakeRunning(crate::ProcessOutput {
                 code: Some(0),
                 stdout: "{\"type\":\"message_update\",\"sessionId\":\"p1\",\"usage\":{\"input\":3,\"cacheRead\":1,\"output\":2}}\n{\"type\":\"agent_end\",\"messages\":[{\"role\":\"assistant\",\"content\":\"done\"}]}".into(),
                 stderr: String::new(),
-            })
+            })))
         }
     }
 
@@ -154,17 +180,20 @@ mod tests {
     fn pi_argv_matches_launch() -> Result<(), domain::ids::InvalidId> {
         let harness = Pi::new(Fake(RefCell::new(Vec::new())));
         let result = harness
-            .run(&LaunchRequest {
-                id: LaunchId(1),
-                assignment: Assignment {
-                    model: ModelId::from_str("openai/gpt-5")?,
-                    effort: Effort::Medium,
+            .run(
+                &LaunchRequest {
+                    id: LaunchId(1),
+                    assignment: Assignment {
+                        model: ModelId::from_str("openai/gpt-5")?,
+                        effort: Effort::Medium,
+                    },
+                    prompt: "context".into(),
+                    cwd: PathBuf::from("/repo"),
+                    session: None,
+                    reviewer: true,
                 },
-                prompt: "context".into(),
-                cwd: PathBuf::from("/repo"),
-                session: None,
-                reviewer: true,
-            })
+                &mut |_| Ok(()),
+            )
             .map_err(|_| domain::ids::InvalidId("run"))?;
         assert_eq!(result.output, "done");
         assert_eq!(result.tokens.map(|value| value.cached), Some(Some(1)));
@@ -173,6 +202,15 @@ mod tests {
                 .args
                 .contains(&"--tools".into())
         );
+        Ok(())
+    }
+
+    #[test]
+    fn pi_stream_yields_final_and_usage() -> Result<(), PortError> {
+        let stream = "{\"type\":\"message_update\",\"sessionId\":\"p1\",\"usage\":{\"input\":3,\"cacheRead\":1,\"output\":2}}\n{\"type\":\"agent_end\",\"messages\":[{\"role\":\"assistant\",\"content\":\"done\"}]}";
+        let result = parse(stream, None)?;
+        assert_eq!(result.output, "done");
+        assert_eq!(result.tokens.map(|tokens| tokens.output), Some(2));
         Ok(())
     }
 }

@@ -47,24 +47,18 @@ impl App<'_> {
         events: Vec<Event>,
         request: LaunchRequest,
     ) -> Result<Output, AgentError> {
-        let mut records = self.write("run-agent", Some(&task), events, false)?;
-        let result =
-            self.services.harness.run(&request).map_err(|error| {
-                self.error("run-agent", Some(&task), Rejection::External(error.0))
-            })?;
-        records.extend(self.write(
-            "run-agent",
-            Some(&task),
-            vec![Event::LaunchEnded {
-                launch: request.id,
-                result: LaunchOutcome::Completed {
-                    session: result.session,
-                    output: result.output.clone(),
-                },
-                usage: result.tokens,
-            }],
-            false,
-        )?);
+        let mut events = events;
+        let (mut records, result) =
+            crate::agent_support::invoke(self, &task, &request, &mut events)?;
+        events.push(Event::LaunchEnded {
+            launch: request.id,
+            result: LaunchOutcome::Completed {
+                session: result.session,
+                output: result.output.clone(),
+            },
+            usage: result.tokens,
+        });
+        records.extend(self.write("run-agent", Some(&task), events, false)?);
         Ok(Output {
             events: records,
             result: ResultData::Launch {
@@ -82,10 +76,8 @@ impl App<'_> {
         request: LaunchRequest,
         value: &domain::task::Task,
     ) -> Result<Output, AgentError> {
-        let result =
-            self.services.harness.run(&request).map_err(|error| {
-                self.error("run-agent", Some(&task), Rejection::External(error.0))
-            })?;
+        let (mut records, result) =
+            crate::agent_support::invoke(self, &task, &request, &mut events)?;
         let mut review: Review = serde_json::from_str(&result.output).map_err(|error| {
             self.error(
                 "run-agent",
@@ -141,7 +133,7 @@ impl App<'_> {
             delivery,
             review: Box::new(review),
         });
-        let records = self.write("run-agent", Some(&task), events, false)?;
+        records.extend(self.write("run-agent", Some(&task), events, false)?);
         Ok(Output {
             events: records,
             result: ResultData::Launch {
@@ -191,6 +183,7 @@ fn prepare_launch(
     );
     let prompt_text = fs::read_to_string(prompt)
         .map_err(|error| app.error("run-agent", Some(id), Rejection::Invalid(error.to_string())))?;
+    let prompt_text = crate::task_support::launch_prompt(&task, prompt_text);
     let request = LaunchRequest {
         id: launch,
         assignment,
@@ -235,6 +228,7 @@ fn validate_launch(
     })?;
     guard_role(task, delivery, role)
         .map_err(|message| app.error("run-agent", Some(id), Rejection::Conflict(message)))?;
+    require_prior_review(app, state, id, role)?;
     ensure_readiness(app, task, delivery, id, role)
 }
 
@@ -259,8 +253,7 @@ fn launch_budget(
         base
     };
     let counted = pair_for(task, role).is_none_or(|authority| !authority::scoped(authority));
-    if counted && budget::remaining(kind, &task.budgets, task.tier.current, &task.authorities) == 0
-    {
+    if counted && !launch_capacity(task, role, kind) {
         return Err(app.error(
             "run-agent",
             Some(id),
@@ -291,6 +284,7 @@ fn launch_events(
                 prompt: prompt.to_path_buf(),
                 session: None,
                 counted,
+                process: None,
             },
         },
         Event::BudgetSpent {
@@ -299,6 +293,13 @@ fn launch_events(
             counted,
         },
     ];
+    if role == AgentRole::Escalation {
+        events.push(Event::BudgetSpent {
+            task: id.clone(),
+            budget: budget::BudgetKind::Review,
+            counted,
+        });
+    }
     if let Some(authority) = pair_for(task, role) {
         events.push(Event::PairSpent {
             task: id.clone(),
@@ -308,6 +309,37 @@ fn launch_events(
         });
     }
     events
+}
+
+fn require_prior_review(
+    app: &App<'_>,
+    state: &domain::state::State,
+    task: &TaskId,
+    role: AgentRole,
+) -> Result<(), AgentError> {
+    let prior = state.launches.iter().any(|launch| {
+        launch.task == *task
+            && launch.role == AgentRole::Reviewer
+            && launch
+                .session
+                .as_deref()
+                .is_some_and(|session| !session.is_empty())
+    });
+    if role != AgentRole::Escalation || prior {
+        Ok(())
+    } else {
+        Err(app.error(
+            "run-agent",
+            Some(task),
+            Rejection::Conflict("escalation requires a completed reviewer launch".into()),
+        ))
+    }
+}
+
+fn launch_capacity(task: &domain::task::Task, role: AgentRole, kind: budget::BudgetKind) -> bool {
+    let available =
+        |budget| budget::remaining(budget, &task.budgets, task.tier.current, &task.authorities) > 0;
+    available(kind) && (role != AgentRole::Escalation || available(budget::BudgetKind::Review))
 }
 
 fn require_checkpoint(state: &domain::state::State, task: &TaskId) -> Result<(), AgentError> {

@@ -36,6 +36,7 @@ impl<P: Process> Gh<P> {
             stdin: None,
             env: BTreeMap::new(),
             remove_env: Vec::new(),
+            timeout_seconds: 300,
         };
         success(self.process.run(&request)?)
     }

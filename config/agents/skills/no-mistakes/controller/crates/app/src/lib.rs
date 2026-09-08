@@ -1,12 +1,15 @@
 mod agent;
+mod agent_support;
 mod delivery;
 mod delivery_support;
 mod error;
 mod finish;
 mod output;
+mod progress;
 mod proof;
 mod publish;
 mod queue;
+mod recovery_support;
 mod status;
 mod task;
 mod task_support;
@@ -126,7 +129,7 @@ impl<'a> App<'a> {
                 scope_reason,
             } => self.checkpoint(
                 task,
-                task::CheckpointInput {
+                progress::CheckpointInput {
                     advanced,
                     observation,
                     next,

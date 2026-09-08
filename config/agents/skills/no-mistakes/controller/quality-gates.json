@@ -2,7 +2,38 @@
   "rust_version": "1.98.0",
   "max_cyclomatic_complexity": 10,
   "max_file_lines": 400,
-  "complexity_dispatches": ["apply", "execute", "scalar", "command_for"],
+  "complexity_dispatches": [
+    {
+      "path": "crates/domain/src/state/apply.rs",
+      "function": "apply",
+      "reason": "Exhaustive event fold; each arm delegates state mutation to its owning module."
+    },
+    {
+      "path": "crates/app/src/lib.rs",
+      "function": "execute",
+      "reason": "Single exhaustive command dispatch required by the CLI contract."
+    },
+    {
+      "path": "crates/cli/src/args.rs",
+      "function": "scalar",
+      "reason": "Strict scalar argument decoder; complex payloads use serde input instead."
+    },
+    {
+      "path": "crates/cli/src/args/parse.rs",
+      "function": "parse_raw",
+      "reason": "Single argv token dispatcher; token validation and duplicate rejection are delegated."
+    },
+    {
+      "path": "crates/domain/src/state/next/format.rs",
+      "function": "command_for",
+      "reason": "Exhaustive NextAction command and schema formatter."
+    },
+    {
+      "path": "crates/domain/src/state/next/format.rs",
+      "function": "template_for",
+      "reason": "Exhaustive NextAction request template formatter; every arm only copies action data."
+    }
+  ],
   "analyzer": {
     "version": "0.0.25",
     "url": "https://github.com/mozilla/rust-code-analysis/releases/download/v0.0.25/rust-code-analysis-linux-cli-x86_64.tar.gz",

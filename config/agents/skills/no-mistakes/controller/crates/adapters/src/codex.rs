@@ -1,8 +1,8 @@
 use crate::{Process, ProcessRequest, success};
 use domain::{
     ports::{
-        Capabilities, Harness, Isolation, LaunchRequest, LaunchResult, PortError, StructuredOutput,
-        Tokens,
+        Capabilities, Harness, Isolation, LaunchRequest, LaunchResult, PortError, ProcessIdentity,
+        StructuredOutput, Tokens,
     },
     risk::{Effort, HarnessKind},
 };
@@ -31,8 +31,14 @@ impl<P: Process> Harness for Codex<P> {
         }
     }
 
-    fn run(&self, launch: &LaunchRequest) -> Result<LaunchResult, PortError> {
-        let output = success(self.process.run(&request(launch))?)?;
+    fn run(
+        &self,
+        launch: &LaunchRequest,
+        started: &mut dyn FnMut(ProcessIdentity) -> Result<(), PortError>,
+    ) -> Result<LaunchResult, PortError> {
+        let process = self.process.start(&request(launch))?;
+        started(process.identity())?;
+        let output = success(process.finish()?)?;
         parse(&output)
     }
 }
@@ -76,6 +82,7 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         stdin: Some(launch.prompt.clone()),
         env: BTreeMap::new(),
         remove_env: vec!["OPENAI_API_KEY".into(), "CODEX_API_KEY".into()],
+        timeout_seconds: 3600,
     }
 }
 
@@ -139,32 +146,55 @@ mod tests {
     use std::{cell::RefCell, path::PathBuf, str::FromStr};
 
     struct Fake(RefCell<Vec<ProcessRequest>>);
+    struct FakeRunning(crate::ProcessOutput);
+    impl crate::process::RunningProcess for FakeRunning {
+        fn identity(&self) -> ProcessIdentity {
+            ProcessIdentity {
+                pid: 1,
+                start_ticks: 2,
+                group: 1,
+            }
+        }
+        fn finish(self: Box<Self>) -> Result<crate::ProcessOutput, PortError> {
+            Ok(self.0)
+        }
+    }
     impl Process for Fake {
         fn run(&self, request: &ProcessRequest) -> Result<crate::ProcessOutput, PortError> {
+            self.start(request)?.finish()
+        }
+        fn start(
+            &self,
+            request: &ProcessRequest,
+        ) -> Result<Box<dyn crate::process::RunningProcess>, PortError> {
             self.0.borrow_mut().push(request.clone());
-            Ok(crate::ProcessOutput {
+            Ok(Box::new(FakeRunning(crate::ProcessOutput {
                 code: Some(0),
                 stdout: "{\"type\":\"thread.started\",\"thread_id\":\"s1\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"done\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":4,\"cached_input_tokens\":2,\"output_tokens\":1}}".into(),
                 stderr: String::new(),
-            })
+            })))
         }
+    }
+
+    fn launch() -> Result<LaunchRequest, domain::ids::InvalidId> {
+        Ok(LaunchRequest {
+            id: LaunchId(1),
+            assignment: Assignment {
+                model: ModelId::from_str("openai/gpt-5")?,
+                effort: Effort::High,
+            },
+            prompt: "context".into(),
+            cwd: PathBuf::from("/repo"),
+            session: Some("old".into()),
+            reviewer: true,
+        })
     }
 
     #[test]
     fn codex_argv_matches_launch() -> Result<(), domain::ids::InvalidId> {
         let harness = Codex::new(Fake(RefCell::new(Vec::new())));
         let result = harness
-            .run(&LaunchRequest {
-                id: LaunchId(1),
-                assignment: Assignment {
-                    model: ModelId::from_str("openai/gpt-5")?,
-                    effort: Effort::High,
-                },
-                prompt: "context".into(),
-                cwd: PathBuf::from("/repo"),
-                session: Some("old".into()),
-                reviewer: true,
-            })
+            .run(&launch()?, &mut |_| Ok(()))
             .map_err(|_| domain::ids::InvalidId("run"))?;
         assert_eq!(result.tokens.map(|value| value.cached), Some(Some(2)));
         assert_eq!(
@@ -176,6 +206,23 @@ mod tests {
                 .args
                 .contains(&"read-only".into())
         );
+        Ok(())
+    }
+
+    #[test]
+    fn codex_stream_yields_usage() -> Result<(), PortError> {
+        let result = parse(
+            "{\"type\":\"thread.started\",\"thread_id\":\"s1\"}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"done\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":4,\"cached_input_tokens\":2,\"output_tokens\":1}}",
+        )?;
+        assert_eq!(result.session, "s1");
+        assert_eq!(result.tokens.map(|tokens| tokens.input), Some(4));
+        Ok(())
+    }
+
+    #[test]
+    fn harness_injects_context() -> Result<(), domain::ids::InvalidId> {
+        let request = request(&launch()?);
+        assert_eq!(request.stdin.as_deref(), Some("context"));
         Ok(())
     }
 }

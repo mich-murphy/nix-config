@@ -10,8 +10,31 @@ use std::path::Path;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PortError(pub String);
 
+impl std::fmt::Display for PortError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for PortError {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProcessIdentity {
+    pub pid: u32,
+    pub start_ticks: u64,
+    pub group: u32,
+}
+
 pub trait Clock {
     fn now(&self) -> Instant;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SlotState {
+    Missing,
+    Unsafe(String),
+    Checkout { clean: bool, head: Sha },
 }
 
 pub trait Vcs {
@@ -22,7 +45,9 @@ pub trait Vcs {
     fn commit_paths(&self, base: &Sha, head: &Sha) -> Result<Vec<Vec<String>>, PortError>;
     fn ignored(&self, path: &Path) -> Result<bool, PortError>;
     fn reserve(&self, task: &TaskId) -> Result<bool, PortError>;
+    fn inspect_slot(&self, slot: &SlotId) -> Result<SlotState, PortError>;
     fn bind_slot(&self, task: &TaskId, slot: &SlotId, branch: &str) -> Result<(), PortError>;
+    fn reuse_slot(&self, slot: &SlotId, branch: &str) -> Result<(), PortError>;
     fn clean_slot(&self, slot: &SlotId, delete: bool) -> Result<(), PortError>;
 }
 
@@ -41,7 +66,11 @@ pub trait GitHub {
 pub trait Harness {
     fn kind(&self) -> HarnessKind;
     fn capabilities(&self) -> Capabilities;
-    fn run(&self, request: &LaunchRequest) -> Result<LaunchResult, PortError>;
+    fn run(
+        &self,
+        request: &LaunchRequest,
+        started: &mut dyn FnMut(ProcessIdentity) -> Result<(), PortError>,
+    ) -> Result<LaunchResult, PortError>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

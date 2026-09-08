@@ -152,6 +152,14 @@ impl App<'_> {
         let state = self.state("hold")?;
         require_active(&state, &task)
             .map_err(|message| self.error("hold", Some(&task), Rejection::Conflict(message)))?;
+        if matches!(&reason, domain::task::HoldReason::CiPending { deadline, .. } if *deadline > self.services.clock.now())
+        {
+            return Err(self.error(
+                "hold",
+                Some(&task),
+                Rejection::Conflict("CI hold requires the recorded deadline to expire".into()),
+            ));
+        }
         if state.operations.iter().any(|operation| {
             matches!(
                 operation.status,

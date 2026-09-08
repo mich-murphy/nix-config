@@ -14,7 +14,7 @@ struct Policy {
     rust_version: String,
     max_cyclomatic_complexity: u32,
     max_file_lines: usize,
-    complexity_dispatches: Vec<String>,
+    complexity_dispatches: Vec<complexity::Dispatch>,
     analyzer: analyzer::Settings,
 }
 

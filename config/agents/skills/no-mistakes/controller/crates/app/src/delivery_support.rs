@@ -5,7 +5,7 @@ use domain::{
     authority::{self, Authority, Grant},
     command::{JiraRead, PublishStep, ReviewMode},
     delivery::{CheckState, Delivery, DeliveryKind, Outcome, PrState},
-    event::GitHubAction,
+    event::{Event, GitHubAction},
     ids::{DeliveryId, IssueKey, OperationId, PrNumber, TaskId},
     review::{self, Verdict},
     sync::Sync,
@@ -200,6 +200,30 @@ fn required_checks_failed(delivery: &Delivery) -> bool {
             .checks
             .iter()
             .any(|check| check.required && check.state != CheckState::Pass)
+}
+
+pub(super) fn append_acceptance_hold(
+    app: &App<'_>,
+    task: &domain::task::Task,
+    delivery: &Delivery,
+    events: &mut Vec<Event>,
+) {
+    let full = task
+        .spec
+        .criteria
+        .iter()
+        .map(|criterion| criterion.id.clone())
+        .collect::<Vec<_>>();
+    if delivery.criteria != full || !domain::delivery::acceptance_ready(delivery, &full) {
+        events.push(Event::Held {
+            task: task.id.clone(),
+            reason: HoldReason::NeedsHuman {
+                diagnosis: "merged delivery does not establish full acceptance".into(),
+                remaining: full,
+            },
+            at: app.services.clock.now(),
+        });
+    }
 }
 
 pub(super) fn publish_action(

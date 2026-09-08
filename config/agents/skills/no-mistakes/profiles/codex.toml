@@ -1,0 +1,26 @@
+[harness]
+kind = "codex"
+
+[models]
+"openai/gpt-5.6-terra" = { rank = 1 }
+"openai/gpt-5.6-sol" = { rank = 2, fallback_for = ["openai/gpt-5.6-terra"] }
+"openai/gpt-6-astra" = { rank = 3 }
+
+[coordinator]
+model = "openai/gpt-5.6-sol"
+effort = "medium"
+
+[tier.trivial]
+implementer = { model = "openai/gpt-5.6-terra", effort = "medium" }
+reviewer = { model = "openai/gpt-5.6-sol", effort = "medium" }
+
+[tier.lite]
+implementer = { model = "openai/gpt-5.6-sol", effort = "medium" }
+reviewer = { model = "openai/gpt-5.6-sol", effort = "medium" }
+
+[tier.full]
+implementer = { model = "openai/gpt-5.6-sol", effort = "high" }
+reviewer = { model = "openai/gpt-5.6-sol", effort = "high" }
+
+[escalation]
+reviewer = { model = "openai/gpt-6-astra", effort = "high" }

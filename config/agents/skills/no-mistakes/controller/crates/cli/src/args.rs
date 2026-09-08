@@ -201,49 +201,13 @@ fn scalar(args: &Args) -> Result<Value, AgentError> {
     Ok(Value::Object(value))
 }
 
+mod parse;
+use parse::parse_raw;
+
 pub(super) fn parse_args() -> Result<Args, AgentError> {
     let raw: Vec<String> = std::env::args().skip(1).collect();
     let command = command_name(&raw)?;
     parse_raw(&raw, command)
-}
-
-fn parse_raw(raw: &[String], command: String) -> Result<Args, AgentError> {
-    let mut run = None;
-    let mut input = None;
-    let mut check = false;
-    let mut pretty = false;
-    let mut values = BTreeMap::new();
-    let mut positionals = Vec::new();
-    let mut index = 1;
-    while index < raw.len() {
-        let arg = &raw[index];
-        match arg.as_str() {
-            "--check" => check = true,
-            "--pretty" => pretty = true,
-            "--delete" | "--wait" | "--terminate" | "--final-revisit" => {
-                values.insert(arg.trim_start_matches("--").into(), "true".into());
-            }
-            value if value.starts_with("--") => {
-                index += 1;
-                let next = raw
-                    .get(index)
-                    .ok_or_else(|| invalid(&command, &format!("{value} needs a value")))?;
-                parse_value(value, next, &mut run, &mut input, &mut values);
-            }
-            _ => positionals.push(arg.clone()),
-        }
-        index += 1;
-    }
-    let run = run.ok_or_else(|| invalid(&command, "--run is required"))?;
-    Ok(Args {
-        command,
-        run,
-        input,
-        check,
-        pretty,
-        values,
-        positionals,
-    })
 }
 
 fn command_name(raw: &[String]) -> Result<String, AgentError> {
@@ -255,22 +219,6 @@ fn command_name(raw: &[String]) -> Result<String, AgentError> {
         Ok(command)
     } else {
         Err(invalid(&command, "unknown command"))
-    }
-}
-
-fn parse_value(
-    option: &str,
-    value: &str,
-    run: &mut Option<PathBuf>,
-    input: &mut Option<String>,
-    values: &mut BTreeMap<String, String>,
-) {
-    match option {
-        "--run" => *run = Some(PathBuf::from(value)),
-        "--input" => *input = Some(value.to_owned()),
-        _ => {
-            values.insert(option.trim_start_matches("--").into(), value.to_owned());
-        }
     }
 }
 
@@ -332,6 +280,18 @@ fn task(args: &Args, value: &mut Map<String, Value>) -> Result<(), AgentError> {
         Value::String(positional(args, 0, "task")?.into()),
     );
     exact_positionals(args, 1)
+}
+
+pub(super) fn validate_init(args: &Args) -> Result<(), AgentError> {
+    no_positionals(args)?;
+    exact_values(args, &["config", "profile"])?;
+    if args.input.is_some() || args.check {
+        return Err(invalid(
+            "init",
+            "init accepts only --config, --profile, --run and --pretty",
+        ));
+    }
+    Ok(())
 }
 
 pub(super) fn required_value<'a>(args: &'a Args, name: &str) -> Result<&'a str, AgentError> {

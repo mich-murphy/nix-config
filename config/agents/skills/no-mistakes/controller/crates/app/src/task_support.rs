@@ -72,6 +72,22 @@ pub(super) fn current_work_delivery(
     Some((work, task.deliveries.last()?))
 }
 
+pub(super) fn launch_prompt(task: &domain::task::Task, prompt: String) -> String {
+    let Some((work, _)) = current_work_delivery(task) else {
+        return prompt;
+    };
+    if work.feedback.is_empty() {
+        return prompt;
+    }
+    let instructions = work
+        .feedback
+        .iter()
+        .map(|lesson| format!("- {}", lesson.text))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!("{prompt}\n\nPinned run guidance:\n{instructions}")
+}
+
 pub(super) fn current_snapshot(task: &domain::task::Task) -> Option<&Snapshot> {
     current_work_delivery(task).and_then(|(work, _)| work.snapshot.as_ref())
 }
@@ -94,31 +110,72 @@ pub(super) fn validate_slot(
     task: &TaskId,
     slot: &SlotId,
     authority: Option<AuthorityId>,
-) -> Result<(), String> {
-    let historical = state.tasks.values().any(|value| {
-        value.id != *task
-            && value.deliveries.iter().any(|delivery| {
+) -> Result<bool, String> {
+    let owners = slot_owners(state, slot);
+    if owners.iter().any(|owner| !state.completed.contains(owner)) {
+        return Err("slot has an unfinished owner".into());
+    }
+    let historical = !owners.is_empty();
+    match (historical, authority) {
+        (false, None) => Ok(false),
+        (true, Some(id)) => validate_reuse(state, task, slot, id).map(|()| true),
+        (true, None) => Err("historical slot needs a slot-reuse grant".into()),
+        (false, Some(_)) => Err("slot-reuse grant requires a historical checkout".into()),
+    }
+}
+
+fn slot_owners(state: &domain::state::State, slot: &SlotId) -> Vec<TaskId> {
+    state
+        .tasks
+        .values()
+        .filter(|value| {
+            value.deliveries.iter().any(|delivery| {
                 delivery
                     .work
                     .as_ref()
                     .is_some_and(|work| work.slot.slot == *slot)
             })
+        })
+        .map(|value| value.id.clone())
+        .collect()
+}
+
+fn validate_reuse(
+    state: &domain::state::State,
+    task: &TaskId,
+    slot: &SlotId,
+    id: AuthorityId,
+) -> Result<(), String> {
+    let value = state.tasks.get(task).ok_or("unknown task")?;
+    let grant = value
+        .authorities
+        .iter()
+        .find(|entry| entry.id == id)
+        .ok_or("unknown authority")?;
+    authority::validate_use(grant, &value.spec.requirements)
+        .map_err(|_| "slot-reuse grant is spent or stale")?;
+    let Grant::SlotReuse {
+        historical,
+        slot: granted,
+    } = &grant.grant
+    else {
+        return Err("authority is not a slot-reuse grant".into());
+    };
+    if granted != slot || !state.completed.contains(historical) {
+        return Err("slot-reuse grant does not name a completed owner".into());
+    }
+    let unstarted = value.deliveries.last().is_none_or(|delivery| {
+        delivery.work.is_none()
+            && delivery.launches.is_empty()
+            && delivery.operations.is_empty()
+            && delivery.proof.entries.is_empty()
+            && delivery.review.is_none()
     });
-    if historical && authority.is_none() {
-        return Err("historical slot needs a slot-reuse grant".into());
+    if unstarted {
+        Ok(())
+    } else {
+        Err("slot reuse requires an unstarted delivery".into())
     }
-    if let Some(id) = authority {
-        let value = state.tasks.get(task).ok_or("unknown task")?;
-        let grant = value
-            .authorities
-            .iter()
-            .find(|entry| entry.id == id)
-            .ok_or("unknown authority")?;
-        if !matches!(&grant.grant, Grant::SlotReuse { slot: granted, .. } if granted == slot) {
-            return Err("slot-reuse grant does not match".into());
-        }
-    }
-    Ok(())
 }
 
 pub(super) fn sensitive_count(state: &domain::state::State, paths: &[String]) -> u32 {
@@ -165,7 +222,7 @@ pub(super) fn guard_role(
     role: AgentRole,
 ) -> Result<(), String> {
     let verification = matches!(delivery.kind, DeliveryKind::Verification { .. });
-    if role == AgentRole::Implementer && verification {
+    if !domain::delivery::admits(delivery, role) {
         return Err("verification delivery rejects implementers".into());
     }
     let planned = matches!(task.phase, Phase::Planned { .. } | Phase::InFlight { .. });
@@ -257,15 +314,35 @@ pub(super) fn bind_worktree(
     task: &TaskId,
     slot: &SlotId,
     branch: &str,
+    reuse: bool,
     check: bool,
 ) -> Result<(), AgentError> {
+    let state = app
+        .services
+        .vcs
+        .inspect_slot(slot)
+        .map_err(|error| app.error("bind-slot", Some(task), Rejection::External(error.0)))?;
+    let safe = matches!((&state, reuse), (domain::ports::SlotState::Missing, false))
+        || matches!(
+            (&state, reuse),
+            (domain::ports::SlotState::Checkout { clean: true, .. }, true)
+        );
+    if !safe {
+        return Err(app.error(
+            "bind-slot",
+            Some(task),
+            Rejection::Conflict(format!("slot is not safe for this binding: {state:?}")),
+        ));
+    }
     if check {
         return Ok(());
     }
-    app.services
-        .vcs
-        .bind_slot(task, slot, branch)
-        .map_err(|error| app.error("bind-slot", Some(task), Rejection::External(error.0)))
+    let result = if reuse {
+        app.services.vcs.reuse_slot(slot, branch)
+    } else {
+        app.services.vcs.bind_slot(task, slot, branch)
+    };
+    result.map_err(|error| app.error("bind-slot", Some(task), Rejection::External(error.0)))
 }
 
 pub(super) fn validate_paths(

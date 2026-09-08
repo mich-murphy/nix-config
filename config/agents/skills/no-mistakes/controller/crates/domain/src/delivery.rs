@@ -1,6 +1,7 @@
 use crate::{
     Instant,
     acceptance::Proof,
+    command::AgentRole,
     ids::{AuthorityId, CriterionId, DeliveryId, LaunchId, OperationId, PrNumber, Sha},
     review::{Review, Verdict},
     task::PlannedWork,
@@ -116,6 +117,11 @@ pub fn acceptance_ready(delivery: &Delivery, full: &[CriterionId]) -> bool {
             .review
             .as_ref()
             .is_some_and(|review| review.verdict == Verdict::Pass)
+}
+
+#[must_use]
+pub fn admits(delivery: &Delivery, role: AgentRole) -> bool {
+    role != AgentRole::Implementer || !matches!(delivery.kind, DeliveryKind::Verification { .. })
 }
 
 pub fn can_open(history: &[Delivery]) -> Result<(), DeliveryError> {

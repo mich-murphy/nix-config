@@ -4,7 +4,7 @@ use domain::{
 };
 use rusqlite::{Connection, OptionalExtension, params};
 use sha2::{Digest as _, Sha256};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct StoreError(pub String);
@@ -19,6 +19,7 @@ impl std::error::Error for StoreError {}
 
 pub struct Store {
     connection: Connection,
+    root: PathBuf,
 }
 
 impl Store {
@@ -43,6 +44,11 @@ impl Store {
                 singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
                 state TEXT NOT NULL,
                 digest TEXT NOT NULL
+             );
+             CREATE TABLE active_process (
+                singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+                kind TEXT NOT NULL,
+                id INTEGER NOT NULL
              );",
             )
             .map_err(error)?;
@@ -54,12 +60,22 @@ impl Store {
                 params![state, chain_digest("", &empty)?],
             )
             .map_err(error)?;
-        Ok(Self { connection })
+        Ok(Self {
+            connection,
+            root: root.to_owned(),
+        })
     }
 
     pub fn open(root: &Path) -> Result<Self, StoreError> {
         let connection = Connection::open(root.join("state.sqlite3")).map_err(error)?;
-        Ok(Self { connection })
+        Ok(Self {
+            connection,
+            root: root.to_owned(),
+        })
+    }
+
+    pub fn root(&self) -> &Path {
+        &self.root
     }
 
     pub fn state(&self) -> Result<State, StoreError> {
@@ -187,6 +203,7 @@ fn append(
     event: &Event,
     meta: AppendMeta<'_>,
 ) -> Result<(EventRecord, String), StoreError> {
+    update_process_claim(transaction, event)?;
     apply(state, event);
     let digest = chain_digest(meta.previous, state)?;
     let record = EventRecord {
@@ -197,6 +214,52 @@ fn append(
     };
     insert(transaction, &record, &phase(event, state), &digest)?;
     Ok((record, digest))
+}
+
+fn update_process_claim(
+    transaction: &rusqlite::Transaction<'_>,
+    event: &Event,
+) -> Result<(), StoreError> {
+    match event {
+        Event::LaunchStarted { launch } => claim_process(transaction, "launch", launch.id.0)?,
+        Event::OperationStarted { operation } => {
+            claim_process(transaction, "operation", operation.id.0)?;
+        }
+        Event::LaunchEnded { launch, .. } => clear_process(transaction, "launch", launch.0)?,
+        Event::OperationSettled { operation, .. } => {
+            clear_process(transaction, "operation", operation.0)?;
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+fn claim_process(
+    transaction: &rusqlite::Transaction<'_>,
+    kind: &str,
+    id: u64,
+) -> Result<(), StoreError> {
+    transaction
+        .execute(
+            "INSERT INTO active_process(singleton, kind, id) VALUES(1, ?1, ?2)",
+            params![kind, i64::try_from(id).map_err(error)?],
+        )
+        .map(|_| ())
+        .map_err(error)
+}
+
+fn clear_process(
+    transaction: &rusqlite::Transaction<'_>,
+    kind: &str,
+    id: u64,
+) -> Result<(), StoreError> {
+    transaction
+        .execute(
+            "DELETE FROM active_process WHERE singleton = 1 AND kind = ?1 AND id = ?2",
+            params![kind, i64::try_from(id).map_err(error)?],
+        )
+        .map(|_| ())
+        .map_err(error)
 }
 
 fn insert(
@@ -288,6 +351,33 @@ fn error(value: impl std::fmt::Display) -> StoreError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn launch(id: u64) -> Event {
+        Event::LaunchStarted {
+            launch: domain::event::Launch {
+                id: domain::ids::LaunchId(id),
+                task: "GAIN-1"
+                    .parse()
+                    .unwrap_or_else(|error| panic!("fixture: {error}")),
+                delivery: domain::ids::DeliveryId(1),
+                role: domain::command::AgentRole::Implementer,
+                prompt: "/prompt".into(),
+                session: None,
+                counted: true,
+                process: None,
+            },
+        }
+    }
+
+    #[test]
+    fn simultaneous_launch_has_one_winner() -> Result<(), StoreError> {
+        let directory = tempfile::tempdir().map_err(error)?;
+        let mut first = Store::create(directory.path())?;
+        let mut second = Store::open(directory.path())?;
+        first.commit(Actor::Coordinator, 1, &[launch(1)])?;
+        assert!(second.commit(Actor::Coordinator, 1, &[launch(2)]).is_err());
+        Ok(())
+    }
 
     #[test]
     fn status_matches_fold() -> Result<(), StoreError> {

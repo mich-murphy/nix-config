@@ -1,6 +1,6 @@
 mod format;
 
-use self::format::command_for;
+use self::format::{command_for, template_for};
 use super::State;
 use crate::{
     acceptance::Snapshot,
@@ -19,9 +19,11 @@ impl State {
     pub fn next(&self) -> Option<ActionEnvelope> {
         let action = self.choose_action()?;
         let (command, schema) = command_for(&action);
+        let template = template_for(&action);
         Some(ActionEnvelope {
             action,
             command,
+            template,
             schema,
         })
     }
@@ -40,7 +42,7 @@ impl State {
             matches!(
                 operation.status,
                 OperationStatus::Running | OperationStatus::Unknown
-            )
+            ) && self.operation_is_open(operation)
         }) {
             return Some(NextAction::SettleOperation {
                 operation: operation.id,
@@ -49,6 +51,17 @@ impl State {
         self.active
             .as_ref()
             .map_or_else(|| self.queue_action(), |task| self.active_action(task))
+    }
+
+    fn operation_is_open(&self, operation: &crate::event::Operation) -> bool {
+        self.tasks
+            .get(&operation.task)
+            .and_then(|task| {
+                task.deliveries
+                    .iter()
+                    .find(|delivery| delivery.id == operation.delivery)
+            })
+            .is_some_and(|delivery| matches!(delivery.outcome, crate::delivery::Outcome::Open))
     }
 
     fn active_action(&self, task: &TaskId) -> Option<NextAction> {

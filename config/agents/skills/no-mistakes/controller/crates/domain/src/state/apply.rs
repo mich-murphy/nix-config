@@ -33,6 +33,11 @@ pub fn apply(state: &mut State, event: &Event) {
         }),
         Event::Claimed { task, .. } => claim(state, task),
         Event::Held { task, reason, at } => {
+            if let crate::task::HoldReason::CiPending { head, deadline, .. } = reason {
+                state
+                    .check_deadlines
+                    .insert(format!("{task}:{head}"), *deadline);
+            }
             with_task(state, task, |value| {
                 value.hold = Some(crate::task::Hold {
                     since: *at,
@@ -67,7 +72,11 @@ pub fn apply(state: &mut State, event: &Event) {
             base,
         } => bind(state, task, binding, branch, base),
         Event::SlotReleased { task, .. } => release(state, task),
-        Event::Planned { task, plan: value } => plan(state, task, value),
+        Event::Planned {
+            task,
+            plan: value,
+            feedback,
+        } => plan(state, task, value, feedback),
         Event::Snapshotted {
             task,
             delivery,

@@ -1,10 +1,11 @@
 use crate::delivery_support::{get_task, review_snapshot, verify_proof};
 use crate::task_support::digest_file;
 use crate::{AgentError, App, Output, Rejection};
+use adapters::process::Recovery;
 use domain::{
     command::RecoveryTarget,
     delivery::{self, DeliveryKind, Outcome},
-    event::{Event, LaunchOutcome, Observation, OperationStatus},
+    event::{Event, Observation, OperationStatus},
     ids::{OperationId, Sha, TaskId},
     sync::Sync,
     task::Phase,
@@ -42,7 +43,7 @@ impl App<'_> {
         verify_proof(value, delivery, snapshot).map_err(|message| {
             self.error("final-verify", Some(&task), Rejection::Evidence(message))
         })?;
-        validate_main_head(self, &task, &snapshot.head, &commit)?;
+        validate_main_head(self, &task, delivery, &snapshot.head, &commit)?;
         let mut events = Vec::new();
         if matches!(delivery.kind, DeliveryKind::Verification { .. }) {
             events.push(Event::DeliveryClosed {
@@ -136,20 +137,10 @@ impl App<'_> {
         let state = self.state("recover-operation")?;
         match target {
             RecoveryTarget::Launch { launch } => {
-                let task = unsettled_launch(self, &state, launch, terminate)?;
-                self.commit(
-                    "recover-operation",
-                    Some(&task),
-                    vec![Event::LaunchEnded {
-                        launch,
-                        result: LaunchOutcome::Cancelled,
-                        usage: None,
-                    }],
-                    check,
-                )
+                crate::recovery_support::recover_launch(self, &state, launch, terminate, check)
             }
             RecoveryTarget::Operation { operation } => {
-                let task = unsettled_operation(self, &state, operation, terminate)?;
+                let task = recoverable_operation(self, &state, operation, terminate)?;
                 self.commit(
                     "recover-operation",
                     Some(&task),
@@ -207,6 +198,7 @@ fn validate_final_artifact(
 fn validate_main_head(
     app: &App<'_>,
     task: &TaskId,
+    delivery: &domain::delivery::Delivery,
     reviewed: &Sha,
     commit: &Sha,
 ) -> Result<(), AgentError> {
@@ -215,46 +207,27 @@ fn validate_main_head(
         .vcs
         .on_main(commit)
         .map_err(|error| app.error("final-verify", Some(task), Rejection::External(error.0)))?;
-    if reviewed == commit && on_main {
+    let identity = match (&delivery.kind, &delivery.outcome) {
+        (DeliveryKind::Code { pr: Some(pr) }, Outcome::Merged { commit: merged, .. }) => {
+            &pr.head == reviewed && merged == commit
+        }
+        (DeliveryKind::Verification { of }, Outcome::Open | Outcome::Accepted { .. }) => {
+            of == reviewed && of == commit
+        }
+        _ => false,
+    };
+    if identity && on_main {
         Ok(())
     } else {
         Err(app.error(
             "final-verify",
             Some(task),
-            Rejection::Evidence("exact reviewed head is not on main".into()),
+            Rejection::Evidence("merge identity or main ancestry does not match review".into()),
         ))
     }
 }
 
-fn unsettled_launch(
-    app: &App<'_>,
-    state: &domain::state::State,
-    launch: domain::ids::LaunchId,
-    terminate: bool,
-) -> Result<TaskId, AgentError> {
-    let item = state
-        .launches
-        .iter()
-        .find(|item| item.id == launch)
-        .ok_or_else(|| {
-            app.error(
-                "recover-operation",
-                None,
-                Rejection::Invalid("unknown launch".into()),
-            )
-        })?;
-    if item.session.is_none() && terminate {
-        Ok(item.task.clone())
-    } else {
-        Err(app.error(
-            "recover-operation",
-            Some(&item.task),
-            Rejection::Conflict("recovery requires an unsettled terminated launch".into()),
-        ))
-    }
-}
-
-fn unsettled_operation(
+fn recoverable_operation(
     app: &App<'_>,
     state: &domain::state::State,
     operation: OperationId,
@@ -271,18 +244,62 @@ fn unsettled_operation(
                 Rejection::Invalid("unknown operation".into()),
             )
         })?;
+    let open = state
+        .tasks
+        .get(&item.task)
+        .and_then(|task| {
+            task.deliveries
+                .iter()
+                .find(|delivery| delivery.id == item.delivery)
+        })
+        .is_some_and(|delivery| matches!(delivery.outcome, Outcome::Open));
+    if !open {
+        return Err(app.error(
+            "recover-operation",
+            Some(&item.task),
+            Rejection::Conflict("closed delivery operations are immutable".into()),
+        ));
+    }
     let unsettled = matches!(
         item.status,
         OperationStatus::Running | OperationStatus::Unknown
     );
-    if unsettled && terminate {
-        Ok(item.task.clone())
-    } else {
-        Err(app.error(
+    if !unsettled {
+        return Err(app.error(
             "recover-operation",
             Some(&item.task),
-            Rejection::Conflict("recovery requires an unsettled terminated operation".into()),
-        ))
+            Rejection::Conflict("operation is already settled".into()),
+        ));
+    }
+    let identity = item.process.ok_or_else(|| {
+        app.error(
+            "recover-operation",
+            Some(&item.task),
+            Rejection::Conflict(
+                "operation has no owned process; observe its external state".into(),
+            ),
+        )
+    })?;
+    let recovered = app
+        .services
+        .process
+        .recover(identity, terminate)
+        .map_err(|error| {
+            app.error(
+                "recover-operation",
+                Some(&item.task),
+                Rejection::External(error.0),
+            )
+        })?;
+    match recovered {
+        Recovery::Stopped | Recovery::Terminated => Ok(item.task.clone()),
+        Recovery::Running => Err(app.error(
+            "recover-operation",
+            Some(&item.task),
+            Rejection::Conflict(
+                "owned process is still running; use --terminate to stop it".into(),
+            ),
+        )),
     }
 }
 
