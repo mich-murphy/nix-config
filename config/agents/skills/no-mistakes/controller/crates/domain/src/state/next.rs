@@ -119,10 +119,7 @@ impl State {
             Phase::InFlight { work, stage } => {
                 self.in_flight_action(task, work.snapshot.as_ref(), stage)
             }
-            Phase::Merged { commit, .. } => Some(NextAction::FinalVerify {
-                task: task.id.clone(),
-                commit: commit.clone(),
-            }),
+            Phase::Merged { commit, .. } => self.merged_action(task, commit),
             Phase::Verified { .. } => self.verified_action(task),
         }
     }
@@ -225,6 +222,38 @@ impl State {
             });
         }
         publish_action(task, delivery)
+    }
+
+    fn merged_action(&self, task: &Task, commit: &crate::ids::Sha) -> Option<NextAction> {
+        let delivery = task.deliveries.last()?;
+        if matches!(delivery.kind, DeliveryKind::Verification { .. }) {
+            if delivery.proof.entries.len() < delivery.criteria.len() {
+                let missing = delivery
+                    .criteria
+                    .iter()
+                    .filter(|id| !delivery.proof.entries.contains_key(*id))
+                    .cloned()
+                    .collect();
+                return Some(NextAction::RecordProof {
+                    task: task.id.clone(),
+                    missing,
+                });
+            }
+            if delivery.review.is_none() {
+                return Some(NextAction::Review {
+                    task: task.id.clone(),
+                    snapshot: Snapshot {
+                        base: commit.clone(),
+                        head: commit.clone(),
+                        requirements: task.spec.requirements.clone(),
+                    },
+                });
+            }
+        }
+        Some(NextAction::FinalVerify {
+            task: task.id.clone(),
+            commit: commit.clone(),
+        })
     }
 
     fn verified_action(&self, task: &Task) -> Option<NextAction> {

@@ -113,7 +113,9 @@ pub fn repurpose(all: &[Authority], digest: &Digest) -> Result<AuthorityId, Auth
 
 pub fn pair_available(authority: &Authority, implementation: bool) -> bool {
     let grants_pair = matches!(authority.grant, Grant::Pair { .. } | Grant::Delivery { .. });
-    if !grants_pair || authority.used.whole.is_some() {
+    let spent_pair_grant =
+        matches!(authority.grant, Grant::Pair { .. }) && authority.used.whole.is_some();
+    if !grants_pair || spent_pair_grant {
         return false;
     }
     if implementation {

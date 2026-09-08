@@ -3,8 +3,9 @@ use crate::{
     acceptance::Snapshot,
     delivery::{DeliveryKind, Outcome},
     event::OperationStatus,
-    ids::{FindingId, Sha, TaskId},
+    ids::{FindingId, IssueKey, Sha, TaskId},
     review::{Disposition, Verdict},
+    sync::Sync,
     task::{Phase, Receipt, Task},
 };
 use std::collections::BTreeMap;
@@ -84,6 +85,11 @@ pub(super) fn settle_review(
 pub(super) fn current_snapshot(task: &Task) -> Option<Snapshot> {
     match &task.phase {
         Phase::Planned { work } | Phase::InFlight { work, .. } => work.snapshot.clone(),
+        Phase::Merged { commit, .. } => Some(Snapshot {
+            base: commit.clone(),
+            head: commit.clone(),
+            requirements: task.spec.requirements.clone(),
+        }),
         _ => None,
     }
 }
@@ -180,6 +186,24 @@ pub(super) fn verify(state: &mut State, task: &TaskId, commit: &Sha) {
     });
 }
 
+pub(super) fn spend_pair(
+    state: &mut State,
+    task: &TaskId,
+    authority: crate::ids::AuthorityId,
+    launch: crate::ids::LaunchId,
+    implementation: bool,
+) {
+    with_task(state, task, |value| {
+        if let Some(item) = value
+            .authorities
+            .iter_mut()
+            .find(|item| item.id == authority)
+        {
+            let _result = crate::authority::spend_pair(item, implementation, launch);
+        }
+    });
+}
+
 pub(super) fn use_authority(
     state: &mut State,
     task: &TaskId,
@@ -193,6 +217,16 @@ pub(super) fn use_authority(
             .find(|item| item.id == authority)
         {
             item.used.whole = Some(by);
+        }
+    });
+}
+
+pub(super) fn set_sync(state: &mut State, task: &TaskId, issue: &IssueKey, sync: Sync) {
+    with_task(state, task, |value| {
+        if IssueKey::from(value.id.clone()) == *issue {
+            value.sync = sync;
+        } else if let Some(subtask) = value.subtasks.get_mut(issue) {
+            subtask.sync = sync;
         }
     });
 }

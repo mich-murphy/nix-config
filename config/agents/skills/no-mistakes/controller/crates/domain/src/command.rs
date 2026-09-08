@@ -165,13 +165,13 @@ pub enum Command {
     OpenDelivery {
         task: TaskId,
         kind: DeliveryKind,
-        authority: AuthorityId,
+        authority: Box<Authority>,
         jira: JiraRead,
     },
     NarrowAcceptance {
         task: TaskId,
         criteria: Vec<CriterionId>,
-        authority: AuthorityId,
+        authority: Box<Authority>,
     },
     RecoverOperation {
         operation: OperationId,

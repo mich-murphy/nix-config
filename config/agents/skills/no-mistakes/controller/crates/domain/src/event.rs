@@ -40,6 +40,7 @@ pub enum Event {
     RunInitialized {
         config: Box<RunConfig>,
         profile: Box<Profile>,
+        capabilities: crate::ports::Capabilities,
     },
     QueueDiscovered {
         tasks: Vec<DiscoveredTask>,
@@ -194,9 +195,12 @@ pub enum Event {
     StatusIntended {
         task: TaskId,
         issue: IssueKey,
+        current: JiraStatus,
         target: JiraStatus,
         transition: TransitionId,
         operation: OperationId,
+        attempts: u8,
+        at: Instant,
     },
     StatusObserved {
         task: TaskId,
@@ -212,6 +216,12 @@ pub enum Event {
         task: TaskId,
         authority: AuthorityId,
         by: UseId,
+    },
+    PairSpent {
+        task: TaskId,
+        authority: AuthorityId,
+        launch: LaunchId,
+        implementation: bool,
     },
     BudgetSpent {
         task: TaskId,

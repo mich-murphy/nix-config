@@ -19,6 +19,7 @@ pub trait Vcs {
     fn on_main(&self, commit: &Sha) -> Result<bool, PortError>;
     fn changed_paths(&self, base: &Sha, head: &Sha) -> Result<Vec<String>, PortError>;
     fn commit_paths(&self, base: &Sha, head: &Sha) -> Result<Vec<Vec<String>>, PortError>;
+    fn ignored(&self, path: &Path) -> Result<bool, PortError>;
     fn reserve(&self, task: &TaskId) -> Result<bool, PortError>;
     fn bind_slot(&self, task: &TaskId, slot: &SlotId, branch: &str) -> Result<(), PortError>;
     fn clean_slot(&self, slot: &SlotId, delete: bool) -> Result<(), PortError>;

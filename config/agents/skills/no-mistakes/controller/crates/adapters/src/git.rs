@@ -77,6 +77,22 @@ impl<P: Process> Vcs for Git<P> {
             .collect()
     }
 
+    fn ignored(&self, path: &Path) -> Result<bool, PortError> {
+        let request = ProcessRequest {
+            program: "git".into(),
+            args: vec![
+                "check-ignore".into(),
+                "--quiet".into(),
+                path.to_string_lossy().into_owned(),
+            ],
+            cwd: self.repo.clone(),
+            stdin: None,
+            env: BTreeMap::new(),
+            remove_env: Vec::new(),
+        };
+        Ok(self.process.run(&request)?.code == Some(0))
+    }
+
     fn reserve(&self, task: &TaskId) -> Result<bool, PortError> {
         let head = self.head("HEAD")?;
         let reference = format!("refs/no-mistakes/claims/{task}");

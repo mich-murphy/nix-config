@@ -1,7 +1,7 @@
 use super::State;
 use super::apply_delivery::{
     close_delivery, disposition, finish_launch, invalidate_proof, narrow, observe_pr, record_proof,
-    settle_operation, settle_review, use_authority, verify, with_task,
+    set_sync, settle_operation, settle_review, spend_pair, use_authority, verify, with_task,
 };
 use crate::{
     acceptance::Snapshot,
@@ -17,9 +17,14 @@ use std::collections::BTreeMap;
 
 pub fn apply(state: &mut State, event: &Event) {
     match event {
-        Event::RunInitialized { config, profile } => {
+        Event::RunInitialized {
+            config,
+            profile,
+            capabilities,
+        } => {
             state.config = Some((**config).clone());
             state.profile = Some((**profile).clone());
+            state.capabilities = Some(*capabilities);
         }
         Event::QueueDiscovered { tasks, order, .. } => apply_discovery(state, tasks, order),
         Event::QueueRefreshed { changed, removed } => apply_refresh(state, changed, removed),
@@ -79,7 +84,14 @@ pub fn apply(state: &mut State, event: &Event) {
             with_task(state, task, |value| value.phase = phase.clone())
         }
         Event::LaunchStarted { launch } => state.launches.push(launch.clone()),
-        Event::LaunchEnded { launch, result, .. } => finish_launch(state, *launch, result),
+        Event::LaunchEnded {
+            launch,
+            result,
+            usage,
+        } => {
+            state.usage.insert(*launch, *usage);
+            finish_launch(state, *launch, result);
+        }
         Event::ProofRecorded {
             task,
             delivery,
@@ -112,7 +124,17 @@ pub fn apply(state: &mut State, event: &Event) {
             state.lessons.push((task.clone(), lesson.clone()))
         }
         Event::DeliveryOpened { task, delivery } => with_task(state, task, |value| {
-            value.deliveries.push((**delivery).clone())
+            let first = value.deliveries.is_empty();
+            value.deliveries.push((**delivery).clone());
+            if !first {
+                value.phase = match &delivery.kind {
+                    crate::delivery::DeliveryKind::Code { .. } => Phase::Claimed,
+                    crate::delivery::DeliveryKind::Verification { of } => Phase::Merged {
+                        delivery: delivery.id,
+                        commit: of.clone(),
+                    },
+                };
+            }
         }),
         Event::AcceptanceNarrowed {
             task,
@@ -134,12 +156,31 @@ pub fn apply(state: &mut State, event: &Event) {
         Event::Completed { task } => {
             state.completed.insert(task.clone());
         }
-        Event::StatusIntended { task, .. } => {
-            with_task(state, task, |value| value.sync = Sync::Pending)
-        }
-        Event::StatusObserved { task, sync, .. } => {
-            with_task(state, task, |value| value.sync = sync.clone())
-        }
+        Event::StatusIntended {
+            task,
+            issue,
+            current,
+            target,
+            transition,
+            operation,
+            attempts,
+            at,
+        } => set_sync(
+            state,
+            task,
+            issue,
+            Sync::Unknown(crate::sync::StatusIntent {
+                operation: *operation,
+                from: current.clone(),
+                target: target.clone(),
+                transition: transition.clone(),
+                attempts: *attempts,
+                at: *at,
+            }),
+        ),
+        Event::StatusObserved {
+            task, issue, sync, ..
+        } => set_sync(state, task, issue, sync.clone()),
         Event::AuthorityRegistered { task, authority } => with_task(state, task, |value| {
             value.authorities.push((**authority).clone())
         }),
@@ -148,6 +189,12 @@ pub fn apply(state: &mut State, event: &Event) {
             authority,
             by,
         } => use_authority(state, task, *authority, *by),
+        Event::PairSpent {
+            task,
+            authority,
+            launch,
+            implementation,
+        } => spend_pair(state, task, *authority, *launch, *implementation),
         Event::BudgetSpent {
             task,
             budget,
@@ -277,7 +324,14 @@ fn bind(
         snapshot: None,
         plan: None,
     };
-    with_task(state, task, |value| value.phase = Phase::Planned { work });
+    with_task(state, task, |value| {
+        if let Some(delivery) = value.deliveries.last_mut()
+            && matches!(delivery.outcome, crate::delivery::Outcome::Open)
+        {
+            delivery.work = Some(work.clone());
+        }
+        value.phase = Phase::Planned { work };
+    });
 }
 
 fn release(state: &mut State, task: &TaskId) {

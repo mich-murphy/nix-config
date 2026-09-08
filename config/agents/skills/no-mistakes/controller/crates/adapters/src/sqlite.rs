@@ -236,6 +236,7 @@ fn event_kind(event: &Event) -> &'static str {
         Event::StatusObserved { .. } => "status-observed",
         Event::AuthorityRegistered { .. } => "authority-registered",
         Event::GrantUsed { .. } => "grant-used",
+        Event::PairSpent { .. } => "pair-spent",
         Event::BudgetSpent { .. } => "budget-spent",
     }
 }
@@ -277,6 +278,7 @@ fn event_task(event: &Event) -> Option<&domain::ids::TaskId> {
         | Event::StatusObserved { task, .. }
         | Event::AuthorityRegistered { task, .. }
         | Event::GrantUsed { task, .. }
+        | Event::PairSpent { task, .. }
         | Event::BudgetSpent { task, .. } => Some(task),
         Event::LaunchStarted { launch } => Some(&launch.task),
         Event::OperationStarted { operation } => Some(&operation.task),
