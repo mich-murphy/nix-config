@@ -1,0 +1,4 @@
+interface:
+  display_name: "Holy AI agents, Batman!"
+  short_description: "Deliver epics with measured progress and bounded review"
+  default_prompt: "Use $holy-ai-agents-batman to deliver EPIC: <Jira epic URL> through verified merge and Jira synchronization."

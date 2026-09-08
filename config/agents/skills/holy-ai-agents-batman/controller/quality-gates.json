@@ -1,0 +1,10 @@
+{
+  "rust_version": "1.98.0",
+  "max_cyclomatic_complexity": 20,
+  "analyzer": {
+    "version": "0.0.25",
+    "url": "https://github.com/mozilla/rust-code-analysis/releases/download/v0.0.25/rust-code-analysis-linux-cli-x86_64.tar.gz",
+    "archive_sha256": "9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894",
+    "executable_sha256": "59eb8762ccd0dc18fc08d1aa8ef34a43c3e650993bca51ec58e642bb38cb41ee"
+  }
+}
