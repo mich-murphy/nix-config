@@ -98,15 +98,20 @@ pub fn closed(delivery: &Delivery) -> bool {
 
 #[must_use]
 pub fn accepts(delivery: &Delivery, full: &[CriterionId]) -> bool {
+    acceptance_ready(delivery, full)
+        && matches!(
+            delivery.outcome,
+            Outcome::Merged { .. } | Outcome::Accepted { .. }
+        )
+}
+
+#[must_use]
+pub fn acceptance_ready(delivery: &Delivery, full: &[CriterionId]) -> bool {
     delivery.criteria == full
         && delivery
             .review
             .as_ref()
             .is_some_and(|review| review.verdict == Verdict::Pass)
-        && matches!(
-            delivery.outcome,
-            Outcome::Merged { .. } | Outcome::Accepted { .. }
-        )
 }
 
 pub fn can_open(history: &[Delivery]) -> Result<(), DeliveryError> {

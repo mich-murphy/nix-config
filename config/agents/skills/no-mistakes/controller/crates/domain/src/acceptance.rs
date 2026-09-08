@@ -11,6 +11,7 @@ pub struct Proof {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ProofEntry {
     pub criterion: CriterionId,
     pub status: ProofStatus,
@@ -24,6 +25,7 @@ pub struct ProofEntry {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Snapshot {
     pub base: Sha,
     pub head: Sha,
@@ -31,6 +33,7 @@ pub struct Snapshot {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Measurement {
     pub baseline: Digest,
     pub observed: String,

@@ -80,7 +80,7 @@ impl App<'_> {
         &mut self,
         task: TaskId,
         kind: DeliveryKind,
-        authority: Authority,
+        mut authority: Authority,
         jira: JiraRead,
         check: bool,
     ) -> Result<Output, AgentError> {
@@ -98,18 +98,35 @@ impl App<'_> {
                 Rejection::Conflict(format!("delivery history: {error:?}")),
             )
         })?;
-        authority::register(&value.authorities, &authority, true).map_err(|error| {
-            self.error(
-                "open-delivery",
-                Some(&task),
-                Rejection::Authority(format!("authority rejected: {error:?}")),
-            )
-        })?;
+        let repurposed = value
+            .authorities
+            .iter()
+            .find(|entry| entry.digest == authority.digest)
+            .filter(|entry| authority::unused_pair(entry))
+            .map(|entry| entry.id);
+        if let Some(id) = repurposed {
+            authority.id = id;
+        } else {
+            authority::register(&value.authorities, &authority, true).map_err(|error| {
+                self.error(
+                    "open-delivery",
+                    Some(&task),
+                    Rejection::Authority(format!("authority rejected: {error:?}")),
+                )
+            })?;
+        }
         validate_authority_file(&authority).map_err(|message| {
             self.error("open-delivery", Some(&task), Rejection::Authority(message))
         })?;
         validate_delivery_grant(&authority, &kind).map_err(|message| {
             self.error("open-delivery", Some(&task), Rejection::Authority(message))
+        })?;
+        authority::validate_use(&authority, &value.spec.requirements).map_err(|error| {
+            self.error(
+                "open-delivery",
+                Some(&task),
+                Rejection::Authority(format!("authority use rejected: {error:?}")),
+            )
         })?;
         validate_history(self, value).map_err(|message| {
             self.error("open-delivery", Some(&task), Rejection::Conflict(message))
@@ -136,22 +153,26 @@ impl App<'_> {
             launches: Vec::new(),
             operations: Vec::new(),
         };
-        let events = vec![
-            Event::AuthorityRegistered {
+        let delivery_id = delivery.id;
+        let mut events = Vec::new();
+        if repurposed.is_none() {
+            events.push(Event::AuthorityRegistered {
                 task: task.clone(),
                 authority: Box::new(authority.clone()),
-            },
-            Event::GrantUsed {
-                task: task.clone(),
-                authority: authority.id,
-                by: UseId(delivery.id.0),
-            },
+            });
+        }
+        events.extend([
             Event::DeliveryOpened {
                 task: task.clone(),
                 delivery: Box::new(delivery),
             },
+            Event::GrantUsed {
+                task: task.clone(),
+                authority: authority.id,
+                by: UseId(delivery_id.0),
+            },
             Event::Resumed { task: task.clone() },
-        ];
+        ]);
         self.commit("open-delivery", Some(&task), events, check)
     }
 
@@ -184,6 +205,19 @@ impl App<'_> {
                 Rejection::Conflict(format!("cannot narrow: {error:?}")),
             )
         })?;
+        if criteria.iter().any(|id| {
+            value
+                .spec
+                .criteria
+                .iter()
+                .any(|criterion| criterion.id == *id)
+        }) {
+            return Err(self.error(
+                "narrow-acceptance",
+                Some(&task),
+                Rejection::Invalid("narrowed criterion IDs must be distinct".into()),
+            ));
+        }
         authority::register(&value.authorities, &authority, true).map_err(|error| {
             self.error(
                 "narrow-acceptance",
@@ -198,7 +232,8 @@ impl App<'_> {
                 Rejection::Authority(message),
             )
         })?;
-        if !matches!(&authority.grant, Grant::Narrowing { criteria: granted, .. } if granted == &criteria)
+        if authority.requirements != value.spec.requirements
+            || !matches!(&authority.grant, Grant::Narrowing { criteria: granted, .. } if granted == &criteria)
         {
             return Err(self.error(
                 "narrow-acceptance",

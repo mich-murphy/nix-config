@@ -33,13 +33,21 @@ pub fn apply(state: &mut State, event: &Event) {
             text: text.clone(),
         }),
         Event::Claimed { task, .. } => claim(state, task),
-        Event::Held { task, reason, at } => with_task(state, task, |value| {
-            value.hold = Some(crate::task::Hold {
-                since: *at,
-                reason: reason.clone(),
-            })
-        }),
-        Event::Resumed { task } => with_task(state, task, |value| value.hold = None),
+        Event::Held { task, reason, at } => {
+            with_task(state, task, |value| {
+                value.hold = Some(crate::task::Hold {
+                    since: *at,
+                    reason: reason.clone(),
+                });
+            });
+            if state.active.as_ref() == Some(task) {
+                state.active = None;
+            }
+        }
+        Event::Resumed { task } => {
+            state.active = Some(task.clone());
+            with_task(state, task, |value| value.hold = None);
+        }
         Event::Briefed {
             task,
             criteria,
@@ -101,11 +109,8 @@ pub fn apply(state: &mut State, event: &Event) {
         Event::ReviewSettled {
             task,
             delivery,
-            launch,
-            findings,
-            gaps,
-            verdict,
-        } => settle_review(state, task, *delivery, *launch, findings, gaps, *verdict),
+            review,
+        } => settle_review(state, task, *delivery, review),
         Event::Dispositioned {
             task,
             finding,
@@ -125,6 +130,19 @@ pub fn apply(state: &mut State, event: &Event) {
         }
         Event::DeliveryOpened { task, delivery } => with_task(state, task, |value| {
             let first = value.deliveries.is_empty();
+            if let Some(authority_id) = delivery.authority
+                && let Some(authority) = value
+                    .authorities
+                    .iter_mut()
+                    .find(|entry| entry.id == authority_id)
+                && crate::authority::unused_pair(authority)
+            {
+                authority.grant = crate::authority::Grant::Delivery {
+                    kind: delivery.kind.clone(),
+                    criteria: delivery.criteria.clone(),
+                    paths: delivery.paths.clone(),
+                };
+            }
             value.deliveries.push((**delivery).clone());
             if !first {
                 value.phase = match &delivery.kind {
@@ -269,9 +287,29 @@ fn initial_phase(found: &DiscoveredTask) -> Phase {
 
 fn apply_refresh(state: &mut State, changed: &[DiscoveredTask], removed: &[TaskId]) {
     for found in changed {
-        with_task(state, &found.id, |task| task.spec = found.spec.clone());
+        with_task(state, &found.id, |task| {
+            task.spec = found.spec.clone();
+            if matches!(
+                task.phase,
+                Phase::Queued | Phase::Blocked(_) | Phase::NeedsInput(_)
+            ) {
+                task.phase = initial_phase(found);
+            }
+        });
+        state
+            .questions
+            .retain(|question| question.task.as_ref() != Some(&found.id));
+        if matches!(initial_phase(found), Phase::NeedsInput(_)) {
+            state.questions.push(Question {
+                task: Some(found.id.clone()),
+                text: found.spec.ownership_evidence.clone(),
+            });
+        }
     }
     for id in removed {
+        state
+            .questions
+            .retain(|question| question.task.as_ref() != Some(id));
         with_task(state, id, |task| {
             task.phase = Phase::Excluded(ExclusionReason::NotMember)
         });
@@ -341,9 +379,20 @@ fn release(state: &mut State, task: &TaskId) {
 }
 
 fn plan(state: &mut State, task: &TaskId, plan: &crate::task::Plan) {
-    with_task(state, task, |value| match &mut value.phase {
-        Phase::Planned { work } | Phase::InFlight { work, .. } => work.plan = Some(plan.clone()),
-        _ => {}
+    with_task(state, task, |value| {
+        match &mut value.phase {
+            Phase::Planned { work } | Phase::InFlight { work, .. } => {
+                work.plan = Some(plan.clone());
+            }
+            _ => {}
+        }
+        if let Some(work) = value
+            .deliveries
+            .last_mut()
+            .and_then(|delivery| delivery.work.as_mut())
+        {
+            work.plan = Some(plan.clone());
+        }
     });
 }
 
@@ -356,6 +405,9 @@ fn snapshot(
     with_task(state, task, |value| {
         if let Some(item) = value.deliveries.iter_mut().find(|item| item.id == delivery) {
             item.review = None;
+            if let Some(work) = item.work.as_mut() {
+                work.snapshot = Some(snapshot.clone());
+            }
         }
         match &mut value.phase {
             Phase::Planned { work } => {

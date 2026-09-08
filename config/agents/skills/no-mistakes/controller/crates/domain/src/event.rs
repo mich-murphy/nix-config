@@ -10,7 +10,7 @@ use crate::{
         OperationId, Sha, SlotId, TaskId, TransitionId, UseId,
     },
     ports::Tokens,
-    review::{Disposition, Finding, Verdict},
+    review::Disposition,
     risk::{Profile, Tier},
     sync::Sync,
     task::{HoldReason, Phase, Plan, SlotBinding, Subtask},
@@ -138,10 +138,7 @@ pub enum Event {
     ReviewSettled {
         task: TaskId,
         delivery: DeliveryId,
-        launch: LaunchId,
-        findings: Vec<Finding>,
-        gaps: Vec<String>,
-        verdict: Verdict,
+        review: Box<crate::review::Review>,
     },
     Dispositioned {
         task: TaskId,

@@ -9,6 +9,7 @@ use std::path::{Component, Path, PathBuf};
 pub type PathGlob = String;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Authority {
     pub id: AuthorityId,
     pub source: String,

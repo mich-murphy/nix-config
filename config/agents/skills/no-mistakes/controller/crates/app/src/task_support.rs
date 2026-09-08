@@ -245,10 +245,3 @@ pub(super) fn previous_session(
         .find(|launch| launch.task == *task && launch.role == role)
         .and_then(|launch| launch.session.clone())
 }
-
-pub(super) fn previous_session_from_role(
-    _task: &domain::task::Task,
-    _role: AgentRole,
-) -> Option<String> {
-    None
-}

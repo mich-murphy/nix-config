@@ -31,15 +31,17 @@ impl App<'_> {
                 Rejection::Conflict("task has no delivery".into()),
             )
         })?;
-        if !delivery::accepts(
-            delivery,
-            &value
-                .spec
-                .criteria
-                .iter()
-                .map(|criterion| criterion.id.clone())
-                .collect::<Vec<_>>(),
-        ) {
+        let full = value
+            .spec
+            .criteria
+            .iter()
+            .map(|criterion| criterion.id.clone())
+            .collect::<Vec<_>>();
+        let accepted = delivery::accepts(delivery, &full)
+            || matches!(delivery.kind, DeliveryKind::Verification { .. })
+                && matches!(delivery.outcome, Outcome::Open)
+                && delivery::acceptance_ready(delivery, &full);
+        if !accepted {
             return Err(self.error(
                 "final-verify",
                 Some(&task),
@@ -198,14 +200,33 @@ impl App<'_> {
                 )
             })?
             .clone();
-        let attempts = current_sync(value, &issue)
-            .map(|sync| match sync {
-                Sync::Unknown(intent) => intent.attempts.saturating_add(1),
-                Sync::Failed(_) => 2,
-                _ => 1,
-            })
-            .unwrap_or(1);
+        let current_sync = current_sync(value, &issue).ok_or_else(|| {
+            self.error(
+                "set-status",
+                Some(&task),
+                Rejection::Invalid("unrecorded subtask".into()),
+            )
+        })?;
+        let attempts = match current_sync {
+            Sync::Failed(failure) => failure.intent.attempts.saturating_add(1),
+            _ => 1,
+        };
         let operation = next_operation(&state);
+        let intent = domain::sync::StatusIntent {
+            operation,
+            from: current.clone(),
+            target: target.clone(),
+            transition: transition.clone(),
+            attempts,
+            at: self.services.clock.now(),
+        };
+        sync::intend(current_sync, intent.clone()).map_err(|error| {
+            self.error(
+                "set-status",
+                Some(&task),
+                Rejection::Conflict(format!("status intent rejected: {error:?}")),
+            )
+        })?;
         let events = vec![Event::StatusIntended {
             task: task.clone(),
             issue,
@@ -214,7 +235,7 @@ impl App<'_> {
             transition: transition.clone(),
             operation,
             attempts,
-            at: self.services.clock.now(),
+            at: intent.at,
         }];
         let mut output = self.commit("set-status", Some(&task), events, check)?;
         output.result = ResultData::Transition { transition };

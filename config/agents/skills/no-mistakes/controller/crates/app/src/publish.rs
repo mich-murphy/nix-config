@@ -5,7 +5,7 @@ use crate::delivery_support::{
 };
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
-    delivery::{self, CheckState, DeliveryKind, Outcome, PrState},
+    delivery::{self, CheckState, DeliveryKind, Outcome, PrState, Replacement},
     event::{Event, Observation, Operation, OperationStatus},
     ids::{PrNumber, TaskId},
     task::HoldReason,
@@ -109,11 +109,34 @@ impl App<'_> {
         let value = get_task(&state, &task).map_err(|message| {
             self.error("observe-pr", Some(&task), Rejection::Invalid(message))
         })?;
-        let delivery = value.deliveries.iter().find(|delivery| matches!(&delivery.kind, DeliveryKind::Code { pr: Some(known) } if known.number == pr)).or_else(|| value.deliveries.last()).ok_or_else(|| self.error("observe-pr", Some(&task), Rejection::Invalid("unknown PR".into())))?;
+        let known = value.deliveries.iter().find(|delivery| matches!(&delivery.kind, DeliveryKind::Code { pr: Some(known) } if known.number == pr));
+        let current = value.deliveries.last().ok_or_else(|| {
+            self.error(
+                "observe-pr",
+                Some(&task),
+                Rejection::Invalid("unknown PR".into()),
+            )
+        })?;
+        let replacement = known.is_none()
+            && matches!(
+                value.hold.as_ref().map(|hold| &hold.reason),
+                Some(HoldReason::SupersededPr { .. })
+            );
+        if known.is_none() && !replacement {
+            return Err(self.error(
+                "observe-pr",
+                Some(&task),
+                Rejection::Invalid("unknown PR".into()),
+            ));
+        }
+        let delivery = known.unwrap_or(current);
         let observation =
             self.services.github.observe(pr).map_err(|error| {
                 self.error("observe-pr", Some(&task), Rejection::External(error.0))
             })?;
+        if replacement {
+            return self.observe_replacement(task, current, observation, check);
+        }
         if delivery::closed(delivery) {
             validate_closed(delivery, &observation).map_err(|message| {
                 self.error("observe-pr", Some(&task), Rejection::Conflict(message))
@@ -155,6 +178,71 @@ impl App<'_> {
             });
         }
         self.commit("observe-pr", Some(&task), events, check)
+    }
+
+    fn observe_replacement(
+        &mut self,
+        task: TaskId,
+        delivery: &domain::delivery::Delivery,
+        observation: domain::delivery::PullRequest,
+        check: bool,
+    ) -> Result<Output, AgentError> {
+        if observation.state != PrState::Merged
+            || observation.merge.is_none()
+            || !self
+                .services
+                .vcs
+                .on_main(observation.merge.as_ref().ok_or_else(|| {
+                    self.error(
+                        "observe-pr",
+                        Some(&task),
+                        Rejection::External("replacement merge is missing".into()),
+                    )
+                })?)
+                .map_err(|error| {
+                    self.error("observe-pr", Some(&task), Rejection::External(error.0))
+                })?
+        {
+            return Err(self.error(
+                "observe-pr",
+                Some(&task),
+                Rejection::Conflict("replacement is not merged on main".into()),
+            ));
+        }
+        let replacement = Replacement {
+            pr: observation.number,
+            head: observation.head,
+            merge: observation.merge.ok_or_else(|| {
+                self.error(
+                    "observe-pr",
+                    Some(&task),
+                    Rejection::External("replacement merge is missing".into()),
+                )
+            })?,
+        };
+        self.commit(
+            "observe-pr",
+            Some(&task),
+            vec![
+                Event::DeliveryClosed {
+                    task: task.clone(),
+                    delivery: delivery.id,
+                    outcome: Outcome::Replaced {
+                        by: replacement,
+                        at: self.services.clock.now(),
+                    },
+                },
+                Event::Held {
+                    task: task.clone(),
+                    reason: HoldReason::NeedsHuman {
+                        diagnosis: "closed PR was replaced externally".into(),
+                        remaining: delivery.criteria.clone(),
+                    },
+                    at: self.services.clock.now(),
+                },
+            ],
+            check,
+        )
     }
 
     pub(super) fn poll_checks(

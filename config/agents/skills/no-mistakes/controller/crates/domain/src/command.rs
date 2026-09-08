@@ -180,6 +180,7 @@ pub enum Command {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RunConfig {
     pub repo: PathBuf,
     pub github_repo: String,
@@ -194,11 +195,13 @@ pub struct RunConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct JiraConfig {
     pub statuses: StatusMap,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct StatusMap {
     pub todo: JiraStatus,
     pub progress: JiraStatus,
@@ -207,6 +210,7 @@ pub struct StatusMap {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RiskConfig {
     pub sensitive: Vec<String>,
 }
@@ -219,18 +223,21 @@ pub enum ReviewMode {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct DiscoveredTask {
     pub id: TaskId,
     pub spec: TaskSpec,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Transition {
     pub id: TransitionId,
     pub to: JiraStatus,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct JiraRead {
     pub member: bool,
     pub resolved: bool,
@@ -239,12 +246,14 @@ pub struct JiraRead {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Fallback {
     pub model: crate::ids::ModelId,
     pub reason: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Lesson {
     pub text: String,
     pub families: Vec<String>,

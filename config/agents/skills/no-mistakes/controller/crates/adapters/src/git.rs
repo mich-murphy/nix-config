@@ -62,6 +62,22 @@ impl<P: Process> Vcs for Git<P> {
         Ok(output.lines().map(ToOwned::to_owned).collect())
     }
 
+    fn changed_lines(&self, base: &Sha, head: &Sha) -> Result<u32, PortError> {
+        let range = format!("{base}...{head}");
+        let output = self.git(&["diff", "--numstat", &range], &self.repo)?;
+        output.lines().try_fold(0_u32, |total, line| {
+            let mut fields = line.split_whitespace();
+            let added = fields.next().and_then(|value| value.parse::<u32>().ok());
+            let deleted = fields.next().and_then(|value| value.parse::<u32>().ok());
+            match (added, deleted) {
+                (Some(added), Some(deleted)) => {
+                    Ok(total.saturating_add(added).saturating_add(deleted))
+                }
+                _ => Ok(total),
+            }
+        })
+    }
+
     fn commit_paths(&self, base: &Sha, head: &Sha) -> Result<Vec<Vec<String>>, PortError> {
         let range = format!("{base}..{head}");
         let commits = self.git(&["rev-list", "--reverse", &range], &self.repo)?;

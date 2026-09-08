@@ -28,6 +28,7 @@ pub struct Task {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TaskSpec {
     pub parent: TaskId,
     pub criteria: Vec<Criterion>,
@@ -45,6 +46,7 @@ pub struct TaskSpec {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Dependency {
     pub task: TaskId,
     pub code: bool,
@@ -53,6 +55,7 @@ pub struct Dependency {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Criterion {
     pub id: CriterionId,
     pub text: String,
@@ -82,6 +85,7 @@ pub struct PlannedWork {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Plan {
     pub deliverable: String,
     pub components: Vec<String>,

@@ -59,6 +59,9 @@ pub(super) fn validate_open(task: &domain::task::Task, jira: &JiraRead) -> Resul
     ) {
         return Err("open-delivery requires a needs-human hold".into());
     }
+    if task.spec.was_terminal || matches!(task.phase, Phase::Verified { .. } | Phase::Excluded(_)) {
+        return Err("terminal tasks cannot open another delivery".into());
+    }
     if !jira.member || jira.resolved || !jira.ownership_clear {
         return Err("fresh Jira read does not establish unresolved run ownership".into());
     }
@@ -270,22 +273,30 @@ pub(super) fn verify_proof(
             .map_err(|error| error.to_string())?;
         artifacts.insert(entry.artifact.clone(), digest);
     }
-    let baselines = match &task.phase {
-        Phase::Planned { work } | Phase::InFlight { work, .. } => work
-            .plan
-            .as_ref()
-            .map(|plan| plan.baselines.clone())
-            .unwrap_or_default(),
-        _ => BTreeMap::new(),
-    };
-    acceptance::complete(
-        &task.spec.criteria,
-        &delivery.proof,
-        snapshot,
-        &artifacts,
-        &baselines,
-    )
-    .map_err(|error| format!("acceptance failed: {error:?}"))
+    let baselines = delivery
+        .work
+        .as_ref()
+        .and_then(|work| work.plan.as_ref())
+        .map(|plan| plan.baselines.clone())
+        .unwrap_or_default();
+    let criteria = delivery
+        .criteria
+        .iter()
+        .map(|id| {
+            task.spec
+                .criteria
+                .iter()
+                .find(|criterion| criterion.id == *id)
+                .cloned()
+                .unwrap_or_else(|| domain::task::Criterion {
+                    id: id.clone(),
+                    text: "authorized narrowed criterion".into(),
+                    human_only: false,
+                })
+        })
+        .collect::<Vec<_>>();
+    acceptance::complete(&criteria, &delivery.proof, snapshot, &artifacts, &baselines)
+        .map_err(|error| format!("acceptance failed: {error:?}"))
 }
 
 pub(super) fn current_sync<'a>(task: &'a domain::task::Task, issue: &IssueKey) -> Option<&'a Sync> {

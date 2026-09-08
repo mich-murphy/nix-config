@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Review {
     pub launch: LaunchId,
     pub session: String,
@@ -19,6 +20,7 @@ pub struct Review {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Finding {
     pub id: FindingId,
     pub severity: Severity,
@@ -56,6 +58,7 @@ pub enum Verdict {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Disposition {
     pub decision: DispositionDecision,
     pub evidence: String,

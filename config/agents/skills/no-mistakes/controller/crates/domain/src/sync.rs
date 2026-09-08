@@ -31,7 +31,7 @@ pub struct StatusReceipt {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StatusFailure {
-    pub target: JiraStatus,
+    pub intent: StatusIntent,
     pub actual: JiraStatus,
     pub reason: String,
 }
@@ -62,10 +62,11 @@ pub fn observe(current: &Sync, status: JiraStatus, at: Instant) -> Result<Sync, 
             observed: at,
         })),
         Sync::Unknown(intent) => Ok(Sync::Failed(StatusFailure {
-            target: intent.target.clone(),
+            intent: intent.clone(),
             actual: status,
             reason: "target status was not observed".into(),
         })),
+        Sync::Confirmed(receipt) if status != receipt.status => Err(SyncError::StaleRead),
         Sync::Pending | Sync::Confirmed(_) | Sync::Failed(_) => {
             Ok(Sync::Confirmed(StatusReceipt {
                 status,
@@ -120,6 +121,45 @@ mod tests {
         let sync = observe(&Sync::Unknown(intent), status, 11)
             .map_err(|_| crate::ids::InvalidId("sync"))?;
         assert!(matches!(sync, Sync::Confirmed(_)));
+        Ok(())
+    }
+
+    #[test]
+    fn status_retry_is_bounded() -> Result<(), crate::ids::InvalidId> {
+        let mut retry = intent()?;
+        retry.attempts = 3;
+        assert_eq!(
+            intend(&Sync::Pending, retry),
+            Err(SyncError::RetryExhausted)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn stale_read_cannot_overwrite() -> Result<(), crate::ids::InvalidId> {
+        let done = JiraStatus::from_str("done")?;
+        let confirmed = Sync::Confirmed(StatusReceipt {
+            status: done,
+            observed: 20,
+        });
+        assert_eq!(
+            observe(&confirmed, JiraStatus::from_str("progress")?, 21),
+            Err(SyncError::StaleRead)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn ambiguous_transition_rejected() -> Result<(), crate::ids::InvalidId> {
+        let target = JiraStatus::from_str("done")?;
+        let choices = [
+            (TransitionId::from_str("1")?, target.clone()),
+            (TransitionId::from_str("2")?, target.clone()),
+        ];
+        assert_eq!(
+            transition(&target, &choices),
+            Err(SyncError::AmbiguousTransition)
+        );
         Ok(())
     }
 }

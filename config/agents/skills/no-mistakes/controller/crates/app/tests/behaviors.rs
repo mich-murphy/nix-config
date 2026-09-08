@@ -43,6 +43,9 @@ impl Vcs for Fake {
     fn changed_paths(&self, _base: &Sha, _head: &Sha) -> Result<Vec<String>, PortError> {
         Ok(Vec::new())
     }
+    fn changed_lines(&self, _base: &Sha, _head: &Sha) -> Result<u32, PortError> {
+        Ok(0)
+    }
     fn commit_paths(&self, _base: &Sha, _head: &Sha) -> Result<Vec<Vec<String>>, PortError> {
         Ok(Vec::new())
     }

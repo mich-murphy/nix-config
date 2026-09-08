@@ -59,12 +59,14 @@ pub enum Effort {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Assignment {
     pub model: ModelId,
     pub effort: Effort,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Model {
     pub rank: u32,
     #[serde(default)]
@@ -72,6 +74,7 @@ pub struct Model {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Profile {
     pub harness: HarnessConfig,
     pub models: BTreeMap<ModelId, Model>,
@@ -81,11 +84,13 @@ pub struct Profile {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct HarnessConfig {
     pub kind: HarnessKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TierProfiles {
     pub trivial: Roles,
     pub lite: Roles,
@@ -93,11 +98,13 @@ pub struct TierProfiles {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Escalation {
     pub reviewer: Assignment,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Roles {
     pub implementer: Assignment,
     pub reviewer: Assignment,

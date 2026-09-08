@@ -34,7 +34,24 @@ impl App<'_> {
                     Rejection::Invalid("unknown delivery".into()),
                 )
             })?;
-        acceptance::validate_batch(&entries, &value.spec.criteria).map_err(|error| {
+        let criteria = current
+            .criteria
+            .iter()
+            .map(|id| {
+                value
+                    .spec
+                    .criteria
+                    .iter()
+                    .find(|criterion| criterion.id == *id)
+                    .cloned()
+                    .unwrap_or(domain::task::Criterion {
+                        id: id.clone(),
+                        text: "authorized narrowed criterion".into(),
+                        human_only: false,
+                    })
+            })
+            .collect::<Vec<_>>();
+        acceptance::validate_batch(&entries, &criteria).map_err(|error| {
             self.error(
                 "record-proof",
                 Some(&task),

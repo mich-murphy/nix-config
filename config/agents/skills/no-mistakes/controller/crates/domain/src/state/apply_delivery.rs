@@ -1,14 +1,12 @@
 use super::State;
 use crate::{
-    acceptance::Snapshot,
     delivery::{DeliveryKind, Outcome},
     event::OperationStatus,
     ids::{FindingId, IssueKey, Sha, TaskId},
-    review::{Disposition, Verdict},
+    review::Disposition,
     sync::Sync,
     task::{Phase, Receipt, Task},
 };
-use std::collections::BTreeMap;
 
 pub(super) fn finish_launch(
     state: &mut State,
@@ -57,41 +55,13 @@ pub(super) fn settle_review(
     state: &mut State,
     task: &TaskId,
     delivery: crate::ids::DeliveryId,
-    launch: crate::ids::LaunchId,
-    findings: &[crate::review::Finding],
-    gaps: &[String],
-    verdict: Verdict,
+    review: &crate::review::Review,
 ) {
-    let snapshot = state.tasks.get(task).and_then(current_snapshot);
     with_task(state, task, |value| {
-        if let (Some(item), Some(snapshot)) = (
-            value.deliveries.iter_mut().find(|item| item.id == delivery),
-            snapshot,
-        ) {
-            item.review = Some(crate::review::Review {
-                launch,
-                session: String::new(),
-                snapshot,
-                findings: findings.to_vec(),
-                evidence_gaps: gaps.to_vec(),
-                reviewer_opinion: verdict,
-                verdict,
-                dispositions: BTreeMap::new(),
-            });
+        if let Some(item) = value.deliveries.iter_mut().find(|item| item.id == delivery) {
+            item.review = Some(review.clone());
         }
     });
-}
-
-pub(super) fn current_snapshot(task: &Task) -> Option<Snapshot> {
-    match &task.phase {
-        Phase::Planned { work } | Phase::InFlight { work, .. } => work.snapshot.clone(),
-        Phase::Merged { commit, .. } => Some(Snapshot {
-            base: commit.clone(),
-            head: commit.clone(),
-            requirements: task.spec.requirements.clone(),
-        }),
-        _ => None,
-    }
 }
 
 pub(super) fn disposition(
@@ -124,6 +94,17 @@ pub(super) fn narrow(
             item.criteria = criteria.to_vec();
             item.proof.entries.clear();
             item.review = None;
+            if let Some(work) = item.work.as_mut() {
+                work.plan = None;
+                work.snapshot = None;
+            }
+        }
+        match &mut value.phase {
+            Phase::Planned { work } | Phase::InFlight { work, .. } => {
+                work.plan = None;
+                work.snapshot = None;
+            }
+            _ => {}
         }
     });
 }

@@ -206,11 +206,11 @@ impl App<'_> {
             .tasks
             .get(&task)
             .is_some_and(|value| value.hold.is_some());
-        if !held || state.active.as_ref() != Some(&task) {
+        if !held || state.active.as_ref().is_some_and(|active| active != &task) {
             return Err(self.error(
                 "resume",
                 Some(&task),
-                Rejection::Conflict("task is not an active hold".into()),
+                Rejection::Conflict("task is not an available hold".into()),
             ));
         }
         self.commit(

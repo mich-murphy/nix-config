@@ -1,6 +1,6 @@
+use crate::delivery_support::verify_proof;
 use crate::task_support::{
-    assignment, guard_role, next_launch, pair_for, previous_session, previous_session_from_role,
-    review_target, task_ref,
+    assignment, guard_role, next_launch, pair_for, previous_session, review_target, task_ref,
 };
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
@@ -24,6 +24,13 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("run-agent")?;
         let value = task_ref(&state, &task, "run-agent", self)?;
+        if state.launches.iter().any(|launch| launch.session.is_none()) {
+            return Err(self.error(
+                "run-agent",
+                Some(&task),
+                Rejection::Conflict("settle the active launch first".into()),
+            ));
+        }
         let delivery = value.deliveries.last().ok_or_else(|| {
             self.error(
                 "run-agent",
@@ -34,6 +41,18 @@ impl App<'_> {
         guard_role(value, delivery, role).map_err(|message| {
             self.error("run-agent", Some(&task), Rejection::Conflict(message))
         })?;
+        if role != AgentRole::Implementer {
+            let snapshot = review_target(value, delivery).ok_or_else(|| {
+                self.error(
+                    "run-agent",
+                    Some(&task),
+                    Rejection::Evidence("review requires a snapshot".into()),
+                )
+            })?;
+            verify_proof(value, delivery, &snapshot).map_err(|message| {
+                self.error("run-agent", Some(&task), Rejection::Evidence(message))
+            })?;
+        }
         let (assignment, budget_kind) =
             assignment(&state, value.tier.current, role, fallback.as_ref()).map_err(|message| {
                 self.error("run-agent", Some(&task), Rejection::Invalid(message))
@@ -177,14 +196,18 @@ impl App<'_> {
                 Rejection::Evidence("review requires a snapshot".into()),
             )
         })?;
+        if review.launch != request.id || review.session != result.session {
+            return Err(self.error(
+                "run-agent",
+                Some(&task),
+                Rejection::Invalid("review launch or session does not match the harness".into()),
+            ));
+        }
         review.verdict =
             review::verdict(&review.findings, &review.evidence_gaps, value.tier.current);
-        review::validate(
-            &review,
-            &snapshot,
-            previous_session_from_role(value, AgentRole::Implementer).as_deref(),
-        )
-        .map_err(|error| {
+        let implementer =
+            previous_session_from_state(&self.state("run-agent")?, &task, AgentRole::Implementer);
+        review::validate(&review, &snapshot, implementer.as_deref()).map_err(|error| {
             self.error(
                 "run-agent",
                 Some(&task),
@@ -194,7 +217,7 @@ impl App<'_> {
         events.push(Event::LaunchEnded {
             launch: request.id,
             result: LaunchOutcome::Completed {
-                session: result.session,
+                session: result.session.clone(),
                 output: result.output.clone(),
             },
             usage: result.tokens,
@@ -202,10 +225,7 @@ impl App<'_> {
         events.push(Event::ReviewSettled {
             task: task.clone(),
             delivery,
-            launch: request.id,
-            findings: review.findings,
-            gaps: review.evidence_gaps,
-            verdict: review.verdict,
+            review: Box::new(review),
         });
         let records = self.write("run-agent", Some(&task), events, false)?;
         Ok(Output {
@@ -216,4 +236,12 @@ impl App<'_> {
             },
         })
     }
+}
+
+fn previous_session_from_state(
+    state: &domain::state::State,
+    task: &TaskId,
+    role: AgentRole,
+) -> Option<String> {
+    previous_session(state, task, role).filter(|session| !session.is_empty())
 }

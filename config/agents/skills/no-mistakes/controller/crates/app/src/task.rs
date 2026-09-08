@@ -247,6 +247,27 @@ impl App<'_> {
             .vcs
             .changed_paths(&work.base, &head)
             .map_err(|error| self.error("snapshot", Some(&task), Rejection::External(error.0)))?;
+        let lines = self
+            .services
+            .vcs
+            .changed_lines(&work.base, &head)
+            .map_err(|error| self.error("snapshot", Some(&task), Rejection::External(error.0)))?;
+        if delivery.paths.is_some() {
+            let commits = self
+                .services
+                .vcs
+                .commit_paths(&work.base, &head)
+                .map_err(|error| {
+                    self.error("snapshot", Some(&task), Rejection::External(error.0))
+                })?;
+            domain::delivery::paths_allow(delivery, &commits).map_err(|error| {
+                self.error(
+                    "snapshot",
+                    Some(&task),
+                    Rejection::Authority(format!("path scope rejected: {error:?}")),
+                )
+            })?;
+        }
         let snapshot = Snapshot {
             base: work.base.clone(),
             head,
@@ -256,7 +277,7 @@ impl App<'_> {
             task: task.clone(),
             delivery: delivery.id,
             snapshot,
-            lines: 0,
+            lines,
             files: paths.len() as u32,
         }];
         let signals = domain::risk::Signals {
@@ -274,7 +295,7 @@ impl App<'_> {
                 .filter(|criterion| criterion.human_only)
                 .count() as u32,
             dependencies: value.spec.dependencies.len() as u32,
-            lines: 0,
+            lines,
         };
         let tier = domain::risk::classify(&signals);
         if tier > value.tier.current {
