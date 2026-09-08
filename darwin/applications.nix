@@ -40,6 +40,7 @@
       "firefox"
       "google-chrome"
       "iina"
+      "plex"
       "slack"
       "microsoft-excel"
       "microsoft-powerpoint"
