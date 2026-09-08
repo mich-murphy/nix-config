@@ -3,6 +3,18 @@
 version = 4
 
 [[package]]
+name = "adapters"
+version = "0.2.0"
+dependencies = [
+ "domain",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"

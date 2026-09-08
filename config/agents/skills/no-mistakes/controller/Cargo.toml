@@ -35,8 +35,8 @@ excessive_nesting = "warn"
 too_many_lines = "warn"
 
 [workspace]
-members = ["crates/domain", "xtask"]
-default-members = [".", "crates/domain"]
+members = ["crates/adapters", "crates/domain", "xtask"]
+default-members = [".", "crates/adapters", "crates/domain"]
 resolver = "3"
 
 [workspace.package]
@@ -45,7 +45,9 @@ edition = "2024"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 sha2 = "0.10"
+rusqlite = { version = "0.38", features = ["bundled"] }
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

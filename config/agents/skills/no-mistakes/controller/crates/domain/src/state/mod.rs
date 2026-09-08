@@ -11,9 +11,10 @@ use crate::{
     risk::Profile,
     task::{Question, Task},
 };
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct State {
     pub config: Option<RunConfig>,
     pub profile: Option<Profile>,
