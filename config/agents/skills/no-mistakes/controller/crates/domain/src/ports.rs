@@ -28,6 +28,11 @@ pub struct ProcessIdentity {
 
 pub trait Clock {
     fn now(&self) -> Instant;
+
+    /// Blocks for `seconds` (a fake clock in tests advances its own time
+    /// instead of really sleeping). Used by a bounded wait such as
+    /// `poll-checks --wait` to poll without busy-looping.
+    fn sleep(&self, seconds: u64);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

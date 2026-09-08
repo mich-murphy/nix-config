@@ -41,7 +41,11 @@ fn prepared_external_merge() -> Result<(tempfile::TempDir, Fake), Box<dyn std::e
     let (directory, fake) = initialized_with(Fake {
         reserve: true,
         slot: domain::ports::SlotState::Missing,
-        observation: Some(merged),
+        observation: std::cell::RefCell::new(Some(merged)),
+        clock: std::cell::Cell::new(10),
+        head: std::cell::Cell::new('a'),
+        reviewer_output: std::cell::RefCell::new("done".into()),
+        pending_checks: std::cell::Cell::new(false),
     })?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     prepare(&mut app)?;

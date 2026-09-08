@@ -1,144 +1,33 @@
 #![allow(dead_code)]
 
 use adapters::Process;
-use app::{App, Services, initialize};
+use app::{App, ResultData, Services, initialize};
 use domain::{
+    acceptance::Snapshot,
     command::{
-        Command, DiscoveredTask, JiraConfig, ReviewMode, RiskConfig, RunConfig, StatusMap,
-        Transition,
+        Command, DiscoveredTask, JiraConfig, NextAction, ReviewMode, RiskConfig, RunConfig,
+        StatusMap, Transition,
     },
-    ids::{CriterionId, Digest, IssueKey, JiraStatus, ModelId, Sha, SlotId, TaskId, TransitionId},
-    ports::{
-        Capabilities, Clock, GitHub, Harness, Isolation, LaunchRequest, LaunchResult, MergeMethod,
-        PortError, StructuredOutput, Vcs,
+    ids::{
+        CriterionId, DeliveryId, Digest, IssueKey, JiraStatus, ModelId, Sha, SlotId, TaskId,
+        TransitionId,
     },
+    ports::PortError,
     risk::{
         Assignment, Effort, Escalation, HarnessConfig, HarnessKind, Model, Profile, Roles,
         TierProfiles,
     },
-    task::{Criterion, Plan, TaskSpec},
+    task::{Criterion, Plan, Task, TaskSpec},
 };
 use std::{collections::BTreeMap, path::Path, str::FromStr};
 
+mod fake;
+pub mod golden;
+pub mod literals;
 mod process;
+pub mod script;
 
-pub struct Fake {
-    pub reserve: bool,
-    pub slot: domain::ports::SlotState,
-    pub observation: Option<domain::delivery::PullRequest>,
-}
-
-impl Clock for Fake {
-    fn now(&self) -> u64 {
-        10
-    }
-}
-
-impl Vcs for Fake {
-    fn head(&self, _revision: &str) -> Result<Sha, PortError> {
-        sha('a')
-    }
-    fn on_main(&self, _commit: &Sha) -> Result<bool, PortError> {
-        Ok(true)
-    }
-    fn changed_paths(&self, _base: &Sha, _head: &Sha) -> Result<Vec<String>, PortError> {
-        Ok(Vec::new())
-    }
-    fn changed_lines(&self, _base: &Sha, _head: &Sha) -> Result<u32, PortError> {
-        Ok(0)
-    }
-    fn commit_paths(&self, _base: &Sha, _head: &Sha) -> Result<Vec<Vec<String>>, PortError> {
-        Ok(Vec::new())
-    }
-    fn ignored(&self, _path: &Path) -> Result<bool, PortError> {
-        Ok(true)
-    }
-    fn reserve(&self, _task: &TaskId) -> Result<bool, PortError> {
-        Ok(self.reserve)
-    }
-    fn inspect_slot(
-        &self,
-        _slot: &domain::ids::SlotId,
-    ) -> Result<domain::ports::SlotState, PortError> {
-        Ok(self.slot.clone())
-    }
-    fn bind_slot(
-        &self,
-        _task: &TaskId,
-        _slot: &domain::ids::SlotId,
-        _branch: &str,
-    ) -> Result<(), PortError> {
-        Ok(())
-    }
-    fn reuse_slot(&self, _slot: &domain::ids::SlotId, _branch: &str) -> Result<(), PortError> {
-        Ok(())
-    }
-    fn clean_slot(&self, _slot: &domain::ids::SlotId, _delete: bool) -> Result<(), PortError> {
-        Ok(())
-    }
-}
-
-impl GitHub for Fake {
-    fn create(
-        &self,
-        _title: &str,
-        _body: &Path,
-        _head: &Sha,
-    ) -> Result<domain::delivery::PullRequest, PortError> {
-        Err(PortError("unused".into()))
-    }
-    fn ready(
-        &self,
-        _number: domain::ids::PrNumber,
-        _head: &Sha,
-    ) -> Result<domain::delivery::PullRequest, PortError> {
-        Err(PortError("unused".into()))
-    }
-    fn merge(
-        &self,
-        _number: domain::ids::PrNumber,
-        _head: &Sha,
-        _method: MergeMethod,
-    ) -> Result<domain::delivery::PullRequest, PortError> {
-        Err(PortError("unused".into()))
-    }
-    fn observe(
-        &self,
-        _number: domain::ids::PrNumber,
-    ) -> Result<domain::delivery::PullRequest, PortError> {
-        self.observation
-            .clone()
-            .ok_or_else(|| PortError("unused".into()))
-    }
-}
-
-impl Harness for Fake {
-    fn kind(&self) -> HarnessKind {
-        HarnessKind::Pi
-    }
-    fn capabilities(&self) -> Capabilities {
-        Capabilities {
-            structured_output: StructuredOutput::SelfValidated,
-            isolation: Isolation::ToolRestriction,
-        }
-    }
-    fn run(
-        &self,
-        _request: &LaunchRequest,
-        started: &mut dyn FnMut(domain::ports::ProcessIdentity) -> Result<(), PortError>,
-    ) -> Result<LaunchResult, PortError> {
-        started(domain::ports::ProcessIdentity {
-            pid: 1,
-            start_ticks: 2,
-            group: 1,
-        })?;
-        Ok(LaunchResult {
-            session: "session-1".into(),
-            output: "done".into(),
-            tokens: None,
-        })
-    }
-}
+pub use fake::Fake;
 
 pub fn services_with_process<'a>(fake: &'a Fake, process: &'a dyn Process) -> Services<'a> {
     Services {
@@ -164,7 +53,11 @@ pub fn initialized() -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Er
     initialized_with(Fake {
         reserve: true,
         slot: domain::ports::SlotState::Missing,
-        observation: None,
+        observation: std::cell::RefCell::new(None),
+        clock: std::cell::Cell::new(10),
+        head: std::cell::Cell::new('a'),
+        reviewer_output: std::cell::RefCell::new("done".into()),
+        pending_checks: std::cell::Cell::new(false),
     })
 }
 
@@ -296,6 +189,68 @@ pub fn sha(seed: char) -> Result<Sha, PortError> {
     Sha::from_str(&seed.to_string().repeat(40)).map_err(|error| PortError(error.to_string()))
 }
 
+/// Writes `contents` to `path` and returns the digest a proof or authority
+/// receipt must be recorded against.
+pub fn write_artifact(
+    path: &std::path::Path,
+    contents: &str,
+) -> Result<Digest, Box<dyn std::error::Error>> {
+    use sha2::{Digest as _, Sha256};
+    std::fs::write(path, contents)?;
+    Ok(Digest::from_str(&format!(
+        "{:x}",
+        Sha256::digest(std::fs::read(path)?)
+    ))?)
+}
+
+/// Reads one task back through `Command::Status`, the public boundary
+/// tests assert at, instead of a nested `match` on `ResultData` at every
+/// call site.
+pub fn task_state(app: &mut App<'_>, task: &TaskId) -> Result<Task, Box<dyn std::error::Error>> {
+    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+        return Err("status returned wrong result".into());
+    };
+    state
+        .tasks
+        .get(task)
+        .cloned()
+        .ok_or_else(|| "task missing from status".into())
+}
+
+/// The current delivery's id and work snapshot, read back through
+/// `Command::Status`. Panics-free stand-in for the 40-field literal a test
+/// would otherwise need to track a delivery's state.
+pub fn current_delivery(
+    app: &mut App<'_>,
+    task: &TaskId,
+) -> Result<(DeliveryId, Snapshot), Box<dyn std::error::Error>> {
+    let state = task_state(app, task)?;
+    let delivery = state.deliveries.last().ok_or("delivery missing")?;
+    let work = delivery.work.as_ref().ok_or("delivery work missing")?;
+    Ok((
+        delivery.id,
+        work.snapshot.clone().ok_or("snapshot missing")?,
+    ))
+}
+
+/// Asserts that `Command::Next` currently yields the action `predicate`
+/// describes, failing with the actual action printed rather than a bare
+/// mismatch. This is the contract design Section 11 promises: the model
+/// never performs a step `next` did not just name.
+pub fn expect_next(
+    app: &mut App<'_>,
+    predicate: impl Fn(&NextAction) -> bool,
+) -> Result<NextAction, Box<dyn std::error::Error>> {
+    let ResultData::Next { next } = app.execute(Command::Next, false)?.result else {
+        return Err("next returned wrong result".into());
+    };
+    let envelope = next.ok_or("next returned no action")?;
+    if !predicate(&envelope.action) {
+        return Err(format!("unexpected next action: {:?}", envelope.action).into());
+    }
+    Ok(envelope.action)
+}
+
 pub fn prepare(app: &mut App<'_>) -> Result<(), Box<dyn std::error::Error>> {
     let task = TaskId::from_str("GAIN-2")?;
     discover_claim(app, &task)?;
@@ -349,7 +304,43 @@ pub fn sync_progress(app: &mut App<'_>, task: &TaskId) -> Result<(), Box<dyn std
     Ok(())
 }
 
-fn brief_bind_plan(app: &mut App<'_>, task: &TaskId) -> Result<(), Box<dyn std::error::Error>> {
+/// A generic Jira status round trip: `set-status` then `observe-status`,
+/// confirming `target` was reached via `transition`. `sync_progress` above
+/// is the fixed `todo` -> `progress` case every `prepare` needs; this is
+/// the same round trip for any other status (`review`, `done`, ...).
+pub fn sync_status(
+    app: &mut App<'_>,
+    task: &TaskId,
+    current: &str,
+    target: &str,
+    transition: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    app.execute(
+        Command::SetStatus {
+            task: task.clone(),
+            issue: IssueKey::from(task.clone()),
+            current: JiraStatus::from_str(current)?,
+            target: JiraStatus::from_str(target)?,
+            transitions: vec![Transition {
+                id: TransitionId::from_str(transition)?,
+                to: JiraStatus::from_str(target)?,
+            }],
+        },
+        false,
+    )?;
+    app.execute(
+        Command::ObserveStatus {
+            task: task.clone(),
+            issue: IssueKey::from(task.clone()),
+            status: JiraStatus::from_str(target)?,
+            evidence: "fresh connector read".into(),
+        },
+        false,
+    )?;
+    Ok(())
+}
+
+pub fn brief_bind_plan(app: &mut App<'_>, task: &TaskId) -> Result<(), Box<dyn std::error::Error>> {
     let criterion = CriterionId::from_str("AC1")?;
     app.execute(
         Command::Brief {

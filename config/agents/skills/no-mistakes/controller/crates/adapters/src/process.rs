@@ -1,11 +1,11 @@
 use domain::ports::{PortError, ProcessIdentity};
 use std::{
     collections::BTreeMap,
-    io::Write,
+    io::{Read, Write},
     os::unix::process::CommandExt,
     path::PathBuf,
     process::{Child, Command, Stdio},
-    thread,
+    thread::{self, JoinHandle},
     time::{Duration, Instant},
 };
 
@@ -157,33 +157,60 @@ fn wait(
     identity: ProcessIdentity,
     timeout: Duration,
 ) -> Result<ProcessOutput, PortError> {
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| PortError("child stdout unavailable".into()))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| PortError("child stderr unavailable".into()))?;
+    let stdout_reader = spawn_reader(stdout);
+    let stderr_reader = spawn_reader(stderr);
     let started = Instant::now();
-    loop {
-        if child
+    let status = loop {
+        if let Some(status) = child
             .try_wait()
             .map_err(|error| PortError(error.to_string()))?
-            .is_some()
         {
-            break;
+            break status;
         }
         if started.elapsed() >= timeout {
             terminate_group(identity.group)?;
             let _ = child.wait();
+            let _ = join_reader(stdout_reader);
+            let _ = join_reader(stderr_reader);
             return Err(PortError(format!(
                 "process timed out after {}s",
                 timeout.as_secs()
             )));
         }
         thread::sleep(Duration::from_millis(10));
-    }
-    let output = child
-        .wait_with_output()
-        .map_err(|error| PortError(error.to_string()))?;
+    };
+    let stdout_bytes = join_reader(stdout_reader)?;
+    let stderr_bytes = join_reader(stderr_reader)?;
     Ok(ProcessOutput {
-        code: output.status.code(),
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        code: status.code(),
+        stdout: String::from_utf8_lossy(&stdout_bytes).into_owned(),
+        stderr: String::from_utf8_lossy(&stderr_bytes).into_owned(),
     })
+}
+
+/// Drains a child pipe on its own thread so a full 64 KB buffer never blocks
+/// the child while we wait for it under a timeout.
+fn spawn_reader(mut pipe: impl Read + Send + 'static) -> JoinHandle<Result<Vec<u8>, PortError>> {
+    thread::spawn(move || {
+        let mut buffer = Vec::new();
+        pipe.read_to_end(&mut buffer)
+            .map_err(|error| PortError(error.to_string()))?;
+        Ok(buffer)
+    })
+}
+
+fn join_reader(handle: JoinHandle<Result<Vec<u8>, PortError>>) -> Result<Vec<u8>, PortError> {
+    handle
+        .join()
+        .map_err(|_| PortError("pipe reader thread panicked".into()))?
 }
 
 fn identity(pid: u32) -> Result<ProcessIdentity, PortError> {
@@ -270,6 +297,18 @@ mod tests {
             Err(error) => error,
         };
         assert!(error.0.contains("timed out"));
+        Ok(())
+    }
+
+    #[test]
+    fn large_output_does_not_deadlock() -> Result<(), PortError> {
+        let output = SystemProcess.run(&request(
+            "sh",
+            &["-c", "head -c 300000 /dev/zero | tr '\\0' a"],
+            5,
+        ))?;
+        assert_eq!(output.code, Some(0));
+        assert_eq!(output.stdout.len(), 300_000);
         Ok(())
     }
 

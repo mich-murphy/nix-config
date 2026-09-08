@@ -110,21 +110,24 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("plan")?;
         let value = task_ref(&state, &task, "plan", self)?;
-        let old = match &value.phase {
-            Phase::Planned { work } | Phase::InFlight { work, .. } => work.plan.as_ref(),
-            _ => {
-                return Err(self.error(
-                    "plan",
-                    Some(&task),
-                    Rejection::Conflict("bind a slot before planning".into()),
-                ));
-            }
-        };
-        if old.is_some_and(|old| old.baselines != plan.baselines) {
+        if !matches!(value.phase, Phase::Planned { .. } | Phase::InFlight { .. }) {
             return Err(self.error(
                 "plan",
                 Some(&task),
-                Rejection::Evidence("replanning cannot change baselines".into()),
+                Rejection::Conflict("bind a slot before planning".into()),
+            ));
+        }
+        let rewrites_fixed_baseline = value
+            .baselines
+            .iter()
+            .any(|(criterion, digest)| plan.baselines.get(criterion) != Some(digest));
+        if rewrites_fixed_baseline {
+            return Err(self.error(
+                "plan",
+                Some(&task),
+                Rejection::Evidence(
+                    "replanning cannot change baselines fixed for this task".into(),
+                ),
             ));
         }
         let feedback = selected_lessons(&state, &plan.lesson_families);
@@ -178,6 +181,7 @@ impl App<'_> {
             snapshot: None,
             plan: None,
             feedback: Vec::new(),
+            snapshot_launch: None,
         };
         let delivery = Delivery {
             id: next_delivery(value),
@@ -230,6 +234,7 @@ impl App<'_> {
                 Rejection::Conflict("task has no planned delivery".into()),
             )
         })?;
+        let previous_head = work.snapshot.as_ref().map(|snapshot| snapshot.head.clone());
         let head =
             self.services.vcs.head(&work.branch).map_err(|error| {
                 self.error("snapshot", Some(&task), Rejection::External(error.0))
@@ -245,6 +250,7 @@ impl App<'_> {
             .changed_lines(&work.base, &head)
             .map_err(|error| self.error("snapshot", Some(&task), Rejection::External(error.0)))?;
         validate_paths(self, &task, delivery, &work.base, &head)?;
+        let head_changed = previous_head.is_some_and(|previous| previous != head);
         let snapshot = Snapshot {
             base: work.base.clone(),
             head,
@@ -256,7 +262,15 @@ impl App<'_> {
             snapshot,
             lines,
             files: paths.len() as u32,
+            covers: state.checkpoints.get(&task).copied(),
         }];
+        if head_changed {
+            events.push(Event::ProofInvalidated {
+                task: task.clone(),
+                delivery: delivery.id,
+                cause: "head changed".into(),
+            });
+        }
         let signals = domain::risk::Signals {
             files: paths.len() as u32,
             sensitive_paths: sensitive_count(&state, &paths),

@@ -26,6 +26,14 @@ pub struct Task {
     pub authorities: Vec<Authority>,
     pub tier: TierState,
     pub subtasks: BTreeMap<IssueKey, Subtask>,
+    /// Set per criterion by the first `Planned` event that carries it and
+    /// immutable for that criterion afterwards: baselines belong to the
+    /// task, not to any one delivery's plan, so verification and follow-up
+    /// deliveries (which have no plan of their own) can still be verified
+    /// against them. A later `Planned` event may still add a baseline for a
+    /// criterion the task had none for yet (for example one a narrowing
+    /// introduced); it may never change one already recorded.
+    pub baselines: BTreeMap<CriterionId, Digest>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -85,6 +93,11 @@ pub struct PlannedWork {
     pub snapshot: Option<crate::acceptance::Snapshot>,
     pub plan: Option<Plan>,
     pub feedback: Vec<crate::command::Lesson>,
+    /// The latest implementer launch the current snapshot covers. `None`
+    /// means either no implementer launch has happened yet or the snapshot
+    /// is integration-only; either is a valid reason for a snapshot to exist
+    /// without one.
+    pub snapshot_launch: Option<crate::ids::LaunchId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

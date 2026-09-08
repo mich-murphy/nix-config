@@ -76,7 +76,11 @@ fn claim_excludes_other_runs() -> Result<(), Box<dyn std::error::Error>> {
     let (directory, fake) = initialized_with(Fake {
         reserve: false,
         slot: domain::ports::SlotState::Missing,
-        observation: None,
+        observation: std::cell::RefCell::new(None),
+        clock: std::cell::Cell::new(10),
+        head: std::cell::Cell::new('a'),
+        reviewer_output: std::cell::RefCell::new("done".into()),
+        pending_checks: std::cell::Cell::new(false),
     })?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     discover(&mut app, vec![task()?])?;

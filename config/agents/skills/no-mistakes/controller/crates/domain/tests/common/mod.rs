@@ -159,5 +159,6 @@ pub fn task() -> Task {
             history: Vec::new(),
         },
         subtasks: BTreeMap::new(),
+        baselines: BTreeMap::new(),
     }
 }

@@ -102,6 +102,7 @@ pub enum Event {
         snapshot: Snapshot,
         lines: u32,
         files: u32,
+        covers: Option<LaunchId>,
     },
     Checkpointed {
         task: TaskId,

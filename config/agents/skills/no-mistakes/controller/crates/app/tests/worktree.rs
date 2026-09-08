@@ -14,7 +14,11 @@ fn app_with_slot(slot: SlotState) -> Result<(tempfile::TempDir, Fake), Box<dyn s
     initialized_with(Fake {
         reserve: true,
         slot,
-        observation: None,
+        observation: std::cell::RefCell::new(None),
+        clock: std::cell::Cell::new(10),
+        head: std::cell::Cell::new('a'),
+        reviewer_output: std::cell::RefCell::new("done".into()),
+        pending_checks: std::cell::Cell::new(false),
     })
 }
 

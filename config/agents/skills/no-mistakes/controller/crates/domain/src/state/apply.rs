@@ -81,8 +81,9 @@ pub fn apply(state: &mut State, event: &Event) {
             task,
             delivery,
             snapshot: value,
+            covers,
             ..
-        } => snapshot(state, task, *delivery, value),
+        } => snapshot(state, task, *delivery, value, *covers),
         Event::Checkpointed {
             task,
             launch,

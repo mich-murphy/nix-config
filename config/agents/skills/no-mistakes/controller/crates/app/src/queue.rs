@@ -19,10 +19,11 @@ impl App<'_> {
     }
 
     pub(super) fn next(&self) -> Result<Output, AgentError> {
+        let now = self.services.clock.now();
         Ok(Output {
             events: Vec::new(),
             result: ResultData::Next {
-                next: self.state("next")?.next(),
+                next: self.state("next")?.next(now),
             },
         })
     }
@@ -120,10 +121,12 @@ impl App<'_> {
 
     pub(super) fn claim(&mut self, task: TaskId, check: bool) -> Result<Output, AgentError> {
         let state = self.state("claim")?;
-        let expected = state.next().and_then(|next| match next.action {
-            NextAction::Claim { task } => Some(task),
-            _ => None,
-        });
+        let expected = state
+            .next(self.services.clock.now())
+            .and_then(|next| match next.action {
+                NextAction::Claim { task } => Some(task),
+                _ => None,
+            });
         if expected.as_ref() != Some(&task) {
             return Err(self.error(
                 "claim",

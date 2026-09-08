@@ -323,12 +323,7 @@ pub(super) fn verify_proof(
             .map_err(|error| error.to_string())?;
         artifacts.insert(entry.artifact.clone(), digest);
     }
-    let baselines = delivery
-        .work
-        .as_ref()
-        .and_then(|work| work.plan.as_ref())
-        .map(|plan| plan.baselines.clone())
-        .unwrap_or_default();
+    let baselines = &task.baselines;
     let criteria = delivery
         .criteria
         .iter()
@@ -345,7 +340,7 @@ pub(super) fn verify_proof(
                 })
         })
         .collect::<Vec<_>>();
-    acceptance::complete(&criteria, &delivery.proof, snapshot, &artifacts, &baselines)
+    acceptance::complete(&criteria, &delivery.proof, snapshot, &artifacts, baselines)
         .map_err(|error| format!("acceptance failed: {error:?}"))
 }
 

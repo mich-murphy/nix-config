@@ -44,6 +44,7 @@ pub(super) fn apply_discovery(state: &mut State, tasks: &[DiscoveredTask], order
                     history: Vec::new(),
                 },
                 subtasks: BTreeMap::new(),
+                baselines: BTreeMap::new(),
             },
         );
     }
@@ -177,6 +178,7 @@ pub(super) fn bind(
         snapshot: None,
         plan: None,
         feedback: Vec::new(),
+        snapshot_launch: None,
     };
     with_task(state, task, |value| {
         if let Some(delivery) = value.deliveries.last_mut()
@@ -216,6 +218,12 @@ pub(super) fn plan(
             work.plan = Some(plan.clone());
             work.feedback = feedback.to_vec();
         }
+        for (criterion, digest) in &plan.baselines {
+            value
+                .baselines
+                .entry(criterion.clone())
+                .or_insert_with(|| digest.clone());
+        }
     });
 }
 
@@ -224,30 +232,40 @@ pub(super) fn snapshot(
     task: &TaskId,
     delivery: crate::ids::DeliveryId,
     snapshot: &Snapshot,
+    covers: Option<crate::ids::LaunchId>,
 ) {
     with_task(state, task, |value| {
         if let Some(item) = value.deliveries.iter_mut().find(|item| item.id == delivery) {
-            update_delivery_snapshot(item, snapshot);
+            update_delivery_snapshot(item, snapshot, covers);
         }
         match &mut value.phase {
             Phase::Planned { work } => {
                 work.snapshot = Some(snapshot.clone());
+                work.snapshot_launch = covers;
                 value.phase = Phase::InFlight {
                     work: work.clone(),
                     stage: WorkStage::Validating,
                 };
             }
-            Phase::InFlight { work, .. } => work.snapshot = Some(snapshot.clone()),
+            Phase::InFlight { work, .. } => {
+                work.snapshot = Some(snapshot.clone());
+                work.snapshot_launch = covers;
+            }
             _ => {}
         }
     });
     state.human_reviews.remove(task);
 }
 
-fn update_delivery_snapshot(delivery: &mut crate::delivery::Delivery, snapshot: &Snapshot) {
+fn update_delivery_snapshot(
+    delivery: &mut crate::delivery::Delivery,
+    snapshot: &Snapshot,
+    covers: Option<crate::ids::LaunchId>,
+) {
     delivery.review = None;
     if let Some(work) = delivery.work.as_mut() {
         work.snapshot = Some(snapshot.clone());
+        work.snapshot_launch = covers;
     }
 }
 

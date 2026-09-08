@@ -10,10 +10,12 @@ the smallest complete deliverable, expected files or directories, suitable local
 examples, and one baseline digest for each criterion. Name extra lesson families
 only when they apply.
 
-The first delivery fixes the task baseline. Later code or verification deliveries
-use current main for their review snapshot but keep the original criterion
-baselines. Replanning may change components or examples but cannot rewrite a
-starting condition. A plan change invalidates proof and review, not budgets.
+Each criterion's baseline is fixed the first time a plan carries it. Later code
+or verification deliveries use current main for their review snapshot but keep
+those fixed baselines. Replanning may change components or examples and add a
+baseline for a criterion that had none yet, such as one narrowing introduced,
+but cannot rewrite one already fixed. A plan change invalidates proof and
+review, not budgets.
 
 ## Checkpoints
 

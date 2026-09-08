@@ -56,6 +56,7 @@ pub(super) fn command_for(action: &NextAction) -> (String, Schema) {
             input("plan", task),
             vec![("plan", "baseline, deliverable, components and examples")],
         ),
+        NextAction::Snapshot { task } => (scalar("snapshot", task), vec![]),
         NextAction::Implement { task, .. } => agent(task, "implementer"),
         NextAction::Review { task, .. } => (
             input("run-agent", task),
@@ -114,6 +115,20 @@ pub(super) fn command_for(action: &NextAction) -> (String, Schema) {
             scalar("poll-checks", task),
             vec![("wait", "true to wait within the recorded deadline")],
         ),
+        NextAction::PollChecks { task, .. } => (
+            scalar("poll-checks", task),
+            vec![(
+                "wait",
+                "true to begin the bounded wait and record a deadline",
+            )],
+        ),
+        NextAction::Resume { task } => (
+            scalar("resume", task),
+            vec![(
+                "final_revisit",
+                "boolean, true only for the terminal revisit",
+            )],
+        ),
         NextAction::AwaitHumanReview { task, .. } => (
             input("human-review", task),
             vec![
@@ -133,10 +148,10 @@ pub(super) fn command_for(action: &NextAction) -> (String, Schema) {
             scalar("cleanup", task),
             vec![("delete", "boolean, false resets for reuse")],
         ),
-        NextAction::Hold { task, .. } => (
-            input("hold", task),
-            vec![("reason", "hold reason shown in the action")],
-        ),
+        // The task is already held (budget exhausted, PR superseded, or Jira
+        // sync failed twice); `hold` would be rejected as a repeat of an
+        // already-recorded hold. Report the standing hold instead.
+        NextAction::Hold { .. } => (plain("status"), vec![]),
         NextAction::OpenDelivery { task, .. } => (
             input("open-delivery", task),
             vec![
@@ -185,9 +200,17 @@ pub(super) fn template_for(action: &NextAction) -> Template {
             insert(&mut values, "deadline", &deadline.to_string());
             insert(&mut values, "wait", "true");
         }
+        NextAction::PollChecks { pr, .. } => {
+            insert(&mut values, "pr", &pr.0.to_string());
+            insert(&mut values, "wait", "true");
+        }
+        NextAction::Resume { .. } => insert(&mut values, "final_revisit", "false"),
         NextAction::FinalVerify { commit, .. } => insert(&mut values, "commit", commit.as_ref()),
         NextAction::Cleanup { slot, .. } => insert(&mut values, "slot", slot.as_ref()),
-        NextAction::SyncStatus { target, .. } => insert(&mut values, "target", target.as_ref()),
+        NextAction::SyncStatus { issue, target, .. } => {
+            insert(&mut values, "issue", issue.as_ref());
+            insert(&mut values, "target", target.as_ref());
+        }
         NextAction::ObserveStatus { issue, .. } => insert(&mut values, "issue", issue.as_ref()),
         NextAction::MonitorLaunch { launch } => {
             insert(&mut values, "launch", &launch.0.to_string())
@@ -206,6 +229,7 @@ pub(super) fn template_for(action: &NextAction) -> Template {
         | NextAction::Brief { .. }
         | NextAction::BindSlot { .. }
         | NextAction::Plan { .. }
+        | NextAction::Snapshot { .. }
         | NextAction::AwaitHumanReview { .. }
         | NextAction::Complete { .. } => {}
     }
@@ -220,6 +244,7 @@ fn action_task(action: &NextAction) -> Option<&TaskId> {
         | NextAction::Brief { task }
         | NextAction::BindSlot { task }
         | NextAction::Plan { task }
+        | NextAction::Snapshot { task }
         | NextAction::Implement { task, .. }
         | NextAction::Checkpoint { task, .. }
         | NextAction::RecordProof { task, .. }
@@ -229,6 +254,8 @@ fn action_task(action: &NextAction) -> Option<&TaskId> {
         | NextAction::ResolveGaps { task, .. }
         | NextAction::Publish { task, .. }
         | NextAction::AwaitChecks { task, .. }
+        | NextAction::PollChecks { task, .. }
+        | NextAction::Resume { task }
         | NextAction::AwaitHumanReview { task, .. }
         | NextAction::FinalVerify { task, .. }
         | NextAction::Complete { task }

@@ -2,6 +2,7 @@ mod common;
 
 use adapters::sqlite::Store;
 use app::{App, Rejection, ResultData};
+use common::literals::{criterion_id, digest, task_id};
 use common::*;
 use domain::{
     command::{AgentRole, Command},
@@ -149,6 +150,42 @@ fn replan_keeps_baseline() -> Result<(), Box<dyn std::error::Error>> {
             ..
         })
     ));
+    Ok(())
+}
+
+/// A re-plan that adds a baseline for a criterion the task never had one
+/// for (as `narrow-acceptance` would introduce) succeeds and the task keeps
+/// both the original and the new baseline; only rewriting an existing one
+/// is a rejection (`replan_keeps_baseline`, above).
+#[test]
+fn replan_adds_new_baseline() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    prepare(&mut app)?;
+    let task = task_id("GAIN-2");
+    let ac1 = criterion_id("AC1");
+    let stage1 = criterion_id("STAGE1");
+    let ac1_baseline = digest('b');
+    let stage1_baseline = digest('d');
+    app.execute(
+        Command::Plan {
+            task: task.clone(),
+            plan: Plan {
+                deliverable: "observable result".into(),
+                components: vec!["src".into()],
+                examples: Vec::new(),
+                baselines: BTreeMap::from([
+                    (ac1.clone(), ac1_baseline.clone()),
+                    (stage1.clone(), stage1_baseline.clone()),
+                ]),
+                lesson_families: vec!["controller".into()],
+            },
+        },
+        false,
+    )?;
+    let state = task_state(&mut app, &task)?;
+    assert_eq!(state.baselines.get(&ac1), Some(&ac1_baseline));
+    assert_eq!(state.baselines.get(&stage1), Some(&stage1_baseline));
     Ok(())
 }
 

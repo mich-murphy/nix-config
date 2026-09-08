@@ -1,5 +1,7 @@
 mod agent;
+mod agent_launch;
 mod agent_support;
+mod checks;
 mod delivery;
 mod delivery_support;
 mod error;
@@ -323,7 +325,8 @@ impl<'a> App<'a> {
         let phase = task
             .and_then(|id| state.as_ref()?.tasks.get(id))
             .map(|task| Box::new(task.phase.clone()));
-        let next = state.and_then(|value| value.next()).map(Box::new);
+        let now = self.services.clock.now();
+        let next = state.and_then(|value| value.next(now)).map(Box::new);
         AgentError {
             failed: failed.into(),
             phase,

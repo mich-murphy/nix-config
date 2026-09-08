@@ -165,7 +165,7 @@ fn readiness_is_free() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn malformed_review_is_free() -> Result<(), Box<dyn std::error::Error>> {
+fn malformed_review_fails_launch() -> Result<(), Box<dyn std::error::Error>> {
     let (directory, fake) = initialized()?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     prepare(&mut app)?;
@@ -187,11 +187,31 @@ fn malformed_review_is_free() -> Result<(), Box<dyn std::error::Error>> {
             ..
         })
     ));
-    match app.execute(Command::Status, false)?.result {
-        ResultData::State { state } => assert_eq!(state.tasks[&task].budgets.reviews, 0),
-        _ => return Err("status returned wrong result".into()),
-    }
+    let state = task_state(&mut app, &task)?;
+    assert_eq!(state.budgets.reviews, 1);
+    let launch = reviewer_launch(&mut app)?;
+    assert_eq!(launch.session.as_deref(), Some(""));
+    assert!(usage_recorded(&mut app, launch.id)?);
     Ok(())
+}
+
+fn reviewer_launch(app: &mut App<'_>) -> Result<domain::event::Launch, Box<dyn std::error::Error>> {
+    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+        return Err("status returned wrong result".into());
+    };
+    state
+        .launches
+        .iter()
+        .find(|launch| launch.role == AgentRole::Reviewer)
+        .cloned()
+        .ok_or_else(|| "reviewer launch missing".into())
+}
+
+fn usage_recorded(app: &mut App<'_>, launch: LaunchId) -> Result<bool, Box<dyn std::error::Error>> {
+    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+        return Err("status returned wrong result".into());
+    };
+    Ok(state.usage.contains_key(&launch))
 }
 
 #[test]
@@ -265,5 +285,23 @@ fn escalation_spends_both_budgets() -> Result<(), Box<dyn std::error::Error>> {
         true,
     )?;
     assert_eq!(spent_events(&output), 2);
+    Ok(())
+}
+
+#[test]
+fn head_change_invalidates_proof() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    prepare(&mut app)?;
+    proof_ready(&mut app, directory.path())?;
+    let task = TaskId::from_str("GAIN-2")?;
+    fake.head.set('b');
+    app.execute(Command::Snapshot { task: task.clone() }, false)?;
+    match app.execute(Command::Status, false)?.result {
+        ResultData::State { state } => {
+            assert!(state.tasks[&task].deliveries[0].proof.entries.is_empty());
+        }
+        _ => return Err("status returned wrong result".into()),
+    }
     Ok(())
 }

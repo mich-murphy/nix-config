@@ -87,7 +87,7 @@ fn new_proof_invalidates_review() {
 }
 
 #[test]
-fn head_change_invalidates_proof() {
+fn proof_invalidated_clears_entries() {
     let mut task = task();
     task.deliveries[0]
         .proof
