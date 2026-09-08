@@ -48,12 +48,7 @@ impl Process for SystemProcess {
             .spawn()
             .map_err(|error| PortError(error.to_string()))?;
         if let Some(input) = &request.stdin {
-            use std::io::Write;
-            let Some(mut pipe) = child.stdin.take() else {
-                return Err(PortError("child stdin unavailable".into()));
-            };
-            pipe.write_all(input.as_bytes())
-                .map_err(|error| PortError(error.to_string()))?;
+            write_stdin(&mut child, input)?;
         }
         let output = child
             .wait_with_output()
@@ -64,6 +59,16 @@ impl Process for SystemProcess {
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         })
     }
+}
+
+fn write_stdin(child: &mut std::process::Child, input: &str) -> Result<(), PortError> {
+    use std::io::Write;
+    let mut pipe = child
+        .stdin
+        .take()
+        .ok_or_else(|| PortError("child stdin unavailable".into()))?;
+    pipe.write_all(input.as_bytes())
+        .map_err(|error| PortError(error.to_string()))
 }
 
 pub fn success(output: ProcessOutput) -> Result<String, PortError> {

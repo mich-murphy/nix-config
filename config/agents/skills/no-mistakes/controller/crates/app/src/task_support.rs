@@ -201,9 +201,18 @@ pub(super) fn assignment(
     } else {
         BudgetKind::Review
     };
-    let Some(fallback) = fallback else {
-        return Ok((original.clone(), budget));
-    };
+    let selected = fallback.map_or_else(
+        || Ok(original.clone()),
+        |value| fallback_assignment(profile, original, value),
+    )?;
+    Ok((selected, budget))
+}
+
+fn fallback_assignment(
+    profile: &domain::risk::Profile,
+    original: &Assignment,
+    fallback: &Fallback,
+) -> Result<Assignment, String> {
     if fallback.reason.trim().is_empty() {
         return Err("fallback needs a reason".into());
     }
@@ -214,13 +223,10 @@ pub(super) fn assignment(
     if !model.fallback_for.contains(&original.model) {
         return Err("model is not an allowed fallback".into());
     }
-    Ok((
-        Assignment {
-            model: fallback.model.clone(),
-            effort: original.effort,
-        },
-        budget,
-    ))
+    Ok(Assignment {
+        model: fallback.model.clone(),
+        effort: original.effort,
+    })
 }
 
 pub(super) fn pair_for(
@@ -244,4 +250,44 @@ pub(super) fn previous_session(
         .rev()
         .find(|launch| launch.task == *task && launch.role == role)
         .and_then(|launch| launch.session.clone())
+}
+
+pub(super) fn bind_worktree(
+    app: &App<'_>,
+    task: &TaskId,
+    slot: &SlotId,
+    branch: &str,
+    check: bool,
+) -> Result<(), AgentError> {
+    if check {
+        return Ok(());
+    }
+    app.services
+        .vcs
+        .bind_slot(task, slot, branch)
+        .map_err(|error| app.error("bind-slot", Some(task), Rejection::External(error.0)))
+}
+
+pub(super) fn validate_paths(
+    app: &App<'_>,
+    task: &TaskId,
+    delivery: &Delivery,
+    base: &domain::ids::Sha,
+    head: &domain::ids::Sha,
+) -> Result<(), AgentError> {
+    if delivery.paths.is_none() {
+        return Ok(());
+    }
+    let commits = app
+        .services
+        .vcs
+        .commit_paths(base, head)
+        .map_err(|error| app.error("snapshot", Some(task), Rejection::External(error.0)))?;
+    domain::delivery::paths_allow(delivery, &commits).map_err(|error| {
+        app.error(
+            "snapshot",
+            Some(task),
+            Rejection::Authority(format!("path scope rejected: {error:?}")),
+        )
+    })
 }

@@ -93,14 +93,7 @@ fn parse(stream: &str) -> Result<LaunchResult, PortError> {
                     .and_then(Value::as_str)
                     .map(ToOwned::to_owned)
             }
-            Some("item.completed") => {
-                if value.pointer("/item/type").and_then(Value::as_str) == Some("agent_message") {
-                    output = value
-                        .pointer("/item/text")
-                        .and_then(Value::as_str)
-                        .map(ToOwned::to_owned);
-                }
-            }
+            Some("item.completed") => output = agent_message(&value).or(output),
             Some("turn.completed") => tokens = parse_tokens(value.get("usage")),
             _ => {}
         }
@@ -110,6 +103,13 @@ fn parse(stream: &str) -> Result<LaunchResult, PortError> {
         output: output.ok_or_else(|| PortError("Codex stream omitted final message".into()))?,
         tokens,
     })
+}
+
+fn agent_message(value: &Value) -> Option<String> {
+    (value.pointer("/item/type").and_then(Value::as_str) == Some("agent_message"))
+        .then(|| value.pointer("/item/text").and_then(Value::as_str))
+        .flatten()
+        .map(ToOwned::to_owned)
 }
 
 fn parse_tokens(value: Option<&Value>) -> Option<Tokens> {

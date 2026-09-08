@@ -1,13 +1,12 @@
-use crate::delivery_support::{
-    current_sync, get_task, next_operation, review_snapshot, verify_proof,
-};
-use crate::{AgentError, App, Output, Rejection, ResultData};
+use crate::delivery_support::{get_task, review_snapshot, verify_proof};
+use crate::task_support::digest_file;
+use crate::{AgentError, App, Output, Rejection};
 use domain::{
-    command::Transition,
+    command::RecoveryTarget,
     delivery::{self, DeliveryKind, Outcome},
-    event::{Event, Observation, OperationStatus},
-    ids::{IssueKey, JiraStatus, OperationId, Sha, TaskId},
-    sync::{self, Sync},
+    event::{Event, LaunchOutcome, Observation, OperationStatus},
+    ids::{OperationId, Sha, TaskId},
+    sync::Sync,
     task::Phase,
 };
 use std::path::PathBuf;
@@ -17,7 +16,7 @@ impl App<'_> {
         &mut self,
         task: TaskId,
         commit: Sha,
-        _evidence: PathBuf,
+        evidence: PathBuf,
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("final-verify")?;
@@ -31,23 +30,8 @@ impl App<'_> {
                 Rejection::Conflict("task has no delivery".into()),
             )
         })?;
-        let full = value
-            .spec
-            .criteria
-            .iter()
-            .map(|criterion| criterion.id.clone())
-            .collect::<Vec<_>>();
-        let accepted = delivery::accepts(delivery, &full)
-            || matches!(delivery.kind, DeliveryKind::Verification { .. })
-                && matches!(delivery.outcome, Outcome::Open)
-                && delivery::acceptance_ready(delivery, &full);
-        if !accepted {
-            return Err(self.error(
-                "final-verify",
-                Some(&task),
-                Rejection::Evidence("latest delivery lacks full criteria and PASS".into()),
-            ));
-        }
+        validate_acceptance(self, value, delivery, &task)?;
+        validate_final_artifact(self, &task, &evidence)?;
         let snapshot = review_snapshot(delivery).ok_or_else(|| {
             self.error(
                 "final-verify",
@@ -58,17 +42,7 @@ impl App<'_> {
         verify_proof(value, delivery, snapshot).map_err(|message| {
             self.error("final-verify", Some(&task), Rejection::Evidence(message))
         })?;
-        if snapshot.head != commit
-            || !self.services.vcs.on_main(&commit).map_err(|error| {
-                self.error("final-verify", Some(&task), Rejection::External(error.0))
-            })?
-        {
-            return Err(self.error(
-                "final-verify",
-                Some(&task),
-                Rejection::Evidence("exact reviewed head is not on main".into()),
-            ));
-        }
+        validate_main_head(self, &task, &snapshot.head, &commit)?;
         let mut events = Vec::new();
         if matches!(delivery.kind, DeliveryKind::Verification { .. }) {
             events.push(Event::DeliveryClosed {
@@ -141,14 +115,7 @@ impl App<'_> {
                     Rejection::Conflict("task has no owned slot".into()),
                 )
             })?;
-        if !check {
-            self.services
-                .vcs
-                .clean_slot(&slot, delete)
-                .map_err(|error| {
-                    self.error("cleanup", Some(&task), Rejection::External(error.0))
-                })?;
-        }
+        clean_slot(self, &task, &slot, delete, check)?;
         self.commit(
             "cleanup",
             Some(&task),
@@ -160,176 +127,177 @@ impl App<'_> {
         )
     }
 
-    pub(super) fn set_status(
-        &mut self,
-        task: TaskId,
-        issue: IssueKey,
-        current: JiraStatus,
-        target: JiraStatus,
-        transitions: Vec<Transition>,
-        check: bool,
-    ) -> Result<Output, AgentError> {
-        let state = self.state("set-status")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("set-status", Some(&task), Rejection::Invalid(message))
-        })?;
-        if target
-            == state
-                .config
-                .as_ref()
-                .map(|config| config.jira.statuses.done.clone())
-                .unwrap_or(current.clone())
-            && !matches!(value.phase, Phase::Verified { .. })
-        {
-            return Err(self.error(
-                "set-status",
-                Some(&task),
-                Rejection::Conflict("Jira Done requires verified delivery".into()),
-            ));
-        }
-        let pairs: Vec<_> = transitions
-            .iter()
-            .map(|entry| (entry.id.clone(), entry.to.clone()))
-            .collect();
-        let transition = sync::transition(&target, &pairs)
-            .map_err(|error| {
-                self.error(
-                    "set-status",
-                    Some(&task),
-                    Rejection::Invalid(format!("transition rejected: {error:?}")),
-                )
-            })?
-            .clone();
-        let current_sync = current_sync(value, &issue).ok_or_else(|| {
-            self.error(
-                "set-status",
-                Some(&task),
-                Rejection::Invalid("unrecorded subtask".into()),
-            )
-        })?;
-        let attempts = match current_sync {
-            Sync::Failed(failure) => failure.intent.attempts.saturating_add(1),
-            _ => 1,
-        };
-        let operation = next_operation(&state);
-        let intent = domain::sync::StatusIntent {
-            operation,
-            from: current.clone(),
-            target: target.clone(),
-            transition: transition.clone(),
-            attempts,
-            at: self.services.clock.now(),
-        };
-        sync::intend(current_sync, intent.clone()).map_err(|error| {
-            self.error(
-                "set-status",
-                Some(&task),
-                Rejection::Conflict(format!("status intent rejected: {error:?}")),
-            )
-        })?;
-        let events = vec![Event::StatusIntended {
-            task: task.clone(),
-            issue,
-            current,
-            target,
-            transition: transition.clone(),
-            operation,
-            attempts,
-            at: intent.at,
-        }];
-        let mut output = self.commit("set-status", Some(&task), events, check)?;
-        output.result = ResultData::Transition { transition };
-        Ok(output)
-    }
-
-    pub(super) fn observe_status(
-        &mut self,
-        task: TaskId,
-        issue: IssueKey,
-        status: JiraStatus,
-        evidence: String,
-        check: bool,
-    ) -> Result<Output, AgentError> {
-        let state = self.state("observe-status")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("observe-status", Some(&task), Rejection::Invalid(message))
-        })?;
-        if evidence.trim().is_empty() {
-            return Err(self.error(
-                "observe-status",
-                Some(&task),
-                Rejection::Invalid("fresh observation evidence is required".into()),
-            ));
-        }
-        let current = current_sync(value, &issue).ok_or_else(|| {
-            self.error(
-                "observe-status",
-                Some(&task),
-                Rejection::Invalid("unrecorded subtask".into()),
-            )
-        })?;
-        let observed =
-            sync::observe(current, status.clone(), self.services.clock.now()).map_err(|error| {
-                self.error(
-                    "observe-status",
-                    Some(&task),
-                    Rejection::Conflict(format!("observation rejected: {error:?}")),
-                )
-            })?;
-        self.commit(
-            "observe-status",
-            Some(&task),
-            vec![Event::StatusObserved {
-                task: task.clone(),
-                issue,
-                read: status,
-                sync: observed,
-            }],
-            check,
-        )
-    }
-
     pub(super) fn recover_operation(
         &mut self,
-        operation: OperationId,
+        target: RecoveryTarget,
         terminate: bool,
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("recover-operation")?;
-        let item = state
-            .operations
-            .iter()
-            .find(|item| item.id == operation)
-            .ok_or_else(|| {
-                self.error(
+        match target {
+            RecoveryTarget::Launch { launch } => {
+                let task = unsettled_launch(self, &state, launch, terminate)?;
+                self.commit(
                     "recover-operation",
-                    None,
-                    Rejection::Invalid("unknown operation".into()),
+                    Some(&task),
+                    vec![Event::LaunchEnded {
+                        launch,
+                        result: LaunchOutcome::Cancelled,
+                        usage: None,
+                    }],
+                    check,
                 )
-            })?;
-        if !matches!(
-            item.status,
-            OperationStatus::Running | OperationStatus::Unknown
-        ) || !terminate
-        {
-            return Err(self.error(
-                "recover-operation",
-                Some(&item.task),
-                Rejection::Conflict("recovery requires an unsettled terminated operation".into()),
-            ));
+            }
+            RecoveryTarget::Operation { operation } => {
+                let task = unsettled_operation(self, &state, operation, terminate)?;
+                self.commit(
+                    "recover-operation",
+                    Some(&task),
+                    vec![Event::OperationSettled {
+                        operation,
+                        status: OperationStatus::Failed,
+                        observation: Observation::Failure {
+                            reason: "owned operation terminated".into(),
+                        },
+                    }],
+                    check,
+                )
+            }
         }
-        let task = item.task.clone();
-        self.commit(
-            "recover-operation",
-            Some(&task),
-            vec![Event::OperationSettled {
-                operation,
-                status: OperationStatus::Failed,
-                observation: Observation::Failure {
-                    reason: "owned operation terminated".into(),
-                },
-            }],
-            check,
-        )
     }
+}
+
+fn validate_acceptance(
+    app: &App<'_>,
+    task: &domain::task::Task,
+    delivery: &domain::delivery::Delivery,
+    id: &TaskId,
+) -> Result<(), AgentError> {
+    let full = task
+        .spec
+        .criteria
+        .iter()
+        .map(|criterion| criterion.id.clone())
+        .collect::<Vec<_>>();
+    let accepted = delivery::accepts(delivery, &full)
+        || matches!(delivery.kind, DeliveryKind::Verification { .. })
+            && matches!(delivery.outcome, Outcome::Open)
+            && delivery::acceptance_ready(delivery, &full);
+    if accepted {
+        Ok(())
+    } else {
+        Err(app.error(
+            "final-verify",
+            Some(id),
+            Rejection::Evidence("latest delivery lacks full criteria and PASS".into()),
+        ))
+    }
+}
+
+fn validate_final_artifact(
+    app: &App<'_>,
+    task: &TaskId,
+    evidence: &std::path::Path,
+) -> Result<(), AgentError> {
+    digest_file(evidence)
+        .map(|_| ())
+        .map_err(|message| app.error("final-verify", Some(task), Rejection::Evidence(message)))
+}
+
+fn validate_main_head(
+    app: &App<'_>,
+    task: &TaskId,
+    reviewed: &Sha,
+    commit: &Sha,
+) -> Result<(), AgentError> {
+    let on_main = app
+        .services
+        .vcs
+        .on_main(commit)
+        .map_err(|error| app.error("final-verify", Some(task), Rejection::External(error.0)))?;
+    if reviewed == commit && on_main {
+        Ok(())
+    } else {
+        Err(app.error(
+            "final-verify",
+            Some(task),
+            Rejection::Evidence("exact reviewed head is not on main".into()),
+        ))
+    }
+}
+
+fn unsettled_launch(
+    app: &App<'_>,
+    state: &domain::state::State,
+    launch: domain::ids::LaunchId,
+    terminate: bool,
+) -> Result<TaskId, AgentError> {
+    let item = state
+        .launches
+        .iter()
+        .find(|item| item.id == launch)
+        .ok_or_else(|| {
+            app.error(
+                "recover-operation",
+                None,
+                Rejection::Invalid("unknown launch".into()),
+            )
+        })?;
+    if item.session.is_none() && terminate {
+        Ok(item.task.clone())
+    } else {
+        Err(app.error(
+            "recover-operation",
+            Some(&item.task),
+            Rejection::Conflict("recovery requires an unsettled terminated launch".into()),
+        ))
+    }
+}
+
+fn unsettled_operation(
+    app: &App<'_>,
+    state: &domain::state::State,
+    operation: OperationId,
+    terminate: bool,
+) -> Result<TaskId, AgentError> {
+    let item = state
+        .operations
+        .iter()
+        .find(|item| item.id == operation)
+        .ok_or_else(|| {
+            app.error(
+                "recover-operation",
+                None,
+                Rejection::Invalid("unknown operation".into()),
+            )
+        })?;
+    let unsettled = matches!(
+        item.status,
+        OperationStatus::Running | OperationStatus::Unknown
+    );
+    if unsettled && terminate {
+        Ok(item.task.clone())
+    } else {
+        Err(app.error(
+            "recover-operation",
+            Some(&item.task),
+            Rejection::Conflict("recovery requires an unsettled terminated operation".into()),
+        ))
+    }
+}
+
+fn clean_slot(
+    app: &App<'_>,
+    task: &TaskId,
+    slot: &domain::ids::SlotId,
+    delete: bool,
+    check: bool,
+) -> Result<(), AgentError> {
+    if check {
+        return Ok(());
+    }
+    app.services
+        .vcs
+        .clean_slot(slot, delete)
+        .map_err(|error| app.error("cleanup", Some(task), Rejection::External(error.0)))
 }

@@ -284,6 +284,29 @@ fn command_returns_events() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn next_fills_command_and_schema() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    app.execute(
+        Command::Discover {
+            tasks: vec![task()?],
+            planning_order: None,
+        },
+        false,
+    )?;
+    let output = app.execute(Command::Next, false)?;
+    match output.result {
+        ResultData::Next { next: Some(next) } => {
+            assert!(next.command.contains("controller claim GAIN-2"));
+            assert!(next.schema.required.contains(&"run".to_owned()));
+            assert!(!next.schema.properties.is_empty());
+        }
+        _ => return Err("next returned no action".into()),
+    }
+    Ok(())
+}
+
+#[test]
 fn refresh_accepts_delta() -> Result<(), Box<dyn std::error::Error>> {
     let (directory, fake) = initialized()?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));

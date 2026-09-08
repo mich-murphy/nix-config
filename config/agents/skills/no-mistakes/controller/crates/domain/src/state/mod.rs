@@ -1,6 +1,7 @@
 mod apply;
 mod apply_delivery;
 mod next;
+mod projection;
 
 use crate::{
     acceptance::Snapshot,
@@ -15,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct State {
     pub config: Option<RunConfig>,
     pub profile: Option<Profile>,
@@ -24,6 +26,7 @@ pub struct State {
     pub questions: Vec<Question>,
     pub active: Option<TaskId>,
     pub launches: Vec<Launch>,
+    pub checkpoints: BTreeMap<TaskId, LaunchId>,
     pub usage: BTreeMap<LaunchId, Option<crate::ports::Tokens>>,
     pub operations: Vec<Operation>,
     pub lessons: Vec<(TaskId, Lesson)>,
@@ -44,6 +47,7 @@ impl State {
             questions: Vec::new(),
             active: None,
             launches: Vec::new(),
+            checkpoints: BTreeMap::new(),
             usage: BTreeMap::new(),
             operations: Vec::new(),
             lessons: Vec::new(),

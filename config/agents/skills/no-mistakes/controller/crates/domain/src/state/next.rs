@@ -1,8 +1,11 @@
+mod format;
+
+use self::format::command_for;
 use super::State;
 use crate::{
     acceptance::Snapshot,
     budget::{self, BudgetKind},
-    command::{ActionEnvelope, NextAction, PublishStep, serde_placeholder::Schema},
+    command::{ActionEnvelope, NextAction, PublishStep},
     delivery::{DeliveryKind, PrState},
     event::OperationStatus,
     ids::{FindingId, IssueKey, TaskId},
@@ -10,20 +13,16 @@ use crate::{
     sync::Sync,
     task::{Phase, Task, WorkStage},
 };
-use std::collections::BTreeMap;
 
 impl State {
     #[must_use]
     pub fn next(&self) -> Option<ActionEnvelope> {
         let action = self.choose_action()?;
-        let command = command_for(&action).to_owned();
+        let (command, schema) = command_for(&action);
         Some(ActionEnvelope {
             action,
             command,
-            schema: Schema {
-                required: Vec::new(),
-                properties: BTreeMap::new(),
-            },
+            schema,
         })
     }
 
@@ -47,13 +46,30 @@ impl State {
                 operation: operation.id,
             });
         }
-        if let Some(task_id) = &self.active {
-            return self
-                .tasks
-                .get(task_id)
-                .and_then(|task| self.task_action(task));
+        self.active
+            .as_ref()
+            .map_or_else(|| self.queue_action(), |task| self.active_action(task))
+    }
+
+    fn active_action(&self, task: &TaskId) -> Option<NextAction> {
+        if let Some(launch) = self.pending_checkpoint(task) {
+            return Some(NextAction::Checkpoint {
+                task: task.clone(),
+                launch,
+            });
         }
-        self.queue_action()
+        self.tasks
+            .get(task)
+            .and_then(|value| self.task_action(value))
+    }
+
+    fn pending_checkpoint(&self, task: &TaskId) -> Option<crate::ids::LaunchId> {
+        let latest = self.launches.iter().rev().find(|launch| {
+            launch.task == *task
+                && launch.role == crate::command::AgentRole::Implementer
+                && launch.session.is_some()
+        })?;
+        (self.checkpoints.get(task) != Some(&latest.id)).then_some(latest.id)
     }
 
     fn queue_action(&self) -> Option<NextAction> {
@@ -99,23 +115,7 @@ impl State {
         match &task.phase {
             Phase::Queued | Phase::Blocked(_) | Phase::NeedsInput(_) | Phase::Excluded(_) => None,
             Phase::Claimed => Some(self.claimed_action(task)),
-            Phase::Planned { work } => {
-                if work.plan.is_none() {
-                    Some(NextAction::Plan {
-                        task: task.id.clone(),
-                    })
-                } else {
-                    Some(NextAction::Implement {
-                        task: task.id.clone(),
-                        remaining_turns: budget::remaining(
-                            BudgetKind::Implementation,
-                            &task.budgets,
-                            task.tier.current,
-                            &task.authorities,
-                        ),
-                    })
-                }
-            }
+            Phase::Planned { work } => Some(planned_action(task, work)),
             Phase::InFlight { work, stage } => {
                 self.in_flight_action(task, work.snapshot.as_ref(), stage)
             }
@@ -135,15 +135,7 @@ impl State {
                 issue: IssueKey::from(task.id.clone()),
             },
             (Sync::Confirmed(receipt), Some(target)) if receipt.status == target => {
-                if task.spec.criteria.is_empty() {
-                    NextAction::Brief {
-                        task: task.id.clone(),
-                    }
-                } else {
-                    NextAction::BindSlot {
-                        task: task.id.clone(),
-                    }
-                }
+                claimed_ready(task)
             }
             (_, Some(target)) => NextAction::SyncStatus {
                 task: task.id.clone(),
@@ -226,29 +218,10 @@ impl State {
 
     fn merged_action(&self, task: &Task, commit: &crate::ids::Sha) -> Option<NextAction> {
         let delivery = task.deliveries.last()?;
-        if matches!(delivery.kind, DeliveryKind::Verification { .. }) {
-            if delivery.proof.entries.len() < delivery.criteria.len() {
-                let missing = delivery
-                    .criteria
-                    .iter()
-                    .filter(|id| !delivery.proof.entries.contains_key(*id))
-                    .cloned()
-                    .collect();
-                return Some(NextAction::RecordProof {
-                    task: task.id.clone(),
-                    missing,
-                });
-            }
-            if delivery.review.is_none() {
-                return Some(NextAction::Review {
-                    task: task.id.clone(),
-                    snapshot: Snapshot {
-                        base: commit.clone(),
-                        head: commit.clone(),
-                        requirements: task.spec.requirements.clone(),
-                    },
-                });
-            }
+        if matches!(delivery.kind, DeliveryKind::Verification { .. })
+            && let Some(action) = verification_action(task, delivery, commit)
+        {
+            return Some(action);
         }
         Some(NextAction::FinalVerify {
             task: task.id.clone(),
@@ -270,6 +243,63 @@ impl State {
                 slot: work.slot.slot.clone(),
             })
     }
+}
+
+fn planned_action(task: &Task, work: &crate::task::PlannedWork) -> NextAction {
+    if work.plan.is_none() {
+        NextAction::Plan {
+            task: task.id.clone(),
+        }
+    } else {
+        NextAction::Implement {
+            task: task.id.clone(),
+            remaining_turns: budget::remaining(
+                BudgetKind::Implementation,
+                &task.budgets,
+                task.tier.current,
+                &task.authorities,
+            ),
+        }
+    }
+}
+
+fn claimed_ready(task: &Task) -> NextAction {
+    if task.spec.criteria.is_empty() {
+        NextAction::Brief {
+            task: task.id.clone(),
+        }
+    } else {
+        NextAction::BindSlot {
+            task: task.id.clone(),
+        }
+    }
+}
+
+fn verification_action(
+    task: &Task,
+    delivery: &crate::delivery::Delivery,
+    commit: &crate::ids::Sha,
+) -> Option<NextAction> {
+    let missing = delivery
+        .criteria
+        .iter()
+        .filter(|id| !delivery.proof.entries.contains_key(*id))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !missing.is_empty() {
+        return Some(NextAction::RecordProof {
+            task: task.id.clone(),
+            missing,
+        });
+    }
+    delivery.review.is_none().then(|| NextAction::Review {
+        task: task.id.clone(),
+        snapshot: Snapshot {
+            base: commit.clone(),
+            head: commit.clone(),
+            requirements: task.spec.requirements.clone(),
+        },
+    })
 }
 
 fn publish_action(task: &Task, delivery: &crate::delivery::Delivery) -> Option<NextAction> {
@@ -337,36 +367,4 @@ fn unfinished_pr(task: &Task) -> bool {
 
 fn terminal(phase: &Phase) -> bool {
     matches!(phase, Phase::Verified { .. } | Phase::Excluded(_))
-}
-
-fn command_for(action: &NextAction) -> &'static str {
-    match action {
-        NextAction::Claim { .. } => "claim",
-        NextAction::RecoverUnfinished { .. }
-        | NextAction::Report { .. }
-        | NextAction::AnswerQuestions { .. } => "status",
-        NextAction::MonitorLaunch { .. } | NextAction::SettleOperation { .. } => {
-            "recover-operation"
-        }
-        NextAction::SyncStatus { .. } => "set-status",
-        NextAction::ObserveStatus { .. } => "observe-status",
-        NextAction::Brief { .. } => "brief",
-        NextAction::BindSlot { .. } => "bind-slot",
-        NextAction::Plan { .. } => "plan",
-        NextAction::Implement { .. }
-        | NextAction::Review { .. }
-        | NextAction::Repair { .. }
-        | NextAction::ResolveGaps { .. } => "run-agent",
-        NextAction::Checkpoint { .. } => "checkpoint",
-        NextAction::RecordProof { .. } => "record-proof",
-        NextAction::Disposition { .. } => "disposition",
-        NextAction::Publish { .. } => "publish",
-        NextAction::AwaitChecks { .. } => "poll-checks",
-        NextAction::AwaitHumanReview { .. } => "human-review",
-        NextAction::FinalVerify { .. } => "final-verify",
-        NextAction::Complete { .. } => "complete",
-        NextAction::Cleanup { .. } => "cleanup",
-        NextAction::Hold { .. } => "hold",
-        NextAction::OpenDelivery { .. } => "open-delivery",
-    }
 }

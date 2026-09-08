@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Task {
     pub id: TaskId,
     pub spec: TaskSpec,
@@ -76,6 +77,7 @@ pub enum Phase {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PlannedWork {
     pub slot: SlotBinding,
     pub branch: String,
@@ -95,6 +97,7 @@ pub struct Plan {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SlotBinding {
     pub slot: SlotId,
     pub origin: SlotOrigin,
@@ -122,12 +125,14 @@ pub enum WorkStage {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Hold {
     pub since: Instant,
     pub reason: HoldReason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub enum HoldReason {
     CiPending {
         pr: PrNumber,
@@ -151,6 +156,7 @@ pub enum BlockReason {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Question {
     pub task: Option<TaskId>,
     pub text: String,
@@ -169,6 +175,7 @@ pub enum Receipt {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Subtask {
     pub criteria: Vec<CriterionId>,
     pub owned: bool,

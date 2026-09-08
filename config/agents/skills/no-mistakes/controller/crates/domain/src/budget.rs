@@ -16,6 +16,7 @@ pub enum BudgetKind {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Budgets {
     pub implementation_turns: u32,
     pub stalled_checkpoints: u32,
@@ -26,6 +27,7 @@ pub struct Budgets {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Limits {
     pub implementation: u32,
     pub stalled: u32,
@@ -117,7 +119,10 @@ const fn spent(budgets: &Budgets, kind: BudgetKind) -> u32 {
 }
 
 fn grants_counted_pair(authority: &Authority, kind: BudgetKind) -> bool {
-    let pair_kind = matches!(kind, BudgetKind::Implementation | BudgetKind::Review);
+    let pair_kind = matches!(
+        kind,
+        BudgetKind::Implementation | BudgetKind::Repair | BudgetKind::Review
+    );
     let unscoped = match &authority.grant {
         Grant::Pair { paths } | Grant::Delivery { paths, .. } => paths.is_none(),
         Grant::Narrowing { .. } | Grant::SlotReuse { .. } => false,

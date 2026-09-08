@@ -1,10 +1,12 @@
 use crate::task_support::{
-    current_work_delivery, digest_json, next_delivery, sensitive_count, task_ref, validate_slot,
+    bind_worktree, current_work_delivery, digest_json, next_delivery, sensitive_count, task_ref,
+    validate_paths, validate_slot,
 };
 use crate::{AgentError, App, Output, Rejection};
 use domain::{
     acceptance::{self, Snapshot},
     budget::BudgetKind,
+    command::AgentRole,
     delivery::{Delivery, DeliveryKind, Outcome},
     event::Event,
     ids::{AuthorityId, CriterionId, IssueKey, JiraStatus, SlotId, TaskId},
@@ -118,6 +120,30 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("checkpoint")?;
         let value = task_ref(&state, &task, "checkpoint", self)?;
+        let launch = state
+            .launches
+            .iter()
+            .rev()
+            .find(|launch| {
+                launch.task == task
+                    && launch.role == AgentRole::Implementer
+                    && launch.session.is_some()
+            })
+            .map(|launch| launch.id)
+            .ok_or_else(|| {
+                self.error(
+                    "checkpoint",
+                    Some(&task),
+                    Rejection::Conflict("checkpoint requires a terminal implementer turn".into()),
+                )
+            })?;
+        if state.checkpoints.get(&task) == Some(&launch) {
+            return Err(self.error(
+                "checkpoint",
+                Some(&task),
+                Rejection::Conflict("implementation turn is already checkpointed".into()),
+            ));
+        }
         if !input.outside_paths.is_empty()
             && input.scope_reason.as_deref().is_none_or(str::is_empty)
         {
@@ -134,6 +160,7 @@ impl App<'_> {
         };
         let mut events = vec![Event::Checkpointed {
             task: task.clone(),
+            launch,
             advanced: input.advanced,
             stalled,
             observation: input.observation,
@@ -173,14 +200,7 @@ impl App<'_> {
             self.services.vcs.head("origin/main").map_err(|error| {
                 self.error("bind-slot", Some(&task), Rejection::External(error.0))
             })?;
-        if !check {
-            self.services
-                .vcs
-                .bind_slot(&task, &slot, &branch)
-                .map_err(|error| {
-                    self.error("bind-slot", Some(&task), Rejection::External(error.0))
-                })?;
-        }
+        bind_worktree(self, &task, &slot, &branch, check)?;
         let binding = SlotBinding {
             slot,
             origin: authority.map_or(SlotOrigin::Fresh, |authority| SlotOrigin::Reused {
@@ -252,22 +272,7 @@ impl App<'_> {
             .vcs
             .changed_lines(&work.base, &head)
             .map_err(|error| self.error("snapshot", Some(&task), Rejection::External(error.0)))?;
-        if delivery.paths.is_some() {
-            let commits = self
-                .services
-                .vcs
-                .commit_paths(&work.base, &head)
-                .map_err(|error| {
-                    self.error("snapshot", Some(&task), Rejection::External(error.0))
-                })?;
-            domain::delivery::paths_allow(delivery, &commits).map_err(|error| {
-                self.error(
-                    "snapshot",
-                    Some(&task),
-                    Rejection::Authority(format!("path scope rejected: {error:?}")),
-                )
-            })?;
-        }
+        validate_paths(self, &task, delivery, &work.base, &head)?;
         let snapshot = Snapshot {
             base: work.base.clone(),
             head,

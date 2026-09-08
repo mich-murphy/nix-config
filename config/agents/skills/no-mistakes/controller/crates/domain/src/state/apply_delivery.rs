@@ -31,15 +31,20 @@ pub(super) fn record_proof(
 ) {
     with_task(state, task, |value| {
         if let Some(item) = value.deliveries.iter_mut().find(|item| item.id == delivery) {
-            for entry in entries {
-                item.proof
-                    .entries
-                    .insert(entry.criterion.clone(), entry.clone());
-            }
-            item.review = None;
+            add_proof(item, entries);
         }
     });
     state.human_reviews.remove(task);
+}
+
+fn add_proof(delivery: &mut crate::delivery::Delivery, entries: &[crate::acceptance::ProofEntry]) {
+    for entry in entries {
+        delivery
+            .proof
+            .entries
+            .insert(entry.criterion.clone(), entry.clone());
+    }
+    delivery.review = None;
 }
 
 pub(super) fn invalidate_proof(state: &mut State, task: &TaskId, delivery: crate::ids::DeliveryId) {
@@ -94,10 +99,7 @@ pub(super) fn narrow(
             item.criteria = criteria.to_vec();
             item.proof.entries.clear();
             item.review = None;
-            if let Some(work) = item.work.as_mut() {
-                work.plan = None;
-                work.snapshot = None;
-            }
+            clear_delivery_plan(item);
         }
         match &mut value.phase {
             Phase::Planned { work } | Phase::InFlight { work, .. } => {
@@ -107,6 +109,13 @@ pub(super) fn narrow(
             _ => {}
         }
     });
+}
+
+fn clear_delivery_plan(delivery: &mut crate::delivery::Delivery) {
+    if let Some(work) = delivery.work.as_mut() {
+        work.plan = None;
+        work.snapshot = None;
+    }
 }
 
 pub(super) fn settle_operation(
@@ -147,12 +156,12 @@ pub(super) fn close_delivery(
     with_task(state, task, |value| {
         if let Some(item) = value.deliveries.iter_mut().find(|item| item.id == delivery) {
             item.outcome = outcome.clone();
-            if let Outcome::Merged { commit, .. } = outcome {
-                value.phase = Phase::Merged {
-                    delivery,
-                    commit: commit.clone(),
-                };
-            }
+        }
+        if let Outcome::Merged { commit, .. } = outcome {
+            value.phase = Phase::Merged {
+                delivery,
+                commit: commit.clone(),
+            };
         }
     });
 }

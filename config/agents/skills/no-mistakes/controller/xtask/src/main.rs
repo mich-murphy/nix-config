@@ -1,4 +1,5 @@
 mod analyzer;
+mod architecture;
 mod complexity;
 
 use anyhow::{Context, Result, bail, ensure};
@@ -12,6 +13,8 @@ use std::{
 struct Policy {
     rust_version: String,
     max_cyclomatic_complexity: u32,
+    max_file_lines: usize,
+    complexity_dispatches: Vec<String>,
     analyzer: analyzer::Settings,
 }
 
@@ -137,52 +140,85 @@ fn options() -> Result<Options> {
 fn run() -> Result<()> {
     guard_invocation()?;
     let options = options()?;
+    let policy = policy()?;
+    let cache = cache()?;
+    let toolchain = toolchain(&cache, &policy.rust_version)?;
+    let target = cache.join("target");
+    let analyzer = analyzer::resolve(&policy.analyzer, options.analyzer.clone(), &cache)?;
+    execute_mode(&policy, &options, &analyzer, &toolchain, &target)
+}
+
+fn execute_mode(
+    policy: &Policy,
+    options: &Options,
+    analyzer: &Path,
+    toolchain: &Path,
+    target: &Path,
+) -> Result<()> {
+    if options.diagnostic {
+        analyze(policy, options, analyzer)?;
+        println!("Complexity diagnostic passed; this is not a full quality pass.");
+        Ok(())
+    } else {
+        lint(policy, analyzer, toolchain, target)?;
+        analyze(policy, options, analyzer)?;
+        test_and_build(analyzer, toolchain, target)
+    }
+}
+
+fn policy() -> Result<Policy> {
     let policy: Policy =
         serde_json::from_slice(&std::fs::read(controller().join("quality-gates.json"))?)?;
     ensure!(
         policy.max_cyclomatic_complexity > 0,
         "Complexity limit must be positive"
     );
-    let cache = cache()?;
-    let toolchain = toolchain(&cache, &policy.rust_version)?;
-    let target = cache.join("target");
-    let analyzer = analyzer::resolve(&policy.analyzer, options.analyzer, &cache)?;
-    if !options.diagnostic {
-        let rust = output(tool(&toolchain, "rustc")?.arg("--version"))?;
-        ensure!(
-            rust.split_whitespace().nth(1) == Some(&policy.rust_version),
-            "Use Rust {}; found {}",
-            policy.rust_version,
-            rust.trim()
-        );
-        cargo(&["fmt", "--all", "--check"], &analyzer, &toolchain, &target)?;
-        cargo(
-            &[
-                "clippy",
-                "--workspace",
-                "--locked",
-                "--all-targets",
-                "--all-features",
-                "--",
-                "-D",
-                "warnings",
-            ],
-            &analyzer,
-            &toolchain,
-            &target,
+    Ok(policy)
+}
+
+fn lint(policy: &Policy, analyzer: &Path, toolchain: &Path, target: &Path) -> Result<()> {
+    let rust = output(tool(toolchain, "rustc")?.arg("--version"))?;
+    ensure!(
+        rust.split_whitespace().nth(1) == Some(&policy.rust_version),
+        "Use Rust {}; found {}",
+        policy.rust_version,
+        rust.trim()
+    );
+    cargo(&["fmt", "--all", "--check"], analyzer, toolchain, target)?;
+    cargo(
+        &[
+            "clippy",
+            "--workspace",
+            "--locked",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings",
+        ],
+        analyzer,
+        toolchain,
+        target,
+    )
+}
+
+fn analyze(policy: &Policy, options: &Options, analyzer: &Path) -> Result<()> {
+    let sources = options.source.as_ref().map_or_else(
+        || vec![controller().join("crates"), controller().join("xtask/src")],
+        |source| vec![source.clone()],
+    );
+    for source in &sources {
+        complexity::check(
+            source,
+            analyzer,
+            policy.max_cyclomatic_complexity,
+            &policy.complexity_dispatches,
         )?;
     }
-    let sources = options.source.map_or_else(
-        || vec![controller().join("src"), controller().join("xtask/src")],
-        |source| vec![source],
-    );
-    for source in sources {
-        complexity::check(&source, &analyzer, policy.max_cyclomatic_complexity)?;
-    }
-    if options.diagnostic {
-        println!("Complexity diagnostic passed; this is not a full quality pass.");
-        return Ok(());
-    }
+    architecture::check(&controller().join("crates"), policy.max_file_lines)
+}
+
+fn test_and_build(analyzer: &Path, toolchain: &Path, target: &Path) -> Result<()> {
     cargo(
         &[
             "test",
@@ -191,21 +227,21 @@ fn run() -> Result<()> {
             "--all-targets",
             "--all-features",
         ],
-        &analyzer,
-        &toolchain,
-        &target,
+        analyzer,
+        toolchain,
+        target,
     )?;
     cargo(
         &["test", "--workspace", "--locked", "--doc", "--all-features"],
-        &analyzer,
-        &toolchain,
-        &target,
+        analyzer,
+        toolchain,
+        target,
     )?;
     cargo(
         &["build", "--release", "--locked"],
-        &analyzer,
-        &toolchain,
-        &target,
+        analyzer,
+        toolchain,
+        target,
     )?;
     println!(
         "Rust quality gates passed. Behavior coverage and design judgment still require the documented review."

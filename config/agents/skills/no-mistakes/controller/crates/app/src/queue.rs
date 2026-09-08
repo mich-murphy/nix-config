@@ -82,14 +82,7 @@ impl App<'_> {
             order,
             frozen: self.services.clock.now(),
         }];
-        for task in &tasks {
-            if task.spec.member && !task.spec.was_terminal && !task.spec.ownership_clear {
-                events.push(Event::QuestionRaised {
-                    task: Some(task.id.clone()),
-                    text: task.spec.ownership_evidence.clone(),
-                });
-            }
-        }
+        events.extend(tasks.iter().filter_map(ownership_question));
         self.commit("discover", None, events, check)
     }
 
@@ -138,19 +131,7 @@ impl App<'_> {
                 Rejection::Conflict("task is not the next eligible claim".into()),
             ));
         }
-        if !check {
-            let reserved =
-                self.services.vcs.reserve(&task).map_err(|error| {
-                    self.error("claim", Some(&task), Rejection::External(error.0))
-                })?;
-            if !reserved {
-                return Err(self.error(
-                    "claim",
-                    Some(&task),
-                    Rejection::Conflict("another run owns this task".into()),
-                ));
-            }
-        }
+        reserve_claim(self, &task, check)?;
         self.commit(
             "claim",
             Some(&task),
@@ -245,22 +226,58 @@ fn validate_cycles(tasks: &[DiscoveredTask]) -> Result<(), String> {
         .map(|task| (&task.id, &task.spec.dependencies))
         .collect();
     for task in tasks {
-        let mut seen = BTreeSet::new();
-        let mut stack = vec![&task.id];
-        while let Some(current) = stack.pop() {
-            if !seen.insert(current) {
-                return Err(format!("dependency cycle at {current}"));
-            }
-            if let Some(dependencies) = graph.get(current) {
-                stack.extend(dependencies.iter().filter_map(|dependency| {
-                    graph
-                        .contains_key(&dependency.task)
-                        .then_some(&dependency.task)
-                }));
-            }
-        }
+        check_cycle(&graph, &task.id)?;
     }
     Ok(())
+}
+
+fn check_cycle<'a>(
+    graph: &BTreeMap<&'a TaskId, &'a Vec<domain::task::Dependency>>,
+    root: &'a TaskId,
+) -> Result<(), String> {
+    let mut seen = BTreeSet::new();
+    let mut stack = vec![root];
+    while let Some(current) = stack.pop() {
+        if !seen.insert(current) {
+            return Err(format!("dependency cycle at {current}"));
+        }
+        stack.extend(graph.get(current).into_iter().flat_map(|dependencies| {
+            dependencies
+                .iter()
+                .filter(|dependency| graph.contains_key(&dependency.task))
+                .map(|dependency| &dependency.task)
+        }));
+    }
+    Ok(())
+}
+
+fn ownership_question(task: &DiscoveredTask) -> Option<Event> {
+    (task.spec.member && !task.spec.was_terminal && !task.spec.ownership_clear).then(|| {
+        Event::QuestionRaised {
+            task: Some(task.id.clone()),
+            text: task.spec.ownership_evidence.clone(),
+        }
+    })
+}
+
+fn reserve_claim(app: &App<'_>, task: &TaskId, check: bool) -> Result<(), AgentError> {
+    if check {
+        return Ok(());
+    }
+    let reserved = app
+        .services
+        .vcs
+        .reserve(task)
+        .map_err(|error| app.error("claim", Some(task), Rejection::External(error.0)))?;
+    if reserved {
+        Ok(())
+    } else {
+        Err(app.error(
+            "claim",
+            Some(task),
+            Rejection::Conflict("another run owns this task".into()),
+        ))
+    }
 }
 
 fn order(tasks: &[DiscoveredTask], planned: Option<Vec<TaskId>>) -> Result<Vec<TaskId>, String> {

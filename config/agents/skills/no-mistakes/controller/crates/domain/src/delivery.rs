@@ -15,6 +15,7 @@ pub enum DeliveryKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Delivery {
     pub id: DeliveryId,
     pub kind: DeliveryKind,
@@ -41,6 +42,7 @@ pub enum Outcome {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Replacement {
     pub pr: PrNumber,
     pub head: Sha,
@@ -48,6 +50,7 @@ pub struct Replacement {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PullRequest {
     pub number: PrNumber,
     pub state: PrState,
@@ -66,6 +69,7 @@ pub enum PrState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Check {
     pub name: String,
     pub state: CheckState,

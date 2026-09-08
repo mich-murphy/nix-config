@@ -65,17 +65,9 @@ impl<P: Process> Vcs for Git<P> {
     fn changed_lines(&self, base: &Sha, head: &Sha) -> Result<u32, PortError> {
         let range = format!("{base}...{head}");
         let output = self.git(&["diff", "--numstat", &range], &self.repo)?;
-        output.lines().try_fold(0_u32, |total, line| {
-            let mut fields = line.split_whitespace();
-            let added = fields.next().and_then(|value| value.parse::<u32>().ok());
-            let deleted = fields.next().and_then(|value| value.parse::<u32>().ok());
-            match (added, deleted) {
-                (Some(added), Some(deleted)) => {
-                    Ok(total.saturating_add(added).saturating_add(deleted))
-                }
-                _ => Ok(total),
-            }
-        })
+        Ok(output
+            .lines()
+            .fold(0_u32, |total, line| total.saturating_add(line_change(line))))
     }
 
     fn commit_paths(&self, base: &Sha, head: &Sha) -> Result<Vec<Vec<String>>, PortError> {
@@ -147,6 +139,19 @@ impl<P: Process> Vcs for Git<P> {
     }
 }
 
+fn line_change(line: &str) -> u32 {
+    let mut fields = line.split_whitespace();
+    let added = fields
+        .next()
+        .and_then(|value| value.parse::<u32>().ok())
+        .unwrap_or(0);
+    let deleted = fields
+        .next()
+        .and_then(|value| value.parse::<u32>().ok())
+        .unwrap_or(0);
+    added.saturating_add(deleted)
+}
+
 fn parse_sha(value: &str) -> Result<Sha, PortError> {
     Sha::from_str(value).map_err(|error| PortError(error.to_string()))
 }
@@ -163,15 +168,21 @@ mod tests {
             let call = self.0.get();
             self.0.set(call + 1);
             let update = request.args.first().is_some_and(|arg| arg == "update-ref");
+            let code = Some(u8::from(update && call > 1).into());
+            let stdout = fake_stdout(update);
             Ok(crate::ProcessOutput {
-                code: if update && call > 1 { Some(1) } else { Some(0) },
-                stdout: if update {
-                    String::new()
-                } else {
-                    format!("{}\n", "a".repeat(40))
-                },
+                code,
+                stdout,
                 stderr: String::new(),
             })
+        }
+    }
+
+    fn fake_stdout(update: bool) -> String {
+        if update {
+            String::new()
+        } else {
+            format!("{}\n", "a".repeat(40))
         }
     }
 

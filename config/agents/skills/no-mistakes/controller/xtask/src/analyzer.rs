@@ -30,6 +30,12 @@ fn install(settings: &Settings, path: &Path) -> Result<()> {
     let directory = tempfile::tempdir_in(parent)?;
     let archive = directory.path().join("analyzer.tar.gz");
     println!("Installing pinned rust-code-analysis {}", settings.version);
+    download(settings, &archive)?;
+    let bytes = extract(settings, &archive)?;
+    persist(parent, path, &bytes)
+}
+
+fn download(settings: &Settings, archive: &Path) -> Result<()> {
     let status = Command::new("curl")
         .args([
             "--fail",
@@ -40,24 +46,31 @@ fn install(settings: &Settings, path: &Path) -> Result<()> {
             "30",
             "--output",
         ])
-        .arg(&archive)
+        .arg(archive)
         .arg(&settings.url)
         .status()?;
     ensure!(status.success(), "Analyzer download failed");
-    verify(&fs::read(&archive)?, &settings.archive_sha256)?;
+    verify(&fs::read(archive)?, &settings.archive_sha256)
+}
+
+fn extract(settings: &Settings, archive: &Path) -> Result<Vec<u8>> {
     // Stream only the named member; never extract archive paths into the filesystem.
-    let bytes = Command::new("tar")
+    let output = Command::new("tar")
         .args(["-xOzf"])
-        .arg(&archive)
+        .arg(archive)
         .arg("rust-code-analysis-cli")
         .output()?;
     ensure!(
-        bytes.status.success(),
+        output.status.success(),
         "Cannot read analyzer executable from archive"
     );
-    verify(&bytes.stdout, &settings.executable_sha256)?;
+    verify(&output.stdout, &settings.executable_sha256)?;
+    Ok(output.stdout)
+}
+
+fn persist(parent: &Path, path: &Path, bytes: &[u8]) -> Result<()> {
     let mut temporary = tempfile::NamedTempFile::new_in(parent)?;
-    temporary.write_all(&bytes.stdout)?;
+    temporary.write_all(bytes)?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;

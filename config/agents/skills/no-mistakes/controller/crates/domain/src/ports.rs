@@ -62,6 +62,7 @@ pub struct LaunchResult {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Tokens {
     pub input: u64,
     pub cached: Option<u64>,
@@ -69,6 +70,7 @@ pub struct Tokens {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Capabilities {
     pub structured_output: StructuredOutput,
     pub isolation: Isolation,

@@ -1,6 +1,8 @@
 {
   "rust_version": "1.98.0",
-  "max_cyclomatic_complexity": 20,
+  "max_cyclomatic_complexity": 10,
+  "max_file_lines": 400,
+  "complexity_dispatches": ["apply", "execute", "scalar", "command_for"],
   "analyzer": {
     "version": "0.0.25",
     "url": "https://github.com/mozilla/rust-code-analysis/releases/download/v0.0.25/rust-code-analysis-linux-cli-x86_64.tar.gz",

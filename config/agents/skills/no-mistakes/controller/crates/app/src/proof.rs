@@ -69,18 +69,7 @@ impl App<'_> {
                 Rejection::Evidence("proof is stale or delivery is closed".into()),
             ));
         }
-        for entry in &entries {
-            let actual = digest_file(&entry.artifact).map_err(|message| {
-                self.error("record-proof", Some(&task), Rejection::Evidence(message))
-            })?;
-            if actual != entry.digest {
-                return Err(self.error(
-                    "record-proof",
-                    Some(&task),
-                    Rejection::Evidence("proof artifact digest changed".into()),
-                ));
-            }
-        }
+        validate_artifacts(self, &task, &entries)?;
         self.commit(
             "record-proof",
             Some(&task),
@@ -206,19 +195,7 @@ impl App<'_> {
                 Rejection::Conflict("task has no delivery".into()),
             )
         })?;
-        if input.argv.is_empty()
-            || input.timeout_seconds == 0
-            || input.criteria.is_empty()
-            || input.implementation.is_empty()
-        {
-            return Err(self.error(
-                "run-check",
-                Some(&task),
-                Rejection::Invalid(
-                    "check command, criteria, timeout and implementation are required".into(),
-                ),
-            ));
-        }
+        validate_check(self, &task, &input)?;
         let id = next_operation(&state);
         let operation = Operation {
             id,
@@ -244,42 +221,14 @@ impl App<'_> {
             vec![Event::OperationStarted { operation }],
             false,
         )?;
-        let request = ProcessRequest {
-            program: input.argv[0].clone(),
-            args: input.argv[1..].to_vec(),
-            cwd: input.cwd,
-            stdin: None,
-            env: BTreeMap::new(),
-            remove_env: Vec::new(),
-        };
-        let output = self.services.process.run(&request);
-        let (status, observation) = match output {
-            Ok(output) if output.code == Some(0) => (
-                OperationStatus::Confirmed,
-                Observation::Check {
-                    exit: 0,
-                    artifact: PathBuf::new(),
-                },
-            ),
-            Ok(output) => (
-                OperationStatus::Failed,
-                Observation::Check {
-                    exit: output.code.unwrap_or(-1),
-                    artifact: PathBuf::new(),
-                },
-            ),
-            Err(error) => (
-                OperationStatus::Failed,
-                Observation::Failure { reason: error.0 },
-            ),
-        };
+        let result = execute_check(self, input);
         records.extend(self.write(
             "run-check",
             Some(&task),
             vec![Event::OperationSettled {
                 operation: id,
-                status,
-                observation,
+                status: result.0,
+                observation: result.1,
             }],
             false,
         )?);
@@ -288,4 +237,73 @@ impl App<'_> {
             result: ResultData::Applied,
         })
     }
+}
+
+fn validate_check(app: &App<'_>, task: &TaskId, input: &CheckInput) -> Result<(), AgentError> {
+    let complete = !input.argv.is_empty()
+        && input.timeout_seconds > 0
+        && !input.criteria.is_empty()
+        && !input.implementation.is_empty();
+    if complete {
+        Ok(())
+    } else {
+        Err(app.error(
+            "run-check",
+            Some(task),
+            Rejection::Invalid(
+                "check command, criteria, timeout and implementation are required".into(),
+            ),
+        ))
+    }
+}
+
+fn execute_check(app: &App<'_>, input: CheckInput) -> (OperationStatus, Observation) {
+    let request = ProcessRequest {
+        program: input.argv[0].clone(),
+        args: input.argv[1..].to_vec(),
+        cwd: input.cwd,
+        stdin: None,
+        env: BTreeMap::new(),
+        remove_env: Vec::new(),
+    };
+    match app.services.process.run(&request) {
+        Ok(output) if output.code == Some(0) => (
+            OperationStatus::Confirmed,
+            Observation::Check {
+                exit: 0,
+                artifact: PathBuf::new(),
+            },
+        ),
+        Ok(output) => (
+            OperationStatus::Failed,
+            Observation::Check {
+                exit: output.code.unwrap_or(-1),
+                artifact: PathBuf::new(),
+            },
+        ),
+        Err(error) => (
+            OperationStatus::Failed,
+            Observation::Failure { reason: error.0 },
+        ),
+    }
+}
+
+fn validate_artifacts(
+    app: &App<'_>,
+    task: &TaskId,
+    entries: &[ProofEntry],
+) -> Result<(), AgentError> {
+    for entry in entries {
+        let actual = digest_file(&entry.artifact).map_err(|message| {
+            app.error("record-proof", Some(task), Rejection::Evidence(message))
+        })?;
+        if actual != entry.digest {
+            return Err(app.error(
+                "record-proof",
+                Some(task),
+                Rejection::Evidence("proof artifact digest changed".into()),
+            ));
+        }
+    }
+    Ok(())
 }

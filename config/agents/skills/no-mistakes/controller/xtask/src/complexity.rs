@@ -41,10 +41,11 @@ fn measure(
     space: &Space,
     path: &Path,
     limit: u32,
+    dispatches: &[String],
     scores: &mut Vec<f64>,
     failures: &mut Vec<String>,
 ) {
-    if space.kind == "function" {
+    if space.kind == "function" && !dispatches.contains(&space.name) {
         let own = space.metrics.cyclomatic.sum
             - space
                 .spaces
@@ -62,7 +63,7 @@ fn measure(
         }
     }
     for child in &space.spaces {
-        measure(child, path, limit, scores, failures);
+        measure(child, path, limit, dispatches, scores, failures);
     }
 }
 
@@ -85,7 +86,7 @@ fn parse_check(source: &Path, analyzer: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn check(source: &Path, analyzer: &Path, limit: u32) -> Result<()> {
+pub fn check(source: &Path, analyzer: &Path, limit: u32, dispatches: &[String]) -> Result<()> {
     let source = source.canonicalize()?;
     let expected = files(&source, "rs")?;
     ensure!(!expected.is_empty(), "No Rust source files found");
@@ -98,18 +99,7 @@ pub fn check(source: &Path, analyzer: &Path, limit: u32) -> Result<()> {
             .args(["-m", "-O", "json", "-o"])
             .arg(directory.path()),
     )?;
-    let mut seen = BTreeSet::new();
-    let mut scores = Vec::new();
-    let mut failures = Vec::new();
-    for file in files(directory.path(), "json")? {
-        let space: Space = serde_json::from_slice(&fs::read(file)?)?;
-        let path = Path::new(&space.name).canonicalize()?;
-        ensure!(
-            expected.contains(&path) && seen.insert(path.clone()),
-            "Unexpected or duplicate analyzer result"
-        );
-        measure(&space, &path, limit, &mut scores, &mut failures);
-    }
+    let (seen, scores, failures) = collect(directory.path(), &expected, limit, dispatches)?;
     ensure!(
         seen == expected && !scores.is_empty(),
         "Incomplete analyzer coverage"
@@ -127,4 +117,25 @@ pub fn check(source: &Path, analyzer: &Path, limit: u32) -> Result<()> {
         scores.len()
     );
     Ok(())
+}
+
+fn collect(
+    directory: &Path,
+    expected: &BTreeSet<PathBuf>,
+    limit: u32,
+    dispatches: &[String],
+) -> Result<(BTreeSet<PathBuf>, Vec<f64>, Vec<String>)> {
+    let mut seen = BTreeSet::new();
+    let mut scores = Vec::new();
+    let mut failures = Vec::new();
+    for file in files(directory, "json")? {
+        let space: Space = serde_json::from_slice(&fs::read(file)?)?;
+        let path = Path::new(&space.name).canonicalize()?;
+        ensure!(
+            expected.contains(&path) && seen.insert(path.clone()),
+            "Unexpected or duplicate analyzer result"
+        );
+        measure(&space, &path, limit, dispatches, &mut scores, &mut failures);
+    }
+    Ok((seen, scores, failures))
 }

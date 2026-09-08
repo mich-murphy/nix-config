@@ -97,23 +97,30 @@ pub(super) fn validate_history(app: &App<'_>, task: &domain::task::Task) -> Resu
             {
                 return Err("historical merge left main".into());
             }
-            Outcome::Replaced { by, .. } => {
-                let observed = app
-                    .services
-                    .github
-                    .observe(by.pr)
-                    .map_err(|error| error.0)?;
-                if observed.state != PrState::Merged
-                    || observed.head != by.head
-                    || observed.merge.as_ref() != Some(&by.merge)
-                {
-                    return Err("replacement identity changed".into());
-                }
-            }
+            Outcome::Replaced { by, .. } => validate_replacement(app, by)?,
             _ => {}
         }
     }
     Ok(())
+}
+
+fn validate_replacement(
+    app: &App<'_>,
+    replacement: &domain::delivery::Replacement,
+) -> Result<(), String> {
+    let observed = app
+        .services
+        .github
+        .observe(replacement.pr)
+        .map_err(|error| error.0)?;
+    let unchanged = observed.state == PrState::Merged
+        && observed.head == replacement.head
+        && observed.merge.as_ref() == Some(&replacement.merge);
+    if unchanged {
+        Ok(())
+    } else {
+        Err("replacement identity changed".into())
+    }
 }
 
 pub(super) fn current_snapshot(task: &domain::task::Task) -> Option<&Snapshot> {
@@ -144,36 +151,55 @@ pub(super) fn publish_ready(
     {
         return Err("publish needs an open code delivery".into());
     }
-    if input.step == PublishStep::Merge {
-        let review = delivery
-            .review
-            .as_ref()
-            .ok_or("merge needs independent review")?;
-        if review.verdict != Verdict::Pass || review::merge_ready(review).is_err() {
-            return Err("merge needs PASS and dispositions".into());
-        }
-        if matches!(
-            state.config.as_ref().map(|config| config.review_mode),
-            Some(ReviewMode::HumanReview)
-        ) && state
-            .human_reviews
-            .get(&task.id)
-            .map(|(snapshot, _)| snapshot)
-            != Some(&review.snapshot)
-        {
-            return Err("human review receipt is stale or missing".into());
-        }
-        if let DeliveryKind::Code { pr: Some(pr) } = &delivery.kind
-            && pr.checks.iter().any(|check| {
-                check.required
-                    && check.state != CheckState::Pass
-                    && check.state != CheckState::Skipped
-            })
-        {
-            return Err("required checks are not green".into());
-        }
+    if input.step != PublishStep::Merge {
+        return Ok(());
+    }
+    merge_ready(state, task, delivery)
+}
+
+fn merge_ready(
+    state: &domain::state::State,
+    task: &domain::task::Task,
+    delivery: &Delivery,
+) -> Result<(), String> {
+    let review = delivery
+        .review
+        .as_ref()
+        .ok_or("merge needs independent review")?;
+    if review.verdict != Verdict::Pass || review::merge_ready(review).is_err() {
+        return Err("merge needs PASS and dispositions".into());
+    }
+    let human_mode = matches!(
+        state.config.as_ref().map(|config| config.review_mode),
+        Some(ReviewMode::HumanReview)
+    );
+    let current_human = state
+        .human_reviews
+        .get(&task.id)
+        .map(|(snapshot, _)| snapshot)
+        == Some(&review.snapshot);
+    if human_mode && !current_human {
+        return Err("human review receipt is stale or missing".into());
+    }
+    if required_checks_failed(delivery) {
+        return Err("required checks are not green".into());
     }
     Ok(())
+}
+
+fn required_checks_failed(delivery: &Delivery) -> bool {
+    let DeliveryKind::Code { pr: Some(pr) } = &delivery.kind else {
+        return true;
+    };
+    pr.head
+        != delivery
+            .review
+            .as_ref()
+            .map_or_else(|| pr.head.clone(), |review| review.snapshot.head.clone())
+        || pr
+            .checks
+            .iter()
+            .any(|check| check.required && check.state != CheckState::Pass)
 }
 
 pub(super) fn publish_action(

@@ -95,15 +95,14 @@ impl Store {
         let mut digest = previous;
         let mut records = Vec::with_capacity(events.len());
         for event in events {
-            apply(&mut state, event);
-            digest = chain_digest(&digest, &state)?;
-            let record = EventRecord {
+            let meta = AppendMeta {
                 sequence,
                 at,
                 actor,
-                event: event.clone(),
+                previous: &digest,
             };
-            insert(&transaction, &record, &phase(event, &state), &digest)?;
+            let (record, next_digest) = append(&transaction, &mut state, event, meta)?;
+            digest = next_digest;
             records.push(record);
             sequence = sequence.saturating_add(1);
         }
@@ -175,6 +174,31 @@ impl Store {
     }
 }
 
+struct AppendMeta<'a> {
+    sequence: u64,
+    at: u64,
+    actor: Actor,
+    previous: &'a str,
+}
+
+fn append(
+    transaction: &rusqlite::Transaction<'_>,
+    state: &mut State,
+    event: &Event,
+    meta: AppendMeta<'_>,
+) -> Result<(EventRecord, String), StoreError> {
+    apply(state, event);
+    let digest = chain_digest(meta.previous, state)?;
+    let record = EventRecord {
+        sequence: meta.sequence,
+        at: meta.at,
+        actor: meta.actor,
+        event: event.clone(),
+    };
+    insert(transaction, &record, &phase(event, state), &digest)?;
+    Ok((record, digest))
+}
+
 fn insert(
     transaction: &rusqlite::Transaction<'_>,
     record: &EventRecord,
@@ -183,7 +207,7 @@ fn insert(
 ) -> Result<(), StoreError> {
     let actor = serde_json::to_string(&record.actor).map_err(error)?;
     let event = serde_json::to_string(&record.event).map_err(error)?;
-    let kind = event_kind(&record.event);
+    let kind = event_kind(&event)?;
     transaction.execute(
         "INSERT INTO events(seq, at, actor, kind, event, phase, digest) VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         params![i64::try_from(record.sequence).map_err(error)?, i64::try_from(record.at).map_err(error)?, actor.trim_matches('"'), kind, event, phase, digest],
@@ -198,47 +222,14 @@ fn chain_digest(previous: &str, state: &State) -> Result<String, StoreError> {
     Ok(format!("{:x}", hash.finalize()))
 }
 
-fn event_kind(event: &Event) -> &'static str {
-    match event {
-        Event::RunInitialized { .. } => "run-initialized",
-        Event::QueueDiscovered { .. } => "queue-discovered",
-        Event::QueueRefreshed { .. } => "queue-refreshed",
-        Event::QuestionRaised { .. } => "question-raised",
-        Event::Claimed { .. } => "claimed",
-        Event::Held { .. } => "held",
-        Event::Resumed { .. } => "resumed",
-        Event::Briefed { .. } => "briefed",
-        Event::TierRaised { .. } => "tier-raised",
-        Event::SlotBound { .. } => "slot-bound",
-        Event::SlotReleased { .. } => "slot-released",
-        Event::Planned { .. } => "planned",
-        Event::Snapshotted { .. } => "snapshotted",
-        Event::Checkpointed { .. } => "checkpointed",
-        Event::SubtaskRecorded { .. } => "subtask-recorded",
-        Event::Excluded { .. } => "excluded",
-        Event::LaunchStarted { .. } => "launch-started",
-        Event::LaunchEnded { .. } => "launch-ended",
-        Event::ProofRecorded { .. } => "proof-recorded",
-        Event::ProofInvalidated { .. } => "proof-invalidated",
-        Event::ReviewSettled { .. } => "review-settled",
-        Event::Dispositioned { .. } => "dispositioned",
-        Event::HumanReviewed { .. } => "human-reviewed",
-        Event::LessonRecorded { .. } => "lesson-recorded",
-        Event::DeliveryOpened { .. } => "delivery-opened",
-        Event::AcceptanceNarrowed { .. } => "acceptance-narrowed",
-        Event::OperationStarted { .. } => "operation-started",
-        Event::OperationSettled { .. } => "operation-settled",
-        Event::PrObserved { .. } => "pr-observed",
-        Event::DeliveryClosed { .. } => "delivery-closed",
-        Event::Verified { .. } => "verified",
-        Event::Completed { .. } => "completed",
-        Event::StatusIntended { .. } => "status-intended",
-        Event::StatusObserved { .. } => "status-observed",
-        Event::AuthorityRegistered { .. } => "authority-registered",
-        Event::GrantUsed { .. } => "grant-used",
-        Event::PairSpent { .. } => "pair-spent",
-        Event::BudgetSpent { .. } => "budget-spent",
+fn event_kind(encoded: &str) -> Result<String, StoreError> {
+    #[derive(serde::Deserialize)]
+    struct Kind {
+        kind: String,
     }
+    serde_json::from_str::<Kind>(encoded)
+        .map(|value| value.kind)
+        .map_err(error)
 }
 
 fn phase(event: &Event, state: &State) -> String {

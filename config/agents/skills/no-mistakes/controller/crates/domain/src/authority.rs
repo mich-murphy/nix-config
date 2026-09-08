@@ -43,6 +43,7 @@ pub enum Grant {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AuthorityUse {
     pub whole: Option<UseId>,
     pub implementation: Option<LaunchId>,

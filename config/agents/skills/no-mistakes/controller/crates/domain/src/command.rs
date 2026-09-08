@@ -174,7 +174,7 @@ pub enum Command {
         authority: Box<Authority>,
     },
     RecoverOperation {
-        operation: OperationId,
+        target: RecoveryTarget,
         terminate: bool,
     },
 }
@@ -276,7 +276,15 @@ pub enum PublishStep {
     Merge,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum RecoveryTarget {
+    Launch { launch: LaunchId },
+    Operation { operation: OperationId },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ActionEnvelope {
     pub action: NextAction,
     pub command: String,
@@ -383,13 +391,4 @@ pub enum NextAction {
     },
 }
 
-pub mod serde_placeholder {
-    use serde::{Deserialize, Serialize};
-    use std::collections::BTreeMap;
-
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-    pub struct Schema {
-        pub required: Vec<String>,
-        pub properties: BTreeMap<String, String>,
-    }
-}
+pub mod serde_placeholder;

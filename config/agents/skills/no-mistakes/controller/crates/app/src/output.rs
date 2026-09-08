@@ -44,13 +44,17 @@ impl UsageReport {
             ..Self::default()
         };
         for launch in &state.launches {
-            match state.usage.get(&launch.id) {
-                Some(Some(tokens)) => report.add(*tokens),
-                Some(None) | None if launch.session.is_some() => report.unknown.push(launch.id),
-                Some(None) | None => {}
-            }
+            report.capture(launch, state.usage.get(&launch.id));
         }
         report
+    }
+
+    fn capture(&mut self, launch: &domain::event::Launch, usage: Option<&Option<Tokens>>) {
+        match usage {
+            Some(Some(tokens)) => self.add(*tokens),
+            Some(None) | None if launch.session.is_some() => self.unknown.push(launch.id),
+            Some(None) | None => {}
+        }
     }
 
     pub fn add(&mut self, tokens: Tokens) {

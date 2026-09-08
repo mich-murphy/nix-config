@@ -7,6 +7,7 @@ mod output;
 mod proof;
 mod publish;
 mod queue;
+mod status;
 mod task;
 mod task_support;
 
@@ -252,10 +253,9 @@ impl<'a> App<'a> {
                 criteria,
                 authority,
             } => self.narrow(task, criteria, *authority, check),
-            Command::RecoverOperation {
-                operation,
-                terminate,
-            } => self.recover_operation(operation, terminate, check),
+            Command::RecoverOperation { target, terminate } => {
+                self.recover_operation(target, terminate, check)
+            }
             Command::Init { .. } => Err(self.error(
                 "init",
                 None,

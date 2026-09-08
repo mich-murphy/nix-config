@@ -37,62 +37,38 @@ impl App<'_> {
         })?;
         publish_ready(&state, value, delivery, &input)
             .map_err(|message| self.error("publish", Some(&task), Rejection::Evidence(message)))?;
-        let id = next_operation(&state);
-        let action = publish_action(delivery, snapshot, &input)
-            .map_err(|message| self.error("publish", Some(&task), Rejection::Invalid(message)))?;
-        let operation = Operation {
-            id,
-            task: task.clone(),
-            delivery: delivery.id,
-            action,
-            status: OperationStatus::Running,
-        };
+        let operation = publish_operation(self, &state, &task, delivery, snapshot, &input)?;
+        self.execute_publish_flow(&task, delivery, snapshot, &input, operation, check)
+    }
+
+    fn execute_publish_flow(
+        &mut self,
+        task: &TaskId,
+        delivery: &domain::delivery::Delivery,
+        snapshot: &domain::acceptance::Snapshot,
+        input: &PublishInput,
+        operation: Operation,
+        check: bool,
+    ) -> Result<Output, AgentError> {
         if check {
             return self.commit(
                 "publish",
-                Some(&task),
+                Some(task),
                 vec![Event::OperationStarted { operation }],
                 true,
             );
         }
+        let id = operation.id;
         let mut records = self.write(
             "publish",
-            Some(&task),
+            Some(task),
             vec![Event::OperationStarted { operation }],
             false,
         )?;
-        let observed = execute_publish(self, delivery, snapshot, &input)
-            .map_err(|message| self.error("publish", Some(&task), Rejection::External(message)))?;
-        let mut events = vec![
-            Event::OperationSettled {
-                operation: id,
-                status: OperationStatus::Confirmed,
-                observation: Observation::PullRequest(observed.clone()),
-            },
-            Event::PrObserved {
-                task: task.clone(),
-                delivery: delivery.id,
-                pr: observed.clone(),
-            },
-        ];
-        if observed.state == PrState::Merged {
-            let merge = observed.merge.clone().ok_or_else(|| {
-                self.error(
-                    "publish",
-                    Some(&task),
-                    Rejection::External("merged PR omitted merge commit".into()),
-                )
-            })?;
-            events.push(Event::DeliveryClosed {
-                task: task.clone(),
-                delivery: delivery.id,
-                outcome: Outcome::Merged {
-                    commit: merge,
-                    at: self.services.clock.now(),
-                },
-            });
-        }
-        records.extend(self.write("publish", Some(&task), events, false)?);
+        let observed = execute_publish(self, delivery, snapshot, input)
+            .map_err(|message| self.error("publish", Some(task), Rejection::External(message)))?;
+        let events = publish_events(self, task, delivery.id, id, observed)?;
+        records.extend(self.write("publish", Some(task), events, false)?);
         Ok(Output {
             events: records,
             result: ResultData::Applied,
@@ -109,27 +85,7 @@ impl App<'_> {
         let value = get_task(&state, &task).map_err(|message| {
             self.error("observe-pr", Some(&task), Rejection::Invalid(message))
         })?;
-        let known = value.deliveries.iter().find(|delivery| matches!(&delivery.kind, DeliveryKind::Code { pr: Some(known) } if known.number == pr));
-        let current = value.deliveries.last().ok_or_else(|| {
-            self.error(
-                "observe-pr",
-                Some(&task),
-                Rejection::Invalid("unknown PR".into()),
-            )
-        })?;
-        let replacement = known.is_none()
-            && matches!(
-                value.hold.as_ref().map(|hold| &hold.reason),
-                Some(HoldReason::SupersededPr { .. })
-            );
-        if known.is_none() && !replacement {
-            return Err(self.error(
-                "observe-pr",
-                Some(&task),
-                Rejection::Invalid("unknown PR".into()),
-            ));
-        }
-        let delivery = known.unwrap_or(current);
+        let (delivery, current, replacement) = observed_delivery(self, value, &task, pr)?;
         let observation =
             self.services.github.observe(pr).map_err(|error| {
                 self.error("observe-pr", Some(&task), Rejection::External(error.0))
@@ -138,45 +94,9 @@ impl App<'_> {
             return self.observe_replacement(task, current, observation, check);
         }
         if delivery::closed(delivery) {
-            validate_closed(delivery, &observation).map_err(|message| {
-                self.error("observe-pr", Some(&task), Rejection::Conflict(message))
-            })?;
-            return Ok(Output {
-                events: Vec::new(),
-                result: ResultData::Valid,
-            });
+            return validate_closed_output(self, &task, delivery, &observation);
         }
-        let mut events = vec![Event::PrObserved {
-            task: task.clone(),
-            delivery: delivery.id,
-            pr: observation.clone(),
-        }];
-        if observation.state == PrState::Merged {
-            let merge = observation.merge.clone().ok_or_else(|| {
-                self.error(
-                    "observe-pr",
-                    Some(&task),
-                    Rejection::External("merge commit missing".into()),
-                )
-            })?;
-            events.push(Event::DeliveryClosed {
-                task: task.clone(),
-                delivery: delivery.id,
-                outcome: Outcome::Merged {
-                    commit: merge,
-                    at: self.services.clock.now(),
-                },
-            });
-        } else if observation.state == PrState::Closed {
-            events.push(Event::Held {
-                task: task.clone(),
-                reason: HoldReason::SupersededPr {
-                    pr,
-                    replacement: None,
-                },
-                at: self.services.clock.now(),
-            });
-        }
+        let events = observation_events(self, &task, delivery.id, pr, observation)?;
         self.commit("observe-pr", Some(&task), events, check)
     }
 
@@ -305,4 +225,156 @@ impl App<'_> {
         }
         self.commit("poll-checks", Some(&task), events, check)
     }
+}
+
+fn publish_operation(
+    app: &App<'_>,
+    state: &domain::state::State,
+    task: &TaskId,
+    delivery: &domain::delivery::Delivery,
+    snapshot: &domain::acceptance::Snapshot,
+    input: &PublishInput,
+) -> Result<Operation, AgentError> {
+    let action = publish_action(delivery, snapshot, input)
+        .map_err(|message| app.error("publish", Some(task), Rejection::Invalid(message)))?;
+    Ok(Operation {
+        id: next_operation(state),
+        task: task.clone(),
+        delivery: delivery.id,
+        action,
+        status: OperationStatus::Running,
+    })
+}
+
+fn publish_events(
+    app: &App<'_>,
+    task: &TaskId,
+    delivery: domain::ids::DeliveryId,
+    operation: domain::ids::OperationId,
+    observed: domain::delivery::PullRequest,
+) -> Result<Vec<Event>, AgentError> {
+    let mut events = vec![
+        Event::OperationSettled {
+            operation,
+            status: OperationStatus::Confirmed,
+            observation: Observation::PullRequest(observed.clone()),
+        },
+        Event::PrObserved {
+            task: task.clone(),
+            delivery,
+            pr: observed.clone(),
+        },
+    ];
+    if let Some(event) = merged_event(app, task, delivery, &observed, "publish")? {
+        events.push(event);
+    }
+    Ok(events)
+}
+
+fn observed_delivery<'a>(
+    app: &App<'_>,
+    value: &'a domain::task::Task,
+    task: &TaskId,
+    pr: PrNumber,
+) -> Result<
+    (
+        &'a domain::delivery::Delivery,
+        &'a domain::delivery::Delivery,
+        bool,
+    ),
+    AgentError,
+> {
+    let known = value.deliveries.iter().find(|delivery| {
+        matches!(&delivery.kind, DeliveryKind::Code { pr: Some(known) } if known.number == pr)
+    });
+    let current = value.deliveries.last().ok_or_else(|| {
+        app.error(
+            "observe-pr",
+            Some(task),
+            Rejection::Invalid("unknown PR".into()),
+        )
+    })?;
+    let replacement = known.is_none()
+        && matches!(
+            value.hold.as_ref().map(|hold| &hold.reason),
+            Some(HoldReason::SupersededPr { .. })
+        );
+    known
+        .or(replacement.then_some(current))
+        .map(|delivery| (delivery, current, replacement))
+        .ok_or_else(|| {
+            app.error(
+                "observe-pr",
+                Some(task),
+                Rejection::Invalid("unknown PR".into()),
+            )
+        })
+}
+
+fn observation_events(
+    app: &App<'_>,
+    task: &TaskId,
+    delivery: domain::ids::DeliveryId,
+    pr: PrNumber,
+    observation: domain::delivery::PullRequest,
+) -> Result<Vec<Event>, AgentError> {
+    let mut events = vec![Event::PrObserved {
+        task: task.clone(),
+        delivery,
+        pr: observation.clone(),
+    }];
+    if let Some(event) = merged_event(app, task, delivery, &observation, "observe-pr")? {
+        events.push(event);
+    } else if observation.state == PrState::Closed {
+        events.push(Event::Held {
+            task: task.clone(),
+            reason: HoldReason::SupersededPr {
+                pr,
+                replacement: None,
+            },
+            at: app.services.clock.now(),
+        });
+    }
+    Ok(events)
+}
+
+fn merged_event(
+    app: &App<'_>,
+    task: &TaskId,
+    delivery: domain::ids::DeliveryId,
+    pr: &domain::delivery::PullRequest,
+    command: &str,
+) -> Result<Option<Event>, AgentError> {
+    if pr.state != PrState::Merged {
+        return Ok(None);
+    }
+    let commit = pr.merge.clone().ok_or_else(|| {
+        app.error(
+            command,
+            Some(task),
+            Rejection::External("merged PR omitted merge commit".into()),
+        )
+    })?;
+    Ok(Some(Event::DeliveryClosed {
+        task: task.clone(),
+        delivery,
+        outcome: Outcome::Merged {
+            commit,
+            at: app.services.clock.now(),
+        },
+    }))
+}
+
+fn validate_closed_output(
+    app: &App<'_>,
+    task: &TaskId,
+    delivery: &domain::delivery::Delivery,
+    observed: &domain::delivery::PullRequest,
+) -> Result<Output, AgentError> {
+    validate_closed(delivery, observed)
+        .map_err(|message| app.error("observe-pr", Some(task), Rejection::Conflict(message)))?;
+    Ok(Output {
+        events: Vec::new(),
+        result: ResultData::Valid,
+    })
 }

@@ -11,7 +11,10 @@ use domain::{
     ports::LaunchRequest,
     review::{self, Review},
 };
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 impl App<'_> {
     pub(super) fn run_agent(
@@ -22,109 +25,20 @@ impl App<'_> {
         fallback: Option<Fallback>,
         check: bool,
     ) -> Result<Output, AgentError> {
-        let state = self.state("run-agent")?;
-        let value = task_ref(&state, &task, "run-agent", self)?;
-        if state.launches.iter().any(|launch| launch.session.is_none()) {
-            return Err(self.error(
-                "run-agent",
-                Some(&task),
-                Rejection::Conflict("settle the active launch first".into()),
-            ));
-        }
-        let delivery = value.deliveries.last().ok_or_else(|| {
-            self.error(
-                "run-agent",
-                Some(&task),
-                Rejection::Conflict("task has no delivery".into()),
-            )
-        })?;
-        guard_role(value, delivery, role).map_err(|message| {
-            self.error("run-agent", Some(&task), Rejection::Conflict(message))
-        })?;
-        if role != AgentRole::Implementer {
-            let snapshot = review_target(value, delivery).ok_or_else(|| {
-                self.error(
-                    "run-agent",
-                    Some(&task),
-                    Rejection::Evidence("review requires a snapshot".into()),
-                )
-            })?;
-            verify_proof(value, delivery, &snapshot).map_err(|message| {
-                self.error("run-agent", Some(&task), Rejection::Evidence(message))
-            })?;
-        }
-        let (assignment, budget_kind) =
-            assignment(&state, value.tier.current, role, fallback.as_ref()).map_err(|message| {
-                self.error("run-agent", Some(&task), Rejection::Invalid(message))
-            })?;
-        let counted = pair_for(value, role).is_none_or(|authority| !authority::scoped(authority));
-        if counted
-            && budget::remaining(
-                budget_kind,
-                &value.budgets,
-                value.tier.current,
-                &value.authorities,
-            ) == 0
-        {
-            return Err(self.error(
-                "run-agent",
-                Some(&task),
-                Rejection::Budget(format!("{budget_kind:?} budget exhausted")),
-            ));
-        }
-        let id = next_launch(&state);
-        let launch = Launch {
-            id,
-            task: task.clone(),
-            delivery: delivery.id,
-            role,
-            prompt: prompt.clone(),
-            session: None,
-            counted,
-        };
-        let mut events = vec![
-            Event::LaunchStarted { launch },
-            Event::BudgetSpent {
-                task: task.clone(),
-                budget: budget_kind,
-                counted,
-            },
-        ];
-        if let Some(authority) = pair_for(value, role) {
-            events.push(Event::PairSpent {
-                task: task.clone(),
-                authority: authority.id,
-                launch: id,
-                implementation: role == AgentRole::Implementer,
-            });
-        }
+        let prepared = prepare_launch(self, &task, role, &prompt, fallback.as_ref())?;
         if check {
-            return self.commit("run-agent", Some(&task), events, true);
+            return self.commit("run-agent", Some(&task), prepared.events, true);
         }
-        let prompt_text = fs::read_to_string(&prompt).map_err(|error| {
-            self.error(
-                "run-agent",
-                Some(&task),
-                Rejection::Invalid(error.to_string()),
-            )
-        })?;
-        let request = LaunchRequest {
-            id,
-            assignment,
-            prompt: prompt_text,
-            cwd: state
-                .config
-                .as_ref()
-                .map(|config| config.repo.clone())
-                .unwrap_or_default(),
-            session: previous_session(&state, &task, role),
-            reviewer: role != AgentRole::Implementer,
-        };
-        let reviewer = role != AgentRole::Implementer;
-        if !reviewer {
-            return self.run_implementer(task, events, request);
+        if role == AgentRole::Implementer {
+            return self.run_implementer(task, prepared.events, prepared.request);
         }
-        self.run_reviewer(task, delivery.id, events, request, value)
+        self.run_reviewer(
+            task,
+            prepared.delivery,
+            prepared.events,
+            prepared.request,
+            &prepared.task,
+        )
     }
 
     fn run_implementer(
@@ -236,6 +150,204 @@ impl App<'_> {
             },
         })
     }
+}
+
+struct PreparedLaunch {
+    task: domain::task::Task,
+    delivery: DeliveryId,
+    events: Vec<Event>,
+    request: LaunchRequest,
+}
+
+fn prepare_launch(
+    app: &App<'_>,
+    id: &TaskId,
+    role: AgentRole,
+    prompt: &Path,
+    fallback: Option<&Fallback>,
+) -> Result<PreparedLaunch, AgentError> {
+    let state = app.state("run-agent")?;
+    let task = task_ref(&state, id, "run-agent", app)?.clone();
+    validate_launch(app, &state, &task, id, role)?;
+    let delivery = task.deliveries.last().ok_or_else(|| {
+        app.error(
+            "run-agent",
+            Some(id),
+            Rejection::Conflict("task has no delivery".into()),
+        )
+    })?;
+    let delivery_id = delivery.id;
+    let (assignment, budget_kind, counted) = launch_budget(app, &state, &task, id, role, fallback)?;
+    let launch = next_launch(&state);
+    let events = launch_events(
+        &task,
+        id,
+        delivery_id,
+        role,
+        prompt,
+        launch,
+        budget_kind,
+        counted,
+    );
+    let prompt_text = fs::read_to_string(prompt)
+        .map_err(|error| app.error("run-agent", Some(id), Rejection::Invalid(error.to_string())))?;
+    let request = LaunchRequest {
+        id: launch,
+        assignment,
+        prompt: prompt_text,
+        cwd: state
+            .config
+            .as_ref()
+            .map(|config| config.repo.clone())
+            .unwrap_or_default(),
+        session: previous_session(&state, id, role),
+        reviewer: role != AgentRole::Implementer,
+    };
+    Ok(PreparedLaunch {
+        task,
+        delivery: delivery_id,
+        events,
+        request,
+    })
+}
+
+fn validate_launch(
+    app: &App<'_>,
+    state: &domain::state::State,
+    task: &domain::task::Task,
+    id: &TaskId,
+    role: AgentRole,
+) -> Result<(), AgentError> {
+    if state.launches.iter().any(|launch| launch.session.is_none()) {
+        return Err(app.error(
+            "run-agent",
+            Some(id),
+            Rejection::Conflict("settle the active launch first".into()),
+        ));
+    }
+    require_checkpoint(state, id)?;
+    let delivery = task.deliveries.last().ok_or_else(|| {
+        app.error(
+            "run-agent",
+            Some(id),
+            Rejection::Conflict("task has no delivery".into()),
+        )
+    })?;
+    guard_role(task, delivery, role)
+        .map_err(|message| app.error("run-agent", Some(id), Rejection::Conflict(message)))?;
+    ensure_readiness(app, task, delivery, id, role)
+}
+
+fn launch_budget(
+    app: &App<'_>,
+    state: &domain::state::State,
+    task: &domain::task::Task,
+    id: &TaskId,
+    role: AgentRole,
+    fallback: Option<&Fallback>,
+) -> Result<(domain::risk::Assignment, budget::BudgetKind, bool), AgentError> {
+    let (assignment, base) = assignment(state, task.tier.current, role, fallback)
+        .map_err(|message| app.error("run-agent", Some(id), Rejection::Invalid(message)))?;
+    let repaired = role == AgentRole::Implementer
+        && state
+            .launches
+            .iter()
+            .any(|launch| launch.task == *id && launch.role == AgentRole::Reviewer);
+    let kind = if repaired {
+        budget::BudgetKind::Repair
+    } else {
+        base
+    };
+    let counted = pair_for(task, role).is_none_or(|authority| !authority::scoped(authority));
+    if counted && budget::remaining(kind, &task.budgets, task.tier.current, &task.authorities) == 0
+    {
+        return Err(app.error(
+            "run-agent",
+            Some(id),
+            Rejection::Budget(format!("{kind:?} budget exhausted")),
+        ));
+    }
+    Ok((assignment, kind, counted))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn launch_events(
+    task: &domain::task::Task,
+    id: &TaskId,
+    delivery: DeliveryId,
+    role: AgentRole,
+    prompt: &Path,
+    launch: domain::ids::LaunchId,
+    budget: budget::BudgetKind,
+    counted: bool,
+) -> Vec<Event> {
+    let mut events = vec![
+        Event::LaunchStarted {
+            launch: Launch {
+                id: launch,
+                task: id.clone(),
+                delivery,
+                role,
+                prompt: prompt.to_path_buf(),
+                session: None,
+                counted,
+            },
+        },
+        Event::BudgetSpent {
+            task: id.clone(),
+            budget,
+            counted,
+        },
+    ];
+    if let Some(authority) = pair_for(task, role) {
+        events.push(Event::PairSpent {
+            task: id.clone(),
+            authority: authority.id,
+            launch,
+            implementation: role == AgentRole::Implementer,
+        });
+    }
+    events
+}
+
+fn require_checkpoint(state: &domain::state::State, task: &TaskId) -> Result<(), AgentError> {
+    let latest = state.launches.iter().rev().find(|launch| {
+        launch.task == *task && launch.role == AgentRole::Implementer && launch.session.is_some()
+    });
+    if latest.is_none_or(|launch| state.checkpoints.get(task) == Some(&launch.id)) {
+        Ok(())
+    } else {
+        Err(AgentError {
+            failed: "run-agent".into(),
+            phase: state
+                .tasks
+                .get(task)
+                .map(|value| Box::new(value.phase.clone())),
+            why: Rejection::Conflict("checkpoint the previous implementer turn".into()),
+            next: state.next().map(Box::new),
+        })
+    }
+}
+
+fn ensure_readiness(
+    app: &App<'_>,
+    task: &domain::task::Task,
+    delivery: &domain::delivery::Delivery,
+    id: &TaskId,
+    role: AgentRole,
+) -> Result<(), AgentError> {
+    if role == AgentRole::Implementer {
+        return Ok(());
+    }
+    let snapshot = review_target(task, delivery).ok_or_else(|| {
+        app.error(
+            "run-agent",
+            Some(id),
+            Rejection::Evidence("review requires a snapshot".into()),
+        )
+    })?;
+    verify_proof(task, delivery, &snapshot)
+        .map_err(|message| app.error("run-agent", Some(id), Rejection::Evidence(message)))
 }
 
 fn previous_session_from_state(

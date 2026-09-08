@@ -14,6 +14,7 @@ pub enum Sync {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct StatusIntent {
     pub operation: OperationId,
     pub from: JiraStatus,
@@ -24,12 +25,14 @@ pub struct StatusIntent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct StatusReceipt {
     pub status: JiraStatus,
     pub observed: Instant,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct StatusFailure {
     pub intent: StatusIntent,
     pub actual: JiraStatus,

@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EventRecord {
     pub sequence: u64,
     pub at: Instant,
@@ -103,6 +104,7 @@ pub enum Event {
     },
     Checkpointed {
         task: TaskId,
+        launch: LaunchId,
         advanced: bool,
         stalled: u32,
         observation: String,
@@ -228,6 +230,7 @@ pub enum Event {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Launch {
     pub id: LaunchId,
     pub task: TaskId,
@@ -247,6 +250,7 @@ pub enum LaunchOutcome {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Operation {
     pub id: OperationId,
     pub task: TaskId,

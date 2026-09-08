@@ -3,7 +3,7 @@ use std::process::{Command, Output};
 
 fn scan(source: Option<&str>) -> Output {
     let directory = tempfile::Builder::new()
-        .prefix("batman-quality-test-")
+        .prefix("no-mistakes-quality-test-")
         .tempdir()
         .unwrap();
     if let Some(source) = source {
@@ -51,7 +51,7 @@ fn comments_and_strings_do_not_count_as_branches() {
 fn threshold_is_inclusive() {
     let code = format!(
         "pub fn value(x:u32)->u32 {{ let mut y=0; {} y }}",
-        branches(19)
+        branches(9)
     );
     let result = scan(Some(&code));
     assert!(
@@ -65,7 +65,7 @@ fn threshold_is_inclusive() {
 fn excessive_function_complexity_fails() {
     let code = format!(
         "pub fn value(x:u32)->u32 {{ let mut y=0; {} y }}",
-        branches(20)
+        branches(10)
     );
     rejected(Some(&code), "Cyclomatic complexity gate failed");
 }
@@ -74,7 +74,7 @@ fn excessive_function_complexity_fails() {
 fn excessive_closure_complexity_cannot_hide_in_parent() {
     let code = format!(
         "pub fn value(x:u32)->u32 {{ let f=|x| {{ let mut y=0; {} y }}; f(x) }}",
-        branches(20)
+        branches(10)
     );
     rejected(Some(&code), "Cyclomatic complexity gate failed");
 }

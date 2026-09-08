@@ -11,6 +11,7 @@ pub enum Tier {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TierState {
     pub current: Tier,
     pub provisional: bool,
@@ -18,6 +19,7 @@ pub struct TierState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TierChange {
     pub to: Tier,
     pub reason: String,
@@ -25,6 +27,7 @@ pub struct TierChange {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Signals {
     pub lines: u32,
     pub files: u32,
