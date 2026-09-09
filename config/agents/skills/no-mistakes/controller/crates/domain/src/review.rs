@@ -19,6 +19,20 @@ pub struct Review {
     pub dispositions: BTreeMap<FindingId, Disposition>,
 }
 
+/// The harness's own output for a reviewer (or escalation) launch: the
+/// only fields it can genuinely report. `launch`, `session` and `snapshot`
+/// come from the controller's own launch record, and `verdict` and
+/// `dispositions` are computed and recorded afterward, so none of the
+/// three belongs in what the reviewer emits (design Section 5, batch B
+/// item 4).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReviewReport {
+    pub findings: Vec<Finding>,
+    pub evidence_gaps: Vec<String>,
+    pub reviewer_opinion: Verdict,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Finding {

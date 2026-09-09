@@ -315,7 +315,6 @@ fn event_task(event: &Event) -> Option<&domain::ids::TaskId> {
         | Event::Snapshotted { task, .. }
         | Event::Checkpointed { task, .. }
         | Event::SubtaskRecorded { task, .. }
-        | Event::Excluded { task, .. }
         | Event::ProofRecorded { task, .. }
         | Event::ProofInvalidated { task, .. }
         | Event::ReviewSettled { task, .. }
@@ -331,6 +330,7 @@ fn event_task(event: &Event) -> Option<&domain::ids::TaskId> {
         | Event::StatusIntended { task, .. }
         | Event::StatusObserved { task, .. }
         | Event::AuthorityRegistered { task, .. }
+        | Event::AuthorityRepurposed { task, .. }
         | Event::GrantUsed { task, .. }
         | Event::PairSpent { task, .. }
         | Event::BudgetSpent { task, .. } => Some(task),
@@ -362,8 +362,9 @@ mod tests {
                 delivery: domain::ids::DeliveryId(1),
                 role: domain::command::AgentRole::Implementer,
                 prompt: "/prompt".into(),
-                session: None,
-                counted: true,
+                outcome: None,
+                usage: None,
+                checkpointed: false,
                 process: None,
             },
         }

@@ -1,6 +1,5 @@
-use crate::delivery_support::{
-    current_sync, get_task, next_operation, review_snapshot, verify_proof,
-};
+use crate::delivery_support::{current_sync, review_snapshot, verify_proof};
+use crate::task_support::{next_operation, task_ref};
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
     command::Transition,
@@ -21,9 +20,7 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("set-status")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("set-status", Some(&task), Rejection::Invalid(message))
-        })?;
+        let value = task_ref(&state, &task, "set-status", self)?;
         validate_done(self, &state, value, &task, &issue, &target)?;
         let transition = select_transition(self, &task, &target, &transitions)?;
         let current_sync = current_sync(value, &issue).ok_or_else(|| {
@@ -74,9 +71,7 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("observe-status")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("observe-status", Some(&task), Rejection::Invalid(message))
-        })?;
+        let value = task_ref(&state, &task, "observe-status", self)?;
         if evidence.trim().is_empty() {
             return Err(self.error(
                 "observe-status",
@@ -154,7 +149,7 @@ fn validate_done(
     if !done {
         return Ok(());
     }
-    if !matches!(task.phase, Phase::Verified { .. }) {
+    if !matches!(task.phase, Phase::Verified { .. } | Phase::Completed { .. }) {
         return Err(app.error(
             "set-status",
             Some(id),

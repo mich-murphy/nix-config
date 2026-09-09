@@ -7,7 +7,7 @@ use crate::{
     ids::{Digest, Sha, TaskId},
     risk::{Signals, TierState, classify, raise},
     sync::Sync,
-    task::{ExclusionReason, Phase, Question, Task, WorkStage},
+    task::{ExclusionReason, Phase, Question, Task},
 };
 use std::collections::BTreeMap;
 
@@ -138,13 +138,6 @@ fn invalidate_plan(task: &mut Task) {
         work.plan = None;
         work.snapshot = None;
     }
-    match &mut task.phase {
-        Phase::Planned { work } | Phase::InFlight { work, .. } => {
-            work.plan = None;
-            work.snapshot = None;
-        }
-        _ => {}
-    }
 }
 
 pub(super) fn raise_tier(
@@ -186,7 +179,7 @@ pub(super) fn bind(
         {
             delivery.work = Some(work.clone());
         }
-        value.phase = Phase::Planned { work };
+        value.phase = Phase::Planned;
     });
 }
 
@@ -203,13 +196,6 @@ pub(super) fn plan(
     feedback: &[crate::command::Lesson],
 ) {
     with_task(state, task, |value| {
-        match &mut value.phase {
-            Phase::Planned { work } | Phase::InFlight { work, .. } => {
-                work.plan = Some(plan.clone());
-                work.feedback = feedback.to_vec();
-            }
-            _ => {}
-        }
         if let Some(work) = value
             .deliveries
             .last_mut()
@@ -238,23 +224,10 @@ pub(super) fn snapshot(
         if let Some(item) = value.deliveries.iter_mut().find(|item| item.id == delivery) {
             update_delivery_snapshot(item, snapshot, covers);
         }
-        match &mut value.phase {
-            Phase::Planned { work } => {
-                work.snapshot = Some(snapshot.clone());
-                work.snapshot_launch = covers;
-                value.phase = Phase::InFlight {
-                    work: work.clone(),
-                    stage: WorkStage::Validating,
-                };
-            }
-            Phase::InFlight { work, .. } => {
-                work.snapshot = Some(snapshot.clone());
-                work.snapshot_launch = covers;
-            }
-            _ => {}
+        if matches!(value.phase, Phase::Planned) {
+            value.phase = Phase::InFlight;
         }
     });
-    state.human_reviews.remove(task);
 }
 
 fn update_delivery_snapshot(
@@ -263,6 +236,7 @@ fn update_delivery_snapshot(
     covers: Option<crate::ids::LaunchId>,
 ) {
     delivery.review = None;
+    delivery.human_review = None;
     if let Some(work) = delivery.work.as_mut() {
         work.snapshot = Some(snapshot.clone());
         work.snapshot_launch = covers;
@@ -272,11 +246,15 @@ fn update_delivery_snapshot(
 pub(super) fn checkpoint(
     state: &mut State,
     task: &TaskId,
-    launch: crate::ids::LaunchId,
+    launch: Option<crate::ids::LaunchId>,
     advanced: bool,
     stalled: u32,
 ) {
-    state.checkpoints.insert(task.clone(), launch);
+    if let Some(id) = launch
+        && let Some(item) = state.launches.iter_mut().find(|item| item.id == id)
+    {
+        item.checkpointed = true;
+    }
     with_task(state, task, |value| {
         value.budgets.stalled_checkpoints = if advanced { 0 } else { stalled };
     });

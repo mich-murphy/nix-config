@@ -90,7 +90,7 @@ fn cancelled_launch_is_charged() -> Result<(), Box<dyn std::error::Error>> {
     let state = task_state(&mut app, &task)?;
     assert_eq!(state.budgets.implementation_turns, 1);
     let launch = launch_for(&mut app, &task)?;
-    assert!(launch.session.is_none());
+    assert!(launch.outcome.is_none());
     app.execute(
         Command::RecoverOperation {
             target: RecoveryTarget::Launch { launch: launch.id },

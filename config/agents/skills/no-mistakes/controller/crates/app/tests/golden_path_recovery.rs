@@ -105,10 +105,7 @@ fn resume_past_deadline(task: &TaskId) -> Vec<Step> {
         unchecked(adjust_clock(2)),
         step(
             move |action| matches!(action, NextAction::Resume { task: id } if *id == resumed),
-            execute(Command::Resume {
-                task: task.clone(),
-                final_revisit: false,
-            }),
+            execute(Command::Resume { task: task.clone() }),
         ),
         // The checks now report passing; a fresh observation is required
         // before `next` reflects it (`next` reads recorded state, not a

@@ -1,12 +1,13 @@
 use crate::{
     Instant,
-    acceptance::Proof,
+    acceptance::{Proof, Snapshot},
     command::AgentRole,
-    ids::{AuthorityId, CriterionId, DeliveryId, LaunchId, OperationId, PrNumber, Sha},
+    ids::{AuthorityId, CriterionId, DeliveryId, Digest, LaunchId, OperationId, PrNumber, Sha},
     review::{Review, Verdict},
     task::PlannedWork,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -27,9 +28,23 @@ pub struct Delivery {
     pub work: Option<PlannedWork>,
     pub proof: Proof,
     pub review: Option<Review>,
+    /// A human decision for the exact snapshot, in human-review mode.
+    /// Cleared whenever this delivery's snapshot changes, so a stale
+    /// receipt can never gate a merge it was never taken against.
+    pub human_review: Option<HumanReceipt>,
+    /// The `poll-checks --wait` deadline recorded per PR head, so a hold
+    /// and resume never restart the wait.
+    pub check_deadlines: BTreeMap<Sha, Instant>,
     pub outcome: Outcome,
     pub launches: Vec<LaunchId>,
     pub operations: Vec<OperationId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HumanReceipt {
+    pub snapshot: Snapshot,
+    pub receipt: Digest,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -155,7 +170,7 @@ pub fn paths_allow(delivery: &Delivery, commits: &[Vec<String>]) -> Result<(), D
     let outside = commits
         .iter()
         .flatten()
-        .any(|path| !allowed.iter().any(|pattern| path_matches(pattern, path)));
+        .any(|path| !allowed.iter().any(|pattern| glob(pattern, path)));
     if outside {
         Err(DeliveryError::OutsidePaths)
     } else {
@@ -163,11 +178,27 @@ pub fn paths_allow(delivery: &Delivery, commits: &[Vec<String>]) -> Result<(), D
     }
 }
 
-fn path_matches(pattern: &str, path: &str) -> bool {
-    pattern == path
-        || pattern
-            .strip_suffix("/**")
-            .is_some_and(|prefix| path.starts_with(&format!("{prefix}/")))
+/// The one glob matcher for both delivery path scopes and sensitive-path
+/// risk signals: an exact path, an anchored `prefix/**` (every path under
+/// `prefix/`), or an anchored `**/suffix` (`suffix` itself, or anything
+/// ending `/suffix`). Anchored so `auth/**` cannot match `authx/file` and
+/// `**/schema.json` cannot match `myschema.json`.
+#[must_use]
+pub fn glob(pattern: &str, path: &str) -> bool {
+    if pattern == path {
+        return true;
+    }
+    if let Some(prefix) = pattern.strip_suffix("/**") {
+        return path
+            .strip_prefix(prefix)
+            .is_some_and(|rest| rest.starts_with('/'));
+    }
+    if let Some(suffix) = pattern.strip_prefix("**/") {
+        return path
+            .strip_suffix(suffix)
+            .is_some_and(|rest| rest.is_empty() || rest.ends_with('/'));
+    }
+    false
 }
 
 #[cfg(test)]
@@ -187,6 +218,8 @@ mod tests {
             work: None,
             proof: Proof::default(),
             review: None,
+            human_review: None,
+            check_deadlines: BTreeMap::new(),
             outcome: Outcome::Open,
             launches: Vec::new(),
             operations: Vec::new(),
@@ -197,5 +230,14 @@ mod tests {
             Err(DeliveryError::OutsidePaths)
         );
         Ok(())
+    }
+
+    #[test]
+    fn glob_is_anchored() {
+        assert!(glob("auth/**", "auth/session.rs"));
+        assert!(!glob("auth/**", "authx/file.rs"));
+        assert!(glob("**/schema.json", "crates/domain/schema.json"));
+        assert!(!glob("**/schema.json", "myschema.json"));
+        assert!(glob("Cargo.toml", "Cargo.toml"));
     }
 }

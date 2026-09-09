@@ -54,7 +54,6 @@ fn dependency_requires_main_commit() -> Result<(), Box<dyn std::error::Error>> {
     blocked.spec.dependencies.push(Dependency {
         task: TaskId::from_str("GAIN-9")?,
         code: true,
-        verified: true,
         main_commit: None,
     });
     discover(&mut app, vec![blocked])?;
@@ -113,7 +112,6 @@ fn discover_partitions_blocked_and_needs_input() -> Result<(), Box<dyn std::erro
     blocked.spec.dependencies.push(Dependency {
         task: TaskId::from_str("GAIN-9")?,
         code: true,
-        verified: false,
         main_commit: None,
     });
     let mut question = task_named("GAIN-3")?;

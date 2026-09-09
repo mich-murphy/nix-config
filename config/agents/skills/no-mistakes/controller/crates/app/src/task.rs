@@ -1,7 +1,8 @@
 use crate::task_support::{
-    bind_worktree, current_work_delivery, digest_json, next_delivery, sensitive_count, task_ref,
-    validate_paths, validate_slot,
+    current_work_delivery, digest_json, latest_checkpointed_launch, next_delivery, sensitive_count,
+    task_ref,
 };
+use crate::worktree::{bind_worktree, validate_paths, validate_slot};
 use crate::{AgentError, App, Output, Rejection};
 use domain::{
     acceptance::{self, Snapshot},
@@ -36,7 +37,7 @@ fn selected_lessons(
     state
         .lessons
         .iter()
-        .map(|(_, lesson)| lesson)
+        .map(|recorded| &recorded.lesson)
         .filter(|lesson| {
             lesson.accepted
                 && lesson
@@ -59,7 +60,7 @@ impl App<'_> {
         let value = task_ref(&state, &task, "brief", self)?;
         let active = matches!(
             value.phase,
-            Phase::Claimed | Phase::Planned { .. } | Phase::InFlight { .. }
+            Phase::Claimed | Phase::Planned | Phase::InFlight
         );
         if !active || criteria.is_empty() {
             return Err(self.error(
@@ -110,7 +111,7 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("plan")?;
         let value = task_ref(&state, &task, "plan", self)?;
-        if !matches!(value.phase, Phase::Planned { .. } | Phase::InFlight { .. }) {
+        if !matches!(value.phase, Phase::Planned | Phase::InFlight) {
             return Err(self.error(
                 "plan",
                 Some(&task),
@@ -198,6 +199,8 @@ impl App<'_> {
             work: Some(work),
             proof: acceptance::Proof::default(),
             review: None,
+            human_review: None,
+            check_deadlines: std::collections::BTreeMap::new(),
             outcome: Outcome::Open,
             launches: Vec::new(),
             operations: Vec::new(),
@@ -262,7 +265,7 @@ impl App<'_> {
             snapshot,
             lines,
             files: paths.len() as u32,
-            covers: state.checkpoints.get(&task).copied(),
+            covers: latest_checkpointed_launch(&state, &task),
         }];
         if head_changed {
             events.push(Event::ProofInvalidated {

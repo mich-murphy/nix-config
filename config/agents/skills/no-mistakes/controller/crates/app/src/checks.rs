@@ -1,11 +1,11 @@
-use crate::delivery_support::{append_acceptance_hold, get_task, validate_closed};
+use crate::delivery_support::{append_acceptance_hold, validate_closed};
+use crate::task_support::task_ref;
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
     Instant,
     delivery::{self, CheckState, DeliveryKind, Outcome, PrState, PullRequest, Replacement},
     event::Event,
     ids::{DeliveryId, PrNumber, TaskId},
-    state::State,
     task::{HoldReason, Task},
 };
 
@@ -17,9 +17,7 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("observe-pr")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("observe-pr", Some(&task), Rejection::Invalid(message))
-        })?;
+        let value = task_ref(&state, &task, "observe-pr", self)?;
         let (delivery, current, replacement) = observed_delivery(self, value, &task, pr)?;
         let observation =
             self.services.github.observe(pr).map_err(|error| {
@@ -112,13 +110,10 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("poll-checks")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("poll-checks", Some(&task), Rejection::Invalid(message))
+        let value = task_ref(&state, &task, "poll-checks", self)?;
+        let (pr_number, delivery_id, mut deadline) = poll_target(value).map_err(|message| {
+            self.error("poll-checks", Some(&task), Rejection::Conflict(message))
         })?;
-        let (pr_number, delivery_id, mut deadline) =
-            poll_target(&state, &task, value).map_err(|message| {
-                self.error("poll-checks", Some(&task), Rejection::Conflict(message))
-            })?;
         let mut observation = observe_checks(self, &task, pr_number)?;
         let mut pending = checks_pending(&observation);
         if wait && !check {
@@ -164,11 +159,7 @@ impl App<'_> {
 
 /// The PR, delivery and persisted per-head deadline `poll_checks` polls
 /// against, or the conflict message to reject with.
-fn poll_target(
-    state: &State,
-    task: &TaskId,
-    value: &Task,
-) -> Result<(PrNumber, DeliveryId, Option<Instant>), String> {
+fn poll_target(value: &Task) -> Result<(PrNumber, DeliveryId, Option<Instant>), String> {
     let delivery = value
         .deliveries
         .last()
@@ -177,10 +168,7 @@ fn poll_target(
         DeliveryKind::Code { pr: Some(pr) } => pr,
         _ => return Err("task has no PR".into()),
     };
-    let deadline = state
-        .check_deadlines
-        .get(&format!("{task}:{}", pr.head))
-        .copied();
+    let deadline = delivery.check_deadlines.get(&pr.head).copied();
     Ok((pr.number, delivery.id, deadline))
 }
 
@@ -297,10 +285,7 @@ fn observation_events(
     } else if observation.state == PrState::Closed {
         events.push(Event::Held {
             task: task.id.clone(),
-            reason: HoldReason::SupersededPr {
-                pr,
-                replacement: None,
-            },
+            reason: HoldReason::SupersededPr { pr },
             at: app.services.clock.now(),
         });
     }

@@ -1,7 +1,7 @@
 use crate::{
     Instant,
     acceptance::{ProofEntry, Snapshot},
-    authority::Authority,
+    authority::{Authority, Grant},
     budget::BudgetKind,
     command::{AgentRole, DiscoveredTask, Lesson, RunConfig},
     delivery::{Delivery, Outcome, PullRequest},
@@ -13,7 +13,7 @@ use crate::{
     review::Disposition,
     risk::{Profile, Tier},
     sync::Sync,
-    task::{HoldReason, Phase, Plan, SlotBinding, Subtask},
+    task::{HoldReason, Plan, Receipt, SlotBinding, Subtask},
 };
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -106,7 +106,10 @@ pub enum Event {
     },
     Checkpointed {
         task: TaskId,
-        launch: LaunchId,
+        /// `None` for an integration checkpoint (a snapshot with no
+        /// implementer launch of its own): it marks nothing, since there
+        /// is no launch to flag as checkpointed.
+        launch: Option<LaunchId>,
         advanced: bool,
         stalled: u32,
         observation: String,
@@ -116,10 +119,6 @@ pub enum Event {
         task: TaskId,
         issue: IssueKey,
         subtask: Subtask,
-    },
-    Excluded {
-        task: TaskId,
-        phase: Phase,
     },
     LaunchStarted {
         launch: Launch,
@@ -188,7 +187,7 @@ pub enum Event {
     },
     Verified {
         task: TaskId,
-        commit: Sha,
+        receipt: Receipt,
     },
     Completed {
         task: TaskId,
@@ -212,6 +211,14 @@ pub enum Event {
     AuthorityRegistered {
         task: TaskId,
         authority: Box<Authority>,
+    },
+    /// An unused `Pair` grant repurposed as the next delivery's grant
+    /// (design Section 5): the handler decides this, `apply` only records
+    /// the resulting `grant` onto the existing `authority`.
+    AuthorityRepurposed {
+        task: TaskId,
+        authority: AuthorityId,
+        grant: Grant,
     },
     GrantUsed {
         task: TaskId,
@@ -239,8 +246,15 @@ pub struct Launch {
     pub delivery: DeliveryId,
     pub role: AgentRole,
     pub prompt: PathBuf,
-    pub session: Option<String>,
-    pub counted: bool,
+    /// `None` while the launch is running; set once by `LaunchEnded`.
+    pub outcome: Option<LaunchOutcome>,
+    /// Captured from the harness's own stream by `LaunchEnded`. `None`
+    /// means unknown, never zero.
+    pub usage: Option<Tokens>,
+    /// Set by `Checkpointed` naming this launch. Read by `next` to decide
+    /// whether the previous implementer turn still needs a checkpoint or,
+    /// once checkpointed, a snapshot.
+    pub checkpointed: bool,
     pub process: Option<ProcessIdentity>,
 }
 

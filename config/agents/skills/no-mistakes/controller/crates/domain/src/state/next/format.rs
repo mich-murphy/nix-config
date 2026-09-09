@@ -122,13 +122,7 @@ pub(super) fn command_for(action: &NextAction) -> (String, Schema) {
                 "true to begin the bounded wait and record a deadline",
             )],
         ),
-        NextAction::Resume { task } => (
-            scalar("resume", task),
-            vec![(
-                "final_revisit",
-                "boolean, true only for the terminal revisit",
-            )],
-        ),
+        NextAction::Resume { task } => (scalar("resume", task), vec![]),
         NextAction::AwaitHumanReview { task, .. } => (
             input("human-review", task),
             vec![
@@ -156,7 +150,7 @@ pub(super) fn command_for(action: &NextAction) -> (String, Schema) {
             input("open-delivery", task),
             vec![
                 ("kind", "code or verification"),
-                ("authority", "current user receipt and delivery grant"),
+                ("receipt", "current user receipt and delivery grant"),
                 ("jira", "fresh membership and ownership read"),
                 ("remaining", "criteria shown in the action"),
             ],
@@ -204,7 +198,6 @@ pub(super) fn template_for(action: &NextAction) -> Template {
             insert(&mut values, "pr", &pr.0.to_string());
             insert(&mut values, "wait", "true");
         }
-        NextAction::Resume { .. } => insert(&mut values, "final_revisit", "false"),
         NextAction::FinalVerify { commit, .. } => insert(&mut values, "commit", commit.as_ref()),
         NextAction::Cleanup { slot, .. } => insert(&mut values, "slot", slot.as_ref()),
         NextAction::SyncStatus { issue, target, .. } => {
@@ -230,6 +223,7 @@ pub(super) fn template_for(action: &NextAction) -> Template {
         | NextAction::BindSlot { .. }
         | NextAction::Plan { .. }
         | NextAction::Snapshot { .. }
+        | NextAction::Resume { .. }
         | NextAction::AwaitHumanReview { .. }
         | NextAction::Complete { .. } => {}
     }

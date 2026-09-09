@@ -19,8 +19,8 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("checkpoint")?;
         let value = task_ref(&state, &task, "checkpoint", self)?;
-        let (launch, integration) = checkpoint_target(self, &state, value, &task)?;
-        if !integration && state.checkpoints.get(&task) == Some(&launch) {
+        let launch = checkpoint_target(self, &state, value, &task)?;
+        if already_checkpointed(&state, launch) {
             return Err(self.error(
                 "checkpoint",
                 Some(&task),
@@ -36,7 +36,7 @@ impl App<'_> {
                 Rejection::Invalid("out-of-plan paths need a scope reason".into()),
             ));
         }
-        let stalled = checkpoint_stalls(value, integration, input.advanced);
+        let stalled = checkpoint_stalls(value, launch.is_none(), input.advanced);
         let mut events = vec![Event::Checkpointed {
             task: task.clone(),
             launch,
@@ -56,24 +56,26 @@ impl App<'_> {
     }
 }
 
+/// The launch this checkpoint marks, or `None` for an integration
+/// checkpoint (a snapshot with no implementer launch of its own).
 fn checkpoint_target(
     app: &App<'_>,
     state: &domain::state::State,
     task: &domain::task::Task,
     id: &TaskId,
-) -> Result<(domain::ids::LaunchId, bool), AgentError> {
+) -> Result<Option<domain::ids::LaunchId>, AgentError> {
     let latest = state
         .launches
         .iter()
         .rev()
         .find(|launch| {
-            launch.task == *id && launch.role == AgentRole::Implementer && launch.session.is_some()
+            launch.task == *id && launch.role == AgentRole::Implementer && launch.outcome.is_some()
         })
         .map(|launch| launch.id);
     let integration = latest.is_none()
         && current_work_delivery(task).is_some_and(|(work, _)| work.snapshot.is_some());
     if latest.is_some() || integration {
-        Ok((latest.unwrap_or(domain::ids::LaunchId(0)), integration))
+        Ok(latest)
     } else {
         Err(app.error(
             "checkpoint",
@@ -83,6 +85,18 @@ fn checkpoint_target(
             ),
         ))
     }
+}
+
+fn already_checkpointed(
+    state: &domain::state::State,
+    launch: Option<domain::ids::LaunchId>,
+) -> bool {
+    launch.is_some_and(|id| {
+        state
+            .launches
+            .iter()
+            .any(|item| item.id == id && item.checkpointed)
+    })
 }
 
 fn checkpoint_stalls(task: &domain::task::Task, integration: bool, advanced: bool) -> u32 {

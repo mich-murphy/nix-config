@@ -7,7 +7,7 @@ use domain::{
     command::{Command, Lesson},
     event::{Actor, Event},
     ids::TaskId,
-    task::Plan,
+    task::{Plan, Receipt},
 };
 use std::{collections::BTreeMap, str::FromStr};
 
@@ -83,10 +83,11 @@ fn plan_selects_accepted_lessons() -> Result<(), Box<dyn std::error::Error>> {
     let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
-    let work = match &state.tasks[&TaskId::from_str("GAIN-3")?].phase {
-        domain::task::Phase::Planned { work } => work,
-        _ => return Err("task was not planned".into()),
-    };
+    let value = &state.tasks[&TaskId::from_str("GAIN-3")?];
+    if !matches!(value.phase, domain::task::Phase::Planned) {
+        return Err("task was not planned".into());
+    }
+    let work = value.current_work().ok_or("planned task has no work")?;
     assert_eq!(work.feedback, vec![lesson("use event outcomes", true)]);
     Ok(())
 }
@@ -143,7 +144,7 @@ fn record_verified_lesson(
         10,
         &[Event::Verified {
             task: TaskId::from_str("GAIN-2")?,
-            commit: sha('a')?,
+            receipt: Receipt::Delivery { commit: sha('a')? },
         }],
     )?;
     let mut app = App::new(Store::open(directory)?, services(fake));

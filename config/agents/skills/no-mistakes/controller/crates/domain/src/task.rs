@@ -2,7 +2,7 @@ use crate::{
     Instant,
     authority::Authority,
     budget::{BudgetKind, Budgets},
-    delivery::{Delivery, Replacement},
+    delivery::Delivery,
     ids::{
         AuthorityId, CriterionId, DeliveryId, Digest, IssueKey, JiraStatus, PrNumber, Sha, SlotId,
         TaskId,
@@ -36,6 +36,25 @@ pub struct Task {
     pub baselines: BTreeMap<CriterionId, Digest>,
 }
 
+impl Task {
+    /// The delivery the task's current phase acts on: every phase from
+    /// `Planned` onward has exactly one, and it is always the last one
+    /// opened. `PlannedWork` lives only here (design decision 2a), so this
+    /// is the one place that reaches for it.
+    #[must_use]
+    pub fn current_delivery(&self) -> Option<&Delivery> {
+        self.deliveries.last()
+    }
+
+    /// The current delivery's planned work, if it has taken one. `None`
+    /// before the first `bind-slot` and for a `Verification` delivery,
+    /// which has no worktree of its own.
+    #[must_use]
+    pub fn current_work(&self) -> Option<&PlannedWork> {
+        self.current_delivery()?.work.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TaskSpec {
@@ -50,7 +69,6 @@ pub struct TaskSpec {
     pub ownership_clear: bool,
     pub ownership_evidence: String,
     pub was_terminal: bool,
-    pub jira_status: JiraStatus,
     pub requirements: Digest,
 }
 
@@ -59,7 +77,6 @@ pub struct TaskSpec {
 pub struct Dependency {
     pub task: TaskId,
     pub code: bool,
-    pub verified: bool,
     pub main_commit: Option<Sha>,
 }
 
@@ -71,16 +88,35 @@ pub struct Criterion {
     pub human_only: bool,
 }
 
+/// A phase carries only what is exclusive to it. `Planned` and `InFlight`
+/// carry no payload: the task's current delivery (`Task::current_delivery`)
+/// is always the one they act on, and that delivery's own `work`, `proof`
+/// and `review` are the only record of what stage of implementation,
+/// review or repair it is in. Deriving that sub-state from the delivery in
+/// `next`, rather than storing it here, is owner's decision 2a: a stored
+/// sub-state and a delivery that disagreed would both be representable,
+/// and only one of them could be true.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Phase {
     Queued,
     Blocked(BlockReason),
     NeedsInput(Question),
     Claimed,
-    Planned { work: PlannedWork },
-    InFlight { work: PlannedWork, stage: WorkStage },
-    Merged { delivery: DeliveryId, commit: Sha },
-    Verified { receipt: Receipt },
+    Planned,
+    InFlight,
+    Merged {
+        delivery: DeliveryId,
+        commit: Sha,
+    },
+    Verified {
+        receipt: Receipt,
+    },
+    /// Verified and separately confirmed done: Jira Done recorded and
+    /// cleanup permitted. Distinct from `Verified` so "every criterion
+    /// passed" and "the run has recorded that fact" cannot be conflated.
+    Completed {
+        receipt: Receipt,
+    },
     Excluded(ExclusionReason),
 }
 
@@ -124,21 +160,6 @@ pub enum SlotOrigin {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum WorkStage {
-    Building,
-    Validating,
-    Reviewing {
-        launch: crate::ids::LaunchId,
-    },
-    Repairing {
-        findings: Vec<crate::ids::FindingId>,
-    },
-    Publishing {
-        pr: PrNumber,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Hold {
     pub since: Instant,
@@ -160,7 +181,6 @@ pub enum HoldReason {
     BudgetExhausted(BudgetKind),
     SupersededPr {
         pr: PrNumber,
-        replacement: Option<Replacement>,
     },
 }
 
@@ -185,7 +205,6 @@ pub enum ExclusionReason {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Receipt {
     Delivery { commit: Sha },
-    Existing { main: Sha },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

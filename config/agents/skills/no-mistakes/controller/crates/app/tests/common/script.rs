@@ -110,40 +110,24 @@ pub fn record_proof_with(
     })
 }
 
-/// Predicts the reviewer's launch id with `--check`, installs a PASS
-/// review for the current snapshot, then runs the real reviewer launch.
+/// Installs a PASS review report in the fake harness, then runs the real
+/// reviewer launch. The controller computes the snapshot to review
+/// against itself (`review_target`), so this needs no snapshot of its
+/// own, unlike `record_proof`.
 pub fn review(prompt: PathBuf) -> ActionFn {
     Box::new(move |app, fake, task| {
-        let (_, snapshot) = current_delivery(app, task)?;
-        review_step(app, fake, task, prompt, snapshot)
+        arrange_passing_review(fake)?;
+        app.execute(
+            Command::RunAgent {
+                task: task.clone(),
+                role: AgentRole::Reviewer,
+                prompt,
+                fallback: None,
+            },
+            false,
+        )?;
+        Ok(())
     })
-}
-
-/// `review`, against an explicit `snapshot` rather than one read back from
-/// `current_delivery`, for a delivery with no `PlannedWork` of its own (a
-/// `Verification` delivery).
-pub fn review_with(prompt: PathBuf, snapshot: Snapshot) -> ActionFn {
-    Box::new(move |app, fake, task| review_step(app, fake, task, prompt, snapshot))
-}
-
-fn review_step(
-    app: &mut App<'_>,
-    fake: &Fake,
-    task: &TaskId,
-    prompt: PathBuf,
-    snapshot: Snapshot,
-) -> Result<(), StepError> {
-    arrange_passing_review(app, fake, task, &prompt, snapshot)?;
-    app.execute(
-        Command::RunAgent {
-            task: task.clone(),
-            role: AgentRole::Reviewer,
-            prompt,
-            fallback: None,
-        },
-        false,
-    )?;
-    Ok(())
 }
 
 /// Writes final-verification evidence and records it against the commit

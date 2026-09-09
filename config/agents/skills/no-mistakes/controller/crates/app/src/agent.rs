@@ -6,9 +6,9 @@ use domain::{
     event::{Event, LaunchOutcome},
     ids::{DeliveryId, TaskId},
     ports::{LaunchRequest, LaunchResult},
-    review::{self, Review},
+    review::{self, Review, ReviewReport},
 };
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf};
 
 impl App<'_> {
     pub(super) fn run_agent(
@@ -120,6 +120,12 @@ impl App<'_> {
     }
 }
 
+/// Builds the stored `Review` from the harness's `ReviewReport` plus what
+/// only the controller can supply: the launch id and session it actually
+/// ran, the snapshot it was reviewing, the verdict computed from finding
+/// severity and tier, and an empty disposition map (design Section 5,
+/// batch B item 4). A malformed report is rejected before any of that is
+/// trusted.
 fn settle_review(
     value: &domain::task::Task,
     state: &domain::state::State,
@@ -127,7 +133,7 @@ fn settle_review(
     request: &LaunchRequest,
     result: &LaunchResult,
 ) -> Result<Review, Rejection> {
-    let mut review: Review = serde_json::from_str(&result.output)
+    let report: ReviewReport = serde_json::from_str(&result.output)
         .map_err(|error| Rejection::Invalid(format!("malformed review: {error}")))?;
     let delivery = value
         .deliveries
@@ -135,12 +141,17 @@ fn settle_review(
         .ok_or_else(|| Rejection::Conflict("task has no delivery".into()))?;
     let snapshot = review_target(value, delivery)
         .ok_or_else(|| Rejection::Evidence("review requires a snapshot".into()))?;
-    if review.launch != request.id || review.session != result.session {
-        return Err(Rejection::Invalid(
-            "review launch or session does not match the harness".into(),
-        ));
-    }
-    review.verdict = review::verdict(&review.findings, &review.evidence_gaps, value.tier.current);
+    let verdict = review::verdict(&report.findings, &report.evidence_gaps, value.tier.current);
+    let review = Review {
+        launch: request.id,
+        session: result.session.clone(),
+        snapshot: snapshot.clone(),
+        findings: report.findings,
+        evidence_gaps: report.evidence_gaps,
+        reviewer_opinion: report.reviewer_opinion,
+        verdict,
+        dispositions: BTreeMap::new(),
+    };
     let implementer = previous_session_from_state(state, task, AgentRole::Implementer);
     review::validate(&review, &snapshot, implementer.as_deref())
         .map_err(|error| Rejection::Evidence(format!("invalid review: {error:?}")))?;

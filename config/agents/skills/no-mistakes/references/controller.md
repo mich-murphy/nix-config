@@ -107,8 +107,9 @@ implementer. `narrow-acceptance` changes the current open code delivery's
 criteria under a `Narrowing` grant. Its merge stays in history and leaves full
 acceptance open.
 
-A receipt records its source, absolute artifact, artifact digest, criteria digest,
-time, grant, and use. The artifact must remain readable and unchanged. A digest
+The coordinator supplies a receipt's source, absolute artifact, artifact digest,
+criteria digest, and grant; the controller assigns its id, records the time, and
+tracks its use. The artifact must remain readable and unchanged. A digest
 registers once. A grant is consumed once. One unused pair may exist. A wholly
 unused pair may become the next delivery grant; a partially spent pair cannot.
 Path-scoped grants apply to every commit in the range, including reverted work.
@@ -136,13 +137,14 @@ The controller records launch attempts and captures usage from Codex JSON or Pi
 JSON events. Missing usage is reported as unknown, never zero. Cached input stays
 null if any contributing launch omitted it. No token report infers billing cost.
 
-Review starts only after current proof passes. The review schema requires the
-launch, session, snapshot, findings, evidence gaps, reviewer opinion, computed
-verdict field, and dispositions. Use `review-schema` for the exact schema and
-`validate-review` for deterministic validation. The controller recomputes the
-verdict from finding severity and tier. Critical findings and configured warning
-patterns require changes. Evidence gaps block. Every finding needs a disposition
-before merge.
+Review starts only after current proof passes. The reviewer reports only
+findings, evidence gaps, and its own opinion; the controller supplies the
+launch, session, snapshot, computed verdict, and dispositions itself. Use
+`review-schema` for the exact schema and `validate-review` for deterministic
+validation against a task's tier. The controller recomputes the verdict from
+finding severity and tier. Critical findings and configured warning patterns
+require changes. Evidence gaps block. Every finding needs a disposition before
+merge.
 
 Escalation requires a completed ordinary reviewer launch. Starting it spends one
 review and one escalation unit. Rejected preconditions spend neither.

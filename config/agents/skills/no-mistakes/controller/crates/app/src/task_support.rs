@@ -1,11 +1,11 @@
 use crate::{AgentError, App, Rejection};
 use domain::{
-    acceptance::Snapshot,
-    authority::{self, Grant},
+    authority,
     budget::BudgetKind,
     command::{AgentRole, Fallback},
     delivery::{Delivery, DeliveryKind},
-    ids::{AuthorityId, DeliveryId, Digest, LaunchId, OperationId, SlotId, TaskId},
+    event::LaunchOutcome,
+    ids::{AuthorityId, DeliveryId, Digest, LaunchId, OperationId, TaskId},
     risk::{Assignment, Tier},
     task::Phase,
 };
@@ -62,14 +62,55 @@ pub(super) fn next_operation(state: &domain::state::State) -> OperationId {
     )
 }
 
+/// The launch a new snapshot should record as covered: the most recent
+/// settled implementer launch, if it has been checkpointed. `None` when
+/// no implementer launch has run yet, the current one is still in
+/// flight, or it has not been checkpointed yet (an integration-only
+/// snapshot is a valid reason for `None` too).
+pub(super) fn latest_checkpointed_launch(
+    state: &domain::state::State,
+    task: &TaskId,
+) -> Option<LaunchId> {
+    state
+        .launches
+        .iter()
+        .rev()
+        .find(|launch| {
+            launch.task == *task
+                && launch.role == AgentRole::Implementer
+                && launch.outcome.is_some()
+        })
+        .filter(|launch| launch.checkpointed)
+        .map(|launch| launch.id)
+}
+
+pub(super) fn next_authority(task: &domain::task::Task) -> AuthorityId {
+    AuthorityId(
+        task.authorities
+            .iter()
+            .map(|authority| authority.id.0)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1),
+    )
+}
+
+/// A task is done and recorded, never bypassable by an in-progress one:
+/// the only fact `Phase::Completed` and `Phase::Verified` disagree on.
+pub(super) fn completed(task: &domain::task::Task) -> bool {
+    matches!(task.phase, Phase::Completed { .. })
+}
+
 pub(super) fn current_work_delivery(
     task: &domain::task::Task,
 ) -> Option<(&domain::task::PlannedWork, &Delivery)> {
-    let work = match &task.phase {
-        Phase::Planned { work } | Phase::InFlight { work, .. } => work,
-        _ => return None,
-    };
-    Some((work, task.deliveries.last()?))
+    match task.phase {
+        Phase::Planned | Phase::InFlight => {
+            let delivery = task.deliveries.last()?;
+            Some((delivery.work.as_ref()?, delivery))
+        }
+        _ => None,
+    }
 }
 
 pub(super) fn launch_prompt(task: &domain::task::Task, prompt: String) -> String {
@@ -88,94 +129,20 @@ pub(super) fn launch_prompt(task: &domain::task::Task, prompt: String) -> String
     format!("{prompt}\n\nPinned run guidance:\n{instructions}")
 }
 
-pub(super) fn current_snapshot(task: &domain::task::Task) -> Option<&Snapshot> {
-    current_work_delivery(task).and_then(|(work, _)| work.snapshot.as_ref())
-}
-
-pub(super) fn review_target(task: &domain::task::Task, delivery: &Delivery) -> Option<Snapshot> {
-    current_snapshot(task)
+pub(super) fn review_target(
+    task: &domain::task::Task,
+    delivery: &Delivery,
+) -> Option<domain::acceptance::Snapshot> {
+    crate::delivery_support::current_snapshot(task)
         .cloned()
         .or_else(|| match &delivery.kind {
-            DeliveryKind::Verification { of } => Some(Snapshot {
+            DeliveryKind::Verification { of } => Some(domain::acceptance::Snapshot {
                 base: of.clone(),
                 head: of.clone(),
                 requirements: task.spec.requirements.clone(),
             }),
             DeliveryKind::Code { .. } => None,
         })
-}
-
-pub(super) fn validate_slot(
-    state: &domain::state::State,
-    task: &TaskId,
-    slot: &SlotId,
-    authority: Option<AuthorityId>,
-) -> Result<bool, String> {
-    let owners = slot_owners(state, slot);
-    if owners.iter().any(|owner| !state.completed.contains(owner)) {
-        return Err("slot has an unfinished owner".into());
-    }
-    let historical = !owners.is_empty();
-    match (historical, authority) {
-        (false, None) => Ok(false),
-        (true, Some(id)) => validate_reuse(state, task, slot, id).map(|()| true),
-        (true, None) => Err("historical slot needs a slot-reuse grant".into()),
-        (false, Some(_)) => Err("slot-reuse grant requires a historical checkout".into()),
-    }
-}
-
-fn slot_owners(state: &domain::state::State, slot: &SlotId) -> Vec<TaskId> {
-    state
-        .tasks
-        .values()
-        .filter(|value| {
-            value.deliveries.iter().any(|delivery| {
-                delivery
-                    .work
-                    .as_ref()
-                    .is_some_and(|work| work.slot.slot == *slot)
-            })
-        })
-        .map(|value| value.id.clone())
-        .collect()
-}
-
-fn validate_reuse(
-    state: &domain::state::State,
-    task: &TaskId,
-    slot: &SlotId,
-    id: AuthorityId,
-) -> Result<(), String> {
-    let value = state.tasks.get(task).ok_or("unknown task")?;
-    let grant = value
-        .authorities
-        .iter()
-        .find(|entry| entry.id == id)
-        .ok_or("unknown authority")?;
-    authority::validate_use(grant, &value.spec.requirements)
-        .map_err(|_| "slot-reuse grant is spent or stale")?;
-    let Grant::SlotReuse {
-        historical,
-        slot: granted,
-    } = &grant.grant
-    else {
-        return Err("authority is not a slot-reuse grant".into());
-    };
-    if granted != slot || !state.completed.contains(historical) {
-        return Err("slot-reuse grant does not name a completed owner".into());
-    }
-    let unstarted = value.deliveries.last().is_none_or(|delivery| {
-        delivery.work.is_none()
-            && delivery.launches.is_empty()
-            && delivery.operations.is_empty()
-            && delivery.proof.entries.is_empty()
-            && delivery.review.is_none()
-    });
-    if unstarted {
-        Ok(())
-    } else {
-        Err("slot reuse requires an unstarted delivery".into())
-    }
 }
 
 pub(super) fn sensitive_count(state: &domain::state::State, paths: &[String]) -> u32 {
@@ -187,20 +154,10 @@ pub(super) fn sensitive_count(state: &domain::state::State, paths: &[String]) ->
                     .risk
                     .sensitive
                     .iter()
-                    .any(|pattern| glob(pattern, path))
+                    .any(|pattern| domain::delivery::glob(pattern, path))
             })
             .count() as u32
     })
-}
-
-pub(super) fn glob(pattern: &str, path: &str) -> bool {
-    pattern == path
-        || pattern
-            .strip_suffix("/**")
-            .is_some_and(|prefix| path.starts_with(prefix))
-        || pattern
-            .strip_prefix("**/")
-            .is_some_and(|suffix| path.ends_with(suffix))
 }
 
 pub(super) fn digest_json(value: &impl serde::Serialize) -> Result<Digest, String> {
@@ -225,7 +182,7 @@ pub(super) fn guard_role(
     if !domain::delivery::admits(delivery, role) {
         return Err("verification delivery rejects implementers".into());
     }
-    let planned = matches!(task.phase, Phase::Planned { .. } | Phase::InFlight { .. });
+    let planned = matches!(task.phase, Phase::Planned | Phase::InFlight);
     let verifying = verification && matches!(task.phase, Phase::Merged { .. });
     if !planned && !verifying {
         return Err("agent requires planned or verification work".into());
@@ -296,75 +253,25 @@ pub(super) fn pair_for(
         .find(|authority| authority::pair_available(authority, role == AgentRole::Implementer))
 }
 
+/// The session id a harness adapter should resume, from the most recent
+/// launch of `role`. A completed launch reports its real session; a
+/// failed or cancelled one reports an empty string, exactly as its
+/// `LaunchOutcome` recorded it, so a caller that only wants a genuine
+/// prior session can still filter it out (`!session.is_empty()`).
 pub(super) fn previous_session(
     state: &domain::state::State,
     task: &TaskId,
     role: AgentRole,
 ) -> Option<String> {
-    state
+    let outcome = state
         .launches
         .iter()
         .rev()
-        .find(|launch| launch.task == *task && launch.role == role)
-        .and_then(|launch| launch.session.clone())
-}
-
-pub(super) fn bind_worktree(
-    app: &App<'_>,
-    task: &TaskId,
-    slot: &SlotId,
-    branch: &str,
-    reuse: bool,
-    check: bool,
-) -> Result<(), AgentError> {
-    let state = app
-        .services
-        .vcs
-        .inspect_slot(slot)
-        .map_err(|error| app.error("bind-slot", Some(task), Rejection::External(error.0)))?;
-    let safe = matches!((&state, reuse), (domain::ports::SlotState::Missing, false))
-        || matches!(
-            (&state, reuse),
-            (domain::ports::SlotState::Checkout { clean: true, .. }, true)
-        );
-    if !safe {
-        return Err(app.error(
-            "bind-slot",
-            Some(task),
-            Rejection::Conflict(format!("slot is not safe for this binding: {state:?}")),
-        ));
-    }
-    if check {
-        return Ok(());
-    }
-    let result = if reuse {
-        app.services.vcs.reuse_slot(slot, branch)
-    } else {
-        app.services.vcs.bind_slot(task, slot, branch)
-    };
-    result.map_err(|error| app.error("bind-slot", Some(task), Rejection::External(error.0)))
-}
-
-pub(super) fn validate_paths(
-    app: &App<'_>,
-    task: &TaskId,
-    delivery: &Delivery,
-    base: &domain::ids::Sha,
-    head: &domain::ids::Sha,
-) -> Result<(), AgentError> {
-    if delivery.paths.is_none() {
-        return Ok(());
-    }
-    let commits = app
-        .services
-        .vcs
-        .commit_paths(base, head)
-        .map_err(|error| app.error("snapshot", Some(task), Rejection::External(error.0)))?;
-    domain::delivery::paths_allow(delivery, &commits).map_err(|error| {
-        app.error(
-            "snapshot",
-            Some(task),
-            Rejection::Authority(format!("path scope rejected: {error:?}")),
-        )
+        .find(|launch| launch.task == *task && launch.role == role)?
+        .outcome
+        .as_ref()?;
+    Some(match outcome {
+        LaunchOutcome::Completed { session, .. } => session.clone(),
+        LaunchOutcome::Failed { .. } | LaunchOutcome::Cancelled => String::new(),
     })
 }

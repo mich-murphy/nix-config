@@ -1,65 +1,31 @@
 use crate::App;
 use crate::delivery::PublishInput;
+use crate::task_support::digest_file;
 use domain::{
     acceptance::{self, Snapshot},
-    authority::{self, Authority, Grant},
     command::{JiraRead, PublishStep, ReviewMode},
     delivery::{CheckState, Delivery, DeliveryKind, Outcome, PrState},
     event::{Event, GitHubAction},
-    ids::{DeliveryId, IssueKey, OperationId, PrNumber, TaskId},
+    ids::{IssueKey, PrNumber},
     review::{self, Verdict},
     sync::Sync,
-    task::{HoldReason, Phase},
+    task::{HoldReason, Phase, Task},
 };
-use sha2::{Digest as _, Sha256};
-use std::{collections::BTreeMap, fs, str::FromStr};
+use std::collections::BTreeMap;
 
-pub(super) fn get_task<'a>(
-    state: &'a domain::state::State,
-    task: &TaskId,
-) -> Result<&'a domain::task::Task, String> {
-    state.tasks.get(task).ok_or_else(|| "unknown task".into())
-}
-
-pub(super) fn next_delivery(task: &domain::task::Task) -> DeliveryId {
-    DeliveryId(
-        task.deliveries
-            .iter()
-            .map(|delivery| delivery.id.0)
-            .max()
-            .unwrap_or(0)
-            .saturating_add(1),
-    )
-}
-
-pub(super) fn next_operation(state: &domain::state::State) -> OperationId {
-    OperationId(
-        state
-            .operations
-            .iter()
-            .map(|operation| operation.id.0)
-            .max()
-            .unwrap_or(0)
-            .saturating_add(1),
-    )
-}
-
-pub(super) fn validate_authority_file(authority: &Authority) -> Result<(), String> {
-    let bytes = fs::read(&authority.artifact).map_err(|error| error.to_string())?;
-    let digest = domain::ids::Digest::from_str(&format!("{:x}", Sha256::digest(bytes)))
-        .map_err(|error| error.to_string())?;
-    authority::validate_receipt(authority, &digest)
-        .map_err(|error| format!("receipt rejected: {error:?}"))
-}
-
-pub(super) fn validate_open(task: &domain::task::Task, jira: &JiraRead) -> Result<(), String> {
+pub(super) fn validate_open(task: &Task, jira: &JiraRead) -> Result<(), String> {
     if !matches!(
         task.hold.as_ref().map(|hold| &hold.reason),
         Some(HoldReason::NeedsHuman { .. })
     ) {
         return Err("open-delivery requires a needs-human hold".into());
     }
-    if task.spec.was_terminal || matches!(task.phase, Phase::Verified { .. } | Phase::Excluded(_)) {
+    let terminal = task.spec.was_terminal
+        || matches!(
+            task.phase,
+            Phase::Verified { .. } | Phase::Completed { .. } | Phase::Excluded(_)
+        );
+    if terminal {
         return Err("terminal tasks cannot open another delivery".into());
     }
     if !jira.member || jira.resolved || !jira.ownership_clear {
@@ -71,25 +37,7 @@ pub(super) fn validate_open(task: &domain::task::Task, jira: &JiraRead) -> Resul
     Ok(())
 }
 
-pub(super) fn validate_delivery_grant(
-    authority: &Authority,
-    kind: &DeliveryKind,
-) -> Result<(), String> {
-    match &authority.grant {
-        Grant::Delivery {
-            kind: granted,
-            criteria,
-            ..
-        } if std::mem::discriminant(granted) == std::mem::discriminant(kind)
-            && !criteria.is_empty() =>
-        {
-            Ok(())
-        }
-        _ => Err("authority is not a matching delivery grant".into()),
-    }
-}
-
-pub(super) fn validate_history(app: &App<'_>, task: &domain::task::Task) -> Result<(), String> {
+pub(super) fn validate_history(app: &App<'_>, task: &Task) -> Result<(), String> {
     for delivery in &task.deliveries {
         match &delivery.outcome {
             Outcome::Merged { commit, .. }
@@ -123,17 +71,17 @@ fn validate_replacement(
     }
 }
 
-pub(super) fn current_snapshot(task: &domain::task::Task) -> Option<&Snapshot> {
-    match &task.phase {
-        Phase::Planned { work } | Phase::InFlight { work, .. } => work.snapshot.as_ref(),
-        Phase::Merged { .. }
-        | Phase::Queued
-        | Phase::Blocked(_)
-        | Phase::NeedsInput(_)
-        | Phase::Claimed
-        | Phase::Verified { .. }
-        | Phase::Excluded(_) => task.deliveries.last().and_then(review_snapshot),
-    }
+/// The snapshot currently in force for a task's current delivery: the one
+/// its `PlannedWork` is tracking while open, or the one its settled review
+/// last covered once closed. Both sides read the same delivery, so they
+/// agree by construction rather than by a phase-keyed branch.
+pub(super) fn current_snapshot(task: &Task) -> Option<&Snapshot> {
+    let delivery = task.current_delivery()?;
+    delivery
+        .work
+        .as_ref()
+        .and_then(|work| work.snapshot.as_ref())
+        .or_else(|| review_snapshot(delivery))
 }
 
 pub(super) fn review_snapshot(delivery: &Delivery) -> Option<&Snapshot> {
@@ -142,7 +90,6 @@ pub(super) fn review_snapshot(delivery: &Delivery) -> Option<&Snapshot> {
 
 pub(super) fn publish_ready(
     state: &domain::state::State,
-    task: &domain::task::Task,
     delivery: &Delivery,
     input: &PublishInput,
 ) -> Result<(), String> {
@@ -154,14 +101,10 @@ pub(super) fn publish_ready(
     if input.step != PublishStep::Merge {
         return Ok(());
     }
-    merge_ready(state, task, delivery)
+    merge_ready(state, delivery)
 }
 
-fn merge_ready(
-    state: &domain::state::State,
-    task: &domain::task::Task,
-    delivery: &Delivery,
-) -> Result<(), String> {
+fn merge_ready(state: &domain::state::State, delivery: &Delivery) -> Result<(), String> {
     let review = delivery
         .review
         .as_ref()
@@ -173,11 +116,10 @@ fn merge_ready(
         state.config.as_ref().map(|config| config.review_mode),
         Some(ReviewMode::HumanReview)
     );
-    let current_human = state
-        .human_reviews
-        .get(&task.id)
-        .map(|(snapshot, _)| snapshot)
-        == Some(&review.snapshot);
+    let current_human = delivery
+        .human_review
+        .as_ref()
+        .is_some_and(|receipt| receipt.snapshot == review.snapshot);
     if human_mode && !current_human {
         return Err("human review receipt is stale or missing".into());
     }
@@ -204,7 +146,7 @@ fn required_checks_failed(delivery: &Delivery) -> bool {
 
 pub(super) fn append_acceptance_hold(
     app: &App<'_>,
-    task: &domain::task::Task,
+    task: &Task,
     delivery: &Delivery,
     events: &mut Vec<Event>,
 ) {
@@ -312,16 +254,13 @@ pub(super) fn validate_closed(
 }
 
 pub(super) fn verify_proof(
-    task: &domain::task::Task,
+    task: &Task,
     delivery: &Delivery,
     snapshot: &Snapshot,
 ) -> Result<(), String> {
     let mut artifacts = BTreeMap::new();
     for entry in delivery.proof.entries.values() {
-        let bytes = fs::read(&entry.artifact).map_err(|error| error.to_string())?;
-        let digest = domain::ids::Digest::from_str(&format!("{:x}", Sha256::digest(bytes)))
-            .map_err(|error| error.to_string())?;
-        artifacts.insert(entry.artifact.clone(), digest);
+        artifacts.insert(entry.artifact.clone(), digest_file(&entry.artifact)?);
     }
     let baselines = &task.baselines;
     let criteria = delivery
@@ -344,7 +283,7 @@ pub(super) fn verify_proof(
         .map_err(|error| format!("acceptance failed: {error:?}"))
 }
 
-pub(super) fn current_sync<'a>(task: &'a domain::task::Task, issue: &IssueKey) -> Option<&'a Sync> {
+pub(super) fn current_sync<'a>(task: &'a Task, issue: &IssueKey) -> Option<&'a Sync> {
     if IssueKey::from(task.id.clone()) == *issue {
         Some(&task.sync)
     } else {

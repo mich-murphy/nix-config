@@ -88,25 +88,13 @@ fn scalar(args: &Args) -> Result<Value, AgentError> {
             no_positionals(args)?;
             exact_values(args, &[])?;
         }
-        "claim" | "snapshot" | "complete" => {
+        "claim" | "snapshot" | "complete" | "resume" => {
             value.insert(
                 "task".into(),
                 Value::String(positional(args, 0, "task")?.into()),
             );
             exact_positionals(args, 1)?;
             exact_values(args, &[])?;
-        }
-        "resume" => {
-            value.insert(
-                "task".into(),
-                Value::String(positional(args, 0, "task")?.into()),
-            );
-            value.insert(
-                "final_revisit".into(),
-                Value::Bool(flag(args, "final-revisit")),
-            );
-            exact_positionals(args, 1)?;
-            exact_values(args, &["final-revisit"])?;
         }
         "cleanup" => {
             value.insert(

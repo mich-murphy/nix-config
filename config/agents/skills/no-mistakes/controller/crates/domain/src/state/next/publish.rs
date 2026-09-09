@@ -3,7 +3,6 @@ use crate::{
     command::{NextAction, PublishStep},
     delivery::{CheckState, Delivery, DeliveryKind, PrState, PullRequest},
     ids::Sha,
-    state::State,
     task::Task,
 };
 
@@ -12,11 +11,7 @@ use crate::{
 /// checks are pending, a deadline already recorded by a prior
 /// `poll-checks --wait` decides between waiting it out and asking the
 /// coordinator to start that wait.
-pub(super) fn publish_action(
-    state: &State,
-    task: &Task,
-    delivery: &Delivery,
-) -> Option<NextAction> {
+pub(super) fn publish_action(task: &Task, delivery: &Delivery) -> Option<NextAction> {
     match &delivery.kind {
         DeliveryKind::Verification { .. } => Some(NextAction::FinalVerify {
             task: task.id.clone(),
@@ -33,13 +28,13 @@ pub(super) fn publish_action(
             })
         }
         DeliveryKind::Code { pr: Some(pr) } if pr.state == PrState::Open => {
-            Some(open_pr_action(state, task, pr))
+            Some(open_pr_action(task, delivery, pr))
         }
         DeliveryKind::Code { pr: Some(_) } => None,
     }
 }
 
-fn open_pr_action(state: &State, task: &Task, pr: &PullRequest) -> NextAction {
+fn open_pr_action(task: &Task, delivery: &Delivery, pr: &PullRequest) -> NextAction {
     let pending = pr
         .checks
         .iter()
@@ -50,8 +45,7 @@ fn open_pr_action(state: &State, task: &Task, pr: &PullRequest) -> NextAction {
             step: PublishStep::Merge,
         };
     }
-    let key = format!("{}:{}", task.id, pr.head);
-    state.check_deadlines.get(&key).map_or(
+    delivery.check_deadlines.get(&pr.head).map_or(
         NextAction::PollChecks {
             task: task.id.clone(),
             pr: pr.number,

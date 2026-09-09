@@ -59,20 +59,15 @@ fn ci_deadline_survives_hold() -> Result<(), Box<dyn std::error::Error>> {
         },
         false,
     )?;
-    app.execute(
-        Command::Resume {
-            task: task.clone(),
-            final_revisit: false,
-        },
-        false,
-    )?;
+    app.execute(Command::Resume { task: task.clone() }, false)?;
     let app::ResultData::State { state } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
-    assert_eq!(
-        state.check_deadlines.get(&format!("{task}:{head}")),
-        Some(&10)
-    );
+    let delivery = state.tasks[&task]
+        .deliveries
+        .last()
+        .ok_or("delivery missing")?;
+    assert_eq!(delivery.check_deadlines.get(&head), Some(&10));
     Ok(())
 }
 
@@ -90,8 +85,9 @@ fn pending_launch(
                 delivery: DeliveryId(1),
                 role: AgentRole::Implementer,
                 prompt: directory.join("prompt.md"),
-                session: None,
-                counted: true,
+                outcome: None,
+                usage: None,
+                checkpointed: false,
                 process,
             },
         }],
@@ -276,7 +272,7 @@ fn mark_verified(
         10,
         &[domain::event::Event::Verified {
             task: TaskId::from_str("GAIN-2")?,
-            commit: sha('a')?,
+            receipt: domain::task::Receipt::Delivery { commit: sha('a')? },
         }],
     )?;
     Ok(())

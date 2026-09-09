@@ -113,8 +113,9 @@ fn record_prior_review(
         delivery: DeliveryId(1),
         role: AgentRole::Reviewer,
         prompt: directory.join("review.md"),
-        session: None,
-        counted: true,
+        outcome: None,
+        usage: None,
+        checkpointed: false,
         process: None,
     };
     store.commit(
@@ -190,7 +191,10 @@ fn malformed_review_fails_launch() -> Result<(), Box<dyn std::error::Error>> {
     let state = task_state(&mut app, &task)?;
     assert_eq!(state.budgets.reviews, 1);
     let launch = reviewer_launch(&mut app)?;
-    assert_eq!(launch.session.as_deref(), Some(""));
+    assert!(matches!(
+        launch.outcome,
+        Some(domain::event::LaunchOutcome::Failed { .. })
+    ));
     assert!(usage_recorded(&mut app, launch.id)?);
     Ok(())
 }
@@ -207,11 +211,17 @@ fn reviewer_launch(app: &mut App<'_>) -> Result<domain::event::Launch, Box<dyn s
         .ok_or_else(|| "reviewer launch missing".into())
 }
 
+/// Whether `LaunchEnded` has captured usage bookkeeping for `launch` at
+/// all (present or explicitly unknown), the same fact `state.usage` used
+/// to record in a separate map before usage moved onto the launch itself.
 fn usage_recorded(app: &mut App<'_>, launch: LaunchId) -> Result<bool, Box<dyn std::error::Error>> {
     let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
-    Ok(state.usage.contains_key(&launch))
+    Ok(state
+        .launches
+        .iter()
+        .any(|item| item.id == launch && item.outcome.is_some()))
 }
 
 #[test]

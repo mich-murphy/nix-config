@@ -1,13 +1,13 @@
 use crate::{
     acceptance::{ProofEntry, Snapshot},
-    authority::Authority,
+    authority::AuthorityReceipt,
     delivery::DeliveryKind,
     ids::{
         AuthorityId, CriterionId, DeliveryId, Digest, FindingId, IssueKey, JiraStatus, LaunchId,
         OperationId, PrNumber, Sha, SlotId, TaskId, TransitionId,
     },
     ports::MergeMethod,
-    review::{Disposition, Review},
+    review::{Disposition, ReviewReport},
     risk::{Profile, Tier},
     task::{Criterion, HoldReason, Plan, TaskSpec},
 };
@@ -41,7 +41,6 @@ pub enum Command {
     },
     Resume {
         task: TaskId,
-        final_revisit: bool,
     },
     Brief {
         task: TaskId,
@@ -106,7 +105,8 @@ pub enum Command {
     },
     ReviewSchema,
     ValidateReview {
-        review: Review,
+        task: TaskId,
+        report: ReviewReport,
     },
     Disposition {
         task: TaskId,
@@ -160,18 +160,18 @@ pub enum Command {
     },
     Grant {
         task: TaskId,
-        authority: Box<Authority>,
+        receipt: AuthorityReceipt,
     },
     OpenDelivery {
         task: TaskId,
         kind: DeliveryKind,
-        authority: Box<Authority>,
+        receipt: AuthorityReceipt,
         jira: JiraRead,
     },
     NarrowAcceptance {
         task: TaskId,
         criteria: Vec<CriterionId>,
-        authority: Box<Authority>,
+        receipt: AuthorityReceipt,
     },
     RecoverOperation {
         target: RecoveryTarget,

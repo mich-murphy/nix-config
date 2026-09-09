@@ -1,6 +1,7 @@
 mod agent;
 mod agent_launch;
 mod agent_support;
+mod authority;
 mod checks;
 mod delivery;
 mod delivery_support;
@@ -15,6 +16,7 @@ mod recovery_support;
 mod status;
 mod task;
 mod task_support;
+mod worktree;
 
 pub use error::{AgentError, Rejection};
 pub use output::{Output, ResultData, UsageReport};
@@ -108,7 +110,7 @@ impl<'a> App<'a> {
                     schema: review_schema(),
                 },
             }),
-            Command::ValidateReview { review } => self.validate_review(&review),
+            Command::ValidateReview { task, report } => self.validate_review(&task, report),
             Command::Discover {
                 tasks,
                 planning_order,
@@ -116,10 +118,7 @@ impl<'a> App<'a> {
             Command::Refresh { changed, removed } => self.refresh(changed, removed, check),
             Command::Claim { task } => self.claim(task, check),
             Command::Hold { task, reason } => self.hold(task, reason, check),
-            Command::Resume {
-                task,
-                final_revisit,
-            } => self.resume(task, final_revisit, check),
+            Command::Resume { task } => self.resume(task, check),
             Command::Brief { task, criteria } => self.brief(task, criteria, check),
             Command::Plan { task, plan } => self.plan(task, plan, check),
             Command::Checkpoint {
@@ -246,18 +245,18 @@ impl<'a> App<'a> {
                 status,
                 evidence,
             } => self.observe_status(task, issue, status, evidence, check),
-            Command::Grant { task, authority } => self.grant(task, *authority, check),
+            Command::Grant { task, receipt } => self.grant(task, receipt, check),
             Command::OpenDelivery {
                 task,
                 kind,
-                authority,
+                receipt,
                 jira,
-            } => self.open_delivery(task, kind, *authority, jira, check),
+            } => self.open_delivery(task, kind, receipt, jira, check),
             Command::NarrowAcceptance {
                 task,
                 criteria,
-                authority,
-            } => self.narrow(task, criteria, *authority, check),
+                receipt,
+            } => self.narrow(task, criteria, receipt, check),
             Command::RecoverOperation { target, terminate } => {
                 self.recover_operation(target, terminate, check)
             }
@@ -336,10 +335,28 @@ impl<'a> App<'a> {
     }
 }
 
+/// The schema a reviewer harness must satisfy: `ReviewReport`, the only
+/// fields it can genuinely report. `launch`, `session` and `snapshot` come
+/// from the controller's own launch record, and `verdict` and
+/// `dispositions` are computed and recorded afterward.
 fn review_schema() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
-        "required": ["launch", "session", "snapshot", "findings", "evidence_gaps", "reviewer_opinion", "verdict", "dispositions"],
-        "additionalProperties": false
+        "required": ["findings", "evidence_gaps", "reviewer_opinion"],
+        "additionalProperties": false,
+        "properties": {
+            "findings": {
+                "type": "array",
+                "description": "every finding the reviewer observed, each with id, severity, category, location, trigger, consequence and correction"
+            },
+            "evidence_gaps": {
+                "type": "array",
+                "description": "criteria the reviewer could not verify from the evidence given"
+            },
+            "reviewer_opinion": {
+                "type": "string",
+                "description": "the reviewer's own verdict; the controller recomputes the verdict it will actually use from finding severity and tier"
+            }
+        }
     })
 }

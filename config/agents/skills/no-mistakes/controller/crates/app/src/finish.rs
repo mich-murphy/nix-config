@@ -1,5 +1,5 @@
-use crate::delivery_support::{get_task, review_snapshot, verify_proof};
-use crate::task_support::digest_file;
+use crate::delivery_support::{review_snapshot, verify_proof};
+use crate::task_support::{completed, digest_file, task_ref};
 use crate::{AgentError, App, Output, Rejection};
 use adapters::process::Recovery;
 use domain::{
@@ -8,7 +8,7 @@ use domain::{
     event::{Event, Observation, OperationStatus},
     ids::{OperationId, Sha, TaskId},
     sync::Sync,
-    task::Phase,
+    task::{Phase, Receipt},
 };
 use std::path::PathBuf;
 
@@ -21,9 +21,7 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("final-verify")?;
-        let value = get_task(&state, &task).map_err(|message| {
-            self.error("final-verify", Some(&task), Rejection::Invalid(message))
-        })?;
+        let value = task_ref(&state, &task, "final-verify", self)?;
         let delivery = value.deliveries.last().ok_or_else(|| {
             self.error(
                 "final-verify",
@@ -56,15 +54,14 @@ impl App<'_> {
         }
         events.push(Event::Verified {
             task: task.clone(),
-            commit,
+            receipt: Receipt::Delivery { commit },
         });
         self.commit("final-verify", Some(&task), events, check)
     }
 
     pub(super) fn complete(&mut self, task: TaskId, check: bool) -> Result<Output, AgentError> {
         let state = self.state("complete")?;
-        let value = get_task(&state, &task)
-            .map_err(|message| self.error("complete", Some(&task), Rejection::Invalid(message)))?;
+        let value = task_ref(&state, &task, "complete", self)?;
         let done = state
             .config
             .as_ref()
@@ -95,9 +92,8 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("cleanup")?;
-        let value = get_task(&state, &task)
-            .map_err(|message| self.error("cleanup", Some(&task), Rejection::Invalid(message)))?;
-        if !state.completed.contains(&task) {
+        let value = task_ref(&state, &task, "cleanup", self)?;
+        if !completed(value) {
             return Err(self.error(
                 "cleanup",
                 Some(&task),

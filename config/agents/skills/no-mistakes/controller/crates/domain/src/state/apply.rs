@@ -1,18 +1,15 @@
 use super::State;
 use super::apply_delivery::{
-    close_delivery, disposition, finish_launch, invalidate_proof, narrow, observe_pr, record_proof,
-    set_sync, settle_operation, settle_review, spend_pair, use_authority, verify, with_task,
+    close_delivery, complete, disposition, finish_launch, invalidate_proof, narrow, observe_pr,
+    open_delivery, record_ci_deadline, record_proof, repurpose_authority, set_human_review,
+    set_sync, settle_operation, settle_review, spend_pair, start_launch, start_operation,
+    use_authority, verify, with_task,
 };
 use super::projection::{
     apply_discovery, apply_refresh, bind, brief, checkpoint, claim, plan, raise_tier, release,
     snapshot,
 };
-use crate::{
-    budget,
-    event::Event,
-    sync::Sync,
-    task::{Phase, Question},
-};
+use crate::{budget, event::Event, state::RecordedLesson, sync::Sync, task::Question};
 
 pub fn apply(state: &mut State, event: &Event) {
     match event {
@@ -34,9 +31,7 @@ pub fn apply(state: &mut State, event: &Event) {
         Event::Claimed { task, .. } => claim(state, task),
         Event::Held { task, reason, at } => {
             if let crate::task::HoldReason::CiPending { head, deadline, .. } = reason {
-                state
-                    .check_deadlines
-                    .insert(format!("{task}:{head}"), *deadline);
+                record_ci_deadline(state, task, head, *deadline);
             }
             with_task(state, task, |value| {
                 value.hold = Some(crate::task::Hold {
@@ -98,18 +93,12 @@ pub fn apply(state: &mut State, event: &Event) {
         } => with_task(state, task, |value| {
             value.subtasks.insert(issue.clone(), subtask.clone());
         }),
-        Event::Excluded { task, phase } => {
-            with_task(state, task, |value| value.phase = phase.clone())
-        }
-        Event::LaunchStarted { launch } => state.launches.push(launch.clone()),
+        Event::LaunchStarted { launch } => start_launch(state, launch),
         Event::LaunchEnded {
             launch,
             result,
             usage,
-        } => {
-            state.usage.insert(*launch, *usage);
-            finish_launch(state, *launch, result);
-        }
+        } => finish_launch(state, *launch, result, *usage),
         Event::ProofRecorded {
             task,
             delivery,
@@ -130,47 +119,26 @@ pub fn apply(state: &mut State, event: &Event) {
             task,
             snapshot,
             receipt,
-        } => {
-            state
-                .human_reviews
-                .insert(task.clone(), (snapshot.clone(), receipt.clone()));
-        }
-        Event::LessonRecorded { task, lesson } => {
-            state.lessons.push((task.clone(), lesson.clone()))
-        }
-        Event::DeliveryOpened { task, delivery } => with_task(state, task, |value| {
-            let first = value.deliveries.is_empty();
-            if let Some(authority_id) = delivery.authority
-                && let Some(authority) = value
-                    .authorities
-                    .iter_mut()
-                    .find(|entry| entry.id == authority_id)
-                && crate::authority::unused_pair(authority)
-            {
-                authority.grant = crate::authority::Grant::Delivery {
-                    kind: delivery.kind.clone(),
-                    criteria: delivery.criteria.clone(),
-                    paths: delivery.paths.clone(),
-                };
-            }
-            value.deliveries.push((**delivery).clone());
-            if !first {
-                value.phase = match &delivery.kind {
-                    crate::delivery::DeliveryKind::Code { .. } => Phase::Claimed,
-                    crate::delivery::DeliveryKind::Verification { of } => Phase::Merged {
-                        delivery: delivery.id,
-                        commit: of.clone(),
-                    },
-                };
-            }
+        } => set_human_review(state, task, snapshot, receipt),
+        Event::LessonRecorded { task, lesson } => state.lessons.push(RecordedLesson {
+            task: task.clone(),
+            lesson: lesson.clone(),
         }),
+        Event::DeliveryOpened { task, delivery } => {
+            open_delivery(state, task, (**delivery).clone());
+        }
+        Event::AuthorityRepurposed {
+            task,
+            authority,
+            grant,
+        } => repurpose_authority(state, task, *authority, grant),
         Event::AcceptanceNarrowed {
             task,
             delivery,
             criteria,
             ..
         } => narrow(state, task, *delivery, criteria),
-        Event::OperationStarted { operation } => state.operations.push(operation.clone()),
+        Event::OperationStarted { operation } => start_operation(state, operation),
         Event::OperationSettled {
             operation, status, ..
         } => settle_operation(state, *operation, *status),
@@ -180,10 +148,8 @@ pub fn apply(state: &mut State, event: &Event) {
             delivery,
             outcome,
         } => close_delivery(state, task, *delivery, outcome),
-        Event::Verified { task, commit } => verify(state, task, commit),
-        Event::Completed { task } => {
-            state.completed.insert(task.clone());
-        }
+        Event::Verified { task, receipt } => verify(state, task, receipt),
+        Event::Completed { task } => complete(state, task),
         Event::StatusIntended {
             task,
             issue,

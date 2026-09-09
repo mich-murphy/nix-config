@@ -21,6 +21,21 @@ pub struct Authority {
     pub used: AuthorityUse,
 }
 
+/// What the coordinator supplies for `grant`, `open-delivery` and
+/// `narrow-acceptance`: everything about a user receipt except what the
+/// controller itself owns. The controller assigns `id`, records `recorded`
+/// from its own clock, and starts `used` at its default; a wire type that
+/// let the caller set those would let it forge or replay them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AuthorityReceipt {
+    pub source: String,
+    pub artifact: PathBuf,
+    pub digest: Digest,
+    pub requirements: Digest,
+    pub grant: Grant,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Grant {
     Pair {

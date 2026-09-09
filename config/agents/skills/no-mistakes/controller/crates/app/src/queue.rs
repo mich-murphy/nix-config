@@ -1,9 +1,10 @@
+use crate::task_support::task_ref;
 use crate::{AgentError, App, Output, Rejection, ResultData, UsageReport};
 use domain::{
     command::{DiscoveredTask, NextAction},
     event::Event,
     ids::TaskId,
-    review,
+    review::{self, ReviewReport},
     task::HoldReason,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -38,23 +39,29 @@ impl App<'_> {
         })
     }
 
-    pub(super) fn validate_review(&self, value: &review::Review) -> Result<Output, AgentError> {
-        let computed = review::verdict(
-            &value.findings,
-            &value.evidence_gaps,
-            domain::risk::Tier::Full,
-        );
-        let unique: BTreeSet<_> = value.findings.iter().map(|finding| &finding.id).collect();
-        if unique.len() != value.findings.len() || computed != value.verdict {
+    /// Validates a reviewer's own `ReviewReport` against the task's actual
+    /// tier and returns the verdict the controller will compute from it,
+    /// so a self-validating reviewer can see what `run-agent` will
+    /// conclude before it spends a launch on a mismatch.
+    pub(super) fn validate_review(
+        &self,
+        task: &TaskId,
+        report: ReviewReport,
+    ) -> Result<Output, AgentError> {
+        let state = self.state("validate-review")?;
+        let value = task_ref(&state, task, "validate-review", self)?;
+        let unique: BTreeSet<_> = report.findings.iter().map(|finding| &finding.id).collect();
+        if unique.len() != report.findings.len() {
             return Err(self.error(
                 "validate-review",
-                None,
-                Rejection::Invalid("review output is inconsistent".into()),
+                Some(task),
+                Rejection::Invalid("duplicate finding id".into()),
             ));
         }
+        let verdict = review::verdict(&report.findings, &report.evidence_gaps, value.tier.current);
         Ok(Output {
             events: Vec::new(),
-            result: ResultData::Valid,
+            result: ResultData::Verdict { verdict },
         })
     }
 
@@ -187,12 +194,7 @@ impl App<'_> {
         )
     }
 
-    pub(super) fn resume(
-        &mut self,
-        task: TaskId,
-        _final_revisit: bool,
-        check: bool,
-    ) -> Result<Output, AgentError> {
+    pub(super) fn resume(&mut self, task: TaskId, check: bool) -> Result<Output, AgentError> {
         let state = self.state("resume")?;
         let held = state
             .tasks

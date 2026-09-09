@@ -79,7 +79,7 @@ fn validate_launch(
     id: &TaskId,
     role: AgentRole,
 ) -> Result<(), AgentError> {
-    if state.launches.iter().any(|launch| launch.session.is_none()) {
+    if state.launches.iter().any(|launch| launch.outcome.is_none()) {
         return Err(app.error(
             "run-agent",
             Some(id),
@@ -150,8 +150,9 @@ fn launch_events(
                 delivery,
                 role,
                 prompt: prompt.to_path_buf(),
-                session: None,
-                counted,
+                outcome: None,
+                usage: None,
+                checkpointed: false,
                 process: None,
             },
         },
@@ -188,10 +189,10 @@ fn require_prior_review(
     let prior = state.launches.iter().any(|launch| {
         launch.task == *task
             && launch.role == AgentRole::Reviewer
-            && launch
-                .session
-                .as_deref()
-                .is_some_and(|session| !session.is_empty())
+            && matches!(
+                launch.outcome,
+                Some(domain::event::LaunchOutcome::Completed { .. })
+            )
     });
     if role != AgentRole::Escalation || prior {
         Ok(())
@@ -216,9 +217,9 @@ fn require_checkpoint(
     task: &TaskId,
 ) -> Result<(), AgentError> {
     let latest = state.launches.iter().rev().find(|launch| {
-        launch.task == *task && launch.role == AgentRole::Implementer && launch.session.is_some()
+        launch.task == *task && launch.role == AgentRole::Implementer && launch.outcome.is_some()
     });
-    if latest.is_none_or(|launch| state.checkpoints.get(task) == Some(&launch.id)) {
+    if latest.is_none_or(|launch| launch.checkpointed) {
         Ok(())
     } else {
         Err(AgentError {

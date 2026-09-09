@@ -14,10 +14,10 @@ use crate::{
     budget::{self, BudgetKind},
     command::{ActionEnvelope, NextAction},
     delivery::{Delivery, DeliveryKind, PrState},
-    event::OperationStatus,
-    ids::{CriterionId, FindingId, IssueKey, TaskId},
+    event::{Launch, OperationStatus},
+    ids::{CriterionId, FindingId, IssueKey, LaunchId, TaskId},
     review::Verdict,
-    task::{Phase, PlannedWork, Task, WorkStage},
+    task::{Phase, PlannedWork, Task},
 };
 
 impl State {
@@ -41,7 +41,7 @@ impl State {
                 questions: self.questions.clone(),
             });
         }
-        if let Some(launch) = self.launches.iter().find(|launch| launch.session.is_none()) {
+        if let Some(launch) = self.launches.iter().find(|launch| launch.outcome.is_none()) {
             return Some(NextAction::MonitorLaunch { launch: launch.id });
         }
         if let Some(operation) = self.operations.iter().find(|operation| {
@@ -86,13 +86,22 @@ impl State {
             .and_then(|value| self.task_action(value))
     }
 
-    fn pending_checkpoint(&self, task: &TaskId) -> Option<crate::ids::LaunchId> {
-        let latest = self.launches.iter().rev().find(|launch| {
+    fn pending_checkpoint(&self, task: &TaskId) -> Option<LaunchId> {
+        let latest = self.latest_implementer_launch(task)?;
+        (!latest.checkpointed).then_some(latest.id)
+    }
+
+    /// The most recent implementer launch that has settled, or `None` if
+    /// none has (either no implementer turn has run yet, or the current
+    /// one is still in flight). `pending_checkpoint` and `needs_snapshot`
+    /// are the only readers: both derive their answer from this one
+    /// launch's own `checkpointed` flag rather than a separate map.
+    fn latest_implementer_launch(&self, task: &TaskId) -> Option<&Launch> {
+        self.launches.iter().rev().find(|launch| {
             launch.task == *task
                 && launch.role == crate::command::AgentRole::Implementer
-                && launch.session.is_some()
-        })?;
-        (self.checkpoints.get(task) != Some(&latest.id)).then_some(latest.id)
+                && launch.outcome.is_some()
+        })
     }
 
     fn queue_action(&self, now: Instant) -> Option<NextAction> {
@@ -138,10 +147,11 @@ impl State {
         match &task.phase {
             Phase::Queued | Phase::Blocked(_) | Phase::NeedsInput(_) | Phase::Excluded(_) => None,
             Phase::Claimed => Some(self.claimed_action(task)),
-            Phase::Planned { work } => Some(self.planned_action(task, work)),
-            Phase::InFlight { work, stage } => self.in_flight_action(task, work, stage),
+            Phase::Planned => Some(self.planned_action(task, task.current_work()?)),
+            Phase::InFlight => self.in_flight_action(task, task.current_work()?),
             Phase::Merged { commit, .. } => self.merged_action(task, commit),
             Phase::Verified { .. } => self.verified_action(task),
+            Phase::Completed { .. } => self.completed_action(task),
         }
     }
 
@@ -183,34 +193,17 @@ impl State {
 
     /// After an implementer launch has been checkpointed, the next action
     /// is `Snapshot` until a snapshot has been taken since that launch
-    /// (design Section 11). The integration sentinel (`LaunchId(0)`,
-    /// recorded when a checkpoint has no launch of its own) never triggers
-    /// this: there is no new launch to snapshot.
+    /// (design Section 11). An integration checkpoint (one with no launch
+    /// of its own) never triggers this: there is no new launch to
+    /// snapshot.
     fn needs_snapshot(&self, task: &Task, work: &PlannedWork) -> bool {
-        self.checkpoints
-            .get(&task.id)
-            .filter(|launch| launch.0 != 0)
-            .is_some_and(|launch| work.snapshot_launch != Some(*launch))
+        self.latest_implementer_launch(&task.id)
+            .filter(|launch| launch.checkpointed)
+            .is_some_and(|launch| work.snapshot_launch != Some(launch.id))
     }
 
-    fn in_flight_action(
-        &self,
-        task: &Task,
-        work: &PlannedWork,
-        stage: &WorkStage,
-    ) -> Option<NextAction> {
+    fn in_flight_action(&self, task: &Task, work: &PlannedWork) -> Option<NextAction> {
         let delivery = task.deliveries.last()?;
-        if matches!(stage, WorkStage::Building) {
-            return Some(NextAction::Implement {
-                task: task.id.clone(),
-                remaining_turns: budget::remaining(
-                    BudgetKind::Implementation,
-                    &task.budgets,
-                    task.tier.current,
-                    &task.authorities,
-                ),
-            });
-        }
         if self.needs_snapshot(task, work) {
             return Some(NextAction::Snapshot {
                 task: task.id.clone(),
@@ -276,7 +269,7 @@ impl State {
         if let Some(action) = self.review_sync_gate(task, delivery) {
             return Some(action);
         }
-        publish_action(self, task, delivery)
+        publish_action(task, delivery)
     }
 
     /// Once the current code delivery has a PR (draft or ready), Jira must
@@ -307,8 +300,7 @@ impl State {
     }
 
     /// After `Verified`, Jira must confirm Done for the parent and every
-    /// recorded subtask before `Complete`, then `Cleanup` (design Section
-    /// 11).
+    /// recorded subtask before `Complete` (design Section 11).
     fn verified_action(&self, task: &Task) -> Option<NextAction> {
         let done = self.config.as_ref()?.jira.statuses.done.clone();
         let issue = IssueKey::from(task.id.clone());
@@ -318,18 +310,17 @@ impl State {
         if let Some(action) = subtasks_sync_step(task, &done) {
             return Some(action);
         }
-        if !self.completed.contains(&task.id) {
-            return Some(NextAction::Complete {
-                task: task.id.clone(),
-            });
-        }
-        task.deliveries
-            .last()
-            .and_then(|delivery| delivery.work.as_ref())
-            .map(|work| NextAction::Cleanup {
-                task: task.id.clone(),
-                slot: work.slot.slot.clone(),
-            })
+        Some(NextAction::Complete {
+            task: task.id.clone(),
+        })
+    }
+
+    /// Once `Completed`, nothing remains but returning the owned slot.
+    fn completed_action(&self, task: &Task) -> Option<NextAction> {
+        task.current_work().map(|work| NextAction::Cleanup {
+            task: task.id.clone(),
+            slot: work.slot.slot.clone(),
+        })
     }
 }
 
@@ -381,5 +372,8 @@ fn unfinished_pr(task: &Task) -> bool {
 }
 
 fn terminal(phase: &Phase) -> bool {
-    matches!(phase, Phase::Verified { .. } | Phase::Excluded(_))
+    matches!(
+        phase,
+        Phase::Verified { .. } | Phase::Completed { .. } | Phase::Excluded(_)
+    )
 }

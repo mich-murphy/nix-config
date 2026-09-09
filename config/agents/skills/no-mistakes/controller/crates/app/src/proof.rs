@@ -1,5 +1,6 @@
+use crate::delivery_support::current_snapshot;
 use crate::task::CheckInput;
-use crate::task_support::{current_snapshot, digest_file, next_operation, task_ref};
+use crate::task_support::{digest_file, next_operation, task_ref};
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use adapters::ProcessRequest;
 use domain::{
@@ -161,7 +162,7 @@ impl App<'_> {
         if state
             .lessons
             .iter()
-            .any(|(_, existing)| existing.text == lesson.text)
+            .any(|recorded| recorded.lesson.text == lesson.text)
         {
             return Err(self.error(
                 "lesson-record",

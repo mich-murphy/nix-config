@@ -8,11 +8,10 @@ use app::App;
 use domain::{
     acceptance::{Measurement, ProofEntry, ProofKind, ProofStatus, Snapshot},
     command::{AgentRole, Command},
-    event::Event,
     ids::{DeliveryId, Digest, TaskId},
-    review::{Review, Verdict},
+    review::{ReviewReport, Verdict},
 };
-use std::{collections::BTreeMap, str::FromStr};
+use std::str::FromStr;
 
 pub fn prompt_file(
     directory: &std::path::Path,
@@ -23,46 +22,18 @@ pub fn prompt_file(
     Ok(path)
 }
 
-/// Predicts the reviewer's `LaunchId` with `--check` (no launch spent) and
-/// installs a PASS `Review` for that launch and `snapshot` in the fake
-/// harness, ready for the real `run-agent` call.
-pub fn arrange_passing_review(
-    app: &mut App<'_>,
-    fake: &Fake,
-    task: &TaskId,
-    prompt: &std::path::Path,
-    snapshot: Snapshot,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let output = app.execute(
-        Command::RunAgent {
-            task: task.clone(),
-            role: AgentRole::Reviewer,
-            prompt: prompt.to_path_buf(),
-            fallback: None,
-        },
-        true,
-    )?;
-    let launch = output
-        .events
-        .iter()
-        .find_map(|record| match &record.event {
-            Event::LaunchStarted { launch } if launch.role == AgentRole::Reviewer => {
-                Some(launch.id)
-            }
-            _ => None,
-        })
-        .ok_or("reviewer launch id was not predicted by --check")?;
-    let review = Review {
-        launch,
-        session: "reviewer-session".into(),
-        snapshot,
+/// Installs a PASS `ReviewReport` in the fake harness, ready for the real
+/// `run-agent` call: the reviewer emits only findings, evidence gaps and
+/// its own opinion (design Section 5, batch B item 4); the controller
+/// supplies the launch, session, snapshot, computed verdict and empty
+/// dispositions itself, so no `--check` prediction is needed here.
+pub fn arrange_passing_review(fake: &Fake) -> Result<(), Box<dyn std::error::Error>> {
+    let report = ReviewReport {
         findings: Vec::new(),
         evidence_gaps: Vec::new(),
         reviewer_opinion: Verdict::Pass,
-        verdict: Verdict::Pass,
-        dispositions: BTreeMap::new(),
     };
-    *fake.reviewer_output.borrow_mut() = serde_json::to_string(&review)?;
+    *fake.reviewer_output.borrow_mut() = serde_json::to_string(&report)?;
     Ok(())
 }
 

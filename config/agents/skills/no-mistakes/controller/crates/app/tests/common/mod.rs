@@ -179,7 +179,6 @@ pub fn task_named(id: &str) -> Result<DiscoveredTask, domain::ids::InvalidId> {
             ownership_clear: true,
             ownership_evidence: "fresh reads".into(),
             was_terminal: false,
-            jira_status: JiraStatus::from_str("todo")?,
             requirements: Digest::from_str(&"0".repeat(64))?,
         },
     })

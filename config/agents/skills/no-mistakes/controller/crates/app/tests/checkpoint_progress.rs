@@ -225,10 +225,14 @@ fn brief_change_keeps_counters() -> Result<(), Box<dyn std::error::Error>> {
         return Err("status returned wrong result".into());
     };
     assert_eq!(state.tasks[&task].budgets.implementation_turns, 1);
-    let phase = &state.tasks[&task].phase;
+    let value = &state.tasks[&task];
+    assert!(matches!(value.phase, domain::task::Phase::Planned));
+    let work = value
+        .current_work()
+        .ok_or("planned task has no current work")?;
     assert!(
-        matches!(phase, domain::task::Phase::Planned { work } if work.plan.is_none() && work.snapshot.is_none()),
-        "phase retained stale plan: {phase:?}"
+        work.plan.is_none() && work.snapshot.is_none(),
+        "delivery retained stale plan: {work:?}"
     );
     Ok(())
 }
@@ -272,6 +276,7 @@ fn checkpoint_allows_integration() -> Result<(), Box<dyn std::error::Error>> {
     let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
-    assert_eq!(state.checkpoints[&task], domain::ids::LaunchId(0));
+    // An integration checkpoint marks no launch: there is none to mark.
+    assert!(state.launches.is_empty());
     Ok(())
 }

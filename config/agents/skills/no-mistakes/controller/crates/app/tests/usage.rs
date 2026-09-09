@@ -1,7 +1,7 @@
 use app::UsageReport;
 use domain::{
     command::AgentRole,
-    event::Launch,
+    event::{Launch, LaunchOutcome},
     ids::{DeliveryId, LaunchId, TaskId},
     ports::Tokens,
     state::State,
@@ -15,8 +15,12 @@ fn launch(id: u64) -> Launch {
         delivery: DeliveryId(1),
         role: AgentRole::Implementer,
         prompt: PathBuf::from("/prompt"),
-        session: Some("session".into()),
-        counted: true,
+        outcome: Some(LaunchOutcome::Completed {
+            session: "session".into(),
+            output: String::new(),
+        }),
+        usage: None,
+        checkpointed: false,
         process: None,
     }
 }
@@ -32,23 +36,28 @@ fn missing_usage_is_unknown() {
 #[test]
 fn cache_count_stays_null() {
     let mut state = State::empty();
-    state.launches.push(launch(1));
-    state.usage.insert(
-        LaunchId(1),
-        Some(Tokens {
-            input: 4,
-            cached: None,
-            output: 2,
-        }),
-    );
+    let mut item = launch(1);
+    item.usage = Some(Tokens {
+        input: 4,
+        cached: None,
+        output: 2,
+    });
+    state.launches.push(item);
     assert_eq!(UsageReport::from_state(&state).cached, None);
 }
 
+/// A launch that settled without usable usage (missing or malformed alike:
+/// the harness adapter drops a malformed report rather than fabricating
+/// one) never reports a fabricated zero; it is unknown, whether it
+/// completed or, as here, failed outright.
 #[test]
 fn malformed_usage_is_dropped() {
     let mut state = State::empty();
-    state.launches.push(launch(1));
-    state.usage.insert(LaunchId(1), None);
+    let mut item = launch(1);
+    item.outcome = Some(LaunchOutcome::Failed {
+        reason: "malformed usage".into(),
+    });
+    state.launches.push(item);
     let report = UsageReport::from_state(&state);
     assert_eq!(report.unknown, vec![LaunchId(1)]);
     assert_eq!(report.input, 0);

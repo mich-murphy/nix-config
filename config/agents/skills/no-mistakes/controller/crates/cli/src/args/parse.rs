@@ -49,7 +49,7 @@ fn classify(argument: &str) -> ArgKind {
     match argument {
         "--check" => ArgKind::Check,
         "--pretty" => ArgKind::Pretty,
-        "--delete" | "--wait" | "--terminate" | "--final-revisit" => ArgKind::Flag,
+        "--delete" | "--wait" | "--terminate" => ArgKind::Flag,
         value if value.starts_with("--") => ArgKind::Option,
         _ => ArgKind::Positional,
     }

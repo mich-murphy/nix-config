@@ -56,7 +56,7 @@ fn unsettled_launch(
                 Rejection::Invalid("unknown launch".into()),
             )
         })?;
-    if item.session.is_none() {
+    if item.outcome.is_none() {
         Ok(item.clone())
     } else {
         Err(app.error(

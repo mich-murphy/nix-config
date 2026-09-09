@@ -1,8 +1,8 @@
 use crate::delivery::PublishInput;
 use crate::delivery_support::{
-    append_acceptance_hold, current_snapshot, execute_publish, get_task, next_operation,
-    publish_action, publish_ready,
+    append_acceptance_hold, current_snapshot, execute_publish, publish_action, publish_ready,
 };
+use crate::task_support::{next_operation, task_ref};
 use crate::{AgentError, App, Output, Rejection, ResultData};
 use domain::{
     event::{Event, Observation, Operation, OperationStatus},
@@ -17,8 +17,7 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("publish")?;
-        let value = get_task(&state, &task)
-            .map_err(|message| self.error("publish", Some(&task), Rejection::Invalid(message)))?;
+        let value = task_ref(&state, &task, "publish", self)?;
         let delivery = value.deliveries.last().ok_or_else(|| {
             self.error(
                 "publish",
@@ -33,7 +32,7 @@ impl App<'_> {
                 Rejection::Evidence("publish requires a snapshot".into()),
             )
         })?;
-        publish_ready(&state, value, delivery, &input)
+        publish_ready(&state, delivery, &input)
             .map_err(|message| self.error("publish", Some(&task), Rejection::Evidence(message)))?;
         let operation = publish_operation(self, &state, &task, delivery, snapshot, &input)?;
         self.execute_publish_flow(value, delivery, snapshot, &input, operation, check)

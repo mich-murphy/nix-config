@@ -5,16 +5,15 @@ use app::App;
 use common::golden::{plan_and_implement, task_baseline};
 use common::literals::{criterion_id, digest, write_text};
 use common::script::{
-    Step, execute, final_verify, merged_commit, record_proof, record_proof_with, review,
-    review_with, run_steps, step, unchecked,
+    Step, execute, final_verify, merged_commit, record_proof, record_proof_with, review, run_steps,
+    step, unchecked,
 };
 use common::*;
 use domain::{
     acceptance::Snapshot,
-    authority::{Authority, AuthorityUse, Grant},
+    authority::{AuthorityReceipt, Grant},
     command::{Command, JiraRead, NextAction, PublishStep},
     delivery::DeliveryKind,
-    ids::AuthorityId,
     ports::MergeMethod,
     task::{Hold, HoldReason, Phase, Plan},
 };
@@ -46,20 +45,17 @@ fn narrow_record_review_and_merge(
             unchecked(execute(Command::NarrowAcceptance {
                 task: task.clone(),
                 criteria: vec![criterion_id("STAGE1")],
-                authority: Box::new(Authority {
-                    id: AuthorityId(1),
+                receipt: AuthorityReceipt {
                     source: "current user".into(),
                     artifact: receipt,
                     digest: narrow_digest,
                     requirements,
-                    recorded: 10,
                     grant: Grant::Narrowing {
                         criteria: vec![criterion_id("STAGE1")],
                         operational_proof: "narrowed merge lands behind a flag".into(),
                         cleanup_plan: "finish AC1 through open-delivery after merge".into(),
                     },
-                    used: AuthorityUse::default(),
-                }),
+                },
             })),
             unchecked(execute(Command::Plan {
                 task: task.clone(),
@@ -132,20 +128,17 @@ fn open_verification_delivery(
         execute(Command::OpenDelivery {
             task: task.clone(),
             kind: DeliveryKind::Verification { of: commit.clone() },
-            authority: Box::new(Authority {
-                id: AuthorityId(2),
+            receipt: AuthorityReceipt {
                 source: "current user".into(),
                 artifact: receipt,
                 digest: receipt_digest,
                 requirements: requirements.clone(),
-                recorded: 20,
                 grant: Grant::Delivery {
                     kind: DeliveryKind::Verification { of: commit },
                     criteria: vec![criterion_id("AC1")],
                     paths: None,
                 },
-                used: AuthorityUse::default(),
-            }),
+            },
             jira: JiraRead {
                 member: true,
                 resolved: false,
@@ -209,10 +202,7 @@ fn verification_script(
         ),
         step(
             |action| matches!(action, NextAction::Review { .. }),
-            review_with(
-                write_text(directory, "review-final.md", "bounded task"),
-                snapshot,
-            ),
+            review(write_text(directory, "review-final.md", "bounded task")),
         ),
         step(
             |action| matches!(action, NextAction::FinalVerify { .. }),
@@ -249,5 +239,129 @@ fn verification_delivery_reaches_verified() -> Result<(), Box<dyn std::error::Er
 
     let state = task_state(&mut app, &task)?;
     assert!(matches!(state.phase, Phase::Verified { .. }));
+    Ok(())
+}
+
+/// Grants an unused `Pair` for the held task, then repurposes it (same
+/// digest and artifact) as the grant for a `Verification` delivery
+/// reopened against `commit`. Returns the authority id the pair was
+/// granted under, for the caller to confirm it, not a new one, now
+/// carries the delivery grant.
+fn grant_then_repurpose_pair(
+    app: &mut App<'_>,
+    task: &domain::ids::TaskId,
+    directory: &std::path::Path,
+    commit: domain::ids::Sha,
+) -> Result<domain::ids::AuthorityId, Box<dyn std::error::Error>> {
+    let requirements = task_state(app, task)?.spec.requirements;
+    let artifact = directory.join("pair-receipt.txt");
+    let digest = write_artifact(&artifact, "one more pair for cleanup")?;
+    app.execute(
+        Command::Grant {
+            task: task.clone(),
+            receipt: AuthorityReceipt {
+                source: "current user".into(),
+                artifact: artifact.clone(),
+                digest: digest.clone(),
+                requirements: requirements.clone(),
+                grant: Grant::Pair { paths: None },
+            },
+        },
+        false,
+    )?;
+    let pair_id = pair_authority_id(app, task, &digest)?;
+    app.execute(
+        Command::OpenDelivery {
+            task: task.clone(),
+            kind: DeliveryKind::Verification { of: commit.clone() },
+            receipt: AuthorityReceipt {
+                source: "current user".into(),
+                artifact,
+                digest,
+                requirements: requirements.clone(),
+                grant: Grant::Delivery {
+                    kind: DeliveryKind::Verification { of: commit },
+                    criteria: vec![criterion_id("AC1")],
+                    paths: None,
+                },
+            },
+            jira: JiraRead {
+                member: true,
+                resolved: false,
+                ownership_clear: true,
+                requirements,
+            },
+        },
+        false,
+    )?;
+    Ok(pair_id)
+}
+
+fn pair_authority_id(
+    app: &mut App<'_>,
+    task: &domain::ids::TaskId,
+    digest: &domain::ids::Digest,
+) -> Result<domain::ids::AuthorityId, Box<dyn std::error::Error>> {
+    task_state(app, task)?
+        .authorities
+        .iter()
+        .find(|entry| entry.digest == *digest)
+        .map(|entry| entry.id)
+        .ok_or_else(|| "pair authority missing".into())
+}
+
+/// A receipt naming an unused `Pair` grant repurposes it as `open-delivery`'s
+/// grant (design Section 5, batch B item 4): no second authority is
+/// registered under the same digest, and the existing one's `grant`
+/// changes from `Pair` to `Delivery` in place, recorded by the explicit
+/// `AuthorityRepurposed` event rather than a hidden mutation inside
+/// `apply`.
+#[test]
+fn open_delivery_repurposes_unused_pair() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let task = plan_and_implement(&mut app, directory.path())?;
+
+    run_steps(
+        &mut app,
+        &fake,
+        &task,
+        vec![unchecked(record_proof(
+            "AC1",
+            digest('b'),
+            directory.path().join("proof-ac1.txt"),
+        ))],
+    )?;
+    narrow_record_review_and_merge(&mut app, &fake, &task, directory.path())?;
+    assert_held_for_human(&mut app, &task)?;
+
+    let commit = merged_commit(&mut app, &task)?;
+    let pair_id = grant_then_repurpose_pair(&mut app, &task, directory.path(), commit)?;
+
+    assert_authority_count_and_grant(&mut app, &task, pair_id, 2)?;
+    Ok(())
+}
+
+/// Asserts the task has exactly `count` authorities (proving repurposing
+/// registered no second one) and that `pair_id` now carries a `Delivery`
+/// grant.
+fn assert_authority_count_and_grant(
+    app: &mut App<'_>,
+    task: &domain::ids::TaskId,
+    pair_id: domain::ids::AuthorityId,
+    count: usize,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let state = task_state(app, task)?;
+    assert_eq!(
+        state.authorities.len(),
+        count,
+        "repurposing must not register a second authority"
+    );
+    let repurposed = state
+        .authorities
+        .iter()
+        .find(|entry| entry.id == pair_id)
+        .ok_or("repurposed authority missing")?;
+    assert!(matches!(repurposed.grant, Grant::Delivery { .. }));
     Ok(())
 }
