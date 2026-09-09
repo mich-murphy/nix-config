@@ -225,19 +225,28 @@ fn check_cycle<'a>(
     graph: &BTreeMap<&'a TaskId, &'a Vec<domain::task::Dependency>>,
     root: &'a TaskId,
 ) -> Result<(), String> {
-    let mut seen = BTreeSet::new();
-    let mut stack = vec![root];
-    while let Some(current) = stack.pop() {
-        if !seen.insert(current) {
-            return Err(format!("dependency cycle at {current}"));
-        }
-        stack.extend(graph.get(current).into_iter().flat_map(|dependencies| {
-            dependencies
-                .iter()
-                .filter(|dependency| graph.contains_key(&dependency.task))
-                .map(|dependency| &dependency.task)
-        }));
+    visit_dependency(graph, root, &mut BTreeSet::new(), &mut BTreeSet::new())
+}
+
+fn visit_dependency<'a>(
+    graph: &BTreeMap<&'a TaskId, &'a Vec<domain::task::Dependency>>,
+    current: &'a TaskId,
+    visited: &mut BTreeSet<&'a TaskId>,
+    path: &mut BTreeSet<&'a TaskId>,
+) -> Result<(), String> {
+    if path.contains(current) {
+        return Err(format!("dependency cycle at {current}"));
     }
+    if !visited.insert(current) {
+        return Ok(());
+    }
+    path.insert(current);
+    for dependency in graph.get(current).into_iter().flat_map(|value| *value) {
+        if graph.contains_key(&dependency.task) {
+            visit_dependency(graph, &dependency.task, visited, path)?;
+        }
+    }
+    path.remove(current);
     Ok(())
 }
 

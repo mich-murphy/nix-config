@@ -102,6 +102,64 @@ fn claim_respects_priority() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn discovery_accepts_shared_dependency_paths() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let mut root = task_named("GAIN-2")?;
+    root.spec.dependencies = vec![
+        Dependency {
+            task: TaskId::from_str("GAIN-3")?,
+            code: true,
+            main_commit: None,
+        },
+        Dependency {
+            task: TaskId::from_str("GAIN-4")?,
+            code: true,
+            main_commit: None,
+        },
+    ];
+    let mut left = task_named("GAIN-3")?;
+    left.spec.dependencies.push(Dependency {
+        task: TaskId::from_str("GAIN-5")?,
+        code: true,
+        main_commit: None,
+    });
+    let mut right = task_named("GAIN-4")?;
+    right.spec.dependencies = left.spec.dependencies.clone();
+
+    discover(&mut app, vec![root, left, right, task_named("GAIN-5")?])?;
+    Ok(())
+}
+
+#[test]
+fn discovery_rejects_dependency_cycle() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let mut first = task_named("GAIN-2")?;
+    first.spec.dependencies.push(Dependency {
+        task: TaskId::from_str("GAIN-3")?,
+        code: true,
+        main_commit: None,
+    });
+    let mut second = task_named("GAIN-3")?;
+    second.spec.dependencies.push(Dependency {
+        task: TaskId::from_str("GAIN-2")?,
+        code: true,
+        main_commit: None,
+    });
+
+    let error = discover(&mut app, vec![first, second]);
+    assert!(matches!(
+        error,
+        Err(app::AgentError {
+            why: Rejection::Invalid(message),
+            ..
+        }) if message.contains("dependency cycle")
+    ));
+    Ok(())
+}
+
+#[test]
 fn dependency_requires_main_commit() -> Result<(), Box<dyn std::error::Error>> {
     let (directory, fake) = initialized()?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
