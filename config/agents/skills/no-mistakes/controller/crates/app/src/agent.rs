@@ -152,7 +152,7 @@ fn settle_review(
         verdict,
         dispositions: BTreeMap::new(),
     };
-    let implementer = previous_session_from_state(state, task, AgentRole::Implementer);
+    let implementer = previous_session_from_state(state, task, delivery.id, AgentRole::Implementer);
     review::validate(&review, &snapshot, implementer.as_deref())?;
     Ok(review)
 }
@@ -160,7 +160,8 @@ fn settle_review(
 fn previous_session_from_state(
     state: &domain::state::State,
     task: &TaskId,
+    delivery: DeliveryId,
     role: AgentRole,
 ) -> Option<String> {
-    previous_session(state, task, role).filter(|session| !session.is_empty())
+    previous_session(state, task, delivery, role).filter(|session| !session.is_empty())
 }

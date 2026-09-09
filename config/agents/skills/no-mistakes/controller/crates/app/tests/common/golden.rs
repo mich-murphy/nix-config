@@ -3,12 +3,15 @@
 //! `../golden_path_recovery.rs`). Kept here, not in `mod.rs`, purely to
 //! stay under the 400-line file gate.
 
-use super::{Fake, prepare, task_state};
+use super::{Fake, prepare, sha, task_state};
+use adapters::sqlite::Store;
 use app::App;
 use domain::{
     acceptance::{Measurement, ProofEntry, ProofKind, ProofStatus, Snapshot},
     command::{AgentRole, Command},
-    ids::{DeliveryId, Digest, TaskId},
+    delivery::{PrState, PullRequest},
+    event::{Actor, Event},
+    ids::{DeliveryId, Digest, PrNumber, TaskId},
     review::{ReviewReport, Verdict},
 };
 use std::str::FromStr;
@@ -149,4 +152,48 @@ pub fn task_baseline(
         .get(&criterion.parse()?)
         .cloned()
         .ok_or_else(|| "task baseline missing".into())
+}
+
+/// `plan_and_implement`, then an external merge observed with no proof or
+/// review ever recorded: a `Merged` delivery whose acceptance is left
+/// open, holding `NeedsHuman` (`external_merge_holds`'s shape), the
+/// starting point every follow-up-delivery rule needs.
+pub fn plan_implement_and_merge_externally(
+    app: &mut App<'_>,
+    fake: &Fake,
+    directory: &std::path::Path,
+) -> Result<TaskId, Box<dyn std::error::Error>> {
+    let task = plan_and_implement(app, directory)?;
+    Store::open(directory)?.commit(
+        Actor::Coordinator,
+        10,
+        &[Event::PrObserved {
+            task: task.clone(),
+            delivery: DeliveryId(1),
+            pr: PullRequest {
+                number: PrNumber(1),
+                state: PrState::Open,
+                draft: false,
+                head: sha('a')?,
+                merge: None,
+                checks: Vec::new(),
+            },
+        }],
+    )?;
+    *fake.observation.borrow_mut() = Some(PullRequest {
+        number: PrNumber(1),
+        state: PrState::Merged,
+        draft: false,
+        head: sha('a')?,
+        merge: Some(sha('a')?),
+        checks: Vec::new(),
+    });
+    app.execute(
+        Command::ObservePr {
+            task: task.clone(),
+            pr: PrNumber(1),
+        },
+        false,
+    )?;
+    Ok(task)
 }

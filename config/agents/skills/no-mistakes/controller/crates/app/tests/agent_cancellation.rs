@@ -1,9 +1,12 @@
 mod common;
 
 use adapters::sqlite::Store;
-use app::App;
+use app::{App, Rejection};
+use common::golden::{arrange_passing_review, plan_and_implement, record_proof_for};
+use common::literals::digest;
 use common::*;
 use domain::{
+    budget::BudgetKind,
     command::{AgentRole, Command, RecoveryTarget},
     ids::TaskId,
     ports::{
@@ -116,4 +119,174 @@ fn launch_for(
         .find(|launch| launch.task == *task && launch.role == AgentRole::Implementer)
         .cloned()
         .ok_or_else(|| "launch missing".into())
+}
+
+/// The most recent unsettled implementer launch for `task`, the one a
+/// just-failed `run-agent` left behind for `recover-operation`.
+fn unsettled_launch(
+    app: &mut App<'_>,
+    task: &TaskId,
+) -> Result<domain::event::Launch, Box<dyn std::error::Error>> {
+    let app::ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
+        return Err("status returned wrong result".into());
+    };
+    state
+        .launches
+        .iter()
+        .rev()
+        .find(|launch| {
+            launch.task == *task
+                && launch.role == AgentRole::Implementer
+                && launch.outcome.is_none()
+        })
+        .cloned()
+        .ok_or_else(|| "unsettled launch missing".into())
+}
+
+/// One implementer turn that reaches the gate, is charged, then fails:
+/// recovered (terminated) and checkpointed (`advanced: true`, so it never
+/// contributes to the stalled-checkpoint count) so the next launch is
+/// free to start. Shared by `turn_limit_counts_cancelled` and
+/// `exhausted_turns_allow_review` to drive the implementation budget to
+/// its Trivial-tier cap of four without ever completing real work.
+fn cancel_one_turn(
+    app: &mut App<'_>,
+    task: &TaskId,
+    directory: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let result = app.execute(
+        Command::RunAgent {
+            task: task.clone(),
+            role: AgentRole::Implementer,
+            prompt: prompt(directory)?,
+            fallback: None,
+        },
+        false,
+    );
+    assert!(result.is_err());
+    let launch = unsettled_launch(app, task)?;
+    app.execute(
+        Command::RecoverOperation {
+            target: RecoveryTarget::Launch { launch: launch.id },
+            terminate: true,
+        },
+        false,
+    )?;
+    app.execute(
+        Command::Checkpoint {
+            task: task.clone(),
+            advanced: true,
+            observation: "turn cancelled".into(),
+            next: "retry".into(),
+            outside_paths: Vec::new(),
+            scope_reason: None,
+        },
+        false,
+    )?;
+    Ok(())
+}
+
+/// Driving a Trivial-tier task (limit 4) to implementation exhaustion
+/// through four cancelled turns still counts every one of them: the fifth
+/// launch is rejected on budget, not merely "still running".
+#[test]
+fn turn_limit_counts_cancelled() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    prepare_in(directory.path(), &fake)?;
+    let task = TaskId::from_str("GAIN-2")?;
+    let canceling = Canceling;
+    let mut app = canceling_app(directory.path(), &fake, &canceling)?;
+    cancel_turns(&mut app, &task, directory.path(), 4)?;
+    let state = task_state(&mut app, &task)?;
+    assert_eq!(state.budgets.implementation_turns, 4);
+
+    let fifth = app.execute(
+        Command::RunAgent {
+            task: task.clone(),
+            role: AgentRole::Implementer,
+            prompt: prompt(directory.path())?,
+            fallback: None,
+        },
+        false,
+    );
+    assert!(matches!(
+        fifth,
+        Err(app::AgentError {
+            why: Rejection::Budget(BudgetKind::Implementation),
+            ..
+        })
+    ));
+    let state = task_state(&mut app, &task)?;
+    assert_eq!(state.budgets.implementation_turns, 4);
+    Ok(())
+}
+
+/// `plan_and_implement` plus one recorded AC1 proof entry, the shared
+/// starting point `exhausted_turns_allow_review` needs before it cancels
+/// out the implementation budget. Split out so its own three fallible
+/// steps are scored apart from the scenario that drives the turns.
+fn plan_implement_and_record_proof(
+    app: &mut App<'_>,
+    directory: &std::path::Path,
+) -> Result<TaskId, Box<dyn std::error::Error>> {
+    let task = plan_and_implement(app, directory)?;
+    let (delivery, snapshot) = current_delivery(app, &task)?;
+    record_proof_for(
+        app,
+        &task,
+        delivery,
+        "AC1",
+        digest('b'),
+        snapshot,
+        directory.join("proof.txt"),
+    )?;
+    Ok(task)
+}
+
+/// Cancels `count` implementer turns in a row, the loop
+/// `exhausted_turns_allow_review` and `turn_limit_counts_cancelled` both
+/// drive to exhaust the implementation budget, split out so the loop's own
+/// branch is not scored against the scenario around it.
+fn cancel_turns(
+    app: &mut App<'_>,
+    task: &TaskId,
+    directory: &std::path::Path,
+    count: u32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    for _ in 0..count {
+        cancel_one_turn(app, task, directory)?;
+    }
+    Ok(())
+}
+
+/// Implementation exhausted by four cancelled turns still permits a
+/// reviewer launch once real proof satisfies readiness: the two budgets
+/// are independent.
+#[test]
+fn exhausted_turns_allow_review() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let task = plan_implement_and_record_proof(&mut app, directory.path())?;
+    drop(app);
+
+    let canceling = Canceling;
+    let mut app = canceling_app(directory.path(), &fake, &canceling)?;
+    cancel_turns(&mut app, &task, directory.path(), 3)?;
+    let state = task_state(&mut app, &task)?;
+    assert_eq!(state.budgets.implementation_turns, 4);
+    drop(app);
+
+    arrange_passing_review(&fake)?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let review = app.execute(
+        Command::RunAgent {
+            task: task.clone(),
+            role: AgentRole::Reviewer,
+            prompt: prompt(directory.path())?,
+            fallback: None,
+        },
+        false,
+    );
+    assert!(review.is_ok());
+    Ok(())
 }

@@ -47,14 +47,14 @@ Two rules were found only by reading bodies and were not settled in
 | --- | --- | --- | --- |
 | Cannot clean a slot with unfinished work | `cannot_clean_unfinished_or_unknown_slot` | `cleanup_rejects_unfinished_slot` | keep |
 | Existing directory of unknown ownership is occupied | same | `reserve_rejects_unknown_directory` | keep |
-| Uncertain provision confirms only the slot the task already holds | `uncertain_provision_confirms_the_same_already_bound_slot` | `uncertain_provision_confirms_same_slot` | keep |
-| Uncertain provision cannot confirm a different slot | `uncertain_provision_cannot_confirm_a_different_already_bound_slot` | `uncertain_provision_rejects_other_slot` | keep |
+| Uncertain provision confirms only the slot the task already holds | `uncertain_provision_confirms_the_same_already_bound_slot` | `uncertain_provision_confirms_same_slot` | drop; bind-slot is synchronous through Vcs (revision 3) |
+| Uncertain provision cannot confirm a different slot | `uncertain_provision_cannot_confirm_a_different_already_bound_slot` | `uncertain_provision_rejects_other_slot` | drop; bind-slot is synchronous through Vcs (revision 3) |
 | A slot with a second unfinished owner is not bindable | `same_slot_replay_cannot_bypass_a_second_unfinished_owner` | `bind_rejects_second_owner` | keep |
 | Missing checkout owned by a held task blocks provisioning before the helper runs | `provision_rejects_missing_checkout_owned_by_unfinished_task_before_helper_runs` | `provision_checks_ownership_first` | keep |
-| Collision settles failed, preserves both tasks, allows another slot | `legacy_provision_collision_settles_failed_and_allows_a_different_slot` | `collision_settles_failed` | keep; drop the counters and checkout-clean assertions on observation shape |
-| Reconciling a provision never bypasses the active-task guard | `legacy_collision_does_not_bypass_active_task_guard` | `reconcile_respects_active_guard` | keep |
+| Collision settles failed, preserves both tasks, allows another slot | `legacy_provision_collision_settles_failed_and_allows_a_different_slot` | `collision_settles_failed` | drop; bind-slot is synchronous through Vcs (revision 3) |
+| Reconciling a provision never bypasses the active-task guard | `legacy_collision_does_not_bypass_active_task_guard` | `reconcile_respects_active_guard` | drop; bind-slot is synchronous through Vcs (revision 3) |
 | No delivery binds a slot any closed delivery used | `followup_preserves_dirty_old_worker_and_refuses_historical_or_foreign_replacement`, `followup_rejects_symlink_foreign_dirty_and_other_task_slot_without_effects` | `bind_rejects_historical_slot` | keep |
-| Symlink, dirty or foreign checkout rejected without effects | same | `bind_rejects_unsafe_checkout` | keep |
+| Symlink, dirty or foreign checkout rejected without effects | same | `symlink_slot_rejected`, `foreign_slot_rejected`, `dirty_slot_rejected` | keep |
 | Slot reuse grant binds a historical slot only for an unstarted delivery whose historical owner completed there | `explicit_historical_slot_reuse_refreshes_only_unstarted_delivery_state`, `historical_slot_exception_rejects_unfinished_owner_or_started_prepared_work` | `slot_reuse_requires_unstarted_delivery`, `slot_reuse_requires_completed_owner` | keep |
 | Slot reuse refreshes the delivery base to current main | `explicit_historical_slot_reuse_refreshes_only_unstarted_delivery_state` | `slot_reuse_refreshes_base` | keep |
 | Completed delivery is stable across worker reset, branch reuse and removal | `completed_delivery_stays_stable_after_worker_reset_reuse_and_removal` | `closed_delivery_ignores_worktree_changes` | keep, one case |
@@ -106,7 +106,7 @@ Two rules were found only by reading bodies and were not settled in
 
 | Rule | Test | Name | Decision |
 | --- | --- | --- | --- |
-| Open-delivery requires hold, run ownership, no prior terminal state | `followup_preparation_rejects_missing_receipt_requirements_live_turn_and_unknown_operation`, `recovery_rejects_changed_receipts_partial_pairs_and_wrong_replacement_without_effects` | `open_requires_held_owned_task` | keep |
+| Open-delivery requires hold, run ownership, no prior terminal state | `followup_preparation_rejects_missing_receipt_requirements_live_turn_and_unknown_operation`, `recovery_rejects_changed_receipts_partial_pairs_and_wrong_replacement_without_effects` | `open_requires_hold`, `open_requires_jira_ownership`, `open_rejects_terminal_task` | keep |
 | Open-delivery requires prior delivery closed | `followup_requires_unchanged_historical_pr_and_rejects_reused_authorization` | `open_requires_closed_prior` | keep |
 | Prior `Merged` commit must be on main | `followup_requires_unchanged_historical_pr_and_rejects_reused_authorization`, `followup_final_verify_uses_current_merge_and_full_cumulative_criteria` | `history_merges_stay_on_main` | keep |
 | Prior `Replaced` PR must still be merged at the recorded head and merge commit | `historical_reopen_and_external_merge_drift_do_not_mutate_current_delivery`, `recovery_rejects_changed_receipts_partial_pairs_and_wrong_replacement_without_effects` | `replacement_identity_is_fixed` | keep |

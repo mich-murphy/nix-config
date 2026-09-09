@@ -61,7 +61,7 @@ pub(super) fn prepare_launch(
             .as_ref()
             .map(|config| config.repo.clone())
             .unwrap_or_default(),
-        session: previous_session(&state, id, role),
+        session: previous_session(&state, id, delivery_id, role),
         reviewer: role != AgentRole::Implementer,
         // The path the reviewer's schema will be written to, for a
         // `Native` harness (Codex). Only the path is decided here; the

@@ -134,6 +134,9 @@ fn base_fake() -> Fake {
         head: std::cell::Cell::new('a'),
         reviewer_output: std::cell::RefCell::new("done".into()),
         pending_checks: std::cell::Cell::new(false),
+        on_main: std::cell::Cell::new(true),
+        vcs_calls: std::cell::RefCell::new(Vec::new()),
+        last_session: std::cell::RefCell::new(None),
     }
 }
 

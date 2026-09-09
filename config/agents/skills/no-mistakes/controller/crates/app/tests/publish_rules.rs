@@ -46,6 +46,9 @@ fn prepared_external_merge() -> Result<(tempfile::TempDir, Fake), Box<dyn std::e
         head: std::cell::Cell::new('a'),
         reviewer_output: std::cell::RefCell::new("done".into()),
         pending_checks: std::cell::Cell::new(false),
+        on_main: std::cell::Cell::new(true),
+        vcs_calls: std::cell::RefCell::new(Vec::new()),
+        last_session: std::cell::RefCell::new(None),
     })?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     prepare(&mut app)?;

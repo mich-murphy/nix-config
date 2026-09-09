@@ -29,6 +29,19 @@ pub struct Fake {
     /// one required, pending check, so `observe` reports CI still running
     /// until a test clears it.
     pub pending_checks: std::cell::Cell<bool>,
+    /// What `Vcs::on_main` reports for any commit. Defaults to `true`; a
+    /// test flips it to simulate a historical merge or replacement PR that
+    /// has since left `origin/main`.
+    pub on_main: std::cell::Cell<bool>,
+    /// Every worktree-mutating `Vcs` call actually made (`bind_slot`,
+    /// `reuse_slot`), in order, so a rejection test can assert the
+    /// forbidden effect never happened.
+    pub vcs_calls: std::cell::RefCell<Vec<&'static str>>,
+    /// The `session` field of the most recent `LaunchRequest` the harness
+    /// received (`Some(None)` for a fresh launch, `Some(Some(id))` for a
+    /// resumed one), so a test can assert whether a launch resumed a prior
+    /// session.
+    pub last_session: std::cell::RefCell<Option<Option<String>>>,
 }
 
 impl Clock for Fake {
@@ -46,7 +59,7 @@ impl Vcs for Fake {
         sha(self.head.get())
     }
     fn on_main(&self, _commit: &domain::ids::Sha) -> Result<bool, PortError> {
-        Ok(true)
+        Ok(self.on_main.get())
     }
     fn changed_paths(
         &self,
@@ -87,9 +100,11 @@ impl Vcs for Fake {
         _slot: &domain::ids::SlotId,
         _branch: &str,
     ) -> Result<(), PortError> {
+        self.vcs_calls.borrow_mut().push("bind_slot");
         Ok(())
     }
     fn reuse_slot(&self, _slot: &domain::ids::SlotId, _branch: &str) -> Result<(), PortError> {
+        self.vcs_calls.borrow_mut().push("reuse_slot");
         Ok(())
     }
     fn clean_slot(&self, _slot: &domain::ids::SlotId, _delete: bool) -> Result<(), PortError> {
@@ -205,6 +220,7 @@ impl Harness for Fake {
         request: &LaunchRequest,
         started: &mut dyn FnMut(domain::ports::ProcessIdentity) -> Result<(), PortError>,
     ) -> Result<LaunchResult, PortError> {
+        *self.last_session.borrow_mut() = Some(request.session.clone());
         started(domain::ports::ProcessIdentity {
             pid: 1,
             start_ticks: 2,

@@ -254,20 +254,25 @@ pub(super) fn pair_for(
 }
 
 /// The session id a harness adapter should resume, from the most recent
-/// launch of `role`. A completed launch reports its real session; a
-/// failed or cancelled one reports an empty string, exactly as its
-/// `LaunchOutcome` recorded it, so a caller that only wants a genuine
-/// prior session can still filter it out (`!session.is_empty()`).
+/// launch of `role` within `delivery`. Scoped to the current delivery so a
+/// new delivery's first launch never resumes a session a prior, closed
+/// delivery left behind (design Section 5: a new delivery starts with
+/// fresh sessions); a repair within the same delivery still finds its own
+/// prior launch. A completed launch reports its real session; a failed or
+/// cancelled one reports an empty string, exactly as its `LaunchOutcome`
+/// recorded it, so a caller that only wants a genuine prior session can
+/// still filter it out (`!session.is_empty()`).
 pub(super) fn previous_session(
     state: &domain::state::State,
     task: &TaskId,
+    delivery: DeliveryId,
     role: AgentRole,
 ) -> Option<String> {
     let outcome = state
         .launches
         .iter()
         .rev()
-        .find(|launch| launch.task == *task && launch.role == role)?
+        .find(|launch| launch.task == *task && launch.delivery == delivery && launch.role == role)?
         .outcome
         .as_ref()?;
     Some(match outcome {
