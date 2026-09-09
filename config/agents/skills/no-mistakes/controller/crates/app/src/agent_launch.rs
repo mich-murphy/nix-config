@@ -1,8 +1,9 @@
 use crate::delivery_support::verify_proof;
+use crate::error::Ctx;
 use crate::task_support::{
     assignment, guard_role, next_launch, pair_for, previous_session, review_target, task_ref,
 };
-use crate::{AgentError, App, Rejection};
+use crate::{AgentError, App, ConflictReason, Rejection};
 use domain::{
     authority, budget,
     command::{AgentRole, Fallback},
@@ -26,18 +27,17 @@ pub(super) fn prepare_launch(
     prompt: &Path,
     fallback: Option<&Fallback>,
 ) -> Result<PreparedLaunch, AgentError> {
+    let ctx = app.ctx("run-agent", Some(id));
     let state = app.state("run-agent")?;
     let task = task_ref(&state, id, "run-agent", app)?.clone();
-    validate_launch(app, &state, &task, id, role)?;
-    let delivery = task.deliveries.last().ok_or_else(|| {
-        app.error(
-            "run-agent",
-            Some(id),
-            Rejection::Conflict("task has no delivery".into()),
-        )
-    })?;
+    validate_launch(&ctx, &state, &task, id, role)?;
+    let delivery = task
+        .deliveries
+        .last()
+        .ok_or_else(|| ctx.reject(ConflictReason::NoDelivery))?;
     let delivery_id = delivery.id;
-    let (assignment, budget_kind, counted) = launch_budget(app, &state, &task, id, role, fallback)?;
+    let (assignment, budget_kind, counted) =
+        launch_budget(&ctx, &state, &task, id, role, fallback)?;
     let launch = next_launch(&state);
     let events = launch_events(
         &task,
@@ -50,7 +50,7 @@ pub(super) fn prepare_launch(
         counted,
     );
     let prompt_text = fs::read_to_string(prompt)
-        .map_err(|error| app.error("run-agent", Some(id), Rejection::Invalid(error.to_string())))?;
+        .map_err(|error| ctx.reject(Rejection::Invalid(error.to_string())))?;
     let prompt_text = crate::task_support::launch_prompt(&task, prompt_text);
     let request = LaunchRequest {
         id: launch,
@@ -63,6 +63,12 @@ pub(super) fn prepare_launch(
             .unwrap_or_default(),
         session: previous_session(&state, id, role),
         reviewer: role != AgentRole::Implementer,
+        // The path the reviewer's schema will be written to, for a
+        // `Native` harness (Codex). Only the path is decided here; the
+        // file itself is written just before the launch actually runs
+        // (`agent_support::invoke`), never during `--check`.
+        output_schema: (role != AgentRole::Implementer)
+            .then(|| app.store.root().join("review-schema.json")),
     };
     Ok(PreparedLaunch {
         task,
@@ -73,35 +79,27 @@ pub(super) fn prepare_launch(
 }
 
 fn validate_launch(
-    app: &App<'_>,
+    ctx: &Ctx,
     state: &domain::state::State,
     task: &domain::task::Task,
     id: &TaskId,
     role: AgentRole,
 ) -> Result<(), AgentError> {
     if state.launches.iter().any(|launch| launch.outcome.is_none()) {
-        return Err(app.error(
-            "run-agent",
-            Some(id),
-            Rejection::Conflict("settle the active launch first".into()),
-        ));
+        return Err(ctx.reject(ConflictReason::ActiveLaunchUnsettled));
     }
-    require_checkpoint(app, state, id)?;
-    let delivery = task.deliveries.last().ok_or_else(|| {
-        app.error(
-            "run-agent",
-            Some(id),
-            Rejection::Conflict("task has no delivery".into()),
-        )
-    })?;
-    guard_role(task, delivery, role)
-        .map_err(|message| app.error("run-agent", Some(id), Rejection::Conflict(message)))?;
-    require_prior_review(app, state, id, role)?;
-    ensure_readiness(app, task, delivery, id, role)
+    require_checkpoint(ctx, state, id)?;
+    let delivery = task
+        .deliveries
+        .last()
+        .ok_or_else(|| ctx.reject(ConflictReason::NoDelivery))?;
+    guard_role(task, delivery, role).map_err(|reason| ctx.reject(reason))?;
+    require_prior_review(ctx, state, id, role)?;
+    ensure_readiness(ctx, task, delivery, role)
 }
 
 fn launch_budget(
-    app: &App<'_>,
+    ctx: &Ctx,
     state: &domain::state::State,
     task: &domain::task::Task,
     id: &TaskId,
@@ -109,7 +107,7 @@ fn launch_budget(
     fallback: Option<&Fallback>,
 ) -> Result<(domain::risk::Assignment, budget::BudgetKind, bool), AgentError> {
     let (assignment, base) = assignment(state, task.tier.current, role, fallback)
-        .map_err(|message| app.error("run-agent", Some(id), Rejection::Invalid(message)))?;
+        .map_err(|message| ctx.reject(Rejection::Invalid(message)))?;
     let repaired = role == AgentRole::Implementer
         && state
             .launches
@@ -121,12 +119,9 @@ fn launch_budget(
         base
     };
     let counted = pair_for(task, role).is_none_or(|authority| !authority::scoped(authority));
-    if counted && !launch_capacity(task, role, kind) {
-        return Err(app.error(
-            "run-agent",
-            Some(id),
-            Rejection::Budget(format!("{kind:?} budget exhausted")),
-        ));
+    let caps = state.config.as_ref().map(|config| &config.caps);
+    if counted && !launch_capacity(task, role, kind, caps) {
+        return Err(ctx.reject(kind));
     }
     Ok((assignment, kind, counted))
 }
@@ -181,7 +176,7 @@ fn launch_events(
 }
 
 fn require_prior_review(
-    app: &App<'_>,
+    ctx: &Ctx,
     state: &domain::state::State,
     task: &TaskId,
     role: AgentRole,
@@ -197,60 +192,53 @@ fn require_prior_review(
     if role != AgentRole::Escalation || prior {
         Ok(())
     } else {
-        Err(app.error(
-            "run-agent",
-            Some(task),
-            Rejection::Conflict("escalation requires a completed reviewer launch".into()),
-        ))
+        Err(ctx.reject(ConflictReason::EscalationRequiresReview))
     }
 }
 
-fn launch_capacity(task: &domain::task::Task, role: AgentRole, kind: budget::BudgetKind) -> bool {
-    let available =
-        |budget| budget::remaining(budget, &task.budgets, task.tier.current, &task.authorities) > 0;
+fn launch_capacity(
+    task: &domain::task::Task,
+    role: AgentRole,
+    kind: budget::BudgetKind,
+    caps: Option<&std::collections::BTreeMap<domain::risk::Tier, budget::Limits>>,
+) -> bool {
+    let available = |budget| {
+        budget::remaining(
+            budget,
+            &task.budgets,
+            task.tier.current,
+            &task.authorities,
+            caps,
+        ) > 0
+    };
     available(kind) && (role != AgentRole::Escalation || available(budget::BudgetKind::Review))
 }
 
 fn require_checkpoint(
-    app: &App<'_>,
+    ctx: &Ctx,
     state: &domain::state::State,
-    task: &TaskId,
+    id: &TaskId,
 ) -> Result<(), AgentError> {
     let latest = state.launches.iter().rev().find(|launch| {
-        launch.task == *task && launch.role == AgentRole::Implementer && launch.outcome.is_some()
+        launch.task == *id && launch.role == AgentRole::Implementer && launch.outcome.is_some()
     });
     if latest.is_none_or(|launch| launch.checkpointed) {
         Ok(())
     } else {
-        Err(AgentError {
-            failed: "run-agent".into(),
-            phase: state
-                .tasks
-                .get(task)
-                .map(|value| Box::new(value.phase.clone())),
-            why: Rejection::Conflict("checkpoint the previous implementer turn".into()),
-            next: state.next(app.services.clock.now()).map(Box::new),
-        })
+        Err(ctx.reject(ConflictReason::CheckpointRequired))
     }
 }
 
 fn ensure_readiness(
-    app: &App<'_>,
+    ctx: &Ctx,
     task: &domain::task::Task,
     delivery: &domain::delivery::Delivery,
-    id: &TaskId,
     role: AgentRole,
 ) -> Result<(), AgentError> {
     if role == AgentRole::Implementer {
         return Ok(());
     }
-    let snapshot = review_target(task, delivery).ok_or_else(|| {
-        app.error(
-            "run-agent",
-            Some(id),
-            Rejection::Evidence("review requires a snapshot".into()),
-        )
-    })?;
-    verify_proof(task, delivery, &snapshot)
-        .map_err(|message| app.error("run-agent", Some(id), Rejection::Evidence(message)))
+    let snapshot = review_target(task, delivery)
+        .ok_or_else(|| ctx.reject(crate::EvidenceError::MissingSnapshot))?;
+    verify_proof(task, delivery, &snapshot).map_err(|error| ctx.reject(error))
 }

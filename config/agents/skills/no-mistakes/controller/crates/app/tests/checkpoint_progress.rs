@@ -60,7 +60,7 @@ fn turn(
 }
 
 fn stalled(app: &mut App<'_>, task: &TaskId) -> Result<(u32, bool), Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     let value = &state.tasks[task];
@@ -221,7 +221,7 @@ fn brief_change_keeps_counters() -> Result<(), Box<dyn std::error::Error>> {
         },
         false,
     )?;
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     assert_eq!(state.tasks[&task].budgets.implementation_turns, 1);
@@ -273,7 +273,7 @@ fn checkpoint_allows_integration() -> Result<(), Box<dyn std::error::Error>> {
     let task = TaskId::from_str("GAIN-2")?;
     app.execute(Command::Snapshot { task: task.clone() }, false)?;
     checkpoint(&mut app, &task, true)?;
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     // An integration checkpoint marks no launch: there is none to mark.

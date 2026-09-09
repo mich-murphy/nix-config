@@ -1,4 +1,4 @@
-use crate::{AgentError, App, Output, Rejection};
+use crate::{AgentError, App, ConflictReason, Output, Rejection};
 use adapters::process::Recovery;
 use domain::{
     event::{Event, Launch, LaunchOutcome},
@@ -18,7 +18,7 @@ pub(super) fn recover_launch(
         return Err(app.error(
             "recover-operation",
             Some(&item.task),
-            Rejection::Conflict("owned launch is still running".into()),
+            ConflictReason::LaunchStillRunning,
         ));
     }
     let result = match status {
@@ -62,7 +62,7 @@ fn unsettled_launch(
         Err(app.error(
             "recover-operation",
             Some(&item.task),
-            Rejection::Conflict("recovery requires an unsettled terminated launch".into()),
+            ConflictReason::LaunchNotRecoverable,
         ))
     }
 }
@@ -76,7 +76,7 @@ fn recover_process(
         app.error(
             "recover-operation",
             Some(&launch.task),
-            Rejection::Conflict("launch has no persisted process identity".into()),
+            ConflictReason::LaunchHasNoProcess,
         )
     })?;
     app.services

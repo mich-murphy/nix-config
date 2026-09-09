@@ -8,7 +8,7 @@ use std::path::{Component, Path, PathBuf};
 
 pub type PathGlob = String;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Authority {
     pub id: AuthorityId,
@@ -26,7 +26,7 @@ pub struct Authority {
 /// controller itself owns. The controller assigns `id`, records `recorded`
 /// from its own clock, and starts `used` at its default; a wire type that
 /// let the caller set those would let it forge or replay them.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorityReceipt {
     pub source: String,
@@ -36,7 +36,7 @@ pub struct AuthorityReceipt {
     pub grant: Grant,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 pub enum Grant {
     Pair {
         paths: Option<Vec<PathGlob>>,
@@ -57,7 +57,7 @@ pub enum Grant {
     },
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct AuthorityUse {
     pub whole: Option<UseId>,
@@ -65,7 +65,8 @@ pub struct AuthorityUse {
     pub review: Option<LaunchId>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "kebab-case")]
 pub enum AuthorityError {
     Duplicate,
     Spent,
@@ -75,6 +76,41 @@ pub enum AuthorityError {
     ReceiptPath,
     ReceiptChanged,
     Scope,
+    /// A `Pair` grant is only meaningful against a task the coordinator has
+    /// already put on hold; an idle, unheld task needs no pair.
+    PairRequiresHold,
+    /// A path-scoped grant's paths must already exist as regular,
+    /// non-symlinked Markdown files in the repository.
+    MissingMarkdownFile,
+    /// The authority's `Grant::Delivery` kind or criteria do not match the
+    /// delivery being opened against it.
+    DeliveryGrantMismatch,
+    /// The authority's `Grant::Narrowing` criteria do not match the
+    /// criteria named on `narrow-acceptance`.
+    NarrowingMismatch,
+    /// A worktree slot already has a delivery in flight for another task.
+    SlotUnfinishedOwner,
+    /// A slot with prior history needs a `SlotReuse` grant; it cannot be
+    /// bound fresh.
+    SlotReuseRequiresGrant,
+    /// A `SlotReuse` grant only applies to a slot with prior history.
+    SlotReuseRequiresHistorical,
+    /// The named authority is not a `Grant::SlotReuse`.
+    NotSlotReuseGrant,
+    /// A `SlotReuse` grant's named slot or historical owner does not match,
+    /// or the historical owner is not `Completed`.
+    SlotReuseOwnerIncomplete,
+    /// Reusing a slot is only valid before the new delivery has any
+    /// recorded work.
+    SlotReuseRequiresUnstartedDelivery,
+    /// A snapshot's commits touched a path outside the authority's path
+    /// scope.
+    PathScopeRejected,
+    /// `bind-slot` named a task with no recorded state (defensive; the
+    /// caller already resolved the task before reaching here).
+    SlotOwnerUnknown,
+    /// `bind-slot` named an authority id the task has no record of.
+    UnknownAuthorityId,
 }
 
 pub fn register(all: &[Authority], new: &Authority, idle: bool) -> Result<(), AuthorityError> {

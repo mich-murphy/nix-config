@@ -59,7 +59,7 @@ fn dependency_requires_main_commit() -> Result<(), Box<dyn std::error::Error>> {
     discover(&mut app, vec![blocked])?;
     let state = app.execute(Command::Status, false)?;
     match state.result {
-        ResultData::State { state } => {
+        ResultData::State { state, .. } => {
             assert!(matches!(
                 state.tasks[&TaskId::from_str("GAIN-2")?].phase,
                 Phase::Blocked(_)
@@ -98,7 +98,7 @@ fn claim_excludes_other_runs() -> Result<(), Box<dyn std::error::Error>> {
     ));
     let state = app.execute(Command::Status, false)?;
     match state.result {
-        ResultData::State { state } => assert!(state.active.is_none()),
+        ResultData::State { state, .. } => assert!(state.active.is_none()),
         _ => return Err("status returned wrong result".into()),
     }
     Ok(())
@@ -120,7 +120,7 @@ fn discover_partitions_blocked_and_needs_input() -> Result<(), Box<dyn std::erro
     discover(&mut app, vec![blocked, question])?;
     let state = app.execute(Command::Status, false)?;
     match state.result {
-        ResultData::State { state } => {
+        ResultData::State { state, .. } => {
             assert!(matches!(
                 state.tasks[&TaskId::from_str("GAIN-2")?].phase,
                 Phase::Blocked(_)

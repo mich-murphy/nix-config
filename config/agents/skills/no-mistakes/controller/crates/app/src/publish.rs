@@ -3,7 +3,7 @@ use crate::delivery_support::{
     append_acceptance_hold, current_snapshot, execute_publish, publish_action, publish_ready,
 };
 use crate::task_support::{next_operation, task_ref};
-use crate::{AgentError, App, Output, Rejection, ResultData};
+use crate::{AgentError, App, ConflictReason, EvidenceError, Output, Rejection, ResultData};
 use domain::{
     event::{Event, Observation, Operation, OperationStatus},
     ids::TaskId,
@@ -16,25 +16,17 @@ impl App<'_> {
         input: PublishInput,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("publish", Some(&task));
         let state = self.state("publish")?;
         let value = task_ref(&state, &task, "publish", self)?;
-        let delivery = value.deliveries.last().ok_or_else(|| {
-            self.error(
-                "publish",
-                Some(&task),
-                Rejection::Conflict("task has no delivery".into()),
-            )
-        })?;
-        let snapshot = current_snapshot(value).ok_or_else(|| {
-            self.error(
-                "publish",
-                Some(&task),
-                Rejection::Evidence("publish requires a snapshot".into()),
-            )
-        })?;
-        publish_ready(&state, delivery, &input)
-            .map_err(|message| self.error("publish", Some(&task), Rejection::Evidence(message)))?;
-        let operation = publish_operation(self, &state, &task, delivery, snapshot, &input)?;
+        let delivery = value
+            .deliveries
+            .last()
+            .ok_or_else(|| ctx.reject(ConflictReason::NoDelivery))?;
+        let snapshot =
+            current_snapshot(value).ok_or_else(|| ctx.reject(EvidenceError::MissingSnapshot))?;
+        publish_ready(&state, delivery, &input).map_err(|error| ctx.reject(error))?;
+        let operation = publish_operation(&ctx, &state, &task, delivery, snapshot, &input)?;
         self.execute_publish_flow(value, delivery, snapshot, &input, operation, check)
     }
 
@@ -75,7 +67,7 @@ impl App<'_> {
 }
 
 fn publish_operation(
-    app: &App<'_>,
+    ctx: &crate::error::Ctx,
     state: &domain::state::State,
     task: &TaskId,
     delivery: &domain::delivery::Delivery,
@@ -83,7 +75,7 @@ fn publish_operation(
     input: &PublishInput,
 ) -> Result<Operation, AgentError> {
     let action = publish_action(delivery, snapshot, input)
-        .map_err(|message| app.error("publish", Some(task), Rejection::Invalid(message)))?;
+        .map_err(|message| ctx.reject(Rejection::Invalid(message)))?;
     Ok(Operation {
         id: next_operation(state),
         task: task.clone(),

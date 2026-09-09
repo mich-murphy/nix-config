@@ -1,6 +1,6 @@
 use crate::agent_launch::prepare_launch;
 use crate::task_support::{previous_session, review_target};
-use crate::{AgentError, App, Output, Rejection, ResultData};
+use crate::{AgentError, App, ConflictReason, EvidenceError, Output, Rejection, ResultData};
 use domain::{
     command::{AgentRole, Fallback},
     event::{Event, LaunchOutcome},
@@ -138,9 +138,9 @@ fn settle_review(
     let delivery = value
         .deliveries
         .last()
-        .ok_or_else(|| Rejection::Conflict("task has no delivery".into()))?;
+        .ok_or(Rejection::Conflict(ConflictReason::NoDelivery))?;
     let snapshot = review_target(value, delivery)
-        .ok_or_else(|| Rejection::Evidence("review requires a snapshot".into()))?;
+        .ok_or(Rejection::Evidence(EvidenceError::MissingSnapshot))?;
     let verdict = review::verdict(&report.findings, &report.evidence_gaps, value.tier.current);
     let review = Review {
         launch: request.id,
@@ -153,8 +153,7 @@ fn settle_review(
         dispositions: BTreeMap::new(),
     };
     let implementer = previous_session_from_state(state, task, AgentRole::Implementer);
-    review::validate(&review, &snapshot, implementer.as_deref())
-        .map_err(|error| Rejection::Evidence(format!("invalid review: {error:?}")))?;
+    review::validate(&review, &snapshot, implementer.as_deref())?;
     Ok(review)
 }
 

@@ -1,5 +1,5 @@
+use crate::schema::AnnotatedAction;
 use domain::{
-    command::ActionEnvelope,
     event::{EventRecord, Launch},
     ids::{LaunchId, TransitionId},
     ports::{Capabilities, Tokens},
@@ -18,12 +18,12 @@ pub struct Output {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "result", rename_all = "kebab-case")]
 pub enum ResultData {
-    State { state: Box<State> },
-    Next { next: Option<ActionEnvelope> },
+    State { state: Box<State>, verified: bool },
+    Next { next: Option<AnnotatedAction> },
     Usage { usage: UsageReport },
     Transition { transition: TransitionId },
     Launch { launch: LaunchId, output: String },
-    ReviewSchema { schema: serde_json::Value },
+    ReviewSchema { schema: schemars::Schema },
     Verdict { verdict: Verdict },
     Valid,
     Applied,

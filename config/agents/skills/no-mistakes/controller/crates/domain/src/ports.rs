@@ -18,7 +18,7 @@ impl std::fmt::Display for PortError {
 
 impl std::error::Error for PortError {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ProcessIdentity {
     pub pid: u32,
@@ -86,6 +86,12 @@ pub struct LaunchRequest {
     pub cwd: std::path::PathBuf,
     pub session: Option<String>,
     pub reviewer: bool,
+    /// Where the controller has written the reviewer's output schema, for
+    /// a harness whose `Capabilities::structured_output` is `Native`
+    /// (Codex `--output-schema`). `app` writes the file and fills this in
+    /// before the launch; a harness that ignores it (pi, `SelfValidated`)
+    /// is unaffected.
+    pub output_schema: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -95,7 +101,7 @@ pub struct LaunchResult {
     pub tokens: Option<Tokens>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Tokens {
     pub input: u64,
@@ -103,14 +109,14 @@ pub struct Tokens {
     pub output: u64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Capabilities {
     pub structured_output: StructuredOutput,
     pub isolation: Isolation,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum StructuredOutput {
     Native,
@@ -118,7 +124,7 @@ pub enum StructuredOutput {
     BestEffort,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum Isolation {
     Sandbox,
@@ -126,7 +132,7 @@ pub enum Isolation {
     None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum MergeMethod {
     Merge,

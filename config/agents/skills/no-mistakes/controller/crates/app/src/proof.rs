@@ -1,7 +1,8 @@
 use crate::delivery_support::current_snapshot;
+use crate::error::Ctx;
 use crate::task::CheckInput;
 use crate::task_support::{digest_file, next_operation, task_ref};
-use crate::{AgentError, App, Output, Rejection, ResultData};
+use crate::{AgentError, App, ConflictReason, EvidenceError, Output, Rejection, ResultData};
 use adapters::ProcessRequest;
 use domain::{
     acceptance::{self, ProofEntry, Snapshot},
@@ -22,19 +23,14 @@ impl App<'_> {
         entries: Vec<ProofEntry>,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("record-proof", Some(&task));
         let state = self.state("record-proof")?;
         let value = task_ref(&state, &task, "record-proof", self)?;
         let current = value
             .deliveries
             .iter()
             .find(|item| item.id == delivery)
-            .ok_or_else(|| {
-                self.error(
-                    "record-proof",
-                    Some(&task),
-                    Rejection::Invalid("unknown delivery".into()),
-                )
-            })?;
+            .ok_or_else(|| ctx.reject(Rejection::Invalid("unknown delivery".into())))?;
         let criteria = current
             .criteria
             .iter()
@@ -52,25 +48,17 @@ impl App<'_> {
                     })
             })
             .collect::<Vec<_>>();
-        acceptance::validate_batch(&entries, &criteria).map_err(|error| {
-            self.error(
-                "record-proof",
-                Some(&task),
-                Rejection::Evidence(format!("invalid proof: {error:?}")),
-            )
-        })?;
+        acceptance::validate_batch(&entries, &criteria).map_err(|error| ctx.reject(error))?;
         if entries
             .iter()
             .any(|entry| entry.snapshot.requirements != value.spec.requirements)
             || !matches!(current.outcome, Outcome::Open)
         {
-            return Err(self.error(
-                "record-proof",
-                Some(&task),
-                Rejection::Evidence("proof is stale or delivery is closed".into()),
-            ));
+            return Err(ctx.reject(EvidenceError::Other(
+                "proof is stale or delivery is closed".into(),
+            )));
         }
-        validate_artifacts(self, &task, &entries)?;
+        validate_artifacts(&ctx, &entries)?;
         self.commit(
             "record-proof",
             Some(&task),
@@ -129,7 +117,7 @@ impl App<'_> {
             return Err(self.error(
                 "human-review",
                 Some(&task),
-                Rejection::Evidence("human review must pin the current snapshot".into()),
+                EvidenceError::Other("human review must pin the current snapshot".into()),
             ));
         }
         self.commit(
@@ -156,7 +144,7 @@ impl App<'_> {
             return Err(self.error(
                 "lesson-record",
                 Some(&task),
-                Rejection::Conflict("accepted lessons require verified delivery".into()),
+                ConflictReason::LessonRequiresVerified,
             ));
         }
         if state
@@ -167,7 +155,7 @@ impl App<'_> {
             return Err(self.error(
                 "lesson-record",
                 Some(&task),
-                Rejection::Conflict("lesson already recorded".into()),
+                ConflictReason::LessonAlreadyRecorded,
             ));
         }
         self.commit(
@@ -189,13 +177,10 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("run-check")?;
         let value = task_ref(&state, &task, "run-check", self)?;
-        let delivery = value.deliveries.last().ok_or_else(|| {
-            self.error(
-                "run-check",
-                Some(&task),
-                Rejection::Conflict("task has no delivery".into()),
-            )
-        })?;
+        let delivery = value
+            .deliveries
+            .last()
+            .ok_or_else(|| self.error("run-check", Some(&task), ConflictReason::NoDelivery))?;
         validate_check(self, &task, &input)?;
         let id = next_operation(&state);
         let request = check_request(&input);
@@ -342,21 +327,12 @@ fn check_output(
     (status, Observation::Check { exit, artifact })
 }
 
-fn validate_artifacts(
-    app: &App<'_>,
-    task: &TaskId,
-    entries: &[ProofEntry],
-) -> Result<(), AgentError> {
+fn validate_artifacts(ctx: &Ctx, entries: &[ProofEntry]) -> Result<(), AgentError> {
     for entry in entries {
-        let actual = digest_file(&entry.artifact).map_err(|message| {
-            app.error("record-proof", Some(task), Rejection::Evidence(message))
-        })?;
+        let actual = digest_file(&entry.artifact)
+            .map_err(|message| ctx.reject(EvidenceError::Other(message)))?;
         if actual != entry.digest {
-            return Err(app.error(
-                "record-proof",
-                Some(task),
-                Rejection::Evidence("proof artifact digest changed".into()),
-            ));
+            return Err(ctx.reject(EvidenceError::Other("proof artifact digest changed".into())));
         }
     }
     Ok(())

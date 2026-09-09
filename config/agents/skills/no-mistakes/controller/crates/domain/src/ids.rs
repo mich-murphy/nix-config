@@ -14,7 +14,18 @@ impl std::error::Error for InvalidId {}
 
 macro_rules! text_id {
     ($name:ident, $check:expr, $message:literal) => {
-        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        #[derive(
+            Debug,
+            Clone,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash,
+            Serialize,
+            Deserialize,
+            schemars::JsonSchema,
+        )]
         #[serde(try_from = "String", into = "String")]
         pub struct $name(String);
 
@@ -112,7 +123,17 @@ impl From<TaskId> for IssueKey {
 macro_rules! numeric_id {
     ($name:ident) => {
         #[derive(
-            Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+            Debug,
+            Clone,
+            Copy,
+            PartialEq,
+            Eq,
+            PartialOrd,
+            Ord,
+            Hash,
+            Serialize,
+            Deserialize,
+            schemars::JsonSchema,
         )]
         pub struct $name(pub u64);
     };

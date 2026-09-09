@@ -19,12 +19,26 @@ events are authoritative. The projection is checked against a complete event
 fold whenever state loads. Keep the database and its WAL files together. Never
 edit them or create another run to reset a limit.
 
-Commands return JSON directly. Errors return a typed JSON object on stderr and a
-class-specific exit code. `--pretty` formats output. Every mutating command except
-`init` accepts `--check`, which returns its proposed events without writing.
-Complex requests use `--input file.json` or `--input -`. Serde rejects unknown
-fields. Scalar commands reject unknown options, duplicate options, and extra
-positionals.
+Every command derives from one `Command` enum. `controller <command> --help`
+prints that command's fields, each with its type and whether it is required.
+A scalar field (string, integer, boolean) is a `--field value` flag; the field
+named `task` may instead be given as the first positional. A field the schema
+does not declare as scalar must come through `--input <file|->` (`-` reads
+stdin); where argv and `--input` both set a field, argv wins. Serde rejects
+unknown fields; scalar commands reject unknown options, duplicate options, and
+extra positionals.
+
+Commands return JSON directly. `--pretty` formats output. Every mutating
+command except `init` accepts `--check`, which returns its proposed events
+without writing. A rejection is a typed JSON object on stderr: `class` and
+`reason` name it, `message` is a human-readable rendering, `phase` is the
+affected task's actual phase, and `next` is the same annotated action `next`
+returns. The exit code is class-specific.
+
+`next` returns `action` (the typed decision), `command` (the invocable command
+line), `template` (the filled request), and `schema` (the real JSON schema,
+taken from the `Command` enum, for the command that performs it). A rejection
+carries the same `next` when one applies.
 
 ## Configuration
 
@@ -40,8 +54,9 @@ escalation reviewer not ranked above the full-tier reviewer. Bundled profiles ar
 under `profiles/`.
 
 `status` reports the resolved profile and harness capabilities. Codex has native
-structured review output and sandbox isolation. Pi self-validates review output
-and restricts reviewer tools.
+structured review output and sandbox isolation. Pi self-validates review
+output; its reviewer keeps `bash` for `git diff`, so its isolation capability
+is none, whatever tool list the launch argv carries.
 
 ## Command catalogue
 
@@ -62,9 +77,11 @@ The public surface has exactly 36 commands.
 
 `publish` uses `create`, `ready`, or `merge`. `run-agent` uses `implementer`,
 `reviewer`, or `escalation`; the profile supplies model and effort. `poll-checks
---wait` performs bounded waiting. `bind-slot` reserves and creates a fresh
-worktree, or performs explicitly authorized historical reuse. `record-proof`
-accepts an atomic array of criterion results.
+--wait` polls every 30 seconds until no required check is pending or its
+per-head deadline passes, then records the hold; without `--wait` it observes
+once. `bind-slot` reserves and creates a fresh worktree, or performs explicitly
+authorized historical reuse. `record-proof` accepts an atomic array of
+criterion results.
 
 ## Jira bridge
 
@@ -158,8 +175,9 @@ selected. The GitHub adapter uses exact-head protection and does not bypass
 branch rules.
 
 `observe-pr` records open, closed, merged, or externally replaced outcomes. A
-closed historical delivery is immutable. `poll-checks --wait` keeps one deadline
-per PR head. Holding and resuming do not restart it.
+closed historical delivery is immutable. `poll-checks --wait` keeps one
+deadline per PR head, set to the first observed pending check plus 1800
+seconds; holding and resuming do not restart it.
 
 `final-verify` checks the recorded PR head against the reviewed snapshot, the
 recorded merge identity against the supplied commit, and the merge commit on

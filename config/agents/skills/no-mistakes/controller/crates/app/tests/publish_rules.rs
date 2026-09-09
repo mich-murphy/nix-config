@@ -24,7 +24,7 @@ fn pull_request(state: PrState) -> Result<PullRequest, domain::ports::PortError>
 }
 
 fn held_for_human(app: &mut App<'_>) -> Result<bool, Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     Ok(matches!(

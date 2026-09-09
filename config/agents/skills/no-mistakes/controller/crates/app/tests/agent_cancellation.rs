@@ -107,7 +107,7 @@ fn launch_for(
     app: &mut App<'_>,
     task: &TaskId,
 ) -> Result<domain::event::Launch, Box<dyn std::error::Error>> {
-    let app::ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let app::ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     state

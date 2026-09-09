@@ -107,12 +107,7 @@ fn harness(kind: HarnessKind, process: SystemProcess) -> Box<dyn Harness> {
 }
 
 fn internal(command: &str, message: String) -> AgentError {
-    AgentError {
-        failed: command.into(),
-        phase: None,
-        why: Rejection::Internal(message),
-        next: None,
-    }
+    AgentError::new(command, None, Rejection::Internal(message), None)
 }
 
 fn fail(error: AgentError) -> ExitCode {

@@ -25,17 +25,11 @@ fn app_with_slot(slot: SlotState) -> Result<(tempfile::TempDir, Fake), Box<dyn s
 fn bind(app: &mut App<'_>) -> Result<app::Output, app::AgentError> {
     app.execute(
         Command::BindSlot {
-            task: TaskId::from_str("GAIN-2").map_err(|error| app::AgentError {
-                failed: "fixture".into(),
-                phase: None,
-                why: Rejection::Invalid(error.to_string()),
-                next: None,
+            task: TaskId::from_str("GAIN-2").map_err(|error| {
+                app::AgentError::new("fixture", None, Rejection::Invalid(error.to_string()), None)
             })?,
-            slot: SlotId::from_str("worker1").map_err(|error| app::AgentError {
-                failed: "fixture".into(),
-                phase: None,
-                why: Rejection::Invalid(error.to_string()),
-                next: None,
+            slot: SlotId::from_str("worker1").map_err(|error| {
+                app::AgentError::new("fixture", None, Rejection::Invalid(error.to_string()), None)
             })?,
             branch: "agent/worker1/GAIN-2".into(),
             authority: None,
@@ -61,7 +55,7 @@ fn unauthorized_reuse_rejected() -> Result<(), Box<dyn std::error::Error>> {
             ..
         })
     ));
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     assert!(

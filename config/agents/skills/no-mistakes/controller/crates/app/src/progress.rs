@@ -1,5 +1,5 @@
 use crate::task_support::{current_work_delivery, task_ref};
-use crate::{AgentError, App, Output, Rejection};
+use crate::{AgentError, App, ConflictReason, Output, Rejection};
 use domain::{budget::BudgetKind, command::AgentRole, event::Event, ids::TaskId};
 
 pub(super) struct CheckpointInput {
@@ -17,24 +17,19 @@ impl App<'_> {
         input: CheckpointInput,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("checkpoint", Some(&task));
         let state = self.state("checkpoint")?;
         let value = task_ref(&state, &task, "checkpoint", self)?;
-        let launch = checkpoint_target(self, &state, value, &task)?;
+        let launch = checkpoint_target(&ctx, &state, value, &task)?;
         if already_checkpointed(&state, launch) {
-            return Err(self.error(
-                "checkpoint",
-                Some(&task),
-                Rejection::Conflict("implementation turn is already checkpointed".into()),
-            ));
+            return Err(ctx.reject(ConflictReason::AlreadyCheckpointed));
         }
         if !input.outside_paths.is_empty()
             && input.scope_reason.as_deref().is_none_or(str::is_empty)
         {
-            return Err(self.error(
-                "checkpoint",
-                Some(&task),
-                Rejection::Invalid("out-of-plan paths need a scope reason".into()),
-            ));
+            return Err(ctx.reject(Rejection::Invalid(
+                "out-of-plan paths need a scope reason".into(),
+            )));
         }
         let stalled = checkpoint_stalls(value, launch.is_none(), input.advanced);
         let mut events = vec![Event::Checkpointed {
@@ -45,7 +40,8 @@ impl App<'_> {
             observation: input.observation,
             next: input.next,
         }];
-        if stalled >= domain::budget::Limits::for_tier(value.tier.current).stalled {
+        let caps = state.config.as_ref().map(|config| &config.caps);
+        if stalled >= domain::budget::Limits::for_tier(value.tier.current, caps).stalled {
             events.push(Event::Held {
                 task: task.clone(),
                 reason: domain::task::HoldReason::BudgetExhausted(BudgetKind::Stalled),
@@ -59,7 +55,7 @@ impl App<'_> {
 /// The launch this checkpoint marks, or `None` for an integration
 /// checkpoint (a snapshot with no implementer launch of its own).
 fn checkpoint_target(
-    app: &App<'_>,
+    ctx: &crate::error::Ctx,
     state: &domain::state::State,
     task: &domain::task::Task,
     id: &TaskId,
@@ -77,13 +73,7 @@ fn checkpoint_target(
     if latest.is_some() || integration {
         Ok(latest)
     } else {
-        Err(app.error(
-            "checkpoint",
-            Some(id),
-            Rejection::Conflict(
-                "checkpoint requires a terminal turn or integration snapshot".into(),
-            ),
-        ))
+        Err(ctx.reject(ConflictReason::CheckpointRequiresTerminalOrIntegration))
     }
 }
 

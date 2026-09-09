@@ -5,11 +5,12 @@
 //! (design Section 5, batch B item 4).
 
 use crate::delivery_support::{validate_history, validate_open};
+use crate::error::Ctx;
 use crate::task_support::{next_authority, next_delivery, task_ref};
-use crate::{AgentError, App, Output, Rejection};
+use crate::{AgentError, App, ConflictReason, Output, Rejection};
 use domain::{
     acceptance,
-    authority::{self, Authority, AuthorityReceipt, AuthorityUse, Grant},
+    authority::{self, Authority, AuthorityError, AuthorityReceipt, AuthorityUse, Grant},
     command::JiraRead,
     delivery::{Delivery, DeliveryKind, Outcome},
     ids::{CriterionId, TaskId, UseId},
@@ -23,6 +24,7 @@ impl App<'_> {
         receipt: AuthorityReceipt,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("grant", Some(&task));
         let state = self.state("grant")?;
         let value = task_ref(&state, &task, "grant", self)?;
         let idle = !state
@@ -38,29 +40,15 @@ impl App<'_> {
                     )
             });
         if matches!(receipt.grant, Grant::Pair { .. }) && value.hold.is_none() {
-            return Err(self.error(
-                "grant",
-                Some(&task),
-                Rejection::Authority("pair grant requires a held task".into()),
-            ));
+            return Err(ctx.reject(AuthorityError::PairRequiresHold));
         }
         let authority = fresh_authority(self, value, receipt);
-        authority::register(&value.authorities, &authority, idle).map_err(|error| {
-            self.error(
-                "grant",
-                Some(&task),
-                Rejection::Authority(format!("grant rejected: {error:?}")),
-            )
-        })?;
-        validate_authority_file(&authority)
-            .map_err(|message| self.error("grant", Some(&task), Rejection::Authority(message)))?;
-        validate_grant_paths(self, "grant", &task, &authority)?;
+        authority::register(&value.authorities, &authority, idle)
+            .map_err(|error| ctx.reject(error))?;
+        validate_authority_file(&authority).map_err(|error| ctx.reject(error))?;
+        validate_grant_paths(&ctx, self, &authority)?;
         if authority.requirements != value.spec.requirements {
-            return Err(self.error(
-                "grant",
-                Some(&task),
-                Rejection::Authority("grant criteria changed".into()),
-            ));
+            return Err(ctx.reject(AuthorityError::Requirements));
         }
         self.commit(
             "grant",
@@ -81,24 +69,15 @@ impl App<'_> {
         jira: JiraRead,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("open-delivery", Some(&task));
         let state = self.state("open-delivery")?;
         let value = task_ref(&state, &task, "open-delivery", self)?;
-        validate_open(value, &jira).map_err(|message| {
-            self.error("open-delivery", Some(&task), Rejection::Conflict(message))
-        })?;
-        domain::delivery::can_open(&value.deliveries).map_err(|error| {
-            self.error(
-                "open-delivery",
-                Some(&task),
-                Rejection::Conflict(format!("delivery history: {error:?}")),
-            )
-        })?;
+        validate_open(value, &jira).map_err(|reason| ctx.reject(reason))?;
+        domain::delivery::can_open(&value.deliveries).map_err(|error| ctx.reject(error))?;
         let (authority, repurposed) = resolved_authority(self, value, &receipt);
-        validate_open_authority(self, value, &task, &kind, &authority, repurposed)?;
-        validate_history(self, value).map_err(|message| {
-            self.error("open-delivery", Some(&task), Rejection::Conflict(message))
-        })?;
-        let delivery = new_delivery(self, value, &task, kind, &authority)?;
+        validate_open_authority(&ctx, value, &kind, &authority, repurposed)?;
+        validate_history(self, value).map_err(|reason| ctx.reject(reason))?;
+        let delivery = new_delivery(self, &ctx, value, kind, &authority)?;
         let events = open_events(&task, authority, delivery, repurposed);
         self.commit("open-delivery", Some(&task), events, check)
     }
@@ -110,31 +89,21 @@ impl App<'_> {
         receipt: AuthorityReceipt,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("narrow-acceptance", Some(&task));
         let state = self.state("narrow-acceptance")?;
         let value = task_ref(&state, &task, "narrow-acceptance", self)?;
-        let delivery = value.deliveries.last().ok_or_else(|| {
-            self.error(
-                "narrow-acceptance",
-                Some(&task),
-                Rejection::Conflict("task has no delivery".into()),
-            )
-        })?;
-        domain::delivery::can_narrow(delivery, &criteria).map_err(|error| {
-            self.error(
-                "narrow-acceptance",
-                Some(&task),
-                Rejection::Conflict(format!("cannot narrow: {error:?}")),
-            )
-        })?;
+        let delivery = value
+            .deliveries
+            .last()
+            .ok_or_else(|| ctx.reject(ConflictReason::NoDelivery))?;
+        domain::delivery::can_narrow(delivery, &criteria).map_err(|error| ctx.reject(error))?;
         if overlaps_full_criteria(value, &criteria) {
-            return Err(self.error(
-                "narrow-acceptance",
-                Some(&task),
-                Rejection::Invalid("narrowed criterion IDs must be distinct".into()),
-            ));
+            return Err(ctx.reject(Rejection::Invalid(
+                "narrowed criterion IDs must be distinct".into(),
+            )));
         }
         let authority = fresh_authority(self, value, receipt);
-        validate_narrowing_authority(self, value, &task, &criteria, &authority)?;
+        validate_narrowing_authority(&ctx, value, &criteria, &authority)?;
         let events = vec![
             domain::event::Event::AuthorityRegistered {
                 task: task.clone(),
@@ -193,31 +162,21 @@ fn resolved_authority(app: &App<'_>, task: &Task, receipt: &AuthorityReceipt) ->
     }
 }
 
-fn validate_authority_file(authority: &Authority) -> Result<(), String> {
-    let digest = crate::task_support::digest_file(&authority.artifact)?;
-    authority::validate_receipt(authority, &digest)
-        .map_err(|error| format!("receipt rejected: {error:?}"))
+fn validate_authority_file(authority: &Authority) -> Result<(), Rejection> {
+    let digest =
+        crate::task_support::digest_file(&authority.artifact).map_err(Rejection::External)?;
+    authority::validate_receipt(authority, &digest)?;
+    Ok(())
 }
 
-fn validate_grant_paths(
-    app: &App<'_>,
-    command: &str,
-    task: &TaskId,
-    authority: &Authority,
-) -> Result<(), AgentError> {
+fn validate_grant_paths(ctx: &Ctx, app: &App<'_>, authority: &Authority) -> Result<(), AgentError> {
     let Some(paths) = authority::paths(&authority.grant) else {
         return Ok(());
     };
     let repo = app
-        .state(command)?
+        .state("grant")?
         .config
-        .ok_or_else(|| {
-            app.error(
-                command,
-                Some(task),
-                Rejection::Internal("config missing".into()),
-            )
-        })?
+        .ok_or_else(|| ctx.reject(Rejection::Internal("config missing".into())))?
         .repo;
     let valid = paths.iter().all(|path| {
         let file = repo.join(path);
@@ -226,15 +185,14 @@ fn validate_grant_paths(
     if valid {
         Ok(())
     } else {
-        Err(app.error(
-            command,
-            Some(task),
-            Rejection::Authority("path scope must name existing regular Markdown files".into()),
-        ))
+        Err(ctx.reject(AuthorityError::MissingMarkdownFile))
     }
 }
 
-fn validate_delivery_grant(authority: &Authority, kind: &DeliveryKind) -> Result<(), String> {
+fn validate_delivery_grant(
+    authority: &Authority,
+    kind: &DeliveryKind,
+) -> Result<(), AuthorityError> {
     match &authority.grant {
         Grant::Delivery {
             kind: granted,
@@ -245,45 +203,30 @@ fn validate_delivery_grant(authority: &Authority, kind: &DeliveryKind) -> Result
         {
             Ok(())
         }
-        _ => Err("authority is not a matching delivery grant".into()),
+        _ => Err(AuthorityError::DeliveryGrantMismatch),
     }
 }
 
 fn validate_open_authority(
-    app: &App<'_>,
+    ctx: &Ctx,
     task: &Task,
-    id: &TaskId,
     kind: &DeliveryKind,
     authority: &Authority,
     repurposed: bool,
 ) -> Result<(), AgentError> {
     if !repurposed {
-        authority::register(&task.authorities, authority, true).map_err(|error| {
-            app.error(
-                "open-delivery",
-                Some(id),
-                Rejection::Authority(format!("authority rejected: {error:?}")),
-            )
-        })?;
+        authority::register(&task.authorities, authority, true)
+            .map_err(|error| ctx.reject(error))?;
     }
-    validate_authority_file(authority)
-        .map_err(|message| app.error("open-delivery", Some(id), Rejection::Authority(message)))?;
-    validate_delivery_grant(authority, kind)
-        .map_err(|message| app.error("open-delivery", Some(id), Rejection::Authority(message)))?;
-    validate_grant_paths(app, "open-delivery", id, authority)?;
-    authority::validate_use(authority, &task.spec.requirements).map_err(|error| {
-        app.error(
-            "open-delivery",
-            Some(id),
-            Rejection::Authority(format!("authority use rejected: {error:?}")),
-        )
-    })
+    validate_authority_file(authority).map_err(|error| ctx.reject(error))?;
+    validate_delivery_grant(authority, kind).map_err(|error| ctx.reject(error))?;
+    authority::validate_use(authority, &task.spec.requirements).map_err(|error| ctx.reject(error))
 }
 
 fn new_delivery(
     app: &App<'_>,
+    ctx: &Ctx,
     task: &Task,
-    id: &TaskId,
     kind: DeliveryKind,
     authority: &Authority,
 ) -> Result<Delivery, AgentError> {
@@ -291,7 +234,7 @@ fn new_delivery(
         .services
         .vcs
         .head("origin/main")
-        .map_err(|error| app.error("open-delivery", Some(id), Rejection::External(error.0)))?;
+        .map_err(|error| ctx.reject(Rejection::External(error.0)))?;
     let criteria = match &authority.grant {
         Grant::Delivery { criteria, .. } => criteria.clone(),
         _ => Vec::new(),
@@ -350,32 +293,19 @@ fn open_events(
 }
 
 fn validate_narrowing_authority(
-    app: &App<'_>,
+    ctx: &Ctx,
     task: &Task,
-    id: &TaskId,
     criteria: &[CriterionId],
     authority: &Authority,
 ) -> Result<(), AgentError> {
-    authority::register(&task.authorities, authority, true).map_err(|error| {
-        app.error(
-            "narrow-acceptance",
-            Some(id),
-            Rejection::Authority(format!("authority rejected: {error:?}")),
-        )
-    })?;
-    validate_authority_file(authority).map_err(|message| {
-        app.error("narrow-acceptance", Some(id), Rejection::Authority(message))
-    })?;
+    authority::register(&task.authorities, authority, true).map_err(|error| ctx.reject(error))?;
+    validate_authority_file(authority).map_err(|error| ctx.reject(error))?;
     let matches = authority.requirements == task.spec.requirements
         && matches!(&authority.grant, Grant::Narrowing { criteria: granted, .. } if granted == criteria);
     if matches {
         Ok(())
     } else {
-        Err(app.error(
-            "narrow-acceptance",
-            Some(id),
-            Rejection::Authority("narrowing grant does not match criteria".into()),
-        ))
+        Err(ctx.reject(AuthorityError::NarrowingMismatch))
     }
 }
 

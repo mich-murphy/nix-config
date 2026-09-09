@@ -1,6 +1,7 @@
 use crate::delivery_support::{append_acceptance_hold, validate_closed};
+use crate::error::Ctx;
 use crate::task_support::task_ref;
-use crate::{AgentError, App, Output, Rejection, ResultData};
+use crate::{AgentError, App, ConflictReason, Output, Rejection, ResultData};
 use domain::{
     Instant,
     delivery::{self, CheckState, DeliveryKind, Outcome, PrState, PullRequest, Replacement},
@@ -16,18 +17,20 @@ impl App<'_> {
         pr: PrNumber,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("observe-pr", Some(&task));
         let state = self.state("observe-pr")?;
         let value = task_ref(&state, &task, "observe-pr", self)?;
-        let (delivery, current, replacement) = observed_delivery(self, value, &task, pr)?;
-        let observation =
-            self.services.github.observe(pr).map_err(|error| {
-                self.error("observe-pr", Some(&task), Rejection::External(error.0))
-            })?;
+        let (delivery, current, replacement) = observed_delivery(&ctx, value, pr)?;
+        let observation = self
+            .services
+            .github
+            .observe(pr)
+            .map_err(|error| ctx.reject(Rejection::External(error.0)))?;
         if replacement {
-            return self.observe_replacement(task, current, observation, check);
+            return self.observe_replacement(ctx, task, current, observation, check);
         }
         if delivery::closed(delivery) {
-            return validate_closed_output(self, &task, delivery, &observation);
+            return validate_closed_output(&ctx, delivery, &observation);
         }
         let events = observation_events(self, value, delivery, pr, observation)?;
         self.commit("observe-pr", Some(&task), events, check)
@@ -35,43 +38,28 @@ impl App<'_> {
 
     fn observe_replacement(
         &mut self,
+        ctx: Ctx,
         task: TaskId,
         delivery: &domain::delivery::Delivery,
         observation: domain::delivery::PullRequest,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let missing_merge =
+            || ctx.reject(Rejection::External("replacement merge is missing".into()));
         if observation.state != PrState::Merged
             || observation.merge.is_none()
             || !self
                 .services
                 .vcs
-                .on_main(observation.merge.as_ref().ok_or_else(|| {
-                    self.error(
-                        "observe-pr",
-                        Some(&task),
-                        Rejection::External("replacement merge is missing".into()),
-                    )
-                })?)
-                .map_err(|error| {
-                    self.error("observe-pr", Some(&task), Rejection::External(error.0))
-                })?
+                .on_main(observation.merge.as_ref().ok_or_else(missing_merge)?)
+                .map_err(|error| ctx.reject(Rejection::External(error.0)))?
         {
-            return Err(self.error(
-                "observe-pr",
-                Some(&task),
-                Rejection::Conflict("replacement is not merged on main".into()),
-            ));
+            return Err(ctx.reject(ConflictReason::ReplacementNotMerged));
         }
         let replacement = Replacement {
             pr: observation.number,
             head: observation.head,
-            merge: observation.merge.ok_or_else(|| {
-                self.error(
-                    "observe-pr",
-                    Some(&task),
-                    Rejection::External("replacement merge is missing".into()),
-                )
-            })?,
+            merge: observation.merge.ok_or_else(missing_merge)?,
         };
         self.commit(
             "observe-pr",
@@ -109,16 +97,16 @@ impl App<'_> {
         wait: bool,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("poll-checks", Some(&task));
         let state = self.state("poll-checks")?;
         let value = task_ref(&state, &task, "poll-checks", self)?;
-        let (pr_number, delivery_id, mut deadline) = poll_target(value).map_err(|message| {
-            self.error("poll-checks", Some(&task), Rejection::Conflict(message))
-        })?;
-        let mut observation = observe_checks(self, &task, pr_number)?;
+        let (pr_number, delivery_id, mut deadline) =
+            poll_target(value).map_err(|reason| ctx.reject(reason))?;
+        let mut observation = observe_checks(&ctx, self, pr_number)?;
         let mut pending = checks_pending(&observation);
         if wait && !check {
             (observation, pending) =
-                self.wait_for_checks(&task, pr_number, &mut deadline, observation)?;
+                self.wait_for_checks(&ctx, pr_number, &mut deadline, observation)?;
         }
         let events = poll_events(
             self,
@@ -137,7 +125,7 @@ impl App<'_> {
 
     fn wait_for_checks(
         &self,
-        task: &TaskId,
+        ctx: &Ctx,
         pr: PrNumber,
         deadline: &mut Option<domain::Instant>,
         mut observation: domain::delivery::PullRequest,
@@ -145,7 +133,7 @@ impl App<'_> {
         let mut pending = checks_pending(&observation);
         while pending && !self.check_deadline_passed(deadline) {
             self.services.clock.sleep(30);
-            observation = observe_checks(self, task, pr)?;
+            observation = observe_checks(ctx, self, pr)?;
             pending = checks_pending(&observation);
         }
         Ok((observation, pending))
@@ -158,15 +146,12 @@ impl App<'_> {
 }
 
 /// The PR, delivery and persisted per-head deadline `poll_checks` polls
-/// against, or the conflict message to reject with.
-fn poll_target(value: &Task) -> Result<(PrNumber, DeliveryId, Option<Instant>), String> {
-    let delivery = value
-        .deliveries
-        .last()
-        .ok_or_else(|| "task has no delivery".to_string())?;
+/// against, or the conflict to reject with.
+fn poll_target(value: &Task) -> Result<(PrNumber, DeliveryId, Option<Instant>), ConflictReason> {
+    let delivery = value.deliveries.last().ok_or(ConflictReason::NoDelivery)?;
     let pr = match &delivery.kind {
         DeliveryKind::Code { pr: Some(pr) } => pr,
-        _ => return Err("task has no PR".into()),
+        _ => return Err(ConflictReason::NoPr),
     };
     let deadline = delivery.check_deadlines.get(&pr.head).copied();
     Ok((pr.number, delivery.id, deadline))
@@ -210,14 +195,14 @@ fn poll_events(app: &App<'_>, task: &TaskId, outcome: PollOutcome) -> Vec<Event>
 }
 
 fn observe_checks(
+    ctx: &Ctx,
     app: &App<'_>,
-    task: &TaskId,
     pr: PrNumber,
 ) -> Result<domain::delivery::PullRequest, AgentError> {
     app.services
         .github
         .observe(pr)
-        .map_err(|error| app.error("poll-checks", Some(task), Rejection::External(error.0)))
+        .map_err(|error| ctx.reject(Rejection::External(error.0)))
 }
 
 fn checks_pending(observation: &domain::delivery::PullRequest) -> bool {
@@ -228,9 +213,8 @@ fn checks_pending(observation: &domain::delivery::PullRequest) -> bool {
 }
 
 fn observed_delivery<'a>(
-    app: &App<'_>,
+    ctx: &Ctx,
     value: &'a domain::task::Task,
-    task: &TaskId,
     pr: PrNumber,
 ) -> Result<
     (
@@ -243,13 +227,10 @@ fn observed_delivery<'a>(
     let known = value.deliveries.iter().find(|delivery| {
         matches!(&delivery.kind, DeliveryKind::Code { pr: Some(known) } if known.number == pr)
     });
-    let current = value.deliveries.last().ok_or_else(|| {
-        app.error(
-            "observe-pr",
-            Some(task),
-            Rejection::Invalid("unknown PR".into()),
-        )
-    })?;
+    let current = value
+        .deliveries
+        .last()
+        .ok_or_else(|| ctx.reject(Rejection::Invalid("unknown PR".into())))?;
     let replacement = known.is_none()
         && matches!(
             value.hold.as_ref().map(|hold| &hold.reason),
@@ -258,13 +239,7 @@ fn observed_delivery<'a>(
     known
         .or(replacement.then_some(current))
         .map(|delivery| (delivery, current, replacement))
-        .ok_or_else(|| {
-            app.error(
-                "observe-pr",
-                Some(task),
-                Rejection::Invalid("unknown PR".into()),
-            )
-        })
+        .ok_or_else(|| ctx.reject(Rejection::Invalid("unknown PR".into())))
 }
 
 fn observation_events(
@@ -320,13 +295,11 @@ pub(super) fn merged_event(
 }
 
 fn validate_closed_output(
-    app: &App<'_>,
-    task: &TaskId,
+    ctx: &Ctx,
     delivery: &domain::delivery::Delivery,
     observed: &domain::delivery::PullRequest,
 ) -> Result<Output, AgentError> {
-    validate_closed(delivery, observed)
-        .map_err(|message| app.error("observe-pr", Some(task), Rejection::Conflict(message)))?;
+    validate_closed(delivery, observed).map_err(|reason| ctx.reject(reason))?;
     Ok(Output {
         events: Vec::new(),
         result: ResultData::Valid,

@@ -9,25 +9,22 @@ use domain::{
         StatusMap, Transition,
     },
     ids::{
-        CriterionId, DeliveryId, Digest, IssueKey, JiraStatus, ModelId, Sha, SlotId, TaskId,
-        TransitionId,
+        CriterionId, DeliveryId, Digest, IssueKey, JiraStatus, Sha, SlotId, TaskId, TransitionId,
     },
     ports::PortError,
-    risk::{
-        Assignment, Effort, Escalation, HarnessConfig, HarnessKind, Model, Profile, Roles,
-        TierProfiles,
-    },
     task::{Criterion, Plan, Task, TaskSpec},
 };
 use std::{collections::BTreeMap, path::Path, str::FromStr};
 
 mod fake;
+mod fixtures;
 pub mod golden;
 pub mod literals;
 mod process;
 pub mod script;
 
 pub use fake::Fake;
+pub use fixtures::profile;
 
 pub fn services_with_process<'a>(fake: &'a Fake, process: &'a dyn Process) -> Services<'a> {
     Services {
@@ -74,6 +71,19 @@ pub fn initialized_with(
     Ok((directory, fake))
 }
 
+/// Like `initialized_with`, but with `RunConfig.feedback_file` pointed at
+/// `feedback_file` instead of left unset.
+pub fn initialized_with_feedback(
+    fake: Fake,
+    feedback_file: std::path::PathBuf,
+) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    let mut run_config = config(directory.path())?;
+    run_config.feedback_file = Some(feedback_file);
+    initialize(directory.path(), run_config, profile()?, services(&fake))?;
+    Ok((directory, fake))
+}
+
 pub fn config(repo: &Path) -> Result<RunConfig, domain::ids::InvalidId> {
     Ok(RunConfig {
         repo: repo.to_owned(),
@@ -94,69 +104,6 @@ pub fn config(repo: &Path) -> Result<RunConfig, domain::ids::InvalidId> {
             sensitive: vec!["auth/**".into()],
         },
         caps: BTreeMap::new(),
-    })
-}
-
-pub fn profile() -> Result<Profile, domain::ids::InvalidId> {
-    let terra = ModelId::from_str("openai/terra")?;
-    let sol = ModelId::from_str("openai/sol")?;
-    let astra = ModelId::from_str("openai/astra")?;
-    let mut models = BTreeMap::new();
-    models.insert(
-        terra.clone(),
-        Model {
-            rank: 1,
-            fallback_for: Vec::new(),
-        },
-    );
-    models.insert(
-        sol.clone(),
-        Model {
-            rank: 2,
-            fallback_for: vec![terra.clone()],
-        },
-    );
-    models.insert(
-        astra.clone(),
-        Model {
-            rank: 3,
-            fallback_for: Vec::new(),
-        },
-    );
-    let implementer = Assignment {
-        model: terra,
-        effort: Effort::Medium,
-    };
-    let reviewer = Assignment {
-        model: sol.clone(),
-        effort: Effort::Medium,
-    };
-    Ok(Profile {
-        harness: HarnessConfig {
-            kind: HarnessKind::Pi,
-        },
-        models,
-        coordinator: reviewer.clone(),
-        tier: TierProfiles {
-            trivial: Roles {
-                implementer: implementer.clone(),
-                reviewer: reviewer.clone(),
-            },
-            lite: Roles {
-                implementer: reviewer.clone(),
-                reviewer: reviewer.clone(),
-            },
-            full: Roles {
-                implementer: reviewer.clone(),
-                reviewer,
-            },
-        },
-        escalation: Escalation {
-            reviewer: Assignment {
-                model: astra,
-                effort: Effort::High,
-            },
-        },
     })
 }
 
@@ -206,7 +153,7 @@ pub fn write_artifact(
 /// tests assert at, instead of a nested `match` on `ResultData` at every
 /// call site.
 pub fn task_state(app: &mut App<'_>, task: &TaskId) -> Result<Task, Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     state
@@ -339,7 +286,14 @@ pub fn sync_status(
     Ok(())
 }
 
-pub fn brief_bind_plan(app: &mut App<'_>, task: &TaskId) -> Result<(), Box<dyn std::error::Error>> {
+/// `brief` and `bind-slot` for `task`, returning the `Plan` a caller can
+/// submit as `Command::Plan` itself: shared by `brief_bind_plan` and any
+/// test that needs to inspect the `plan` command's own result rather than
+/// have it swallowed by `?`.
+pub fn brief_and_bind(
+    app: &mut App<'_>,
+    task: &TaskId,
+) -> Result<Plan, Box<dyn std::error::Error>> {
     let criterion = CriterionId::from_str("AC1")?;
     app.execute(
         Command::Brief {
@@ -361,16 +315,21 @@ pub fn brief_bind_plan(app: &mut App<'_>, task: &TaskId) -> Result<(), Box<dyn s
         },
         false,
     )?;
+    Ok(Plan {
+        deliverable: "observable result".into(),
+        components: vec!["src".into()],
+        examples: Vec::new(),
+        baselines: BTreeMap::from([(criterion, Digest::from_str(&"b".repeat(64))?)]),
+        lesson_families: vec!["controller".into()],
+    })
+}
+
+pub fn brief_bind_plan(app: &mut App<'_>, task: &TaskId) -> Result<(), Box<dyn std::error::Error>> {
+    let plan = brief_and_bind(app, task)?;
     app.execute(
         Command::Plan {
             task: task.clone(),
-            plan: Plan {
-                deliverable: "observable result".into(),
-                components: vec!["src".into()],
-                examples: Vec::new(),
-                baselines: BTreeMap::from([(criterion, Digest::from_str(&"b".repeat(64))?)]),
-                lesson_families: vec!["controller".into()],
-            },
+            plan,
         },
         false,
     )?;

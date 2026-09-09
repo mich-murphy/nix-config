@@ -13,12 +13,13 @@ mod proof;
 mod publish;
 mod queue;
 mod recovery_support;
+pub mod schema;
 mod status;
 mod task;
 mod task_support;
 mod worktree;
 
-pub use error::{AgentError, Rejection};
+pub use error::{AgentError, ConflictReason, EvidenceError, Rejection};
 pub use output::{Output, ResultData, UsageReport};
 
 use adapters::{Process, sqlite::Store};
@@ -38,37 +39,31 @@ pub struct Services<'a> {
     pub clock: &'a dyn Clock,
 }
 
+/// `initialize` runs before any `App` exists, so it cannot use `App::ctx`;
+/// `init` never has a task or a next action to report.
+fn init_error(why: Rejection) -> AgentError {
+    AgentError::new("init", None, why, None)
+}
+
 pub fn initialize(
     root: &std::path::Path,
     config: domain::command::RunConfig,
     profile: domain::risk::Profile,
     services: Services<'_>,
 ) -> Result<Output, AgentError> {
-    domain::risk::validate(&profile).map_err(|error| AgentError {
-        failed: "init".into(),
-        phase: None,
-        why: Rejection::Invalid(format!("invalid profile: {error:?}")),
-        next: None,
-    })?;
-    if !services.vcs.ignored(root).map_err(|error| AgentError {
-        failed: "init".into(),
-        phase: None,
-        why: Rejection::External(error.0),
-        next: None,
-    })? {
-        return Err(AgentError {
-            failed: "init".into(),
-            phase: None,
-            why: Rejection::Invalid("run directory must be Git-ignored".into()),
-            next: None,
-        });
+    domain::risk::validate(&profile)
+        .map_err(|error| init_error(Rejection::Invalid(format!("invalid profile: {error:?}"))))?;
+    if !services
+        .vcs
+        .ignored(root)
+        .map_err(|error| init_error(Rejection::External(error.0)))?
+    {
+        return Err(init_error(Rejection::Invalid(
+            "run directory must be Git-ignored".into(),
+        )));
     }
-    let mut store = Store::create(root).map_err(|error| AgentError {
-        failed: "init".into(),
-        phase: None,
-        why: Rejection::Internal(error.to_string()),
-        next: None,
-    })?;
+    let mut store =
+        Store::create(root).map_err(|error| init_error(Rejection::Internal(error.to_string())))?;
     let capabilities = services.harness.capabilities();
     let event = Event::RunInitialized {
         config: Box::new(config),
@@ -77,12 +72,7 @@ pub fn initialize(
     };
     let events = store
         .commit(Actor::Coordinator, services.clock.now(), &[event])
-        .map_err(|error| AgentError {
-            failed: "init".into(),
-            phase: None,
-            why: Rejection::Internal(error.to_string()),
-            next: None,
-        })?;
+        .map_err(|error| init_error(Rejection::Internal(error.to_string())))?;
     Ok(Output {
         events,
         result: ResultData::Initialized { capabilities },
@@ -107,7 +97,7 @@ impl<'a> App<'a> {
             Command::ReviewSchema => Ok(Output {
                 events: Vec::new(),
                 result: ResultData::ReviewSchema {
-                    schema: review_schema(),
+                    schema: schemars::schema_for!(domain::review::ReviewReport),
                 },
             }),
             Command::ValidateReview { task, report } => self.validate_review(&task, report),
@@ -260,11 +250,7 @@ impl<'a> App<'a> {
             Command::RecoverOperation { target, terminate } => {
                 self.recover_operation(target, terminate, check)
             }
-            Command::Init { .. } => Err(self.error(
-                "init",
-                None,
-                Rejection::Conflict("run already exists".into()),
-            )),
+            Command::Init { .. } => Err(self.error("init", None, ConflictReason::RunAlreadyExists)),
         }
     }
 
@@ -319,44 +305,10 @@ impl<'a> App<'a> {
             .map_err(|error| self.error(command, task, Rejection::Internal(error.to_string())))
     }
 
-    fn error(&self, failed: &str, task: Option<&TaskId>, why: Rejection) -> AgentError {
-        let state = self.store.state().ok();
-        let phase = task
-            .and_then(|id| state.as_ref()?.tasks.get(id))
-            .map(|task| Box::new(task.phase.clone()));
-        let now = self.services.clock.now();
-        let next = state.and_then(|value| value.next(now)).map(Box::new);
-        AgentError {
-            failed: failed.into(),
-            phase,
-            why,
-            next,
-        }
+    /// Convenience for a handler with a single fallible step: the same
+    /// per-command context `ctx` gives a handler with several, built and
+    /// spent in one call.
+    fn error(&self, failed: &str, task: Option<&TaskId>, why: impl Into<Rejection>) -> AgentError {
+        self.ctx(failed, task).reject(why)
     }
-}
-
-/// The schema a reviewer harness must satisfy: `ReviewReport`, the only
-/// fields it can genuinely report. `launch`, `session` and `snapshot` come
-/// from the controller's own launch record, and `verdict` and
-/// `dispositions` are computed and recorded afterward.
-fn review_schema() -> serde_json::Value {
-    serde_json::json!({
-        "type": "object",
-        "required": ["findings", "evidence_gaps", "reviewer_opinion"],
-        "additionalProperties": false,
-        "properties": {
-            "findings": {
-                "type": "array",
-                "description": "every finding the reviewer observed, each with id, severity, category, location, trigger, consequence and correction"
-            },
-            "evidence_gaps": {
-                "type": "array",
-                "description": "criteria the reviewer could not verify from the evidence given"
-            },
-            "reviewer_opinion": {
-                "type": "string",
-                "description": "the reviewer's own verdict; the controller recomputes the verdict it will actually use from finding severity and tier"
-            }
-        }
-    })
 }

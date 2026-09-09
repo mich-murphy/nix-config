@@ -60,7 +60,7 @@ fn ci_deadline_survives_hold() -> Result<(), Box<dyn std::error::Error>> {
         false,
     )?;
     app.execute(Command::Resume { task: task.clone() }, false)?;
-    let app::ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let app::ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     let delivery = state.tasks[&task]
@@ -149,7 +149,7 @@ fn recovery_is_idempotent() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn implementation_spend(app: &mut App<'_>) -> Result<u32, Box<dyn std::error::Error>> {
-    let app::ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let app::ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     Ok(state.tasks[&TaskId::from_str("GAIN-2")?]

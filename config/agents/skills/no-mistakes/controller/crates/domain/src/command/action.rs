@@ -9,16 +9,20 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ActionEnvelope {
     pub action: NextAction,
-    pub command: String,
+    /// The bare `Command` tag this action performs (`"claim"`,
+    /// `"set-status"`, ...). `app` looks this up in the real `Command`
+    /// schema to fill in the filled command line and the schema itself
+    /// on the way out (`app::schema::AnnotatedAction`); domain only ever
+    /// needs to say which one it is.
+    pub name: String,
     pub template: schema::Template,
-    pub schema: schema::Schema,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "action", rename_all = "kebab-case")]
 pub enum NextAction {
     Claim {

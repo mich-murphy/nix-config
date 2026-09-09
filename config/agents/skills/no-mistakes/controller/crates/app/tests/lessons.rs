@@ -80,7 +80,7 @@ fn plan_selects_accepted_lessons() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     prepare_second(&mut app)?;
     plan_second(&mut app)?;
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     let value = &state.tasks[&TaskId::from_str("GAIN-3")?];
@@ -93,7 +93,7 @@ fn plan_selects_accepted_lessons() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn task_feedback(app: &mut App<'_>) -> Result<Vec<Lesson>, Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     Ok(state.tasks[&TaskId::from_str("GAIN-3")?].deliveries[0]
@@ -122,6 +122,63 @@ fn feedback_pins_to_main() -> Result<(), Box<dyn std::error::Error>> {
         task_feedback(&mut app)?,
         vec![lesson("use event outcomes", true)]
     );
+    Ok(())
+}
+
+fn base_fake() -> Fake {
+    Fake {
+        reserve: true,
+        slot: domain::ports::SlotState::Missing,
+        observation: std::cell::RefCell::new(None),
+        clock: std::cell::Cell::new(10),
+        head: std::cell::Cell::new('a'),
+        reviewer_output: std::cell::RefCell::new("done".into()),
+        pending_checks: std::cell::Cell::new(false),
+    }
+}
+
+#[test]
+fn plan_loads_committed_lessons() -> Result<(), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    let feedback_path = directory.path().join("feedback.json");
+    std::fs::write(
+        &feedback_path,
+        serde_json::to_string(&vec![lesson("pinned run guidance", true)])?,
+    )?;
+    let (directory, fake) = initialized_with_feedback(base_fake(), feedback_path)?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    prepare(&mut app)?;
+    let value = task_state(&mut app, &TaskId::from_str("GAIN-2")?)?;
+    let work = value.current_work().ok_or("planned task has no work")?;
+    assert_eq!(work.feedback, vec![lesson("pinned run guidance", true)]);
+    Ok(())
+}
+
+#[test]
+fn plan_rejects_malformed_feedback_file() -> Result<(), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    let feedback_path = directory.path().join("feedback.json");
+    std::fs::write(&feedback_path, "not json")?;
+    let (directory, fake) = initialized_with_feedback(base_fake(), feedback_path)?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let task_id = TaskId::from_str("GAIN-2")?;
+    discover_claim(&mut app, &task_id)?;
+    sync_progress(&mut app, &task_id)?;
+    let plan = brief_and_bind(&mut app, &task_id)?;
+    let result = app.execute(
+        Command::Plan {
+            task: task_id,
+            plan,
+        },
+        false,
+    );
+    assert!(matches!(
+        result,
+        Err(app::AgentError {
+            why: Rejection::Invalid(_),
+            ..
+        })
+    ));
     Ok(())
 }
 

@@ -2,7 +2,7 @@ use domain::{
     event::{Actor, Event, EventRecord},
     state::{State, apply},
 };
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use sha2::{Digest as _, Sha256};
 use std::path::{Path, PathBuf};
 
@@ -78,21 +78,25 @@ impl Store {
         &self.root
     }
 
+    /// The read path: the materialised projection row, taken on trust. No
+    /// fold and no comparison happen here, so a read costs one row lookup
+    /// regardless of event log length. Use `verify` to check the
+    /// projection against a fresh fold.
     pub fn state(&self) -> Result<State, StoreError> {
-        let stored: String = self
-            .connection
-            .query_row(
-                "SELECT state FROM projection WHERE singleton = 1",
-                [],
-                |row| row.get(0),
-            )
-            .map_err(error)?;
-        let projection: State = serde_json::from_str(&stored).map_err(error)?;
+        read_projection(&self.connection)
+    }
+
+    /// Folds the entire event log and compares it to the stored
+    /// projection, the tamper-evident check `state` used to perform on
+    /// every read. Callers that need that assurance (`status`) call this
+    /// explicitly instead of paying its cost on every read.
+    pub fn verify(&self) -> Result<(), StoreError> {
+        let projection = read_projection(&self.connection)?;
         let folded = self.fold()?;
         let projected = serde_json::to_vec(&projection).map_err(error)?;
         let expected = serde_json::to_vec(&folded).map_err(error)?;
         if projected == expected {
-            Ok(projection)
+            Ok(())
         } else {
             Err(StoreError("projection does not match event fold".into()))
         }
@@ -104,10 +108,19 @@ impl Store {
         at: u64,
         events: &[Event],
     ) -> Result<Vec<EventRecord>, StoreError> {
-        let mut state = self.fold()?;
-        let mut sequence = self.last_sequence()?.saturating_add(1);
-        let previous = self.last_digest()?.unwrap_or_default();
-        let transaction = self.connection.transaction().map_err(error)?;
+        // BEGIN IMMEDIATE claims the write lock before any read, so a
+        // second concurrent writer conflicts here rather than surviving
+        // all the way to its own insert.
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(error)?;
+        // Folds from the current projection plus the new events, not
+        // from scratch: a read of the materialised row rather than a
+        // replay of the whole event log.
+        let mut state = read_projection(&transaction)?;
+        let mut sequence = last_sequence(&transaction)?.saturating_add(1);
+        let previous = last_digest(&transaction)?.unwrap_or_default();
         let mut digest = previous;
         let mut records = Vec::with_capacity(events.len());
         for event in events {
@@ -168,26 +181,37 @@ impl Store {
         }
         Ok(state)
     }
+}
 
-    fn last_sequence(&self) -> Result<u64, StoreError> {
-        self.connection
-            .query_row("SELECT COALESCE(MAX(seq), 0) FROM events", [], |row| {
-                row.get::<_, i64>(0)
-            })
-            .map_err(error)
-            .and_then(|value| u64::try_from(value).map_err(error))
-    }
+fn read_projection(connection: &Connection) -> Result<State, StoreError> {
+    let stored: String = connection
+        .query_row(
+            "SELECT state FROM projection WHERE singleton = 1",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(error)?;
+    serde_json::from_str(&stored).map_err(error)
+}
 
-    fn last_digest(&self) -> Result<Option<String>, StoreError> {
-        self.connection
-            .query_row(
-                "SELECT digest FROM events ORDER BY seq DESC LIMIT 1",
-                [],
-                |row| row.get(0),
-            )
-            .optional()
-            .map_err(error)
-    }
+fn last_sequence(connection: &Connection) -> Result<u64, StoreError> {
+    connection
+        .query_row("SELECT COALESCE(MAX(seq), 0) FROM events", [], |row| {
+            row.get::<_, i64>(0)
+        })
+        .map_err(error)
+        .and_then(|value| u64::try_from(value).map_err(error))
+}
+
+fn last_digest(connection: &Connection) -> Result<Option<String>, StoreError> {
+    connection
+        .query_row(
+            "SELECT digest FROM events ORDER BY seq DESC LIMIT 1",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(error)
 }
 
 struct AppendMeta<'a> {
@@ -349,42 +373,4 @@ fn error(value: impl std::fmt::Display) -> StoreError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn launch(id: u64) -> Event {
-        Event::LaunchStarted {
-            launch: domain::event::Launch {
-                id: domain::ids::LaunchId(id),
-                task: "GAIN-1"
-                    .parse()
-                    .unwrap_or_else(|error| panic!("fixture: {error}")),
-                delivery: domain::ids::DeliveryId(1),
-                role: domain::command::AgentRole::Implementer,
-                prompt: "/prompt".into(),
-                outcome: None,
-                usage: None,
-                checkpointed: false,
-                process: None,
-            },
-        }
-    }
-
-    #[test]
-    fn simultaneous_launch_has_one_winner() -> Result<(), StoreError> {
-        let directory = tempfile::tempdir().map_err(error)?;
-        let mut first = Store::create(directory.path())?;
-        let mut second = Store::open(directory.path())?;
-        first.commit(Actor::Coordinator, 1, &[launch(1)])?;
-        assert!(second.commit(Actor::Coordinator, 1, &[launch(2)]).is_err());
-        Ok(())
-    }
-
-    #[test]
-    fn status_matches_fold() -> Result<(), StoreError> {
-        let directory = tempfile::tempdir().map_err(error)?;
-        let store = Store::create(directory.path())?;
-        assert!(store.state()?.tasks.is_empty());
-        Ok(())
-    }
-}
+mod tests;

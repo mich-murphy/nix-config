@@ -180,7 +180,7 @@ fn code_delivery_reaches_cleanup() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = task_state(&mut app, &task)?;
     assert!(matches!(state.phase, Phase::Completed { .. }));
-    let ResultData::State { state: whole } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state: whole, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     assert!(whole.active.is_none());

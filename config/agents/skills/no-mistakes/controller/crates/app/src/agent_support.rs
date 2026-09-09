@@ -16,6 +16,10 @@ pub(super) fn invoke(
     request: &LaunchRequest,
     events: Vec<Event>,
 ) -> Result<(Vec<EventRecord>, LaunchResult), AgentError> {
+    if let Some(path) = &request.output_schema {
+        write_review_schema(path)
+            .map_err(|message| app.error("run-agent", Some(task), Rejection::Internal(message)))?;
+    }
     invoke_harness(
         &mut app.store,
         app.services.harness,
@@ -24,6 +28,16 @@ pub(super) fn invoke(
         events,
     )
     .map_err(|error| app.error("run-agent", Some(task), Rejection::External(error.0)))
+}
+
+/// Writes the reviewer's output schema for a `Native` harness
+/// (`Capabilities::structured_output`), so `--output-schema` names a real
+/// file: `schemars::schema_for!` is called here, in `app`, never in
+/// `domain`.
+fn write_review_schema(path: &std::path::Path) -> Result<(), String> {
+    let schema = schemars::schema_for!(domain::review::ReviewReport);
+    let encoded = serde_json::to_string_pretty(&schema).map_err(|error| error.to_string())?;
+    std::fs::write(path, encoded).map_err(|error| error.to_string())
 }
 
 fn invoke_harness(

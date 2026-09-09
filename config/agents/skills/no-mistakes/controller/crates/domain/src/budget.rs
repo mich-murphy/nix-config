@@ -3,8 +3,11 @@ use crate::{
     risk::Tier,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum BudgetKind {
     Implementation,
@@ -15,7 +18,7 @@ pub enum BudgetKind {
     Escalation,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Budgets {
     pub implementation_turns: u32,
@@ -26,7 +29,7 @@ pub struct Budgets {
     pub escalations: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Limits {
     pub implementation: u32,
@@ -38,13 +41,16 @@ pub struct Limits {
 }
 
 impl Limits {
+    /// The default limits for `tier`, overridden by a matching entry in
+    /// `RunConfig.caps` when the run configures one. Run config lives in
+    /// `State`, so this stays pure: the override map is passed in, never
+    /// read from disk here.
     #[must_use]
-    pub fn for_tier(tier: Tier) -> Self {
-        match tier {
-            Tier::Trivial => Self::new(4, 2, 1, 1, 1, 0),
-            Tier::Lite => Self::new(8, 2, 3, 2, 1, 1),
-            Tier::Full => Self::new(12, 2, 5, 4, 1, 1),
-        }
+    pub fn for_tier(tier: Tier, overrides: Option<&BTreeMap<Tier, Self>>) -> Self {
+        overrides
+            .and_then(|map| map.get(&tier))
+            .copied()
+            .unwrap_or_else(|| default_for_tier(tier))
     }
 
     const fn new(
@@ -66,14 +72,23 @@ impl Limits {
     }
 }
 
+const fn default_for_tier(tier: Tier) -> Limits {
+    match tier {
+        Tier::Trivial => Limits::new(4, 2, 1, 1, 1, 0),
+        Tier::Lite => Limits::new(8, 2, 3, 2, 1, 1),
+        Tier::Full => Limits::new(12, 2, 5, 4, 1, 1),
+    }
+}
+
 #[must_use]
 pub fn remaining(
     kind: BudgetKind,
     budgets: &Budgets,
     tier: Tier,
     authorities: &[Authority],
+    caps: Option<&BTreeMap<Tier, Limits>>,
 ) -> u32 {
-    let base = limit(Limits::for_tier(tier), kind);
+    let base = limit(Limits::for_tier(tier, caps), kind);
     let extra = authorities
         .iter()
         .filter(|entry| grants_counted_pair(entry, kind))
@@ -138,11 +153,17 @@ mod tests {
     fn review_cap_follows_tier() {
         let budgets = Budgets::default();
         assert_eq!(
-            remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[]),
+            remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[], None),
             1
         );
-        assert_eq!(remaining(BudgetKind::Review, &budgets, Tier::Lite, &[]), 3);
-        assert_eq!(remaining(BudgetKind::Review, &budgets, Tier::Full, &[]), 5);
+        assert_eq!(
+            remaining(BudgetKind::Review, &budgets, Tier::Lite, &[], None),
+            3
+        );
+        assert_eq!(
+            remaining(BudgetKind::Review, &budgets, Tier::Full, &[], None),
+            5
+        );
     }
 
     #[test]
@@ -159,8 +180,38 @@ mod tests {
             ..Budgets::default()
         };
         assert_eq!(
-            remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[]),
+            remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[], None),
             0
+        );
+    }
+
+    #[test]
+    fn caps_override_tier_limit() {
+        let budgets = Budgets::default();
+        let caps = BTreeMap::from([(
+            Tier::Trivial,
+            Limits {
+                implementation: 4,
+                stalled: 2,
+                reviews: 9,
+                repairs: 1,
+                ci_repairs: 1,
+                escalations: 0,
+            },
+        )]);
+        assert_eq!(
+            remaining(
+                BudgetKind::Review,
+                &budgets,
+                Tier::Trivial,
+                &[],
+                Some(&caps)
+            ),
+            9
+        );
+        assert_eq!(
+            remaining(BudgetKind::Review, &budgets, Tier::Lite, &[], Some(&caps)),
+            3
         );
     }
 }

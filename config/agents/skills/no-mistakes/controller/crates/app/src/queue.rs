@@ -1,5 +1,5 @@
 use crate::task_support::task_ref;
-use crate::{AgentError, App, Output, Rejection, ResultData, UsageReport};
+use crate::{AgentError, App, ConflictReason, Output, Rejection, ResultData, UsageReport};
 use domain::{
     command::{DiscoveredTask, NextAction},
     event::Event,
@@ -11,21 +11,23 @@ use std::collections::{BTreeMap, BTreeSet};
 
 impl App<'_> {
     pub(super) fn status(&self) -> Result<Output, AgentError> {
+        let state = self.state("status")?;
+        let verified = self.store.verify().is_ok();
         Ok(Output {
             events: Vec::new(),
             result: ResultData::State {
-                state: Box::new(self.state("status")?),
+                state: Box::new(state),
+                verified,
             },
         })
     }
 
     pub(super) fn next(&self) -> Result<Output, AgentError> {
         let now = self.services.clock.now();
+        let next = self.state("next")?.next(now).map(crate::schema::annotate);
         Ok(Output {
             events: Vec::new(),
-            result: ResultData::Next {
-                next: self.state("next")?.next(now),
-            },
+            result: ResultData::Next { next },
         })
     }
 
@@ -73,11 +75,7 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("discover")?;
         if state.frozen {
-            return Err(self.error(
-                "discover",
-                None,
-                Rejection::Conflict("membership is already frozen".into()),
-            ));
+            return Err(self.error("discover", None, ConflictReason::MembershipFrozen));
         }
         validate_unique(&tasks)
             .map_err(|message| self.error("discover", None, Rejection::Invalid(message)))?;
@@ -102,21 +100,13 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let state = self.state("refresh")?;
         if !state.frozen {
-            return Err(self.error(
-                "refresh",
-                None,
-                Rejection::Conflict("discover the queue first".into()),
-            ));
+            return Err(self.error("refresh", None, ConflictReason::QueueNotDiscovered));
         }
         if changed
             .iter()
             .any(|task| !state.tasks.contains_key(&task.id))
         {
-            return Err(self.error(
-                "refresh",
-                None,
-                Rejection::Conflict("new tasks are follow-up scope".into()),
-            ));
+            return Err(self.error("refresh", None, ConflictReason::NewTasksOutOfScope));
         }
         self.commit(
             "refresh",
@@ -135,11 +125,7 @@ impl App<'_> {
                 _ => None,
             });
         if expected.as_ref() != Some(&task) {
-            return Err(self.error(
-                "claim",
-                Some(&task),
-                Rejection::Conflict("task is not the next eligible claim".into()),
-            ));
+            return Err(self.error("claim", Some(&task), ConflictReason::NotNextEligibleClaim));
         }
         reserve_claim(self, &task, check)?;
         self.commit(
@@ -160,15 +146,10 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("hold")?;
-        require_active(&state, &task)
-            .map_err(|message| self.error("hold", Some(&task), Rejection::Conflict(message)))?;
+        require_active(&state, &task).map_err(|reason| self.error("hold", Some(&task), reason))?;
         if matches!(&reason, domain::task::HoldReason::CiPending { deadline, .. } if *deadline > self.services.clock.now())
         {
-            return Err(self.error(
-                "hold",
-                Some(&task),
-                Rejection::Conflict("CI hold requires the recorded deadline to expire".into()),
-            ));
+            return Err(self.error("hold", Some(&task), ConflictReason::CiDeadlinePending));
         }
         if state.operations.iter().any(|operation| {
             matches!(
@@ -179,7 +160,7 @@ impl App<'_> {
             return Err(self.error(
                 "hold",
                 Some(&task),
-                Rejection::Conflict("settle the active operation first".into()),
+                ConflictReason::ActiveOperationUnsettled,
             ));
         }
         self.commit(
@@ -201,11 +182,7 @@ impl App<'_> {
             .get(&task)
             .is_some_and(|value| value.hold.is_some());
         if !held || state.active.as_ref().is_some_and(|active| active != &task) {
-            return Err(self.error(
-                "resume",
-                Some(&task),
-                Rejection::Conflict("task is not an available hold".into()),
-            ));
+            return Err(self.error("resume", Some(&task), ConflictReason::NotAvailableHold));
         }
         self.commit(
             "resume",
@@ -216,11 +193,11 @@ impl App<'_> {
     }
 }
 
-fn require_active(state: &domain::state::State, task: &TaskId) -> Result<(), String> {
+fn require_active(state: &domain::state::State, task: &TaskId) -> Result<(), ConflictReason> {
     if state.active.as_ref() == Some(task) {
         Ok(())
     } else {
-        Err("task is not active".into())
+        Err(ConflictReason::TaskNotActive)
     }
 }
 
@@ -285,11 +262,7 @@ fn reserve_claim(app: &App<'_>, task: &TaskId, check: bool) -> Result<(), AgentE
     if reserved {
         Ok(())
     } else {
-        Err(app.error(
-            "claim",
-            Some(task),
-            Rejection::Conflict("another run owns this task".into()),
-        ))
+        Err(app.error("claim", Some(task), ConflictReason::TaskOwnedElsewhere))
     }
 }
 

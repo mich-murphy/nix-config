@@ -1,6 +1,8 @@
 # Controller and skill redesign
 
-Status: proposal, revision 2, not yet implemented.
+Status: implemented. Revision 2 is the rebuild; revision 3 (Section 19)
+records the decisions taken while landing it, in three batches committed on
+8 and 9 September 2026.
 Date: 2026-09-08.
 Scope: the `no-mistakes` skill and its bundled Rust controller.
 
@@ -1290,3 +1292,61 @@ struct Subtask {
 A subtask transitions through the same `set-status` and `observe-status` with
 its own issue key, and `subtask_done_requires_record` is the rule that it
 must exist here first.
+
+## 19. Revision 3: decisions taken during the rebuild
+
+- `PlannedWork` is owned by the delivery; `Phase::Planned` and
+  `Phase::InFlight` carry no payload. Sections 4 and 5 both declared it and
+  the implementation kept two copies that had to be updated in step.
+- `WorkStage` is removed; in-flight sub-state is derived from the current
+  delivery's proof, review and PR in `next`. Only one variant was ever
+  constructed and a stored stage could disagree with the delivery.
+- A hold releases the active task, so another may be claimed within the
+  open-PR cap, and `next` surfaces actionable holds before new claims: an
+  expired CI wait resumes, a needs-human hold asks for the next delivery,
+  budget and superseded holds are reported. Held tasks had become invisible
+  to `next`.
+- `Phase::Completed` is added after `Verified`. "Verified" and "recorded done
+  and cleaned up" were the same state plus a set on `State`.
+- Baselines belong to the task, fixed per criterion by the first plan that
+  names them; a later plan may add a baseline for a new criterion (for
+  example one a narrowing introduced) but never rewrite one. Verification and
+  follow-up deliveries have no plan and could never be verified against
+  plan-owned baselines.
+- Budgets and pairs are charged when a launch starts, in the same transaction
+  as `LaunchStarted`. Cancelled and timed-out launches were free,
+  contradicting the inventory.
+- A malformed or invalid review is a failed, charged launch for `Native` and
+  `SelfValidated` harnesses; only `BestEffort` would re-prompt free, and no
+  such harness exists. The launch is settled by the handler, not by
+  recovery.
+- Grant commands take an `AuthorityReceipt` (source, artifact, digest,
+  requirements, grant); the controller assigns the id, records the time and
+  tracks use. Repurposing an unused pair is an explicit `AuthorityRepurposed`
+  event.
+- Reviewers report a `ReviewReport` (findings, evidence gaps, opinion); the
+  controller supplies launch, session, snapshot, computed verdict and
+  dispositions. `validate-review` validates against the task's tier.
+- `next` gained `Snapshot`, `PollChecks` and `Resume`, and the Jira steps, in
+  this order: create draft PR, Jira Review, ready, merge, final-verify, Jira
+  Done for the parent then each subtask, complete, cleanup. Stale proof
+  (recorded against an older snapshot) counts as missing.
+- `poll-checks --wait` really waits, polling every 30 seconds until the
+  per-head deadline (first observation plus 1800 seconds), then records the
+  CI hold.
+- The CLI frame is `clap`; per-command arguments, help and the schema `next`
+  returns derive from the `Command` enum through `schemars`. Scalar fields
+  may be argv flags (the field named `task` may be the first positional);
+  structured fields come through `--input`.
+- The projection is the read path; `status` verifies it against the event
+  fold. `commit` opens `BEGIN IMMEDIATE`.
+- `Rejection` carries typed reasons (`ConflictReason`, `EvidenceError`,
+  `AuthorityError`, `BudgetKind`) plus a human message; exit codes per class
+  are unchanged.
+- pi reviewers keep `bash` (they need `git diff`) and pi therefore declares
+  `Isolation::None`; Codex passes `--output-schema` for reviewer launches and
+  keeps `Native`.
+- `unwrap`/`expect` are denied by the workspace lints in every controller
+  crate, test code included; only the `xtask` gate tooling is outside that
+  table. Test fixtures return `Result` or use infallible literal helpers that
+  panic with a message, so no exemption was needed.

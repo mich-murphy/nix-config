@@ -26,12 +26,21 @@ The gate runs:
 - documentation tests
 - `cargo build --release --locked`
 
+`unwrap`/`expect` denial (`clippy::unwrap_used`, `clippy::expect_used`) is set
+once, in the root `Cargo.toml`'s `[workspace.lints.clippy]`, and applies to
+`domain`, `adapters`, `app`, and `cli` through each crate's own `[lints]
+workspace = true` — library code and that crate's tests alike; `domain`'s
+`lib.rs` restates it as an inner `#![deny(...)]`. The `xtask` maintenance
+crate carries its own separate `[lints]` table with neither lint denied.
+
 `quality-gates.json` pins Rust and the Mozilla analyzer with archive and binary
 hashes. Complexity exceptions name an exact repository-relative path, function,
 and reason. Bare function names are forbidden because they could exempt an
-unrelated function added later. The current exceptions are exhaustive command,
-event, argv, and next-action dispatchers. Do not add one to hide mixed
-responsibilities.
+unrelated function added later. The current exceptions are the exhaustive
+event fold (`apply`), the single command dispatcher (`execute`), the
+exhaustive `ConflictReason` display, and the two next-action formatters that
+turn a `NextAction` into its command tag and filled template. Do not add one
+to hide mixed responsibilities.
 
 For a quick diagnostic:
 

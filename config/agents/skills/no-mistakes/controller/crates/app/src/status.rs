@@ -1,6 +1,7 @@
 use crate::delivery_support::{current_sync, review_snapshot, verify_proof};
+use crate::error::Ctx;
 use crate::task_support::{next_operation, task_ref};
-use crate::{AgentError, App, Output, Rejection, ResultData};
+use crate::{AgentError, App, ConflictReason, Output, Rejection, ResultData};
 use domain::{
     command::Transition,
     event::Event,
@@ -19,17 +20,13 @@ impl App<'_> {
         transitions: Vec<Transition>,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("set-status", Some(&task));
         let state = self.state("set-status")?;
         let value = task_ref(&state, &task, "set-status", self)?;
-        validate_done(self, &state, value, &task, &issue, &target)?;
-        let transition = select_transition(self, &task, &target, &transitions)?;
-        let current_sync = current_sync(value, &issue).ok_or_else(|| {
-            self.error(
-                "set-status",
-                Some(&task),
-                Rejection::Invalid("unrecorded subtask".into()),
-            )
-        })?;
+        validate_done(&ctx, &state, value, &issue, &target)?;
+        let transition = select_transition(&ctx, &target, &transitions)?;
+        let current_sync = current_sync(value, &issue)
+            .ok_or_else(|| ctx.reject(Rejection::Invalid("unrecorded subtask".into())))?;
         let attempts = attempts(current_sync);
         let operation = next_operation(&state);
         let intent = domain::sync::StatusIntent {
@@ -40,13 +37,7 @@ impl App<'_> {
             attempts,
             at: self.services.clock.now(),
         };
-        sync::intend(current_sync, intent.clone()).map_err(|error| {
-            self.error(
-                "set-status",
-                Some(&task),
-                Rejection::Conflict(format!("status intent rejected: {error:?}")),
-            )
-        })?;
+        sync::intend(current_sync, intent.clone()).map_err(|error| ctx.reject(error))?;
         let events = vec![Event::StatusIntended {
             task: task.clone(),
             issue,
@@ -70,30 +61,18 @@ impl App<'_> {
         evidence: String,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let ctx = self.ctx("observe-status", Some(&task));
         let state = self.state("observe-status")?;
         let value = task_ref(&state, &task, "observe-status", self)?;
         if evidence.trim().is_empty() {
-            return Err(self.error(
-                "observe-status",
-                Some(&task),
-                Rejection::Invalid("fresh observation evidence is required".into()),
-            ));
+            return Err(ctx.reject(Rejection::Invalid(
+                "fresh observation evidence is required".into(),
+            )));
         }
-        let current = current_sync(value, &issue).ok_or_else(|| {
-            self.error(
-                "observe-status",
-                Some(&task),
-                Rejection::Invalid("unrecorded subtask".into()),
-            )
-        })?;
-        let observed =
-            sync::observe(current, status.clone(), self.services.clock.now()).map_err(|error| {
-                self.error(
-                    "observe-status",
-                    Some(&task),
-                    Rejection::Conflict(format!("observation rejected: {error:?}")),
-                )
-            })?;
+        let current = current_sync(value, &issue)
+            .ok_or_else(|| ctx.reject(Rejection::Invalid("unrecorded subtask".into())))?;
+        let observed = sync::observe(current, status.clone(), self.services.clock.now())
+            .map_err(|error| ctx.reject(error))?;
         self.commit(
             "observe-status",
             Some(&task),
@@ -109,8 +88,7 @@ impl App<'_> {
 }
 
 fn select_transition(
-    app: &App<'_>,
-    task: &TaskId,
+    ctx: &Ctx,
     target: &JiraStatus,
     transitions: &[Transition],
 ) -> Result<domain::ids::TransitionId, AgentError> {
@@ -119,11 +97,9 @@ fn select_transition(
         .map(|entry| (entry.id.clone(), entry.to.clone()))
         .collect::<Vec<_>>();
     sync::transition(target, &pairs).cloned().map_err(|error| {
-        app.error(
-            "set-status",
-            Some(task),
-            Rejection::Invalid(format!("transition rejected: {error:?}")),
-        )
+        ctx.reject(Rejection::Invalid(format!(
+            "transition rejected: {error:?}"
+        )))
     })
 }
 
@@ -135,10 +111,9 @@ fn attempts(sync: &Sync) -> u8 {
 }
 
 fn validate_done(
-    app: &App<'_>,
+    ctx: &Ctx,
     state: &domain::state::State,
     task: &domain::task::Task,
-    id: &TaskId,
     issue: &IssueKey,
     target: &JiraStatus,
 ) -> Result<(), AgentError> {
@@ -150,34 +125,21 @@ fn validate_done(
         return Ok(());
     }
     if !matches!(task.phase, Phase::Verified { .. } | Phase::Completed { .. }) {
-        return Err(app.error(
-            "set-status",
-            Some(id),
-            Rejection::Conflict("Jira Done requires verified delivery".into()),
-        ));
+        return Err(ctx.reject(ConflictReason::JiraDoneRequiresVerified));
     }
-    if IssueKey::from(id.clone()) != *issue && !task.subtasks.contains_key(issue) {
-        return Err(app.error(
-            "set-status",
-            Some(id),
-            Rejection::Invalid("unrecorded subtask".into()),
-        ));
+    if IssueKey::from(task.id.clone()) != *issue && !task.subtasks.contains_key(issue) {
+        return Err(ctx.reject(Rejection::Invalid("unrecorded subtask".into())));
     }
     let delivery = task.deliveries.last().ok_or_else(|| {
-        app.error(
-            "set-status",
-            Some(id),
-            Rejection::Evidence("verified task has no delivery".into()),
-        )
+        ctx.reject(crate::EvidenceError::Other(
+            "verified task has no delivery".into(),
+        ))
     })?;
     let snapshot = review_snapshot(delivery).ok_or_else(|| {
-        app.error(
-            "set-status",
-            Some(id),
-            Rejection::Evidence("verified task has no review snapshot".into()),
-        )
+        ctx.reject(crate::EvidenceError::Other(
+            "verified task has no review snapshot".into(),
+        ))
     })?;
-    verify_proof(task, delivery, snapshot)
-        .map_err(|message| app.error("set-status", Some(id), Rejection::Evidence(message)))?;
+    verify_proof(task, delivery, snapshot).map_err(|error| ctx.reject(error))?;
     Ok(())
 }

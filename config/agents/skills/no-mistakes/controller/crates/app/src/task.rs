@@ -1,9 +1,9 @@
 use crate::task_support::{
-    current_work_delivery, digest_json, latest_checkpointed_launch, next_delivery, sensitive_count,
-    task_ref,
+    committed_lessons, current_work_delivery, digest_json, latest_checkpointed_launch,
+    next_delivery, selected_lessons, sensitive_count, task_ref,
 };
 use crate::worktree::{bind_worktree, validate_paths, validate_slot};
-use crate::{AgentError, App, Output, Rejection};
+use crate::{AgentError, App, ConflictReason, EvidenceError, Output, Rejection};
 use domain::{
     acceptance::{self, Snapshot},
     delivery::{Delivery, DeliveryKind, Outcome},
@@ -30,25 +30,6 @@ pub(super) struct CheckInput {
     pub implementation: Vec<String>,
 }
 
-fn selected_lessons(
-    state: &domain::state::State,
-    families: &[String],
-) -> Vec<domain::command::Lesson> {
-    state
-        .lessons
-        .iter()
-        .map(|recorded| &recorded.lesson)
-        .filter(|lesson| {
-            lesson.accepted
-                && lesson
-                    .families
-                    .iter()
-                    .any(|family| family == "*" || families.contains(family))
-        })
-        .cloned()
-        .collect()
-}
-
 impl App<'_> {
     pub(super) fn brief(
         &mut self,
@@ -66,7 +47,7 @@ impl App<'_> {
             return Err(self.error(
                 "brief",
                 Some(&task),
-                Rejection::Conflict("brief requires a claimed task and criteria".into()),
+                ConflictReason::BriefRequiresClaimedTask,
             ));
         }
         let requirements = digest_json(&criteria)
@@ -112,11 +93,7 @@ impl App<'_> {
         let state = self.state("plan")?;
         let value = task_ref(&state, &task, "plan", self)?;
         if !matches!(value.phase, Phase::Planned | Phase::InFlight) {
-            return Err(self.error(
-                "plan",
-                Some(&task),
-                Rejection::Conflict("bind a slot before planning".into()),
-            ));
+            return Err(self.error("plan", Some(&task), ConflictReason::PlanRequiresSlot));
         }
         let rewrites_fixed_baseline = value
             .baselines
@@ -126,12 +103,12 @@ impl App<'_> {
             return Err(self.error(
                 "plan",
                 Some(&task),
-                Rejection::Evidence(
+                EvidenceError::Other(
                     "replanning cannot change baselines fixed for this task".into(),
                 ),
             ));
         }
-        let feedback = selected_lessons(&state, &plan.lesson_families);
+        let feedback = self.plan_feedback(&state, &task, &plan.lesson_families)?;
         self.commit(
             "plan",
             Some(&task),
@@ -142,6 +119,29 @@ impl App<'_> {
             }],
             check,
         )
+    }
+
+    /// This task's own recorded lessons matching `families`, plus any
+    /// accepted lessons `RunConfig.feedback_file` pins for them: cross-run
+    /// guidance the coordinator can commit without replaying it through
+    /// `lesson-record` for every run.
+    fn plan_feedback(
+        &self,
+        state: &domain::state::State,
+        task: &TaskId,
+        families: &[String],
+    ) -> Result<Vec<domain::command::Lesson>, AgentError> {
+        let mut feedback = selected_lessons(state, families);
+        let path = state
+            .config
+            .as_ref()
+            .and_then(|config| config.feedback_file.as_ref());
+        if let Some(path) = path {
+            let committed = committed_lessons(path, families)
+                .map_err(|message| self.error("plan", Some(task), Rejection::Invalid(message)))?;
+            feedback.extend(committed);
+        }
+        Ok(feedback)
     }
 
     pub(super) fn bind_slot(
@@ -158,12 +158,11 @@ impl App<'_> {
             return Err(self.error(
                 "bind-slot",
                 Some(&task),
-                Rejection::Conflict("bind requires the claimed task and a task branch".into()),
+                ConflictReason::BindRequiresClaimedTask,
             ));
         }
-        let reuse = validate_slot(&state, &task, &slot, authority).map_err(|message| {
-            self.error("bind-slot", Some(&task), Rejection::Authority(message))
-        })?;
+        let reuse = validate_slot(&state, &task, &slot, authority)
+            .map_err(|error| self.error("bind-slot", Some(&task), error))?;
         let base =
             self.services.vcs.head("origin/main").map_err(|error| {
                 self.error("bind-slot", Some(&task), Rejection::External(error.0))
@@ -231,11 +230,7 @@ impl App<'_> {
         let state = self.state("snapshot")?;
         let value = task_ref(&state, &task, "snapshot", self)?;
         let (work, delivery) = current_work_delivery(value).ok_or_else(|| {
-            self.error(
-                "snapshot",
-                Some(&task),
-                Rejection::Conflict("task has no planned delivery".into()),
-            )
+            self.error("snapshot", Some(&task), ConflictReason::NoPlannedDelivery)
         })?;
         let previous_head = work.snapshot.as_ref().map(|snapshot| snapshot.head.clone());
         let head =

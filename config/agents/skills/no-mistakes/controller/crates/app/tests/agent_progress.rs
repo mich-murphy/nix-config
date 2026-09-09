@@ -43,7 +43,7 @@ fn current_delivery(
     app: &mut App<'_>,
     task: &TaskId,
 ) -> Result<(domain::ids::DeliveryId, domain::acceptance::Snapshot), Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     let delivery = &state.tasks[task].deliveries[0];
@@ -159,7 +159,7 @@ fn readiness_is_free() -> Result<(), Box<dyn std::error::Error>> {
         })
     ));
     match app.execute(Command::Status, false)?.result {
-        ResultData::State { state } => assert_eq!(state.tasks[&task].budgets.reviews, 0),
+        ResultData::State { state, .. } => assert_eq!(state.tasks[&task].budgets.reviews, 0),
         _ => return Err("status returned wrong result".into()),
     }
     Ok(())
@@ -200,7 +200,7 @@ fn malformed_review_fails_launch() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn reviewer_launch(app: &mut App<'_>) -> Result<domain::event::Launch, Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     state
@@ -215,7 +215,7 @@ fn reviewer_launch(app: &mut App<'_>) -> Result<domain::event::Launch, Box<dyn s
 /// all (present or explicitly unknown), the same fact `state.usage` used
 /// to record in a separate map before usage moved onto the launch itself.
 fn usage_recorded(app: &mut App<'_>, launch: LaunchId) -> Result<bool, Box<dyn std::error::Error>> {
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     Ok(state
@@ -247,7 +247,7 @@ fn rejected_launch_spends_nothing() -> Result<(), Box<dyn std::error::Error>> {
         })
     ));
     match app.execute(Command::Status, false)?.result {
-        ResultData::State { state } => assert_eq!(state.tasks[&task].budgets.reviews, 0),
+        ResultData::State { state, .. } => assert_eq!(state.tasks[&task].budgets.reviews, 0),
         _ => return Err("status returned wrong result".into()),
     }
     Ok(())
@@ -308,7 +308,7 @@ fn head_change_invalidates_proof() -> Result<(), Box<dyn std::error::Error>> {
     fake.head.set('b');
     app.execute(Command::Snapshot { task: task.clone() }, false)?;
     match app.execute(Command::Status, false)?.result {
-        ResultData::State { state } => {
+        ResultData::State { state, .. } => {
             assert!(state.tasks[&task].deliveries[0].proof.entries.is_empty());
         }
         _ => return Err("status returned wrong result".into()),

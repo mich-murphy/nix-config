@@ -177,15 +177,15 @@ pub(super) fn guard_role(
     task: &domain::task::Task,
     delivery: &Delivery,
     role: AgentRole,
-) -> Result<(), String> {
+) -> Result<(), crate::ConflictReason> {
     let verification = matches!(delivery.kind, DeliveryKind::Verification { .. });
     if !domain::delivery::admits(delivery, role) {
-        return Err("verification delivery rejects implementers".into());
+        return Err(crate::ConflictReason::VerificationRejectsImplementer);
     }
     let planned = matches!(task.phase, Phase::Planned | Phase::InFlight);
     let verifying = verification && matches!(task.phase, Phase::Merged { .. });
     if !planned && !verifying {
-        return Err("agent requires planned or verification work".into());
+        return Err(crate::ConflictReason::RequiresPlannedOrVerification);
     }
     Ok(())
 }
@@ -274,4 +274,44 @@ pub(super) fn previous_session(
         LaunchOutcome::Completed { session, .. } => session.clone(),
         LaunchOutcome::Failed { .. } | LaunchOutcome::Cancelled => String::new(),
     })
+}
+
+pub(super) fn selected_lessons(
+    state: &domain::state::State,
+    families: &[String],
+) -> Vec<domain::command::Lesson> {
+    state
+        .lessons
+        .iter()
+        .map(|recorded| &recorded.lesson)
+        .filter(|lesson| accepted_for(lesson, families))
+        .cloned()
+        .collect()
+}
+
+fn accepted_for(lesson: &domain::command::Lesson, families: &[String]) -> bool {
+    lesson.accepted
+        && lesson
+            .families
+            .iter()
+            .any(|family| family == "*" || families.contains(family))
+}
+
+/// `RunConfig.feedback_file`, read fresh at every `plan`: a JSON array of
+/// `Lesson`, external to this run's own recorded lessons, so a coordinator
+/// can pin cross-run guidance without replaying it through `lesson-record`.
+/// Reading the file is app-side I/O, the same layering as reading a
+/// prompt file for `run-agent`.
+pub(super) fn committed_lessons(
+    path: &std::path::Path,
+    families: &[String],
+) -> Result<Vec<domain::command::Lesson>, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|error| format!("feedback file {}: {error}", path.display()))?;
+    let lessons: Vec<domain::command::Lesson> = serde_json::from_str(&text)
+        .map_err(|error| format!("feedback file {}: {error}", path.display()))?;
+    Ok(lessons
+        .into_iter()
+        .filter(|lesson| accepted_for(lesson, families))
+        .collect())
 }

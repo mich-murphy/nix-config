@@ -1,48 +1,44 @@
 use super::*;
 
 #[test]
-fn command_catalog_is_exact() {
-    assert_eq!(
-        COMMANDS,
-        [
-            "init",
-            "status",
-            "next",
-            "usage-report",
-            "discover",
-            "refresh",
-            "claim",
-            "hold",
-            "resume",
-            "brief",
-            "plan",
-            "checkpoint",
-            "snapshot",
-            "subtask-record",
-            "escalate-tier",
-            "bind-slot",
-            "cleanup",
-            "record-proof",
-            "run-check",
-            "run-agent",
-            "review-schema",
-            "validate-review",
-            "disposition",
-            "human-review",
-            "lesson-record",
-            "publish",
-            "observe-pr",
-            "poll-checks",
-            "final-verify",
-            "complete",
-            "set-status",
-            "observe-status",
-            "grant",
-            "open-delivery",
-            "narrow-acceptance",
-            "recover-operation",
-        ]
+fn every_command_variant_is_a_subcommand() {
+    assert_eq!(app::schema::command_names().len(), 36);
+}
+
+#[test]
+fn scalar_field_round_trips_from_argv() -> Result<(), Box<dyn std::error::Error>> {
+    let args = build::parse(
+        "claim".into(),
+        &["GAIN-1".into(), "--run".into(), "/run".into()],
+    )?;
+    let command = command(&args)?;
+    assert!(matches!(command, Command::Claim { task } if task.as_ref() == "GAIN-1"));
+    Ok(())
+}
+
+#[test]
+fn non_scalar_field_on_argv_is_rejected_naming_input() {
+    let result = build::parse(
+        "hold".into(),
+        &[
+            "GAIN-1".into(),
+            "--reason".into(),
+            "x".into(),
+            "--run".into(),
+            "/run".into(),
+        ],
     );
+    let Err(error) = result else {
+        panic!("non-scalar field must be rejected");
+    };
+    assert!(error.message.contains("--input"));
+}
+
+#[test]
+fn help_for_subcommand_lists_required_field() {
+    let text = help_text(Some("claim"));
+    assert!(text.contains("task"));
+    assert!(text.contains("required"));
 }
 
 #[test]
@@ -63,31 +59,28 @@ fn unknown_top_level_field_fails_closed() {
 
 #[test]
 fn duplicate_option_fails_closed() {
-    let raw = vec![
+    let result = build::parse(
         "claim".into(),
-        "GAIN-1".into(),
-        "--run".into(),
-        "/one".into(),
-        "--run".into(),
-        "/two".into(),
-    ];
-    assert!(parse_raw(&raw, "claim".into()).is_err());
+        &[
+            "GAIN-1".into(),
+            "--run".into(),
+            "/one".into(),
+            "--run".into(),
+            "/two".into(),
+        ],
+    );
+    assert!(result.is_err());
 }
 
 #[test]
-fn init_rejects_unhandled_fields() {
+fn init_rejects_input_and_check() {
     let args = Args {
         command: "init".into(),
         run: "/run".into(),
-        input: None,
+        input: Some("x".into()),
         check: false,
         pretty: false,
-        values: BTreeMap::from([
-            ("config".into(), "/config".into()),
-            ("profile".into(), "/profile".into()),
-            ("extra".into(), "bad".into()),
-        ]),
-        positionals: Vec::new(),
+        values: BTreeMap::new(),
     };
     assert!(validate_init(&args).is_err());
 }

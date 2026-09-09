@@ -1,6 +1,7 @@
 use crate::App;
 use crate::delivery::PublishInput;
 use crate::task_support::digest_file;
+use crate::{ConflictReason, EvidenceError, Rejection};
 use domain::{
     acceptance::{self, Snapshot},
     command::{JiraRead, PublishStep, ReviewMode},
@@ -13,12 +14,12 @@ use domain::{
 };
 use std::collections::BTreeMap;
 
-pub(super) fn validate_open(task: &Task, jira: &JiraRead) -> Result<(), String> {
+pub(super) fn validate_open(task: &Task, jira: &JiraRead) -> Result<(), ConflictReason> {
     if !matches!(
         task.hold.as_ref().map(|hold| &hold.reason),
         Some(HoldReason::NeedsHuman { .. })
     ) {
-        return Err("open-delivery requires a needs-human hold".into());
+        return Err(ConflictReason::OpenRequiresNeedsHumanHold);
     }
     let terminal = task.spec.was_terminal
         || matches!(
@@ -26,24 +27,28 @@ pub(super) fn validate_open(task: &Task, jira: &JiraRead) -> Result<(), String> 
             Phase::Verified { .. } | Phase::Completed { .. } | Phase::Excluded(_)
         );
     if terminal {
-        return Err("terminal tasks cannot open another delivery".into());
+        return Err(ConflictReason::TerminalTaskCannotOpen);
     }
     if !jira.member || jira.resolved || !jira.ownership_clear {
-        return Err("fresh Jira read does not establish unresolved run ownership".into());
+        return Err(ConflictReason::JiraOwnershipUnresolved);
     }
     if jira.requirements != task.spec.requirements {
-        return Err("criteria changed".into());
+        return Err(ConflictReason::CriteriaChanged);
     }
     Ok(())
 }
 
-pub(super) fn validate_history(app: &App<'_>, task: &Task) -> Result<(), String> {
+pub(super) fn validate_history(app: &App<'_>, task: &Task) -> Result<(), Rejection> {
     for delivery in &task.deliveries {
         match &delivery.outcome {
             Outcome::Merged { commit, .. }
-                if !app.services.vcs.on_main(commit).map_err(|error| error.0)? =>
+                if !app
+                    .services
+                    .vcs
+                    .on_main(commit)
+                    .map_err(|error| Rejection::External(error.0))? =>
             {
-                return Err("historical merge left main".into());
+                return Err(Rejection::Conflict(ConflictReason::HistoricalMergeLeftMain));
             }
             Outcome::Replaced { by, .. } => validate_replacement(app, by)?,
             _ => {}
@@ -55,19 +60,21 @@ pub(super) fn validate_history(app: &App<'_>, task: &Task) -> Result<(), String>
 fn validate_replacement(
     app: &App<'_>,
     replacement: &domain::delivery::Replacement,
-) -> Result<(), String> {
+) -> Result<(), Rejection> {
     let observed = app
         .services
         .github
         .observe(replacement.pr)
-        .map_err(|error| error.0)?;
+        .map_err(|error| Rejection::External(error.0))?;
     let unchanged = observed.state == PrState::Merged
         && observed.head == replacement.head
         && observed.merge.as_ref() == Some(&replacement.merge);
     if unchanged {
         Ok(())
     } else {
-        Err("replacement identity changed".into())
+        Err(Rejection::Conflict(
+            ConflictReason::ReplacementIdentityChanged,
+        ))
     }
 }
 
@@ -92,11 +99,11 @@ pub(super) fn publish_ready(
     state: &domain::state::State,
     delivery: &Delivery,
     input: &PublishInput,
-) -> Result<(), String> {
+) -> Result<(), EvidenceError> {
     if !matches!(delivery.outcome, Outcome::Open)
         || !matches!(delivery.kind, DeliveryKind::Code { .. })
     {
-        return Err("publish needs an open code delivery".into());
+        return Err(other("publish needs an open code delivery"));
     }
     if input.step != PublishStep::Merge {
         return Ok(());
@@ -104,13 +111,13 @@ pub(super) fn publish_ready(
     merge_ready(state, delivery)
 }
 
-fn merge_ready(state: &domain::state::State, delivery: &Delivery) -> Result<(), String> {
+fn merge_ready(state: &domain::state::State, delivery: &Delivery) -> Result<(), EvidenceError> {
     let review = delivery
         .review
         .as_ref()
-        .ok_or("merge needs independent review")?;
+        .ok_or_else(|| other("merge needs independent review"))?;
     if review.verdict != Verdict::Pass || review::merge_ready(review).is_err() {
-        return Err("merge needs PASS and dispositions".into());
+        return Err(other("merge needs PASS and dispositions"));
     }
     let human_mode = matches!(
         state.config.as_ref().map(|config| config.review_mode),
@@ -121,12 +128,16 @@ fn merge_ready(state: &domain::state::State, delivery: &Delivery) -> Result<(), 
         .as_ref()
         .is_some_and(|receipt| receipt.snapshot == review.snapshot);
     if human_mode && !current_human {
-        return Err("human review receipt is stale or missing".into());
+        return Err(other("human review receipt is stale or missing"));
     }
     if required_checks_failed(delivery) {
-        return Err("required checks are not green".into());
+        return Err(other("required checks are not green"));
     }
     Ok(())
+}
+
+fn other(message: &str) -> EvidenceError {
+    EvidenceError::Other(message.into())
 }
 
 fn required_checks_failed(delivery: &Delivery) -> bool {
@@ -234,7 +245,7 @@ pub(super) fn pr_number(delivery: &Delivery) -> Result<PrNumber, String> {
 pub(super) fn validate_closed(
     delivery: &Delivery,
     observed: &domain::delivery::PullRequest,
-) -> Result<(), String> {
+) -> Result<(), ConflictReason> {
     match &delivery.outcome {
         Outcome::Merged { commit, .. }
             if observed.state == PrState::Merged && observed.merge.as_ref() == Some(commit) =>
@@ -249,7 +260,7 @@ pub(super) fn validate_closed(
             Ok(())
         }
         Outcome::Accepted { .. } | Outcome::Abandoned { .. } => Ok(()),
-        _ => Err("closed delivery observation changed".into()),
+        _ => Err(ConflictReason::ClosedDeliveryChanged),
     }
 }
 
@@ -257,7 +268,7 @@ pub(super) fn verify_proof(
     task: &Task,
     delivery: &Delivery,
     snapshot: &Snapshot,
-) -> Result<(), String> {
+) -> Result<(), EvidenceError> {
     let mut artifacts = BTreeMap::new();
     for entry in delivery.proof.entries.values() {
         artifacts.insert(entry.artifact.clone(), digest_file(&entry.artifact)?);
@@ -279,8 +290,8 @@ pub(super) fn verify_proof(
                 })
         })
         .collect::<Vec<_>>();
-    acceptance::complete(&criteria, &delivery.proof, snapshot, &artifacts, baselines)
-        .map_err(|error| format!("acceptance failed: {error:?}"))
+    acceptance::complete(&criteria, &delivery.proof, snapshot, &artifacts, baselines)?;
+    Ok(())
 }
 
 pub(super) fn current_sync<'a>(task: &'a Task, issue: &IssueKey) -> Option<&'a Sync> {

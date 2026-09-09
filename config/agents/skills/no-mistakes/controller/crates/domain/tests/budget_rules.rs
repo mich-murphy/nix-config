@@ -14,7 +14,7 @@ fn cancelled_review_counts() {
     let mut budgets = Budgets::default();
     budget::spend(&mut budgets, BudgetKind::Review, true);
     assert_eq!(
-        budget::remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[]),
+        budget::remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[], None),
         0
     );
 }
@@ -35,7 +35,7 @@ fn review_budget_spans_deliveries() {
         ..Budgets::default()
     };
     assert_eq!(
-        budget::remaining(BudgetKind::Review, &budgets, Tier::Lite, &[]),
+        budget::remaining(BudgetKind::Review, &budgets, Tier::Lite, &[], None),
         1
     );
 }

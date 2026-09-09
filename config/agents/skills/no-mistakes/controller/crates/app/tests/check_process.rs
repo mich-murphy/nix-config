@@ -17,19 +17,21 @@ fn run(
 ) -> Result<app::Output, app::AgentError> {
     app.execute(
         Command::RunCheck {
-            task: TaskId::from_str("GAIN-2").map_err(|error| app::AgentError {
-                failed: "fixture".into(),
-                phase: None,
-                why: app::Rejection::Invalid(error.to_string()),
-                next: None,
+            task: TaskId::from_str("GAIN-2").map_err(|error| {
+                app::AgentError::new(
+                    "fixture",
+                    None,
+                    app::Rejection::Invalid(error.to_string()),
+                    None,
+                )
             })?,
             criteria: vec!["AC1".parse().map_err(|error: domain::ids::InvalidId| {
-                app::AgentError {
-                    failed: "fixture".into(),
-                    phase: None,
-                    why: app::Rejection::Invalid(error.to_string()),
-                    next: None,
-                }
+                app::AgentError::new(
+                    "fixture",
+                    None,
+                    app::Rejection::Invalid(error.to_string()),
+                    None,
+                )
             })?],
             argv,
             cwd: directory.to_owned(),
@@ -63,7 +65,7 @@ fn check_records_exit_status() -> Result<(), Box<dyn std::error::Error>> {
         _ => None,
     });
     assert!(artifact.is_some_and(|path| path.is_file()));
-    let ResultData::State { state } = app.execute(Command::Status, false)?.result else {
+    let ResultData::State { state, .. } = app.execute(Command::Status, false)?.result else {
         return Err("status returned wrong result".into());
     };
     assert!(state.operations[0].process.is_some());

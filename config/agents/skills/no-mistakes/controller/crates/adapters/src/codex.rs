@@ -50,12 +50,14 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         .as_ref()
         .split_once('/')
         .map_or(launch.assignment.model.as_ref(), |(_, id)| id);
-    let mut args = vec![
-        "exec".into(),
-        "--json".into(),
-        "--model".into(),
-        model.into(),
-    ];
+    // The codex CLI grammar is `codex exec resume <SESSION_ID> [OPTIONS]`:
+    // the session id is a positional argument to `resume`, immediately
+    // after `exec`, not a trailing flag.
+    let mut args = vec!["exec".into()];
+    if let Some(session) = &launch.session {
+        args.extend(["resume".into(), session.clone()]);
+    }
+    args.extend(["--json".into(), "--model".into(), model.into()]);
     args.extend([
         "-c".into(),
         format!(
@@ -72,8 +74,8 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         }
         .into(),
     ]);
-    if let Some(session) = &launch.session {
-        args.extend(["resume".into(), session.clone()]);
+    if let Some(schema) = &launch.output_schema {
+        args.extend(["--output-schema".into(), schema.display().to_string()]);
     }
     ProcessRequest {
         program: "codex".into(),
@@ -187,6 +189,7 @@ mod tests {
             cwd: PathBuf::from("/repo"),
             session: Some("old".into()),
             reviewer: true,
+            output_schema: Some(PathBuf::from("/run/review-schema.json")),
         })
     }
 
@@ -206,6 +209,27 @@ mod tests {
                 .args
                 .contains(&"read-only".into())
         );
+        Ok(())
+    }
+
+    #[test]
+    fn codex_resume_follows_exec() -> Result<(), domain::ids::InvalidId> {
+        let request = request(&launch()?);
+        assert_eq!(request.args[0], "exec");
+        assert_eq!(request.args[1], "resume");
+        assert_eq!(request.args[2], "old");
+        Ok(())
+    }
+
+    #[test]
+    fn codex_reviewer_passes_output_schema() -> Result<(), domain::ids::InvalidId> {
+        let request = request(&launch()?);
+        let index = request
+            .args
+            .iter()
+            .position(|arg| arg == "--output-schema")
+            .ok_or(domain::ids::InvalidId("missing --output-schema"))?;
+        assert_eq!(request.args[index + 1], "/run/review-schema.json");
         Ok(())
     }
 

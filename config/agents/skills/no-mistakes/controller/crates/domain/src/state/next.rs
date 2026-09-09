@@ -24,13 +24,12 @@ impl State {
     #[must_use]
     pub fn next(&self, now: Instant) -> Option<ActionEnvelope> {
         let action = self.choose_action(now)?;
-        let (command, schema) = command_for(&action);
+        let name = command_for(&action);
         let template = template_for(&action);
         Some(ActionEnvelope {
             action,
-            command,
+            name,
             template,
-            schema,
         })
     }
 
@@ -187,6 +186,7 @@ impl State {
                 &task.budgets,
                 task.tier.current,
                 &task.authorities,
+                self.config.as_ref().map(|config| &config.caps),
             ),
         }
     }

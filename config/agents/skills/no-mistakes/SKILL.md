@@ -77,9 +77,9 @@ Keep one implementer session through repairs and a separate reviewer session.
 Pause implementation during review. Do not launch Claude, recursive delegation,
 bookkeeping agents, polling agents, or summary agents.
 
-Escalation needs a completed profile reviewer launch and spends both review and
-escalation capacity. It answers one bounded consequential question. Missing
-business decisions are blockers, not escalation prompts.
+Escalation needs a completed profile reviewer launch. It answers one bounded
+consequential question. Missing business decisions are blockers, not
+escalation prompts.
 
 The coordinator owns scheduling, evidence judgment, GitHub delivery, and Jira
 connector work. Workers do not edit the controller, run state, Jira, GitHub, or
@@ -117,8 +117,8 @@ and observation but holds no Jira credential.
 
 Before a transition, read the issue and available transitions. Call `set-status`,
 perform the exact returned transition, read the issue again, and call
-`observe-status`. A timeout is unknown, not failed. Observe before retrying. The
-controller permits one retry. Never repeat a merge to repair Jira synchronization.
+`observe-status`. A timeout is unknown, not failed. Observe before retrying.
+Never repeat a merge to repair Jira synchronization.
 
 ## Implementation loop
 
@@ -166,10 +166,8 @@ Create one draft PR from a safe committed checkpoint. Keep its head tied to the
 recorded snapshot. Mark it ready when coherent. Required checks must be present
 and green. `poll-checks --wait` preserves one deadline per head.
 
-Merge only when all current delivery criteria have proof, independent review is
-PASS, findings are dispositioned, required checks are green, the head matches,
-and any selected human review is current. Do not bypass branch protection.
-Observe GitHub's merged state and the merge commit on main.
+Do not bypass branch protection. Observe GitHub's merged state and the merge
+commit on main.
 
 A narrowed delivery may merge its approved subset but cannot complete the task.
 For more code, hold the task and use `open-delivery` with a fresh receipt. A

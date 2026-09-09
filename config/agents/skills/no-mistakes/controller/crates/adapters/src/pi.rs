@@ -27,7 +27,10 @@ impl<P: Process> Harness for Pi<P> {
     fn capabilities(&self) -> Capabilities {
         Capabilities {
             structured_output: StructuredOutput::SelfValidated,
-            isolation: Isolation::ToolRestriction,
+            // The reviewer keeps `bash` in its tool list (owner's
+            // decision: it needs `git diff`), so this is not a
+            // tool-restricted sandbox, whatever the argv passes.
+            isolation: Isolation::None,
         }
     }
 
@@ -191,6 +194,7 @@ mod tests {
                     cwd: PathBuf::from("/repo"),
                     session: None,
                     reviewer: true,
+                    output_schema: None,
                 },
                 &mut |_| Ok(()),
             )

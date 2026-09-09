@@ -19,7 +19,7 @@ fn check_flag_writes_nothing() -> Result<(), Box<dyn std::error::Error>> {
     assert!(!preview.events.is_empty());
     let state = app.execute(Command::Status, false)?;
     match state.result {
-        ResultData::State { state } => assert!(!state.frozen),
+        ResultData::State { state, .. } => assert!(!state.frozen),
         _ => return Err("status returned wrong result".into()),
     }
     Ok(())
@@ -55,8 +55,19 @@ fn next_fills_command_and_schema() -> Result<(), Box<dyn std::error::Error>> {
     match output.result {
         ResultData::Next { next: Some(next) } => {
             assert!(next.command.contains("controller claim GAIN-2"));
-            assert!(next.schema.required.contains(&"run".to_owned()));
-            assert!(!next.schema.additional_properties);
+            let required = next
+                .schema
+                .get("required")
+                .and_then(|value| value.as_array())
+                .cloned()
+                .unwrap_or_default();
+            assert!(required.iter().any(|value| value.as_str() == Some("task")));
+            assert_eq!(
+                next.schema
+                    .get("additionalProperties")
+                    .and_then(|value| value.as_bool()),
+                Some(false)
+            );
             assert_eq!(next.template.values.get("task"), Some(&"GAIN-2".to_owned()));
         }
         _ => return Err("next returned no action".into()),

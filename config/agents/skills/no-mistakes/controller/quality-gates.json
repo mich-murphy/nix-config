@@ -14,19 +14,14 @@
       "reason": "Single exhaustive command dispatch required by the CLI contract."
     },
     {
-      "path": "crates/cli/src/args.rs",
-      "function": "scalar",
-      "reason": "Strict scalar argument decoder; complex payloads use serde input instead."
-    },
-    {
-      "path": "crates/cli/src/args/parse.rs",
-      "function": "parse_raw",
-      "reason": "Single argv token dispatcher; token validation and duplicate rejection are delegated."
+      "path": "crates/app/src/error/conflict.rs",
+      "function": "fmt",
+      "reason": "Exhaustive ConflictReason Display dispatch; each arm only writes a fixed message."
     },
     {
       "path": "crates/domain/src/state/next/format.rs",
       "function": "command_for",
-      "reason": "Exhaustive NextAction command and schema formatter."
+      "reason": "Exhaustive NextAction-to-Command-tag dispatcher; every arm returns one literal name."
     },
     {
       "path": "crates/domain/src/state/next/format.rs",
