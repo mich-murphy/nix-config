@@ -146,10 +146,10 @@ Two rules were found only by reading bodies and were not settled in
 | --- | --- | --- | --- |
 | Review settles only against the exact snapshot it was launched on | `rejects_stale_review_after_head_changes` | `review_requires_same_snapshot` | keep |
 | Reviewer session cannot equal the implementer session | `reviewer_cannot_reuse_implementer_session` | `reviewer_session_is_separate` | keep |
-| Malformed review output rejected without consuming a launch | `review_prevalidation_rejects_malformed_results_without_consuming_launches` | `malformed_review_is_free` | keep |
+| Malformed review output settles the launch failed and is charged (revision 3) | `review_prevalidation_rejects_malformed_results_without_consuming_launches` | `malformed_review_fails_launch` | rewrite |
 | Evidence gaps cannot accompany PASS | same | `pass_rejects_evidence_gaps` | keep; becomes computed verdict |
 | Readiness failure spends no review budget | `readiness_rejects_missing_evidence_without_spending_review_budget` | `readiness_is_free` | keep |
-| Native PASS receipt survives a failed settlement; same launch retries | `native_pass_receipt_survives_failed_settlement_and_same_launch_can_retry` | `settlement_failure_is_retryable` | keep |
+| An unsettled launch is surfaced by `next` and settled once through recover-operation | `native_pass_receipt_survives_failed_settlement_and_same_launch_can_retry` | `unsettled_launch_is_recoverable` | rewrite |
 | Verdict is computed from severity; Critical blocks | new, Section 9 | `critical_finding_blocks` | new |
 | Reviewer-declared PASS with a critical finding is not PASS | new, Section 9 | `verdict_ignores_reviewer_claim` | new |
 | Every finding must be dispositioned before merge | `engine::reviewed` invariant, no direct test | `merge_requires_dispositions` | new |
@@ -161,10 +161,10 @@ Two rules were found only by reading bodies and were not settled in
 | --- | --- | --- | --- |
 | CI hold rejected before the per-head deadline | `cannot_defer_ci_before_deadline` | `ci_hold_requires_deadline` | keep |
 | Deadline survives hold and resume | `deadline_survives_hold_and_resume` | `ci_deadline_survives_hold` | keep |
-| Merge requires PASS, green required checks, exact head match | `complete_delivery_requires_merge_review_jira_and_allows_cleanup_check` | `merge_requires_pass_checks_head` | keep |
+| Merge requires PASS, green required checks, exact head match | `complete_delivery_requires_merge_review_jira_and_allows_cleanup_check` | `merge_requires_pass`, `merge_requires_green_checks`, `merge_requires_reviewed_head` | keep |
 | Merge records `Merged` only from a verified GitHub MERGED observation | same | `merged_requires_observation` | keep |
 | Narrowed merge merges only the reviewed head | `staged_github_delivery_merges_only_the_reviewed_stage_and_keeps_full_acceptance_open` | `merge_uses_reviewed_head` | keep |
-| Complete requires Merged, Verified and confirmed Jira Done | `complete_delivery_requires_merge_review_jira_and_allows_cleanup_check` | `complete_requires_verified_and_done` | keep |
+| Complete requires Merged, Verified and confirmed Jira Done | `complete_delivery_requires_merge_review_jira_and_allows_cleanup_check` | `complete_requires_parent_done`, `complete_requires_subtasks_done` | keep |
 | Reconciliation reuses confirmed PR receipts and re-observes unknown ones | `reconciliation_reuses_complete_prs_but_selects_uncertain_operations` | `reconcile_reobserves_unknown_only` | keep |
 
 ## domain::sync

@@ -2,7 +2,7 @@ mod common;
 
 use adapters::sqlite::Store;
 use app::App;
-use common::golden::{plan_and_implement, task_baseline};
+use common::golden::{narrow_record_review_and_merge, plan_and_implement, task_baseline};
 use common::literals::{criterion_id, digest, write_text};
 use common::script::{
     Step, execute, final_verify, merged_commit, record_proof, record_proof_with, review, run_steps,
@@ -12,103 +12,10 @@ use common::*;
 use domain::{
     acceptance::Snapshot,
     authority::{AuthorityReceipt, Grant},
-    command::{Command, JiraRead, NextAction, PublishStep},
+    command::{Command, JiraRead, NextAction},
     delivery::DeliveryKind,
-    ports::MergeMethod,
-    task::{Hold, HoldReason, Phase, Plan},
+    task::{Hold, HoldReason, Phase},
 };
-use std::collections::BTreeMap;
-
-/// Drives the narrowed-to-`STAGE1` delivery from `plan_and_implement`
-/// through a merged, held task: `narrow-acceptance`, the re-plan that adds
-/// a baseline for STAGE1 (design Section 5: replanning cannot change a
-/// baseline target, but may add one for a criterion that had none), a
-/// fresh snapshot (narrowing clears the one taken before it), measured
-/// proof, a PASS review, and publish create/ready/merge.
-fn narrow_record_review_and_merge(
-    app: &mut App<'_>,
-    fake: &Fake,
-    task: &domain::ids::TaskId,
-    directory: &std::path::Path,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let requirements = task_state(app, task)?.spec.requirements;
-    let receipt = directory.join("narrow-receipt.txt");
-    let narrow_digest = write_artifact(&receipt, "narrow to STAGE1 for early merge")?;
-    let ac1_baseline = task_baseline(app, task, "AC1")?;
-    let stage1_baseline = digest('e');
-
-    run_steps(
-        app,
-        fake,
-        task,
-        vec![
-            unchecked(execute(Command::NarrowAcceptance {
-                task: task.clone(),
-                criteria: vec![criterion_id("STAGE1")],
-                receipt: AuthorityReceipt {
-                    source: "current user".into(),
-                    artifact: receipt,
-                    digest: narrow_digest,
-                    requirements,
-                    grant: Grant::Narrowing {
-                        criteria: vec![criterion_id("STAGE1")],
-                        operational_proof: "narrowed merge lands behind a flag".into(),
-                        cleanup_plan: "finish AC1 through open-delivery after merge".into(),
-                    },
-                },
-            })),
-            unchecked(execute(Command::Plan {
-                task: task.clone(),
-                plan: Plan {
-                    deliverable: "narrow to STAGE1 for early merge".into(),
-                    components: vec!["src".into()],
-                    examples: Vec::new(),
-                    baselines: BTreeMap::from([
-                        (criterion_id("AC1"), ac1_baseline),
-                        (criterion_id("STAGE1"), stage1_baseline.clone()),
-                    ]),
-                    lesson_families: vec!["controller".into()],
-                },
-            })),
-            // Narrowing clears the snapshot taken before it (design
-            // Section 5): nothing changed on disk, so retaking it
-            // reproduces the same base and head, but a snapshot must
-            // exist for the reviewer to have a target.
-            unchecked(execute(Command::Snapshot { task: task.clone() })),
-            unchecked(record_proof(
-                "STAGE1",
-                stage1_baseline,
-                directory.join("proof-stage1.txt"),
-            )),
-            unchecked(review(write_text(
-                directory,
-                "review-stage1.md",
-                "bounded task",
-            ))),
-            unchecked(execute(Command::Publish {
-                task: task.clone(),
-                step: PublishStep::Create,
-                title: Some("Narrow to STAGE1".into()),
-                body: Some(write_text(directory, "pr-body.md", "narrows to STAGE1")),
-                method: None,
-            })),
-            unchecked(execute(Command::Publish {
-                task: task.clone(),
-                step: PublishStep::Ready,
-                title: None,
-                body: None,
-                method: None,
-            })),
-            unchecked(execute(Command::Publish {
-                task: task.clone(),
-                step: PublishStep::Merge,
-                title: None,
-                body: None,
-                method: Some(MergeMethod::Squash),
-            })),
-        ],
-    )
-}
 
 /// Builds the `open-delivery` step that resumes full AC1 acceptance
 /// against the narrowed merge, once the coordinator has a fresh Jira read
@@ -211,28 +118,39 @@ fn verification_script(
     ])
 }
 
-#[test]
-fn verification_delivery_reaches_verified() -> Result<(), Box<dyn std::error::Error>> {
-    let (directory, fake) = initialized()?;
-    let mut app = App::new(Store::open(directory.path())?, services(&fake));
-    let task = plan_and_implement(&mut app, directory.path())?;
-
-    // Same flow as `code_delivery_reaches_cleanup`, through `record-proof`
-    // only: the coordinator then narrows to STAGE1 instead of reviewing
-    // the full AC1 delivery, so this recorded proof is superseded, not
-    // reused, by `narrow-acceptance` clearing it.
+/// `plan_and_implement`, then one recorded AC1 proof (superseded, not
+/// reused, once `narrow-acceptance` clears it — same flow as
+/// `code_delivery_reaches_cleanup`), a narrowed STAGE1 merge, and the
+/// `NeedsHuman` hold that merge leaves behind: the shared starting point
+/// `verification_delivery_reaches_verified`, `open_delivery_repurposes_unused_pair`
+/// and `verification_routes_to_acceptance` all need before they diverge
+/// on what happens next.
+fn narrowed_and_held(
+    app: &mut App<'_>,
+    fake: &Fake,
+    directory: &std::path::Path,
+) -> Result<domain::ids::TaskId, Box<dyn std::error::Error>> {
+    let task = plan_and_implement(app, directory)?;
     run_steps(
-        &mut app,
-        &fake,
+        app,
+        fake,
         &task,
         vec![unchecked(record_proof(
             "AC1",
             digest('b'),
-            directory.path().join("proof-ac1.txt"),
+            directory.join("proof-ac1.txt"),
         ))],
     )?;
-    narrow_record_review_and_merge(&mut app, &fake, &task, directory.path())?;
-    assert_held_for_human(&mut app, &task)?;
+    narrow_record_review_and_merge(app, fake, &task, directory, None)?;
+    assert_held_for_human(app, &task)?;
+    Ok(task)
+}
+
+#[test]
+fn verification_delivery_reaches_verified() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let task = narrowed_and_held(&mut app, &fake, directory.path())?;
 
     let script = verification_script(&mut app, &task, directory.path())?;
     run_steps(&mut app, &fake, &task, script)?;
@@ -320,20 +238,7 @@ fn pair_authority_id(
 fn open_delivery_repurposes_unused_pair() -> Result<(), Box<dyn std::error::Error>> {
     let (directory, fake) = initialized()?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
-    let task = plan_and_implement(&mut app, directory.path())?;
-
-    run_steps(
-        &mut app,
-        &fake,
-        &task,
-        vec![unchecked(record_proof(
-            "AC1",
-            digest('b'),
-            directory.path().join("proof-ac1.txt"),
-        ))],
-    )?;
-    narrow_record_review_and_merge(&mut app, &fake, &task, directory.path())?;
-    assert_held_for_human(&mut app, &task)?;
+    let task = narrowed_and_held(&mut app, &fake, directory.path())?;
 
     let commit = merged_commit(&mut app, &task)?;
     let pair_id = grant_then_repurpose_pair(&mut app, &task, directory.path(), commit)?;
@@ -363,5 +268,48 @@ fn assert_authority_count_and_grant(
         .find(|entry| entry.id == pair_id)
         .ok_or("repurposed authority missing")?;
     assert!(matches!(repurposed.grant, Grant::Delivery { .. }));
+    Ok(())
+}
+
+/// Once a held task opens a `Verification` delivery against its narrowed
+/// merge commit, `next` is final acceptance throughout: it asks for the
+/// missing proof, then the review, and once both are satisfied it yields
+/// `FinalVerify` naming the delivery's own `of` commit as both base and
+/// head — never `Publish`, which a `Verification` delivery has no PR to
+/// support.
+/// `verification_script`'s steps up to (but not performing) `final-verify`
+/// itself: `open-delivery`, the reopened delivery's own AC1 proof, and its
+/// PASS review, leaving `final-verify` for the caller to assert `next`
+/// against instead of executing.
+fn record_proof_and_review_steps(
+    app: &mut App<'_>,
+    task: &domain::ids::TaskId,
+    directory: &std::path::Path,
+) -> Result<Vec<Step>, Box<dyn std::error::Error>> {
+    let mut script = verification_script(app, task, directory)?;
+    script.truncate(3);
+    Ok(script)
+}
+
+#[test]
+fn verification_routes_to_acceptance() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    let mut app = App::new(Store::open(directory.path())?, services(&fake));
+    let task = narrowed_and_held(&mut app, &fake, directory.path())?;
+
+    let commit = merged_commit(&mut app, &task)?;
+    let script = record_proof_and_review_steps(&mut app, &task, directory.path())?;
+    run_steps(&mut app, &fake, &task, script)?;
+
+    let action = expect_next(&mut app, |action| {
+        matches!(action, NextAction::FinalVerify { .. })
+    })?;
+    assert_eq!(
+        action,
+        NextAction::FinalVerify {
+            task: task.clone(),
+            commit,
+        }
+    );
     Ok(())
 }

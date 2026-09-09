@@ -19,7 +19,7 @@ fn launch(id: u64) -> Event {
 }
 
 #[test]
-fn simultaneous_launch_has_one_winner() -> Result<(), StoreError> {
+fn launch_has_one_winner() -> Result<(), StoreError> {
     let directory = tempfile::tempdir().map_err(error)?;
     let mut first = Store::create(directory.path())?;
     let mut second = Store::open(directory.path())?;

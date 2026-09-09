@@ -6,7 +6,7 @@ use crate::task_support::{next_operation, task_ref};
 use crate::{AgentError, App, ConflictReason, EvidenceError, Output, Rejection, ResultData};
 use domain::{
     event::{Event, Observation, Operation, OperationStatus},
-    ids::TaskId,
+    ids::{DeliveryId, TaskId},
 };
 
 impl App<'_> {
@@ -23,6 +23,9 @@ impl App<'_> {
             .deliveries
             .last()
             .ok_or_else(|| ctx.reject(ConflictReason::NoDelivery))?;
+        if unsettled_operation(&state, &task, delivery.id) {
+            return Err(ctx.reject(ConflictReason::ActiveOperationUnsettled));
+        }
         let snapshot =
             current_snapshot(value).ok_or_else(|| ctx.reject(EvidenceError::MissingSnapshot))?;
         publish_ready(&state, delivery, &input).map_err(|error| ctx.reject(error))?;
@@ -64,6 +67,21 @@ impl App<'_> {
             result: ResultData::Applied,
         })
     }
+}
+
+/// A create/ready/merge already dispatched for `delivery` and not yet
+/// settled: `publish` must not start a second GitHub operation on top of
+/// it (design Section 11's "settle the active operation first"), notably
+/// a retried `--step create` after the first attempt failed post-write.
+fn unsettled_operation(state: &domain::state::State, task: &TaskId, delivery: DeliveryId) -> bool {
+    state.operations.iter().any(|operation| {
+        operation.task == *task
+            && operation.delivery == delivery
+            && matches!(
+                operation.status,
+                OperationStatus::Running | OperationStatus::Unknown
+            )
+    })
 }
 
 fn publish_operation(

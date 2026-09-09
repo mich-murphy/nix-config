@@ -22,6 +22,7 @@ fn app_with_slot(slot: SlotState) -> Result<(tempfile::TempDir, Fake), Box<dyn s
         on_main: std::cell::Cell::new(true),
         vcs_calls: std::cell::RefCell::new(Vec::new()),
         last_session: std::cell::RefCell::new(None),
+        create_fails_once: std::cell::Cell::new(false),
     })
 }
 

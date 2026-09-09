@@ -5,8 +5,9 @@ use crate::{AgentError, App, ConflictReason, Output, Rejection, ResultData};
 use domain::{
     Instant,
     delivery::{self, CheckState, DeliveryKind, Outcome, PrState, PullRequest, Replacement},
-    event::Event,
+    event::{Event, GitHubAction, Observation, OperationStatus},
     ids::{DeliveryId, PrNumber, TaskId},
+    state::State,
     task::{HoldReason, Task},
 };
 
@@ -20,7 +21,7 @@ impl App<'_> {
         let ctx = self.ctx("observe-pr", Some(&task));
         let state = self.state("observe-pr")?;
         let value = task_ref(&state, &task, "observe-pr", self)?;
-        let (delivery, current, replacement) = observed_delivery(&ctx, value, pr)?;
+        let (delivery, current, replacement) = observed_delivery(&ctx, &state, value, pr)?;
         let observation = self
             .services
             .github
@@ -32,7 +33,13 @@ impl App<'_> {
         if delivery::closed(delivery) {
             return validate_closed_output(&ctx, delivery, &observation);
         }
-        let events = observation_events(self, value, delivery, pr, observation)?;
+        let mut events = observation_events(self, value, delivery, pr, observation.clone())?;
+        events.extend(settle_pending_operations(
+            &state,
+            &task,
+            delivery.id,
+            &observation,
+        ));
         self.commit("observe-pr", Some(&task), events, check)
     }
 
@@ -214,6 +221,7 @@ fn checks_pending(observation: &domain::delivery::PullRequest) -> bool {
 
 fn observed_delivery<'a>(
     ctx: &Ctx,
+    state: &State,
     value: &'a domain::task::Task,
     pr: PrNumber,
 ) -> Result<
@@ -236,10 +244,85 @@ fn observed_delivery<'a>(
             value.hold.as_ref().map(|hold| &hold.reason),
             Some(HoldReason::SupersededPr { .. })
         );
+    // A code delivery still waiting on its first PR (the create
+    // operation may have been recorded and then failed, e.g. a
+    // network error after the coordinator's own event was already
+    // written) is itself a valid observation target: the PR number the
+    // coordinator now reports is the one that create actually produced.
+    let pending_create = known.is_none()
+        && !replacement
+        && matches!(current.outcome, Outcome::Open)
+        && matches!(&current.kind, DeliveryKind::Code { pr: None })
+        && has_unsettled_create(state, &value.id, current.id);
     known
-        .or(replacement.then_some(current))
+        .or((replacement || pending_create).then_some(current))
         .map(|delivery| (delivery, current, replacement))
         .ok_or_else(|| ctx.reject(Rejection::Invalid("unknown PR".into())))
+}
+
+fn has_unsettled_create(state: &State, task: &TaskId, delivery: DeliveryId) -> bool {
+    state.operations.iter().any(|operation| {
+        operation.task == *task
+            && operation.delivery == delivery
+            && matches!(
+                operation.status,
+                OperationStatus::Running | OperationStatus::Unknown
+            )
+            && matches!(operation.action, GitHubAction::Create { .. })
+    })
+}
+
+/// Any unsettled `Create`, `Ready` or `Merge` operation on `delivery`
+/// settles once GitHub itself has been observed: the observation just
+/// fetched is the outcome that operation was waiting on, whether it was
+/// dispatched by the same command or, as with a create that failed after
+/// its own event was recorded, discovered later through `observe-pr`. It
+/// settles `Confirmed` only when the observation shows the action took
+/// effect (the PR exists, is no longer a draft, or is merged) and
+/// `Failed` otherwise.
+fn settle_pending_operations(
+    state: &State,
+    task: &TaskId,
+    delivery: DeliveryId,
+    observation: &PullRequest,
+) -> Vec<Event> {
+    state
+        .operations
+        .iter()
+        .filter(|operation| {
+            operation.task == *task
+                && operation.delivery == delivery
+                && matches!(
+                    operation.status,
+                    OperationStatus::Running | OperationStatus::Unknown
+                )
+        })
+        .filter_map(|operation| {
+            let status = settled_status(&operation.action, observation)?;
+            Some(Event::OperationSettled {
+                operation: operation.id,
+                status,
+                observation: Observation::PullRequest(observation.clone()),
+            })
+        })
+        .collect()
+}
+
+fn settled_status(action: &GitHubAction, observation: &PullRequest) -> Option<OperationStatus> {
+    let effective = match action {
+        GitHubAction::Create { .. } => true,
+        GitHubAction::Ready { .. } => !observation.draft,
+        GitHubAction::Merge { .. } => observation.state == PrState::Merged,
+        GitHubAction::Observe { .. }
+        | GitHubAction::Check { .. }
+        | GitHubAction::BindSlot { .. }
+        | GitHubAction::Cleanup { .. } => return None,
+    };
+    Some(if effective {
+        OperationStatus::Confirmed
+    } else {
+        OperationStatus::Failed
+    })
 }
 
 fn observation_events(

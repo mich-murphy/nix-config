@@ -106,6 +106,77 @@ fn cancelled_launch_is_charged() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// A launch that reaches the gate (so it is charged) and then fails is
+/// unsettled: `next` surfaces it as `MonitorLaunch` rather than skipping
+/// past it, and `recover-operation` settles it `Failed` — a stopped, not
+/// terminated, process, since the harness itself already returned before
+/// any termination was requested. The budget charged when the launch
+/// started is unchanged by settling it: recovery is neither a second
+/// charge nor a refund.
+/// Runs one implementer turn against `canceling`, asserting it fails at
+/// the gate, and returns the unsettled launch it leaves behind.
+fn cancel_at_gate(
+    app: &mut App<'_>,
+    task: &TaskId,
+    directory: &std::path::Path,
+) -> Result<domain::event::Launch, Box<dyn std::error::Error>> {
+    let result = app.execute(
+        Command::RunAgent {
+            task: task.clone(),
+            role: AgentRole::Implementer,
+            prompt: prompt(directory)?,
+            fallback: None,
+        },
+        false,
+    );
+    assert!(result.is_err());
+    unsettled_launch(app, task)
+}
+
+/// Asserts `launch` settled `Failed` (a stopped, not terminated, process:
+/// the harness itself already returned before any termination was
+/// requested) and that the budget `launch` charged at start is
+/// unchanged: settling it is neither a second charge nor a refund.
+fn assert_settled_failed_without_recharge(
+    app: &mut App<'_>,
+    task: &TaskId,
+    charged: u32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let settled = launch_for(app, task)?;
+    assert!(matches!(
+        settled.outcome,
+        Some(domain::event::LaunchOutcome::Failed { .. })
+    ));
+    assert_eq!(task_state(app, task)?.budgets.implementation_turns, charged);
+    Ok(())
+}
+
+#[test]
+fn unsettled_launch_is_recoverable() -> Result<(), Box<dyn std::error::Error>> {
+    let (directory, fake) = initialized()?;
+    prepare_in(directory.path(), &fake)?;
+    let task = TaskId::from_str("GAIN-2")?;
+    let canceling = Canceling;
+    let mut app = canceling_app(directory.path(), &fake, &canceling)?;
+    let launch = cancel_at_gate(&mut app, &task, directory.path())?;
+    let charged = task_state(&mut app, &task)?.budgets.implementation_turns;
+
+    expect_next(
+        &mut app,
+        |action| matches!(action, domain::command::NextAction::MonitorLaunch { launch: value } if *value == launch.id),
+    )?;
+
+    app.execute(
+        Command::RecoverOperation {
+            target: RecoveryTarget::Launch { launch: launch.id },
+            terminate: false,
+        },
+        false,
+    )?;
+    assert_settled_failed_without_recharge(&mut app, &task, charged)?;
+    Ok(())
+}
+
 fn launch_for(
     app: &mut App<'_>,
     task: &TaskId,

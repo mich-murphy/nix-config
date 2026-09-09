@@ -42,6 +42,11 @@ pub struct Fake {
     /// resumed one), so a test can assert whether a launch resumed a prior
     /// session.
     pub last_session: std::cell::RefCell<Option<Option<String>>>,
+    /// When set, the next `GitHub::create` call fails once (simulating a
+    /// network failure after the coordinator's own operation was already
+    /// recorded), then clears itself so a later `create` succeeds
+    /// normally.
+    pub create_fails_once: std::cell::Cell<bool>,
 }
 
 impl Clock for Fake {
@@ -119,6 +124,9 @@ impl GitHub for Fake {
         _body: &Path,
         head: &domain::ids::Sha,
     ) -> Result<domain::delivery::PullRequest, PortError> {
+        if self.create_fails_once.replace(false) {
+            return Err(PortError("simulated create failure".into()));
+        }
         self.set_pr(
             domain::ids::PrNumber(1),
             domain::delivery::PrState::Open,

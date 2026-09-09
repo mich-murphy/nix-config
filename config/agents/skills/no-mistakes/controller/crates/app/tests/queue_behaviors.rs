@@ -138,6 +138,7 @@ fn claim_excludes_other_runs() -> Result<(), Box<dyn std::error::Error>> {
         on_main: std::cell::Cell::new(true),
         vcs_calls: std::cell::RefCell::new(Vec::new()),
         last_session: std::cell::RefCell::new(None),
+        create_fails_once: std::cell::Cell::new(false),
     })?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     discover(&mut app, vec![task()?])?;

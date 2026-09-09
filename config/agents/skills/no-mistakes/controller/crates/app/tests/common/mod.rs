@@ -58,6 +58,7 @@ pub fn initialized() -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Er
         on_main: std::cell::Cell::new(true),
         vcs_calls: std::cell::RefCell::new(Vec::new()),
         last_session: std::cell::RefCell::new(None),
+        create_fails_once: std::cell::Cell::new(false),
     })
 }
 
@@ -67,7 +68,7 @@ pub fn initialized_with(
     let directory = tempfile::tempdir()?;
     initialize(
         directory.path(),
-        config(directory.path())?,
+        config(directory.path(), ReviewMode::Autonomous)?,
         profile()?,
         services(&fake),
     )?;
@@ -81,18 +82,36 @@ pub fn initialized_with_feedback(
     feedback_file: std::path::PathBuf,
 ) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
     let directory = tempfile::tempdir()?;
-    let mut run_config = config(directory.path())?;
+    let mut run_config = config(directory.path(), ReviewMode::Autonomous)?;
     run_config.feedback_file = Some(feedback_file);
     initialize(directory.path(), run_config, profile()?, services(&fake))?;
     Ok((directory, fake))
 }
 
-pub fn config(repo: &Path) -> Result<RunConfig, domain::ids::InvalidId> {
+/// Like `initialized_with`, but with `RunConfig.review_mode` set to
+/// `review_mode` instead of the fixed `Autonomous` every other fixture
+/// uses, for the human-review-mode rules (`human_receipt_pins_snapshot`,
+/// `human_receipt_gates_merge`).
+pub fn initialized_with_review_mode(
+    fake: Fake,
+    review_mode: ReviewMode,
+) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    initialize(
+        directory.path(),
+        config(directory.path(), review_mode)?,
+        profile()?,
+        services(&fake),
+    )?;
+    Ok((directory, fake))
+}
+
+pub fn config(repo: &Path, review_mode: ReviewMode) -> Result<RunConfig, domain::ids::InvalidId> {
     Ok(RunConfig {
         repo: repo.to_owned(),
         github_repo: "owner/repo".into(),
         epic: TaskId::from_str("GAIN-1")?,
-        review_mode: ReviewMode::Autonomous,
+        review_mode,
         max_open_prs: 2,
         feedback_file: None,
         jira: JiraConfig {
