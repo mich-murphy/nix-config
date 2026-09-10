@@ -235,6 +235,7 @@ fn commit_started_delivery(
                 review: None,
                 human_review: None,
                 check_deadlines: std::collections::BTreeMap::new(),
+                prior_review: None,
                 outcome: Outcome::Open,
                 launches: Vec::new(),
                 operations: Vec::new(),

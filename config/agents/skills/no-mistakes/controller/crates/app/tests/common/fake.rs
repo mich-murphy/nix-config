@@ -42,11 +42,17 @@ pub struct Fake {
     /// resumed one), so a test can assert whether a launch resumed a prior
     /// session.
     pub last_session: std::cell::RefCell<Option<Option<String>>>,
+    /// The prompt text of the most recent `LaunchRequest`, so a test can
+    /// assert what a worker was actually told.
+    pub last_prompt: std::cell::RefCell<Option<String>>,
     /// When set, the next `GitHub::create` call fails once (simulating a
     /// network failure after the coordinator's own operation was already
     /// recorded), then clears itself so a later `create` succeeds
     /// normally.
     pub create_fails_once: std::cell::Cell<bool>,
+    /// Every detached process `complete` or `usage-report` asked for (the
+    /// background judge), so a test can assert what would have run.
+    pub spawned: std::cell::RefCell<Vec<adapters::ProcessRequest>>,
 }
 
 impl Clock for Fake {
@@ -63,6 +69,7 @@ impl Clock for Fake {
 impl Tracer for Fake {
     fn record(&self, _: &mut dyn TraceState, _: &[domain::event::EventRecord]) {}
     fn finish(&self, _: &mut dyn TraceState) {}
+    fn quality(&self, _: &mut dyn TraceState, _: &domain::judge::QualityPayload) {}
 }
 
 impl Vcs for Fake {
@@ -235,6 +242,7 @@ impl Harness for Fake {
         started: &mut dyn FnMut(domain::ports::ProcessIdentity) -> Result<(), PortError>,
     ) -> Result<LaunchResult, PortError> {
         *self.last_session.borrow_mut() = Some(request.session.clone());
+        *self.last_prompt.borrow_mut() = Some(request.prompt.clone());
         started(domain::ports::ProcessIdentity {
             pid: 1,
             start_ticks: 2,

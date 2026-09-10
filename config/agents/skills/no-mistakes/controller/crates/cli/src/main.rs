@@ -1,5 +1,6 @@
 use adapters::{
     SystemClock, SystemProcess,
+    claude::Claude,
     codex::Codex,
     git::Git,
     github::Gh,
@@ -46,8 +47,45 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(app::Output, bool), AgentError> {
     let args = parse_args()?;
+    let outcome = execute(&args);
+    if let Err(error) = &outcome {
+        note_rejection(&args, error);
+    }
+    outcome
+}
+
+/// Keeps every rejection beside the run's ledger as friction evidence for
+/// the judge. Best effort: a run that does not exist yet, or a store that
+/// cannot be opened, records nothing.
+fn note_rejection(args: &Args, error: &AgentError) {
+    if !args.run.join("state.sqlite3").is_file() {
+        return;
+    }
+    let Ok(store) = Store::open(&args.run) else {
+        return;
+    };
+    let class = serde_json::to_value(&error.why)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("class")
+                .and_then(|c| c.as_str())
+                .map(ToOwned::to_owned)
+        })
+        .unwrap_or_else(|| "unknown".into());
+    let _ = store.record_rejection(&domain::judge::RejectionNote {
+        at: domain::ports::Clock::now(&SystemClock),
+        command: args.command.clone(),
+        task: args.values.get("task").and_then(|task| task.parse().ok()),
+        check: args.check,
+        class,
+        message: error.message.clone(),
+    });
+}
+
+fn execute(args: &Args) -> Result<(app::Output, bool), AgentError> {
     if args.command == "init" {
-        let output = init(&args)?;
+        let output = init(args)?;
         return Ok((output, args.pretty));
     }
     let store =
@@ -77,7 +115,7 @@ fn run() -> Result<(app::Output, bool), AgentError> {
         clock: &clock,
         tracer: &tracer,
     };
-    let command = command(&args)?;
+    let command = command(args)?;
     let mut app = App::new(store, services);
     Ok((app.execute(command, args.check)?, args.pretty))
 }
@@ -111,6 +149,7 @@ fn init(args: &Args) -> Result<app::Output, AgentError> {
 
 fn harness(kind: HarnessKind, process: SystemProcess) -> Box<dyn Harness> {
     match kind {
+        HarnessKind::Claude => Box::new(Claude::new(process)),
         HarnessKind::Codex => Box::new(Codex::new(process)),
         HarnessKind::Pi => Box::new(Pi::new(process)),
     }

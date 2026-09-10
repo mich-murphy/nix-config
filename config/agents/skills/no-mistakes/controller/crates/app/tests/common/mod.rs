@@ -49,7 +49,12 @@ pub fn services(fake: &Fake) -> Services<'_> {
 }
 
 pub fn initialized() -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
-    initialized_with(Fake {
+    initialized_with(fake())
+}
+
+/// The default fake every fixture starts from.
+pub fn fake() -> Fake {
+    Fake {
         reserve: true,
         slot: domain::ports::SlotState::Missing,
         observation: std::cell::RefCell::new(None),
@@ -60,8 +65,10 @@ pub fn initialized() -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Er
         on_main: std::cell::Cell::new(true),
         vcs_calls: std::cell::RefCell::new(Vec::new()),
         last_session: std::cell::RefCell::new(None),
+        last_prompt: std::cell::RefCell::new(None),
         create_fails_once: std::cell::Cell::new(false),
-    })
+        spawned: std::cell::RefCell::new(Vec::new()),
+    }
 }
 
 pub fn initialized_with(
@@ -108,6 +115,19 @@ pub fn initialized_with_review_mode(
     Ok((directory, fake))
 }
 
+/// Like `initialized`, but with `RunConfig.follow_up_deliveries` set to
+/// `follow_ups` instead of the fixture's one.
+pub fn initialized_with_follow_ups(
+    follow_ups: u32,
+) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    let fake = fake();
+    let mut run_config = config(directory.path(), ReviewMode::Autonomous)?;
+    run_config.follow_up_deliveries = follow_ups;
+    initialize(directory.path(), run_config, profile()?, services(&fake))?;
+    Ok((directory, fake))
+}
+
 pub fn config(repo: &Path, review_mode: ReviewMode) -> Result<RunConfig, domain::ids::InvalidId> {
     Ok(RunConfig {
         repo: repo.to_owned(),
@@ -128,6 +148,7 @@ pub fn config(repo: &Path, review_mode: ReviewMode) -> Result<RunConfig, domain:
             sensitive: vec!["auth/**".into()],
         },
         caps: BTreeMap::new(),
+        follow_up_deliveries: 1,
     })
 }
 

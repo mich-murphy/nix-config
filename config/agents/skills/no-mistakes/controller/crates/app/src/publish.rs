@@ -64,6 +64,7 @@ impl App<'_> {
         records.extend(self.write("publish", Some(&task.id), events, false)?);
         Ok(Output {
             events: records,
+            next: None,
             result: ResultData::Applied,
         })
     }

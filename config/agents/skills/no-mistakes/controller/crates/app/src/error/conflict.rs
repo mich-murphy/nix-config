@@ -35,6 +35,8 @@ pub enum ConflictReason {
     JiraDoneRequiresVerified,
     CompletionRequiresJiraDone,
     CleanupRequiresCompletion,
+    AlreadyJudged,
+    JudgeRequiresClaimedTask,
     ClosedDeliveryImmutable,
     OperationAlreadySettled,
     OperationHasNoProcess,
@@ -51,6 +53,11 @@ pub enum ConflictReason {
     HistoricalMergeLeftMain,
     ReplacementIdentityChanged,
     ClosedDeliveryChanged,
+    /// `open-delivery` without a receipt only opens a task's first
+    /// delivery, as verification of a commit on main, after `brief`.
+    ReceiptRequired,
+    /// The commit a receipt-free verification names is not on main.
+    VerificationCommitNotOnMain,
     /// A worktree slot's actual state (missing, dirty, foreign, or a
     /// binding kind that does not match the requested reuse) rejects this
     /// binding. Carries the debug-formatted `SlotState`, which is not
@@ -117,6 +124,10 @@ impl fmt::Display for ConflictReason {
                 formatter.write_str("completion needs verification and confirmed Jira Done")
             }
             Self::CleanupRequiresCompletion => formatter.write_str("cannot clean unfinished work"),
+            Self::AlreadyJudged => formatter.write_str("task already has a judgment"),
+            Self::JudgeRequiresClaimedTask => {
+                formatter.write_str("judge requires a task that was claimed")
+            }
             Self::ClosedDeliveryImmutable => {
                 formatter.write_str("closed delivery operations are immutable")
             }
@@ -152,6 +163,12 @@ impl fmt::Display for ConflictReason {
             Self::ReplacementIdentityChanged => formatter.write_str("replacement identity changed"),
             Self::ClosedDeliveryChanged => {
                 formatter.write_str("closed delivery observation changed")
+            }
+            Self::ReceiptRequired => formatter.write_str(
+                "only a briefed task's first delivery opens without a receipt, as verification of a commit on main",
+            ),
+            Self::VerificationCommitNotOnMain => {
+                formatter.write_str("verification commit is not on main")
             }
             Self::SlotUnsafe(state) => {
                 write!(formatter, "slot is not safe for this binding: {state}")

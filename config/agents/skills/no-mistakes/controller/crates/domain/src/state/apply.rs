@@ -1,9 +1,9 @@
 use super::State;
 use super::apply_delivery::{
-    close_delivery, complete, disposition, finish_launch, invalidate_proof, narrow, observe_pr,
-    open_delivery, record_ci_deadline, record_proof, repurpose_authority, set_human_review,
-    set_sync, settle_operation, settle_review, spend_pair, start_launch, start_operation,
-    use_authority, verify, with_task,
+    close_delivery, complete, disposition, finish_launch, invalidate_proof, judge, narrow,
+    observe_pr, open_delivery, record_ci_deadline, record_proof, repurpose_authority,
+    set_human_review, set_sync, settle_operation, settle_review, spend_pair, start_launch,
+    start_operation, use_authority, verify, with_task,
 };
 use super::projection::{
     apply_discovery, apply_refresh, bind, brief, checkpoint, claim, plan, raise_tier, release,
@@ -150,6 +150,7 @@ pub fn apply(state: &mut State, event: &Event) {
         } => close_delivery(state, task, *delivery, outcome),
         Event::Verified { task, receipt } => verify(state, task, receipt),
         Event::Completed { task } => complete(state, task),
+        Event::Judged { task, judgment } => judge(state, task, judgment),
         Event::StatusIntended {
             task,
             issue,

@@ -60,10 +60,7 @@ fn kind_of(variant: &Value) -> Option<String> {
 
 fn variant_schema(variant: &Value, defs: Option<&Map<String, Value>>) -> Value {
     let mut schema = variant.clone();
-    if let Some(properties) = schema
-        .get_mut("properties")
-        .and_then(Value::as_object_mut)
-    {
+    if let Some(properties) = schema.get_mut("properties").and_then(Value::as_object_mut) {
         properties.remove("kind");
     }
     if let Some(required) = schema.get_mut("required").and_then(Value::as_array_mut) {

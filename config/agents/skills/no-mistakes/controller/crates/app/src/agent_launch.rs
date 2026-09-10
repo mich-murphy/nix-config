@@ -51,7 +51,7 @@ pub(super) fn prepare_launch(
     );
     let prompt_text = fs::read_to_string(prompt)
         .map_err(|error| ctx.reject(Rejection::Invalid(error.to_string())))?;
-    let prompt_text = crate::task_support::launch_prompt(&task, prompt_text);
+    let prompt_text = crate::task_support::launch_prompt(&task, role, prompt_text);
     let request = LaunchRequest {
         id: launch,
         assignment,
@@ -85,7 +85,12 @@ fn validate_launch(
     id: &TaskId,
     role: AgentRole,
 ) -> Result<(), AgentError> {
-    if state.launches.iter().any(|launch| launch.outcome.is_none()) {
+    // A background judge is not the coordinator's active launch.
+    if state
+        .launches
+        .iter()
+        .any(|launch| launch.outcome.is_none() && launch.role != AgentRole::Judge)
+    {
         return Err(ctx.reject(ConflictReason::ActiveLaunchUnsettled));
     }
     require_checkpoint(ctx, state, id)?;

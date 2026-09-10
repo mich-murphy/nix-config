@@ -46,7 +46,14 @@ impl App<'_> {
         events: Vec<Event>,
         request: LaunchRequest,
     ) -> Result<Output, AgentError> {
-        let (mut records, result) = crate::agent_support::invoke(self, &task, &request, events)?;
+        let (mut records, result) = crate::agent_support::invoke(
+            self,
+            "run-agent",
+            &task,
+            &request,
+            events,
+            crate::agent_support::OutputSchema::Review,
+        )?;
         let end = vec![Event::LaunchEnded {
             launch: request.id,
             result: LaunchOutcome::Completed {
@@ -58,6 +65,7 @@ impl App<'_> {
         records.extend(self.write("run-agent", Some(&task), end, false)?);
         Ok(Output {
             events: records,
+            next: None,
             result: ResultData::Launch {
                 launch: request.id,
                 output: result.output,
@@ -77,7 +85,14 @@ impl App<'_> {
         request: LaunchRequest,
         value: &domain::task::Task,
     ) -> Result<Output, AgentError> {
-        let (mut records, result) = crate::agent_support::invoke(self, &task, &request, events)?;
+        let (mut records, result) = crate::agent_support::invoke(
+            self,
+            "run-agent",
+            &task,
+            &request,
+            events,
+            crate::agent_support::OutputSchema::Review,
+        )?;
         let state = self.state("run-agent")?;
         match settle_review(value, &state, &task, &request, &result) {
             Ok(review) => {
@@ -99,6 +114,7 @@ impl App<'_> {
                 records.extend(self.write("run-agent", Some(&task), settled, false)?);
                 Ok(Output {
                     events: records,
+                    next: None,
                     result: ResultData::Launch {
                         launch: request.id,
                         output: result.output,

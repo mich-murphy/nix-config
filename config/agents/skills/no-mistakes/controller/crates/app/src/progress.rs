@@ -40,6 +40,14 @@ impl App<'_> {
             observation: input.observation,
             next: input.next,
         }];
+        // The turn's snapshot is taken here, in the same command, so the
+        // coordinator records one checkpoint per turn rather than a
+        // checkpoint and then a snapshot. An integration checkpoint
+        // (`launch` is `None`) follows a snapshot the coordinator already
+        // took and takes no second one.
+        if launch.is_some() {
+            events.extend(self.snapshot_events(&state, value, &task, launch)?);
+        }
         let caps = state.config.as_ref().map(|config| &config.caps);
         if stalled >= domain::budget::Limits::for_tier(value.tier.current, caps).stalled {
             events.push(Event::Held {

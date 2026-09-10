@@ -12,10 +12,11 @@ use domain::{
 #[test]
 fn cancelled_review_counts() {
     let mut budgets = Budgets::default();
+    let limit = budget::Limits::for_tier(Tier::Trivial, None).reviews;
     budget::spend(&mut budgets, BudgetKind::Review, true);
     assert_eq!(
         budget::remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[], None),
-        0
+        limit - 1
     );
 }
 

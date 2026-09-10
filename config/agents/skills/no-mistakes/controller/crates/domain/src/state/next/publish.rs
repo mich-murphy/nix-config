@@ -63,6 +63,9 @@ pub(super) fn verification_action(
     delivery: &Delivery,
     commit: &Sha,
 ) -> Option<NextAction> {
+    if let Some(action) = unfixed_baseline(task, delivery) {
+        return Some(action);
+    }
     let missing = delivery
         .criteria
         .iter()
@@ -82,5 +85,22 @@ pub(super) fn verification_action(
             head: commit.clone(),
             requirements: task.spec.requirements.clone(),
         },
+    })
+}
+
+/// A verification delivery opened without a prior plan (work already on
+/// main) has no baseline fixed for its automated criteria yet; proof
+/// cannot be measured until `plan` records one.
+fn unfixed_baseline(task: &Task, delivery: &Delivery) -> Option<NextAction> {
+    let unfixed = delivery.criteria.iter().any(|id| {
+        !task.baselines.contains_key(id)
+            && task
+                .spec
+                .criteria
+                .iter()
+                .any(|criterion| criterion.id == *id && !criterion.human_only)
+    });
+    unfixed.then(|| NextAction::Plan {
+        task: task.id.clone(),
     })
 }

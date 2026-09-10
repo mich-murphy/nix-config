@@ -65,10 +65,13 @@ impl App<'_> {
         &mut self,
         task: TaskId,
         kind: DeliveryKind,
-        receipt: AuthorityReceipt,
+        receipt: Option<AuthorityReceipt>,
         jira: JiraRead,
         check: bool,
     ) -> Result<Output, AgentError> {
+        let Some(receipt) = receipt else {
+            return self.open_without_receipt(task, kind, jira, check);
+        };
         let ctx = self.ctx("open-delivery", Some(&task));
         let state = self.state("open-delivery")?;
         let value = task_ref(&state, &task, "open-delivery", self)?;
@@ -251,6 +254,7 @@ fn new_delivery(
         review: None,
         human_review: None,
         check_deadlines: std::collections::BTreeMap::new(),
+        prior_review: None,
         outcome: Outcome::Open,
         launches: Vec::new(),
         operations: Vec::new(),

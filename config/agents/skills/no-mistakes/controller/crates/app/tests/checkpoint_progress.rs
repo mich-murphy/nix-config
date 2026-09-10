@@ -199,7 +199,9 @@ fn stall_limit_survives_replan() -> Result<(), Box<dyn std::error::Error>> {
     turn(&mut app, &task, &file, false)?;
     replan(&mut app, &task)?;
     turn(&mut app, &task, &file, false)?;
-    assert_eq!(stalled(&mut app, &task)?, (2, true));
+    assert_eq!(stalled(&mut app, &task)?, (2, false));
+    turn(&mut app, &task, &file, false)?;
+    assert_eq!(stalled(&mut app, &task)?, (3, true));
     Ok(())
 }
 

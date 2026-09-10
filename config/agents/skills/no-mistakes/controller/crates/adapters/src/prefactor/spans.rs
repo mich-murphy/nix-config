@@ -30,7 +30,8 @@ pub(super) enum Pairing {
 }
 
 pub(super) fn describe(record: &EventRecord, tracing: &Tracing) -> Result<Span, PortError> {
-    let mut body = serde_json::to_value(&record.event).map_err(|error| PortError(error.to_string()))?;
+    let mut body =
+        serde_json::to_value(&record.event).map_err(|error| PortError(error.to_string()))?;
     let fields = body
         .as_object_mut()
         .ok_or_else(|| PortError("event is not an object".into()))?;
@@ -65,18 +66,23 @@ fn enrich(kind: &str, fields: &mut Map<String, Value>, tracing: &Tracing) {
         }
     }
     if kind == "launch-ended" {
-        let completed = fields
-            .get_mut("result")
-            .and_then(|result| result.get_mut("completed"))
-            .and_then(Value::as_object_mut);
-        if let Some(completed) = completed {
-            match completed.remove("output") {
-                Some(Value::String(output)) if tracing.capture_outputs => {
-                    completed.insert("output".into(), sensitive(output));
-                }
-                _ => {}
-            }
-        }
+        mark_output(fields, tracing.capture_outputs);
+    }
+}
+
+fn mark_output(fields: &mut Map<String, Value>, capture: bool) {
+    let completed = fields
+        .get_mut("result")
+        .and_then(|result| result.get_mut("completed"))
+        .and_then(Value::as_object_mut);
+    let Some(completed) = completed else {
+        return;
+    };
+    let Some(Value::String(output)) = completed.remove("output") else {
+        return;
+    };
+    if capture {
+        completed.insert("output".into(), sensitive(output));
     }
 }
 
@@ -117,7 +123,9 @@ fn pairing(kind: &str, body: &Value) -> Pairing {
 }
 
 fn key(group: &str, id: &Value) -> String {
-    let id = id.as_str().map_or_else(|| id.to_string(), ToOwned::to_owned);
+    let id = id
+        .as_str()
+        .map_or_else(|| id.to_string(), ToOwned::to_owned);
     format!("span/{group}/{id}")
 }
 

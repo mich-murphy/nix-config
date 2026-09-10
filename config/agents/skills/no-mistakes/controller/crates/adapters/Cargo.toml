@@ -5,6 +5,7 @@ edition.workspace = true
 publish = false
 
 [dependencies]
+schemars = { workspace = true }
 domain = { path = "../domain" }
 rusqlite.workspace = true
 serde.workspace = true

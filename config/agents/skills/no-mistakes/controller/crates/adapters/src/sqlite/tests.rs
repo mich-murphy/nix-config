@@ -67,3 +67,56 @@ fn trace_state_survives_reopen_and_is_not_an_event() -> Result<(), Box<dyn std::
     assert_eq!(store.get("instance")?, None);
     Ok(())
 }
+
+#[test]
+fn rejections_and_judges_live_beside_the_ledger() -> Result<(), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    let store = Store::create(directory.path())?;
+    let task: domain::ids::TaskId = "GAIN-2".parse()?;
+    store.record_rejection(&domain::judge::RejectionNote {
+        at: 7,
+        command: "bind-slot".into(),
+        task: Some(task.clone()),
+        check: false,
+        class: "conflict".into(),
+        message: "slot occupied".into(),
+    })?;
+    store.record_rejection(&domain::judge::RejectionNote {
+        at: 8,
+        command: "status".into(),
+        task: None,
+        check: true,
+        class: "invalid".into(),
+        message: "bad".into(),
+    })?;
+    let notes = store.rejections()?;
+    assert_eq!(notes.len(), 2);
+    assert_eq!(notes[0].task.as_ref(), Some(&task));
+    assert!(!notes[0].check && notes[1].check);
+    assert_eq!(notes[1].task, None);
+    assert!(store.events()?.is_empty());
+
+    assert_eq!(store.judges_pending()?, 0);
+    store.judge_started(&task)?;
+    store.judge_started(&task)?;
+    assert_eq!(store.judges_pending()?, 1);
+    assert_eq!(store.judge_finished(&task)?, 0);
+    Ok(())
+}
+
+#[test]
+fn judge_launch_does_not_take_the_single_process_claim() -> Result<(), StoreError> {
+    let directory = tempfile::tempdir().map_err(error)?;
+    let mut store = Store::create(directory.path())?;
+    store.commit(Actor::Coordinator, 1, &[launch(1)])?;
+    let judge = match launch(2) {
+        Event::LaunchStarted { mut launch } => {
+            launch.role = domain::command::AgentRole::Judge;
+            Event::LaunchStarted { launch }
+        }
+        other => other,
+    };
+    store.commit(Actor::Coordinator, 2, &[judge])?;
+    assert!(store.commit(Actor::Coordinator, 3, &[launch(3)]).is_err());
+    Ok(())
+}

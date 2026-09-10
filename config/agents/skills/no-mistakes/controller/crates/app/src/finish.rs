@@ -69,12 +69,18 @@ impl App<'_> {
                 ConflictReason::CompletionRequiresJiraDone,
             ));
         }
-        self.commit(
+        let output = self.commit(
             "complete",
             Some(&task),
             vec![Event::Completed { task: task.clone() }],
             check,
-        )
+        )?;
+        // The judge grades the finished task in the background; the
+        // coordinator moves on to cleanup and the next task meanwhile.
+        if !check && value.judgment.is_none() {
+            self.spawn_judge(&task);
+        }
+        Ok(output)
     }
 
     pub(super) fn cleanup(

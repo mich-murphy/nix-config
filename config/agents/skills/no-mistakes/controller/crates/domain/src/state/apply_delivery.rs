@@ -63,15 +63,17 @@ fn attach_operation(task: &mut Task, operation: &crate::event::Operation) {
     }
 }
 
-/// Pushes the delivery, and, for every delivery after the first, moves
-/// the phase on: `Claimed` for a new code delivery, `Merged` (at the
-/// commit under verification) for a `Verification` one. The first
-/// delivery moves no phase; `bind-slot` already set `Planned` for it.
+/// Pushes the delivery and moves the phase on: `Claimed` for a new code
+/// delivery, `Merged` (at the commit under verification) for a
+/// `Verification` one. A first code delivery moves no phase; `bind-slot`
+/// already set `Planned` for it. A first verification delivery (work
+/// already on main) has no slot, so it moves to `Merged` here.
 pub(super) fn open_delivery(state: &mut State, task: &TaskId, delivery: crate::delivery::Delivery) {
     with_task(state, task, |value| {
-        let first = value.deliveries.is_empty();
+        let first_code =
+            value.deliveries.is_empty() && matches!(delivery.kind, DeliveryKind::Code { .. });
         value.deliveries.push(delivery.clone());
-        if !first {
+        if !first_code {
             value.phase = opened_phase(&delivery);
         }
     });
@@ -119,7 +121,9 @@ fn add_proof(delivery: &mut crate::delivery::Delivery, entries: &[crate::accepta
             .entries
             .insert(entry.criterion.clone(), entry.clone());
     }
-    delivery.review = None;
+    if delivery.review.is_some() {
+        delivery.prior_review = delivery.review.take();
+    }
     delivery.human_review = None;
 }
 
@@ -254,6 +258,19 @@ pub(super) fn complete(state: &mut State, task: &TaskId) {
             value.phase = Phase::Completed { receipt };
         }
     });
+    // A task that never took a slot has no cleanup to wait for, so it
+    // stops being the active task here rather than at `SlotReleased`.
+    let unowned = state
+        .tasks
+        .get(task)
+        .is_some_and(|value| value.current_work().is_none());
+    if unowned && state.active.as_ref() == Some(task) {
+        state.active = None;
+    }
+}
+
+pub(super) fn judge(state: &mut State, task: &TaskId, judgment: &crate::judge::Judgment) {
+    with_task(state, task, |value| value.judgment = Some(judgment.clone()));
 }
 
 pub(super) fn set_human_review(

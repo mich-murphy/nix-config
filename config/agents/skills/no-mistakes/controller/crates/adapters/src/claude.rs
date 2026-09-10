@@ -189,7 +189,7 @@ mod tests {
     };
     use std::{cell::RefCell, path::PathBuf, str::FromStr};
 
-    const SUCCESS_STREAM: &str = "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"{\\\"word\\\":\\\"pong\\\"}\",\"structured_output\":{\"word\":\"pong\"},\"session_id\":\"58e1e232-ea5e-4d4b-97e2-f9b0cf83981e\",\"num_turns\":2,\"usage\":{\"input_tokens\":10,\"cache_creation_input_tokens\":7125,\"cache_read_input_tokens\":0,\"output_tokens\":191}}";
+    const SUCCESS_STREAM: &str = "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"{\\\"word\\\":\\\"pong\\\"}\",\"structured_output\":{\"word\":\"pong\"},\"session_id\":\"00000000-0000-4000-8000-000000000000\",\"num_turns\":2,\"usage\":{\"input_tokens\":10,\"cache_creation_input_tokens\":7125,\"cache_read_input_tokens\":0,\"output_tokens\":191}}";
 
     struct Fake(RefCell<Vec<ProcessRequest>>);
     struct FakeRunning(crate::ProcessOutput);
@@ -321,7 +321,7 @@ mod tests {
         let result = harness
             .run(&launch(true, None)?, &mut |_| Ok(()))
             .map_err(|_| domain::ids::InvalidId("run"))?;
-        assert_eq!(result.session, "58e1e232-ea5e-4d4b-97e2-f9b0cf83981e");
+        assert_eq!(result.session, "00000000-0000-4000-8000-000000000000");
         assert_eq!(result.output, "{\"word\":\"pong\"}");
         let tokens = result.tokens.ok_or(domain::ids::InvalidId("tokens"))?;
         assert_eq!(tokens.input, 7135);

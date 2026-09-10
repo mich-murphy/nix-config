@@ -8,7 +8,8 @@ between tasks.
 After `brief` and `bind-slot`, call `plan` before an implementer launch. Include
 the smallest complete deliverable, expected files or directories, suitable local
 examples, and one baseline digest for each criterion. Name extra lesson families
-only when they apply.
+only when they apply. A verification delivery of work already on main also
+needs a `plan`, for its baselines alone, before proof can be recorded.
 
 Each criterion's baseline is fixed the first time a plan carries it. Later code
 or verification deliveries use current main for their review snapshot but keep
@@ -19,19 +20,21 @@ review, not budgets.
 
 ## Checkpoints
 
-After each terminal implementer turn, commit coherent work where possible, call
-`snapshot`, then `checkpoint`. Record a new observation, whether it advanced the
-work, and one bounded next action. A new SHA, repeated command, or rewritten
-summary is not progress by itself.
+After each terminal implementer turn, commit coherent work where possible and
+call `checkpoint`; it snapshots the turn in the same command. Record a new
+observation, whether it advanced the work, and one bounded next action. A new
+SHA, repeated command, or rewritten summary is not progress by itself.
 
 The controller records changed paths and diff size. Explain paths outside the
 plan and assess whether they remain necessary to the same deliverable. Size is a
-signal, not permission to omit acceptance. An integration-only snapshot may be
-checkpointed without an agent launch and does not alter the stall count.
+signal, not permission to omit acceptance. An integration commit made without
+an agent launch is recorded with `snapshot` and then checkpointed; it does not
+alter the stall count.
 
-Two consecutive checkpoints without progress exhaust the default stall budget.
-Replanning and resuming do not clear it. A supported new observation clears the
-streak. Exhausted implementation still permits proof and review of existing work.
+Three consecutive checkpoints without progress exhaust the default stall
+budget. Replanning and resuming do not clear it. A supported new observation
+clears the streak. Exhausted implementation still permits proof and review of
+existing work.
 
 ## Measurements
 

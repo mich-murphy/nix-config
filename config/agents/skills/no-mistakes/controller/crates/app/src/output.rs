@@ -11,6 +11,13 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize)]
 pub struct Output {
     pub events: Vec<EventRecord>,
+    /// The action `next` would name after this command's events were
+    /// written, attached to every command that wrote any, so the
+    /// coordinator does not need a separate `next` call between steps.
+    /// Absent on read-only commands and on `--check`, whose events were
+    /// not written.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next: Option<AnnotatedAction>,
     #[serde(flatten)]
     pub result: ResultData,
 }

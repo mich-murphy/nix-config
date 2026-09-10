@@ -39,7 +39,7 @@ fn open_delivery_command(task: &TaskId, receipt: AuthorityReceipt, jira: JiraRea
     Command::OpenDelivery {
         task: task.clone(),
         kind: DeliveryKind::Code { pr: None },
-        receipt,
+        receipt: Some(receipt),
         jira,
     }
 }
@@ -134,6 +134,7 @@ fn commit_replaced_delivery(
                     review: None,
                     human_review: None,
                     check_deadlines: std::collections::BTreeMap::new(),
+                    prior_review: None,
                     outcome: Outcome::Replaced {
                         by: Replacement {
                             pr: PrNumber(99),

@@ -15,6 +15,8 @@ use std::cell::{Cell, RefCell};
 struct Recording {
     kinds: RefCell<Vec<String>>,
     finished: Cell<bool>,
+    /// `rollup.judged` of the last quality payload sent.
+    quality: Cell<Option<u32>>,
 }
 
 impl Tracer for Recording {
@@ -27,6 +29,9 @@ impl Tracer for Recording {
     }
     fn finish(&self, _: &mut dyn TraceState) {
         self.finished.set(true);
+    }
+    fn quality(&self, _: &mut dyn TraceState, payload: &domain::judge::QualityPayload) {
+        self.quality.set(Some(payload.rollup.judged));
     }
 }
 

@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn every_command_variant_is_a_subcommand() {
-    assert_eq!(app::schema::command_names().len(), 36);
+    assert_eq!(app::schema::command_names().len(), 37);
 }
 
 #[test]
@@ -88,7 +88,7 @@ fn init_rejects_input_and_check() {
 #[test]
 fn bundled_profiles_validate() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    for name in ["codex", "pi"] {
+    for name in ["claude", "codex", "pi"] {
         let path = root.join("../profiles").join(format!("{name}.toml"));
         let profile = parse_toml::<domain::risk::Profile>(&path, "profile")
             .unwrap_or_else(|error| panic!("{name} profile failed: {error:?}"));

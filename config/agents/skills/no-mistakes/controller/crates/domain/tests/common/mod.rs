@@ -125,6 +125,7 @@ pub fn delivery() -> Delivery {
         review: None,
         human_review: None,
         check_deadlines: BTreeMap::new(),
+        prior_review: None,
         outcome: Outcome::Open,
         launches: Vec::new(),
         operations: Vec::new(),
@@ -161,5 +162,6 @@ pub fn task() -> Task {
         },
         subtasks: BTreeMap::new(),
         baselines: BTreeMap::new(),
+        judgment: None,
     }
 }

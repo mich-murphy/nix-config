@@ -128,23 +128,40 @@ fn fit(text: String, cap: usize) -> String {
 pub(super) fn parse_rfc3339(text: &str) -> Option<u64> {
     let text = text.strip_suffix('Z')?;
     let (date, time) = text.split_once('T')?;
-    let mut date = date.split('-').map(str::parse::<i64>);
-    let (year, month, day) = (date.next()?.ok()?, date.next()?.ok()?, date.next()?.ok()?);
-    let mut time = time.split(':');
-    let hour: u64 = time.next()?.parse().ok()?;
-    let minute: u64 = time.next()?.parse().ok()?;
-    let second: u64 = time.next()?.split('.').next()?.parse().ok()?;
+    let (year, month, day) = parse_date(date)?;
+    let seconds = parse_time(time)?;
+    u64::try_from(days_from_civil(year, month, day))
+        .ok()?
+        .checked_mul(86_400)?
+        .checked_add(seconds)
+}
+
+fn parse_date(date: &str) -> Option<(i64, i64, i64)> {
+    let mut parts = date.split('-').map(str::parse::<i64>);
+    Some((
+        parts.next()?.ok()?,
+        parts.next()?.ok()?,
+        parts.next()?.ok()?,
+    ))
+}
+
+/// `HH:MM:SS(.fraction)` as seconds into the day.
+fn parse_time(time: &str) -> Option<u64> {
+    let mut parts = time.split(':');
+    let hour: u64 = parts.next()?.parse().ok()?;
+    let minute: u64 = parts.next()?.parse().ok()?;
+    let second: u64 = parts.next()?.split('.').next()?.parse().ok()?;
+    Some(hour * 3_600 + minute * 60 + second)
+}
+
+fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     let y = if month <= 2 { year - 1 } else { year };
     let era = y.div_euclid(400);
     let yoe = y - era * 400;
     let mp = (month + 9) % 12;
     let doy = (153 * mp + 2) / 5 + day - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    let days = era * 146_097 + doe - 719_468;
-    u64::try_from(days)
-        .ok()?
-        .checked_mul(86_400)?
-        .checked_add(hour * 3_600 + minute * 60 + second)
+    era * 146_097 + doe - 719_468
 }
 
 #[cfg(test)]

@@ -74,9 +74,9 @@ impl Limits {
 
 const fn default_for_tier(tier: Tier) -> Limits {
     match tier {
-        Tier::Trivial => Limits::new(4, 2, 1, 1, 1, 0),
-        Tier::Lite => Limits::new(8, 2, 3, 2, 1, 1),
-        Tier::Full => Limits::new(12, 2, 5, 4, 1, 1),
+        Tier::Trivial => Limits::new(6, 3, 2, 2, 1, 1),
+        Tier::Lite => Limits::new(10, 3, 3, 3, 2, 1),
+        Tier::Full => Limits::new(14, 3, 5, 4, 2, 1),
     }
 }
 
@@ -154,7 +154,7 @@ mod tests {
         let budgets = Budgets::default();
         assert_eq!(
             remaining(BudgetKind::Review, &budgets, Tier::Trivial, &[], None),
-            1
+            2
         );
         assert_eq!(
             remaining(BudgetKind::Review, &budgets, Tier::Lite, &[], None),
@@ -176,7 +176,7 @@ mod tests {
     #[test]
     fn scoped_pair_keeps_exhaustion() {
         let budgets = Budgets {
-            reviews: 1,
+            reviews: 2,
             ..Budgets::default()
         };
         assert_eq!(

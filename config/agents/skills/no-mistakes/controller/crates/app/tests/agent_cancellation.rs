@@ -17,6 +17,13 @@ use domain::{
 };
 use std::str::FromStr;
 
+/// The Trivial-tier limits the fixture task is classified under, read
+/// from the domain so these scenarios follow the defaults rather than
+/// restate them.
+fn trivial_limits() -> domain::budget::Limits {
+    domain::budget::Limits::for_tier(domain::risk::Tier::Trivial, None)
+}
+
 fn prompt(directory: &std::path::Path) -> Result<std::path::PathBuf, std::io::Error> {
     let path = directory.join("prompt.md");
     std::fs::write(&path, "bounded task")?;
@@ -268,9 +275,10 @@ fn turn_limit_counts_cancelled() -> Result<(), Box<dyn std::error::Error>> {
     let task = TaskId::from_str("GAIN-2")?;
     let canceling = Canceling;
     let mut app = canceling_app(directory.path(), &fake, &canceling)?;
-    cancel_turns(&mut app, &task, directory.path(), 4)?;
+    let limit = trivial_limits().implementation;
+    cancel_turns(&mut app, &task, directory.path(), limit)?;
     let state = task_state(&mut app, &task)?;
-    assert_eq!(state.budgets.implementation_turns, 4);
+    assert_eq!(state.budgets.implementation_turns, limit);
 
     let fifth = app.execute(
         Command::RunAgent {
@@ -289,7 +297,7 @@ fn turn_limit_counts_cancelled() -> Result<(), Box<dyn std::error::Error>> {
         })
     ));
     let state = task_state(&mut app, &task)?;
-    assert_eq!(state.budgets.implementation_turns, 4);
+    assert_eq!(state.budgets.implementation_turns, limit);
     Ok(())
 }
 
@@ -343,9 +351,10 @@ fn exhausted_turns_allow_review() -> Result<(), Box<dyn std::error::Error>> {
 
     let canceling = Canceling;
     let mut app = canceling_app(directory.path(), &fake, &canceling)?;
-    cancel_turns(&mut app, &task, directory.path(), 3)?;
+    let limit = trivial_limits().implementation;
+    cancel_turns(&mut app, &task, directory.path(), limit - 1)?;
     let state = task_state(&mut app, &task)?;
-    assert_eq!(state.budgets.implementation_turns, 4);
+    assert_eq!(state.budgets.implementation_turns, limit);
     drop(app);
 
     arrange_passing_review(&fake)?;

@@ -45,6 +45,7 @@ pub(super) fn apply_discovery(state: &mut State, tasks: &[DiscoveredTask], order
                 },
                 subtasks: BTreeMap::new(),
                 baselines: BTreeMap::new(),
+                judgment: None,
             },
         );
     }
@@ -235,7 +236,7 @@ fn update_delivery_snapshot(
     snapshot: &Snapshot,
     covers: Option<crate::ids::LaunchId>,
 ) {
-    delivery.review = None;
+    delivery.prior_review = delivery.review.take();
     delivery.human_review = None;
     if let Some(work) = delivery.work.as_mut() {
         work.snapshot = Some(snapshot.clone());

@@ -35,12 +35,11 @@ impl State {
 
     fn choose_action(&self, now: Instant) -> Option<NextAction> {
         self.config.as_ref()?;
-        if !self.questions.is_empty() {
-            return Some(NextAction::AnswerQuestions {
-                questions: self.questions.clone(),
-            });
-        }
-        if let Some(launch) = self.launches.iter().find(|launch| launch.outcome.is_none()) {
+        // A judge runs in the background beside the coordinator's own
+        // work, so an open judge launch never asks to be monitored.
+        if let Some(launch) = self.launches.iter().find(|launch| {
+            launch.outcome.is_none() && launch.role != crate::command::AgentRole::Judge
+        }) {
             return Some(NextAction::MonitorLaunch { launch: launch.id });
         }
         if let Some(operation) = self.operations.iter().find(|operation| {
@@ -116,6 +115,15 @@ impl State {
         }
         if let Some(task) = self.order.iter().find_map(|id| self.eligible(id)) {
             return Some(NextAction::Claim { task });
+        }
+        // An open question holds only the task it is about (its phase is
+        // `NeedsInput`, so `eligible` skips it); it is put to the
+        // coordinator once no other task can proceed, never ahead of the
+        // rest of the queue.
+        if !self.questions.is_empty() {
+            return Some(NextAction::AnswerQuestions {
+                questions: self.questions.clone(),
+            });
         }
         if let Some(action) = pending_ci_wait(self, now) {
             return Some(action);

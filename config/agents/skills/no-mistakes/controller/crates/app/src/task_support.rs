@@ -113,20 +113,52 @@ pub(super) fn current_work_delivery(
     }
 }
 
-pub(super) fn launch_prompt(task: &domain::task::Task, prompt: String) -> String {
-    let Some((work, _)) = current_work_delivery(task) else {
-        return prompt;
-    };
-    if work.feedback.is_empty() {
-        return prompt;
+pub(super) fn launch_prompt(task: &domain::task::Task, role: AgentRole, prompt: String) -> String {
+    let mut prompt = prompt;
+    if let Some((work, _)) = current_work_delivery(task)
+        && !work.feedback.is_empty()
+    {
+        let instructions = work
+            .feedback
+            .iter()
+            .map(|lesson| format!("- {}", lesson.text))
+            .collect::<Vec<_>>()
+            .join("\n");
+        prompt.push_str(&format!("\n\nPinned run guidance:\n{instructions}"));
     }
-    let instructions = work
-        .feedback
+    if role == AgentRole::Reviewer
+        && let Some(prior) = task
+            .current_delivery()
+            .and_then(|delivery| delivery.prior_review.as_ref())
+    {
+        prompt.push_str(&prior_review_packet(prior));
+    }
+    prompt
+}
+
+/// What a repair review is told about the review it follows: the head
+/// that review covered, so the reviewer can concentrate on the diff
+/// since it, and every finding it raised, each to be reported again as
+/// still open or as resolved. The report is still validated against the
+/// whole current snapshot.
+fn prior_review_packet(prior: &domain::review::Review) -> String {
+    let findings = prior
+        .findings
         .iter()
-        .map(|lesson| format!("- {}", lesson.text))
+        .map(|finding| {
+            format!(
+                "- {} [{:?}] {}: {}",
+                finding.id, finding.severity, finding.location, finding.correction
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n");
-    format!("{prompt}\n\nPinned run guidance:\n{instructions}")
+    format!(
+        "\n\nPrior review covered head {head}. Review the full snapshot, concentrate on \
+         `git diff {head} <head>`, and report every prior finding below by id as still \
+         open or as resolved:\n{findings}",
+        head = prior.snapshot.head
+    )
 }
 
 pub(super) fn review_target(

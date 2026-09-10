@@ -2,6 +2,7 @@ use domain::{
     event::{Actor, Event, EventRecord},
     state::{State, apply},
 };
+use process_claim::update_process_claim;
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use sha2::{Digest as _, Sha256};
 use std::path::{Path, PathBuf};
@@ -25,7 +26,7 @@ pub struct Store {
 impl Store {
     pub fn create(root: &Path) -> Result<Self, StoreError> {
         std::fs::create_dir_all(root).map_err(error)?;
-        let connection = Connection::open(root.join("state.sqlite3")).map_err(error)?;
+        let connection = connect(root)?;
         connection
             .pragma_update(None, "journal_mode", "WAL")
             .map_err(error)?;
@@ -67,7 +68,7 @@ impl Store {
     }
 
     pub fn open(root: &Path) -> Result<Self, StoreError> {
-        let connection = Connection::open(root.join("state.sqlite3")).map_err(error)?;
+        let connection = connect(root)?;
         Ok(Self {
             connection,
             root: root.to_owned(),
@@ -183,6 +184,18 @@ impl Store {
     }
 }
 
+/// A background judge commits beside the coordinator's own commands, so
+/// a writer that finds the file locked waits briefly instead of failing:
+/// `BEGIN IMMEDIATE` still serialises them, the timeout only covers the
+/// moments one transaction is open.
+fn connect(root: &Path) -> Result<Connection, StoreError> {
+    let connection = Connection::open(root.join("state.sqlite3")).map_err(error)?;
+    connection
+        .busy_timeout(std::time::Duration::from_secs(10))
+        .map_err(error)?;
+    Ok(connection)
+}
+
 fn read_projection(connection: &Connection) -> Result<State, StoreError> {
     let stored: String = connection
         .query_row(
@@ -238,52 +251,6 @@ fn append(
     };
     insert(transaction, &record, &phase(event, state), &digest)?;
     Ok((record, digest))
-}
-
-fn update_process_claim(
-    transaction: &rusqlite::Transaction<'_>,
-    event: &Event,
-) -> Result<(), StoreError> {
-    match event {
-        Event::LaunchStarted { launch } => claim_process(transaction, "launch", launch.id.0)?,
-        Event::OperationStarted { operation } => {
-            claim_process(transaction, "operation", operation.id.0)?;
-        }
-        Event::LaunchEnded { launch, .. } => clear_process(transaction, "launch", launch.0)?,
-        Event::OperationSettled { operation, .. } => {
-            clear_process(transaction, "operation", operation.0)?;
-        }
-        _ => {}
-    }
-    Ok(())
-}
-
-fn claim_process(
-    transaction: &rusqlite::Transaction<'_>,
-    kind: &str,
-    id: u64,
-) -> Result<(), StoreError> {
-    transaction
-        .execute(
-            "INSERT INTO active_process(singleton, kind, id) VALUES(1, ?1, ?2)",
-            params![kind, i64::try_from(id).map_err(error)?],
-        )
-        .map(|_| ())
-        .map_err(error)
-}
-
-fn clear_process(
-    transaction: &rusqlite::Transaction<'_>,
-    kind: &str,
-    id: u64,
-) -> Result<(), StoreError> {
-    transaction
-        .execute(
-            "DELETE FROM active_process WHERE singleton = 1 AND kind = ?1 AND id = ?2",
-            params![kind, i64::try_from(id).map_err(error)?],
-        )
-        .map(|_| ())
-        .map_err(error)
 }
 
 fn insert(
@@ -351,6 +318,7 @@ fn event_task(event: &Event) -> Option<&domain::ids::TaskId> {
         | Event::DeliveryClosed { task, .. }
         | Event::Verified { task, .. }
         | Event::Completed { task }
+        | Event::Judged { task, .. }
         | Event::StatusIntended { task, .. }
         | Event::StatusObserved { task, .. }
         | Event::AuthorityRegistered { task, .. }
@@ -372,6 +340,8 @@ fn error(value: impl std::fmt::Display) -> StoreError {
     StoreError(value.to_string())
 }
 
+mod judge;
+mod process_claim;
 mod trace;
 
 #[cfg(test)]

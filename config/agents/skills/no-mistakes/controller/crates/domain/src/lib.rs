@@ -7,6 +7,7 @@ pub mod command;
 pub mod delivery;
 pub mod event;
 pub mod ids;
+pub mod judge;
 pub mod ports;
 pub mod review;
 pub mod risk;

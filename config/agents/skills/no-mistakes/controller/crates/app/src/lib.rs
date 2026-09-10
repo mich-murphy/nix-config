@@ -7,6 +7,7 @@ mod delivery;
 mod delivery_support;
 mod error;
 mod finish;
+mod judge;
 mod output;
 mod progress;
 mod proof;
@@ -14,9 +15,11 @@ mod publish;
 mod queue;
 mod recovery_support;
 pub mod schema;
+mod snapshot;
 mod status;
 mod task;
 mod task_support;
+mod verification;
 mod worktree;
 
 pub use error::{AgentError, ConflictReason, EvidenceError, Rejection};
@@ -75,8 +78,14 @@ pub fn initialize(
         .commit(Actor::Coordinator, services.clock.now(), &[event])
         .map_err(|error| init_error(Rejection::Internal(error.to_string())))?;
     services.tracer.record(&mut store, &events);
+    // The coordinator transcript location, if the skill's hook wrote one,
+    // is kept beside the ledger for the judge; it is not a domain fact.
+    if let Some(note) = judge::coordinator_note() {
+        let _ = domain::ports::TraceState::set(&mut store, judge::COORDINATOR, &note);
+    }
     Ok(Output {
         events,
+        next: None,
         result: ResultData::Initialized { capabilities },
     })
 }
@@ -91,13 +100,26 @@ impl<'a> App<'a> {
         Self { store, services }
     }
 
+    /// Runs `command` and, when it wrote events, attaches the action
+    /// `next` would now name, so one round trip carries both the result
+    /// and the following step.
     pub fn execute(&mut self, command: Command, check: bool) -> Result<Output, AgentError> {
+        let mut output = self.dispatch(command, check)?;
+        if !check && !output.events.is_empty() {
+            let now = self.services.clock.now();
+            output.next = self.state("next")?.next(now).map(schema::annotate);
+        }
+        Ok(output)
+    }
+
+    fn dispatch(&mut self, command: Command, check: bool) -> Result<Output, AgentError> {
         match command {
             Command::Status => self.status(),
             Command::Next => self.next(),
             Command::UsageReport => self.usage(),
             Command::ReviewSchema => Ok(Output {
                 events: Vec::new(),
+                next: None,
                 result: ResultData::ReviewSchema {
                     schema: schemars::schema_for!(domain::review::ReviewReport),
                 },
@@ -224,6 +246,7 @@ impl<'a> App<'a> {
                 evidence,
             } => self.final_verify(task, commit, evidence, check),
             Command::Complete { task } => self.complete(task, check),
+            Command::Judge { task } => self.judge(task, check),
             Command::SetStatus {
                 task,
                 issue,
@@ -272,6 +295,7 @@ impl<'a> App<'a> {
         let records = self.write(command, task, events, check)?;
         Ok(Output {
             events: records,
+            next: None,
             result: ResultData::Applied,
         })
     }

@@ -385,6 +385,7 @@ fn validate_closed_output(
     validate_closed(delivery, observed).map_err(|reason| ctx.reject(reason))?;
     Ok(Output {
         events: Vec::new(),
+        next: None,
         result: ResultData::Valid,
     })
 }

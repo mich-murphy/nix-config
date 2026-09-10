@@ -34,6 +34,10 @@ pub struct Task {
     /// criterion the task had none for yet (for example one a narrowing
     /// introduced); it may never change one already recorded.
     pub baselines: BTreeMap<CriterionId, Digest>,
+    /// Set once by `Judged`. Absent until the judge has run; `default` so
+    /// projections written before judging existed still load.
+    #[serde(default)]
+    pub judgment: Option<crate::judge::Judgment>,
 }
 
 impl Task {

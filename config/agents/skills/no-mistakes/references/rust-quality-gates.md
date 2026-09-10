@@ -10,8 +10,11 @@ Use this contract when changing the bundled controller.
 
 `controller/env.sh` places the pinned Rust toolchain on `PATH` and moves Cargo
 output under `${XDG_CACHE_HOME:-$HOME/.cache}/no-mistakes`. Always source it for
-manual Cargo commands. The full gate performs no model calls or live Jira or
-GitHub mutations.
+manual Cargo commands. `quality.sh` also exports `NO_MISTAKES_CONTROLLER`, the
+directory the gate checks; the shared Cargo cache can serve an xtask binary
+built from another checkout, and without that variable it would gate that
+checkout instead. The full gate performs no model calls or live Jira or GitHub
+mutations.
 
 The gate runs:
 

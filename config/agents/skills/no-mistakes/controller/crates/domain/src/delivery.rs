@@ -28,6 +28,11 @@ pub struct Delivery {
     pub work: Option<PlannedWork>,
     pub proof: Proof,
     pub review: Option<Review>,
+    /// The last settled review this delivery's snapshot (or new proof)
+    /// superseded, kept so a repair review can concentrate on what
+    /// changed since it. `default` so older projections still load.
+    #[serde(default)]
+    pub prior_review: Option<Review>,
     /// A human decision for the exact snapshot, in human-review mode.
     /// Cleared whenever this delivery's snapshot changes, so a stale
     /// receipt can never gate a merge it was never taken against.
@@ -221,6 +226,7 @@ mod tests {
             review: None,
             human_review: None,
             check_deadlines: BTreeMap::new(),
+            prior_review: None,
             outcome: Outcome::Open,
             launches: Vec::new(),
             operations: Vec::new(),

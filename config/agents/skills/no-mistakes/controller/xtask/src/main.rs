@@ -18,11 +18,20 @@ struct Policy {
     analyzer: analyzer::Settings,
 }
 
+/// The controller directory under test. `quality.sh` names it in
+/// `NO_MISTAKES_CONTROLLER`, because a cached xtask binary built from
+/// another checkout of this workspace would otherwise carry that
+/// checkout's `CARGO_MANIFEST_DIR` and silently gate the wrong tree.
 fn controller() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("workspace parent")
-        .to_owned()
+    std::env::var_os("NO_MISTAKES_CONTROLLER").map_or_else(
+        || {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .parent()
+                .expect("workspace parent")
+                .to_owned()
+        },
+        PathBuf::from,
+    )
 }
 
 fn cache() -> Result<PathBuf> {

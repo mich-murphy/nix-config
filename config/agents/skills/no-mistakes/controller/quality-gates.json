@@ -10,7 +10,7 @@
     },
     {
       "path": "crates/app/src/lib.rs",
-      "function": "execute",
+      "function": "dispatch",
       "reason": "Single exhaustive command dispatch required by the CLI contract."
     },
     {

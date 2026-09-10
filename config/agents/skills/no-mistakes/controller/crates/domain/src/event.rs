@@ -9,6 +9,7 @@ use crate::{
         AuthorityId, CriterionId, DeliveryId, FindingId, IssueKey, JiraStatus, LaunchId,
         OperationId, Sha, SlotId, TaskId, TransitionId, UseId,
     },
+    judge::Judgment,
     ports::{ProcessIdentity, Tokens},
     review::Disposition,
     risk::{Profile, Tier},
@@ -191,6 +192,13 @@ pub enum Event {
     },
     Completed {
         task: TaskId,
+    },
+    /// The judge's verdict on a task, recorded after its launch settles.
+    /// Never read by `next`: a judgment describes the run, it does not
+    /// steer it.
+    Judged {
+        task: TaskId,
+        judgment: Box<Judgment>,
     },
     StatusIntended {
         task: TaskId,

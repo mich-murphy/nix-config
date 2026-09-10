@@ -24,9 +24,11 @@ impl TraceState for Store {
     fn get(&self, key: &str) -> Result<Option<String>, PortError> {
         self.trace_table()?;
         self.connection
-            .query_row("SELECT value FROM trace WHERE key = ?1", params![key], |row| {
-                row.get(0)
-            })
+            .query_row(
+                "SELECT value FROM trace WHERE key = ?1",
+                params![key],
+                |row| row.get(0),
+            )
             .optional()
             .map_err(port)
     }

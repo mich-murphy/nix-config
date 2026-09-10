@@ -19,6 +19,11 @@ impl Process for Fake {
             Recovery::Stopped
         })
     }
+
+    fn spawn(&self, request: &ProcessRequest, _log: &std::path::Path) -> Result<u32, PortError> {
+        self.spawned.borrow_mut().push(request.clone());
+        Ok(4242)
+    }
 }
 
 struct FakeProcess;

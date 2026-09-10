@@ -52,7 +52,7 @@ pub fn intend(current: &Sync, intent: StatusIntent) -> Result<Sync, SyncError> {
     if matches!(current, Sync::Unknown(_)) {
         return Err(SyncError::UnknownOperation);
     }
-    if intent.attempts > 2 {
+    if intent.attempts > 3 {
         return Err(SyncError::RetryExhausted);
     }
     Ok(Sync::Unknown(intent))
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn status_retry_is_bounded() -> Result<(), crate::ids::InvalidId> {
         let mut retry = intent()?;
-        retry.attempts = 3;
+        retry.attempts = 4;
         assert_eq!(
             intend(&Sync::Pending, retry),
             Err(SyncError::RetryExhausted)

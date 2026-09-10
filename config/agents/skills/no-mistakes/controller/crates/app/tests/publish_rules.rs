@@ -284,7 +284,9 @@ fn prepared_external_merge() -> Result<(tempfile::TempDir, Fake), Box<dyn std::e
         on_main: std::cell::Cell::new(true),
         vcs_calls: std::cell::RefCell::new(Vec::new()),
         last_session: std::cell::RefCell::new(None),
+        last_prompt: std::cell::RefCell::new(None),
         create_fails_once: std::cell::Cell::new(false),
+        spawned: std::cell::RefCell::new(Vec::new()),
     })?;
     let mut app = App::new(Store::open(directory.path())?, services(&fake));
     prepare(&mut app)?;

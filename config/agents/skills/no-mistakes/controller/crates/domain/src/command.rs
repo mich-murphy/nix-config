@@ -145,6 +145,9 @@ pub enum Command {
     Complete {
         task: TaskId,
     },
+    Judge {
+        task: TaskId,
+    },
     SetStatus {
         task: TaskId,
         issue: IssueKey,
@@ -165,7 +168,10 @@ pub enum Command {
     OpenDelivery {
         task: TaskId,
         kind: DeliveryKind,
-        receipt: AuthorityReceipt,
+        /// `None` opens a task's first delivery as verification of a
+        /// commit already on main, which needs no authority because it
+        /// writes no code; every other delivery carries a receipt.
+        receipt: Option<AuthorityReceipt>,
         jira: JiraRead,
     },
     NarrowAcceptance {
@@ -192,6 +198,12 @@ pub struct RunConfig {
     pub risk: RiskConfig,
     #[serde(default)]
     pub caps: BTreeMap<Tier, crate::budget::Limits>,
+    /// Code deliveries per task that may reopen after a needs-human hold
+    /// without a receipt: the run config is the user's standing
+    /// authorization for that many follow-ups. Verification deliveries
+    /// never count, since they write no code.
+    #[serde(default)]
+    pub follow_up_deliveries: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -266,6 +278,9 @@ pub enum AgentRole {
     Implementer,
     Reviewer,
     Escalation,
+    /// The post-hoc grader: launched by `judge`, never by `run-agent`, and
+    /// exempt from budgets, pairs and the active-launch rule.
+    Judge,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]

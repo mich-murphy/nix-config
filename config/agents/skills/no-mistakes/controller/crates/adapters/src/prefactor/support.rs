@@ -8,6 +8,7 @@ use domain::{
 };
 use serde_json::Value;
 use std::{
+    os::unix::fs::OpenOptionsExt as _,
     path::PathBuf,
     sync::atomic::{AtomicU64, Ordering},
 };
@@ -26,12 +27,27 @@ pub(super) struct PayloadFile(PathBuf);
 
 impl PayloadFile {
     pub(super) fn new(value: &Value) -> Result<Self, PortError> {
+        Self::text(&value.to_string())
+    }
+
+    /// Any text handed over as `@file`: the JSON payloads and, for HTTP,
+    /// the header lines carrying the token. Owner-only permissions, since
+    /// the token passes through here.
+    pub(super) fn text(contents: &str) -> Result<Self, PortError> {
+        use std::io::Write as _;
         let path = std::env::temp_dir().join(format!(
             "no-mistakes-trace-{}-{}.json",
             std::process::id(),
             next_number()
         ));
-        std::fs::write(&path, value.to_string()).map_err(|error| PortError(error.to_string()))?;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&path)
+            .map_err(|error| PortError(error.to_string()))?;
+        file.write_all(contents.as_bytes())
+            .map_err(|error| PortError(error.to_string()))?;
         Ok(Self(path))
     }
 
@@ -64,7 +80,7 @@ pub(super) fn save_pending(state: &mut dyn TraceState, pending: &[EventRecord]) 
 }
 
 /// Formats Unix seconds as UTC RFC 3339 (civil-from-days, no dependency).
-pub(crate) fn rfc3339(at: Instant) -> String {
+pub fn rfc3339(at: Instant) -> String {
     let days = at / 86_400;
     let seconds = at % 86_400;
     let z = days + 719_468;

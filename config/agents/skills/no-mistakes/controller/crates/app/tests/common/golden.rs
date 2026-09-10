@@ -46,9 +46,9 @@ pub fn arrange_passing_review(fake: &Fake) -> Result<(), Box<dyn std::error::Err
 }
 
 /// Discovers and claims GAIN-2, syncs it to Jira `progress`, briefs, binds
-/// and plans a single `AC1` criterion, then runs one implementer turn,
-/// checkpoints it and snapshots. Every golden-path test that needs a
-/// planned, snapshotted delivery starts from here.
+/// and plans a single `AC1` criterion, then runs one implementer turn and
+/// checkpoints it (which snapshots it). Every golden-path test that needs
+/// a planned, snapshotted delivery starts from here.
 pub fn plan_and_implement(
     app: &mut App<'_>,
     directory: &std::path::Path,
@@ -75,7 +75,6 @@ pub fn plan_and_implement(
         },
         false,
     )?;
-    app.execute(Command::Snapshot { task: task.clone() }, false)?;
     Ok(task)
 }
 

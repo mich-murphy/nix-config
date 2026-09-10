@@ -218,6 +218,7 @@ impl App<'_> {
         )?);
         Ok(Output {
             events: records,
+            next: None,
             result: ResultData::Applied,
         })
     }

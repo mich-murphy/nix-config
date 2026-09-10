@@ -7,31 +7,47 @@
 //! in `TraceState` and are replayed, in order, on the next commit. Nothing
 //! here can fail or block a command: the CLI reads `PREFACTOR_API_TOKEN`
 //! itself, and tracing is on only when that token, `PREFACTOR_AGENT_ID`, and
-//! `PREFACTOR_AGENT_IDENTIFIER` are all set.
+//! `PREFACTOR_AGENT_IDENTIFIER` are all set. Registration and the quality
+//! payload use the HTTP API directly (`http`), because the CLI has no way to
+//! declare or record quality schemas.
 
 use crate::{Process, ProcessRequest, success};
 use domain::{
     Instant,
     event::EventRecord,
+    judge::QualityPayload,
     ports::{Clock, PortError, TraceState, Tracer},
 };
+use http::Http;
 use serde_json::{Value, json};
 use spans::Pairing;
-use std::{cell::Cell, collections::BTreeMap, path::PathBuf};
+use std::{collections::BTreeMap, path::PathBuf};
+pub use support::rfc3339;
+use support::{PayloadFile, load_pending, next_number, save_pending};
 
+mod http;
+mod quality;
 mod schema;
 mod spans;
+mod support;
 #[cfg(test)]
 mod tests;
 
 const INSTANCE: &str = "instance";
-const PENDING: &str = "pending";
+/// The most recently closed instance: a judge that lands after
+/// `usage-report` still records its quality payload there.
+const LAST_INSTANCE: &str = "last-instance";
 const AGENT_NAME: &str = "no-mistakes";
+const DEFAULT_API_URL: &str = "https://app.prefactorai.com";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tracing {
     pub agent_id: String,
     pub agent_identifier: String,
+    /// `PREFACTOR_API_URL`, for the calls the CLI cannot make.
+    pub api_url: String,
+    /// `PREFACTOR_API_TOKEN`; the CLI reads it from the environment itself.
+    pub token: String,
     /// `PREFACTOR_CAPTURE_INPUTS`: attach the launch prompt text.
     pub capture_inputs: bool,
     /// `PREFACTOR_CAPTURE_OUTPUTS`: keep the launch output text.
@@ -45,10 +61,11 @@ impl Tracing {
 
     pub fn from_lookup(lookup: impl Fn(&str) -> Option<String>) -> Option<Self> {
         let present = |key: &str| lookup(key).filter(|value| !value.trim().is_empty());
-        present("PREFACTOR_API_TOKEN")?;
         Some(Self {
+            token: present("PREFACTOR_API_TOKEN")?,
             agent_id: present("PREFACTOR_AGENT_ID")?,
             agent_identifier: present("PREFACTOR_AGENT_IDENTIFIER")?,
+            api_url: present("PREFACTOR_API_URL").unwrap_or_else(|| DEFAULT_API_URL.into()),
             capture_inputs: enabled(lookup("PREFACTOR_CAPTURE_INPUTS")),
             capture_outputs: enabled(lookup("PREFACTOR_CAPTURE_OUTPUTS")),
         })
@@ -71,17 +88,20 @@ pub struct Prefactor<P, C> {
     /// The event enum's JSON schema, from which each span type's schema is
     /// derived when the instance is registered.
     event_schema: Option<String>,
-    files: Cell<u64>,
 }
 
 impl<P, C> Prefactor<P, C> {
-    pub fn new(process: P, clock: C, tracing: Option<Tracing>, event_schema: Option<String>) -> Self {
+    pub fn new(
+        process: P,
+        clock: C,
+        tracing: Option<Tracing>,
+        event_schema: Option<String>,
+    ) -> Self {
         Self {
             process,
             clock,
             tracing,
             event_schema,
-            files: Cell::new(0),
         }
     }
 }
@@ -94,12 +114,8 @@ impl<P: Process, C: Clock> Tracer for Prefactor<P, C> {
         let mut pending = load_pending(state);
         pending.extend(records.iter().cloned());
         if let Some(instance) = self.instance(state, tracing, &pending) {
-            while let Some(record) = pending.first() {
-                if self.send(state, &instance, tracing, record).is_err() {
-                    break;
-                }
-                pending.remove(0);
-            }
+            // A failure leaves the rest pending for the next commit.
+            let _ = self.drain(state, &instance, tracing, &mut pending);
         }
         save_pending(state, &pending);
     }
@@ -118,15 +134,36 @@ impl<P: Process, C: Clock> Tracer for Prefactor<P, C> {
         let finished = self.cli(vec![
             "agent_instances".into(),
             "finish".into(),
-            instance,
+            instance.clone(),
             "--status".into(),
             "complete".into(),
             "--timestamp".into(),
             rfc3339(self.clock.now()),
         ]);
         if finished.is_ok() {
+            let _ = state.set(LAST_INSTANCE, &instance);
             let _ = state.remove(INSTANCE);
         }
+    }
+
+    fn quality(&self, state: &mut dyn TraceState, payload: &QualityPayload) {
+        let Some(tracing) = &self.tracing else {
+            return;
+        };
+        let instance = match state.get(INSTANCE) {
+            Ok(Some(id)) => id,
+            _ => match state.get(LAST_INSTANCE) {
+                Ok(Some(id)) => id,
+                _ => return,
+            },
+        };
+        let Ok(body) = serde_json::to_value(payload) else {
+            return;
+        };
+        let _ = Http::new(&self.process, &tracing.api_url, &tracing.token).post(
+            &format!("/api/v1/agent_instance/{instance}/record_quality"),
+            &json!({ "name": quality::NAME, "payload": body }),
+        );
     }
 }
 
@@ -145,24 +182,20 @@ impl<P: Process, C: Clock> Prefactor<P, C> {
         serde_json::from_str(&output).map_err(|error| PortError(error.to_string()))
     }
 
-    /// Runs `call` with an `@file` argument holding `value`, then removes
-    /// the file. Payloads go through a file because a single argv entry
-    /// has a hard size limit.
-    fn with_file<T>(
+    /// Sends pending records in order; the first failure stops the drain
+    /// with that record and everything after it still pending.
+    fn drain(
         &self,
-        value: &Value,
-        call: impl FnOnce(String) -> Result<T, PortError>,
-    ) -> Result<T, PortError> {
-        let number = self.files.get();
-        self.files.set(number.wrapping_add(1));
-        let path = std::env::temp_dir().join(format!(
-            "no-mistakes-trace-{}-{number}.json",
-            std::process::id()
-        ));
-        std::fs::write(&path, value.to_string()).map_err(|error| PortError(error.to_string()))?;
-        let result = call(format!("@{}", path.display()));
-        let _ = std::fs::remove_file(&path);
-        result
+        state: &mut dyn TraceState,
+        instance: &str,
+        tracing: &Tracing,
+        pending: &mut Vec<EventRecord>,
+    ) -> Result<(), PortError> {
+        while let Some(record) = pending.first() {
+            self.send(state, instance, tracing, record)?;
+            pending.remove(0);
+        }
+        Ok(())
     }
 
     fn instance(
@@ -201,28 +234,26 @@ impl<P: Process, C: Clock> Prefactor<P, C> {
         })
     }
 
+    /// Registration goes over HTTP rather than the CLI because only the
+    /// endpoint accepts `quality_schemas`, which the quality payload needs.
     fn register_with(&self, tracing: &Tracing, schemas: &schema::Schemas) -> Option<String> {
-        let registered = self
-            .with_file(&schemas.params, |params| {
-                self.with_file(&schemas.results, |results| {
-                    self.cli(vec![
-                        "agent_instances".into(),
-                        "register".into(),
-                        "--agent_id".into(),
-                        tracing.agent_id.clone(),
-                        "--agent_version_name".into(),
-                        AGENT_NAME.into(),
-                        "--agent_version_external_identifier".into(),
-                        tracing.agent_identifier.clone(),
-                        "--agent_schema_version_external_identifier".into(),
-                        tracing.agent_identifier.clone(),
-                        "--span_schemas".into(),
-                        params,
-                        "--span_result_schemas".into(),
-                        results,
-                    ])
-                })
-            })
+        let registered = Http::new(&self.process, &tracing.api_url, &tracing.token)
+            .post(
+                "/api/v1/agent_instance/register",
+                &json!({
+                    "agent_id": tracing.agent_id,
+                    "agent_version": {
+                        "name": AGENT_NAME,
+                        "external_identifier": tracing.agent_identifier,
+                    },
+                    "agent_schema_version": {
+                        "external_identifier": tracing.agent_identifier,
+                        "span_schemas": schemas.params,
+                        "span_result_schemas": schemas.results,
+                        "quality_schemas": quality::schemas(),
+                    },
+                }),
+            )
             .ok()?;
         Some(registered.pointer("/details/id")?.as_str()?.to_owned())
     }
@@ -240,17 +271,33 @@ impl<P: Process, C: Clock> Prefactor<P, C> {
                 let id = self.create_span(instance, &span.kind, &span.payload, None, record.at)?;
                 state.set(&key, &id)
             }
-            Pairing::Close { key, status, result } => match state.get(&key)? {
+            Pairing::Close {
+                key,
+                status,
+                result,
+            } => match state.get(&key)? {
                 Some(id) => {
                     self.finish_span(&id, status, &result, record.at)?;
                     state.remove(&key)
                 }
                 None => self
-                    .create_span(instance, &span.kind, &span.payload, Some(record.at), record.at)
+                    .create_span(
+                        instance,
+                        &span.kind,
+                        &span.payload,
+                        Some(record.at),
+                        record.at,
+                    )
                     .map(|_| ()),
             },
             Pairing::None => self
-                .create_span(instance, &span.kind, &span.payload, Some(record.at), record.at)
+                .create_span(
+                    instance,
+                    &span.kind,
+                    &span.payload,
+                    Some(record.at),
+                    record.at,
+                )
                 .map(|_| ()),
         }
     }
@@ -261,16 +308,20 @@ impl<P: Process, C: Clock> Prefactor<P, C> {
     fn bulk(&self, item: Value) -> Result<Value, PortError> {
         let key = format!(
             "nm-{}-{}",
-            self.files.get(),
+            next_number(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_or(0, |elapsed| elapsed.as_nanos())
         );
         let mut item = item;
         item["idempotency_key"] = json!(key);
-        let response = self.with_file(&json!([item]), |file| {
-            self.cli(vec!["bulk".into(), "execute".into(), "--items".into(), file])
-        })?;
+        let items = PayloadFile::new(&json!([item]))?;
+        let response = self.cli(vec![
+            "bulk".into(),
+            "execute".into(),
+            "--items".into(),
+            items.arg(),
+        ])?;
         let output = response
             .pointer(&format!("/outputs/{key}"))
             .ok_or_else(|| PortError("bulk response omitted the item".into()))?;
@@ -312,6 +363,8 @@ impl<P: Process, C: Clock> Prefactor<P, C> {
             .ok_or_else(|| PortError("span create returned no id".into()))
     }
 
+    /// Unlike create, finish takes its fields beside the span id: a
+    /// `details` wrapper is accepted but stores no result.
     fn finish_span(
         &self,
         span: &str,
@@ -324,51 +377,11 @@ impl<P: Process, C: Clock> Prefactor<P, C> {
             "path": format!("/api/v1/agent_spans/{span}/finish"),
             "_type": "agent_spans/finish",
             "agent_span_id": span,
-            "details": {
-                "status": status,
-                "sensitive_encoding": true,
-                "timestamp": rfc3339(at),
-                "result_payload": result,
-            },
+            "status": status,
+            "sensitive_encoding": true,
+            "timestamp": rfc3339(at),
+            "result_payload": result,
         }))
         .map(|_| ())
     }
-}
-
-fn load_pending(state: &dyn TraceState) -> Vec<EventRecord> {
-    state
-        .get(PENDING)
-        .ok()
-        .flatten()
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_default()
-}
-
-fn save_pending(state: &mut dyn TraceState, pending: &[EventRecord]) {
-    if pending.is_empty() {
-        let _ = state.remove(PENDING);
-    } else if let Ok(text) = serde_json::to_string(pending) {
-        let _ = state.set(PENDING, &text);
-    }
-}
-
-/// Formats Unix seconds as UTC RFC 3339 (civil-from-days, no dependency).
-pub(crate) fn rfc3339(at: Instant) -> String {
-    let days = at / 86_400;
-    let seconds = at % 86_400;
-    let z = days + 719_468;
-    let era = z / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = yoe + era * 400 + u64::from(month <= 2);
-    format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
-        seconds / 3_600,
-        seconds % 3_600 / 60,
-        seconds % 60
-    )
 }

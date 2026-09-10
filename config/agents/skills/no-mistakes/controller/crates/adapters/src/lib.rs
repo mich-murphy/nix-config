@@ -1,3 +1,4 @@
+pub mod claude;
 pub mod clock;
 pub mod codex;
 pub mod git;

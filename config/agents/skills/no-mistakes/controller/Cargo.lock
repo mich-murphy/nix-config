@@ -8,6 +8,7 @@ version = "0.2.0"
 dependencies = [
  "domain",
  "rusqlite",
+ "schemars",
  "serde",
  "serde_json",
  "sha2",

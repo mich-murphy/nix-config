@@ -12,13 +12,15 @@ use domain::{
 /// for a valid review, `ReviewSettled`) is written afterwards.
 pub(super) fn invoke(
     app: &mut App<'_>,
+    command: &str,
     task: &domain::ids::TaskId,
     request: &LaunchRequest,
     events: Vec<Event>,
+    schema: OutputSchema,
 ) -> Result<(Vec<EventRecord>, LaunchResult), AgentError> {
     if let Some(path) = &request.output_schema {
-        write_review_schema(path)
-            .map_err(|message| app.error("run-agent", Some(task), Rejection::Internal(message)))?;
+        write_schema(path, schema)
+            .map_err(|message| app.error(command, Some(task), Rejection::Internal(message)))?;
     }
     invoke_harness(
         &mut app.store,
@@ -28,15 +30,26 @@ pub(super) fn invoke(
         request,
         events,
     )
-    .map_err(|error| app.error("run-agent", Some(task), Rejection::External(error.0)))
+    .map_err(|error| app.error(command, Some(task), Rejection::External(error.0)))
 }
 
-/// Writes the reviewer's output schema for a `Native` harness
+/// Which structured output a launch must produce: the reviewer's report
+/// or the judge's.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum OutputSchema {
+    Review,
+    Judge,
+}
+
+/// Writes the launch's output schema for a `Native` harness
 /// (`Capabilities::structured_output`), so `--output-schema` names a real
 /// file: `schemars::schema_for!` is called here, in `app`, never in
 /// `domain`.
-fn write_review_schema(path: &std::path::Path) -> Result<(), String> {
-    let schema = schemars::schema_for!(domain::review::ReviewReport);
+fn write_schema(path: &std::path::Path, schema: OutputSchema) -> Result<(), String> {
+    let schema = match schema {
+        OutputSchema::Review => schemars::schema_for!(domain::review::ReviewReport),
+        OutputSchema::Judge => schemars::schema_for!(domain::judge::JudgeReport),
+    };
     let encoded = serde_json::to_string_pretty(&schema).map_err(|error| error.to_string())?;
     std::fs::write(path, encoded).map_err(|error| error.to_string())
 }

@@ -155,4 +155,8 @@ pub trait TraceState {
 pub trait Tracer {
     fn record(&self, state: &mut dyn TraceState, records: &[crate::event::EventRecord]);
     fn finish(&self, state: &mut dyn TraceState);
+    /// Records the run's quality payload on its trace instance. Best
+    /// effort like the rest; sent whole each time so the latest judgment
+    /// replaces the previous payload.
+    fn quality(&self, state: &mut dyn TraceState, payload: &crate::judge::QualityPayload);
 }

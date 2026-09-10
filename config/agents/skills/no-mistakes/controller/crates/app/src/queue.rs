@@ -15,6 +15,7 @@ impl App<'_> {
         let verified = self.store.verify().is_ok();
         Ok(Output {
             events: Vec::new(),
+            next: None,
             result: ResultData::State {
                 state: Box::new(state),
                 verified,
@@ -27,17 +28,24 @@ impl App<'_> {
         let next = self.state("next")?.next(now).map(crate::schema::annotate);
         Ok(Output {
             events: Vec::new(),
+            next: None,
             result: ResultData::Next { next },
         })
     }
 
-    /// The handoff step: it also closes the run's trace instance, so a
-    /// later command opens a fresh one.
+    /// The handoff step: it starts a judge for every worked task still
+    /// without a verdict, then closes the run's trace instance, so a later
+    /// command opens a fresh one. With judges still out, the last of them
+    /// closes the instance instead, so their spans and the quality payload
+    /// land on this run.
     pub(super) fn usage(&mut self) -> Result<Output, AgentError> {
         let state = self.state("usage-report")?;
-        self.services.tracer.finish(&mut self.store);
+        if self.sweep_judges(&state) == 0 {
+            self.services.tracer.finish(&mut self.store);
+        }
         Ok(Output {
             events: Vec::new(),
+            next: None,
             result: ResultData::Usage {
                 usage: UsageReport::from_state(&state),
             },
@@ -66,6 +74,7 @@ impl App<'_> {
         let verdict = review::verdict(&report.findings, &report.evidence_gaps, value.tier.current);
         Ok(Output {
             events: Vec::new(),
+            next: None,
             result: ResultData::Verdict { verdict },
         })
     }

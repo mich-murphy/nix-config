@@ -95,10 +95,6 @@ fn code_delivery_script(directory: &std::path::Path) -> Vec<Step> {
             }),
         ),
         step(
-            |action| matches!(action, NextAction::Snapshot { .. }),
-            execute(Command::Snapshot { task: task.clone() }),
-        ),
-        step(
             |action| matches!(action, NextAction::RecordProof { .. }),
             record_proof("AC1", ac1_baseline, directory.join("proof.txt")),
         ),

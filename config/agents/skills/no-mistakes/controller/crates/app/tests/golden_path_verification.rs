@@ -35,7 +35,7 @@ fn open_verification_delivery(
         execute(Command::OpenDelivery {
             task: task.clone(),
             kind: DeliveryKind::Verification { of: commit.clone() },
-            receipt: AuthorityReceipt {
+            receipt: Some(AuthorityReceipt {
                 source: "current user".into(),
                 artifact: receipt,
                 digest: receipt_digest,
@@ -45,7 +45,7 @@ fn open_verification_delivery(
                     criteria: vec![criterion_id("AC1")],
                     paths: None,
                 },
-            },
+            }),
             jira: JiraRead {
                 member: true,
                 resolved: false,
@@ -192,7 +192,7 @@ fn grant_then_repurpose_pair(
         Command::OpenDelivery {
             task: task.clone(),
             kind: DeliveryKind::Verification { of: commit.clone() },
-            receipt: AuthorityReceipt {
+            receipt: Some(AuthorityReceipt {
                 source: "current user".into(),
                 artifact,
                 digest,
@@ -202,7 +202,7 @@ fn grant_then_repurpose_pair(
                     criteria: vec![criterion_id("AC1")],
                     paths: None,
                 },
-            },
+            }),
             jira: JiraRead {
                 member: true,
                 resolved: false,

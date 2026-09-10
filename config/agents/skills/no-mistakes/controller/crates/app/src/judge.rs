@@ -163,6 +163,7 @@ impl App<'_> {
                 self.publish_quality();
                 Ok(Output {
                     events: records,
+                    next: None,
                     result: ResultData::Launch {
                         launch,
                         output: result.output,

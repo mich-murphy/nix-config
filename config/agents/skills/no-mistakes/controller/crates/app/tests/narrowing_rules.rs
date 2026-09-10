@@ -18,7 +18,7 @@ fn open_delivery_command(task: &TaskId, receipt: AuthorityReceipt, jira: JiraRea
     Command::OpenDelivery {
         task: task.clone(),
         kind: DeliveryKind::Code { pr: None },
-        receipt,
+        receipt: Some(receipt),
         jira,
     }
 }
