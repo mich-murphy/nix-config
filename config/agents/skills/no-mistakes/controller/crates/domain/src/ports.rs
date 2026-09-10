@@ -139,3 +139,20 @@ pub enum MergeMethod {
     Squash,
     Rebase,
 }
+
+/// Durable bookkeeping for the trace mirror: the external instance, spans
+/// still open, and records not yet sent. It lives beside the event log,
+/// never inside it; nothing here is a domain fact or enters the fold.
+pub trait TraceState {
+    fn get(&self, key: &str) -> Result<Option<String>, PortError>;
+    fn set(&mut self, key: &str, value: &str) -> Result<(), PortError>;
+    fn remove(&mut self, key: &str) -> Result<(), PortError>;
+}
+
+/// Mirrors committed events to an external trace. Both methods are best
+/// effort: a failure is kept in `TraceState` for a later retry and never
+/// reaches the caller, so tracing cannot fail or block a command.
+pub trait Tracer {
+    fn record(&self, state: &mut dyn TraceState, records: &[crate::event::EventRecord]);
+    fn finish(&self, state: &mut dyn TraceState);
+}

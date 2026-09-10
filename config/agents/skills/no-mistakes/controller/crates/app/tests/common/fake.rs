@@ -3,7 +3,7 @@ use domain::{
     ids::TaskId,
     ports::{
         Capabilities, Clock, GitHub, Harness, Isolation, LaunchRequest, LaunchResult, MergeMethod,
-        PortError, StructuredOutput, Vcs,
+        PortError, StructuredOutput, TraceState, Tracer, Vcs,
     },
     risk::HarnessKind,
 };
@@ -57,6 +57,12 @@ impl Clock for Fake {
     fn sleep(&self, seconds: u64) {
         self.clock.set(self.clock.get().saturating_add(seconds));
     }
+}
+
+/// Tests run untraced; the tap itself is covered in `tracing.rs`.
+impl Tracer for Fake {
+    fn record(&self, _: &mut dyn TraceState, _: &[domain::event::EventRecord]) {}
+    fn finish(&self, _: &mut dyn TraceState) {}
 }
 
 impl Vcs for Fake {

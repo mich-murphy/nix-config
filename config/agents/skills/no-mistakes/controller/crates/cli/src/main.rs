@@ -1,5 +1,11 @@
 use adapters::{
-    SystemClock, SystemProcess, codex::Codex, git::Git, github::Gh, pi::Pi, sqlite::Store,
+    SystemClock, SystemProcess,
+    codex::Codex,
+    git::Git,
+    github::Gh,
+    pi::Pi,
+    prefactor::{Prefactor, Tracing},
+    sqlite::Store,
 };
 use app::{AgentError, App, Rejection, Services, initialize};
 use domain::{
@@ -62,12 +68,14 @@ fn run() -> Result<(app::Output, bool), AgentError> {
     let git = Git::new(process, config.repo.clone());
     let github = Gh::new(process, config.repo.clone(), config.github_repo.clone());
     let harness = harness(profile.harness.kind, process);
+    let tracer = tracer(process);
     let services = Services {
         vcs: &git,
         github: &github,
         harness: harness.as_ref(),
         process: &process,
         clock: &clock,
+        tracer: &tracer,
     };
     let command = command(&args)?;
     let mut app = App::new(store, services);
@@ -85,6 +93,7 @@ fn init(args: &Args) -> Result<app::Output, AgentError> {
     let git = Git::new(process, config.repo.clone());
     let github = Gh::new(process, config.repo.clone(), config.github_repo.clone());
     let harness = harness(profile.harness.kind, process);
+    let tracer = tracer(process);
     initialize(
         &args.run,
         config,
@@ -95,6 +104,7 @@ fn init(args: &Args) -> Result<app::Output, AgentError> {
             harness: harness.as_ref(),
             process: &process,
             clock: &clock,
+            tracer: &tracer,
         },
     )
 }
@@ -104,6 +114,14 @@ fn harness(kind: HarnessKind, process: SystemProcess) -> Box<dyn Harness> {
         HarnessKind::Codex => Box::new(Codex::new(process)),
         HarnessKind::Pi => Box::new(Pi::new(process)),
     }
+}
+
+/// The trace mirror: every committed event, sent through the `prefactor`
+/// CLI when the environment names an agent. The event enum's schema goes
+/// with it so each span type is declared.
+fn tracer(process: SystemProcess) -> Prefactor<SystemProcess, SystemClock> {
+    let schema = serde_json::to_string(&schemars::schema_for!(domain::event::Event)).ok();
+    Prefactor::new(process, SystemClock, Tracing::from_env(), schema)
 }
 
 fn internal(command: &str, message: String) -> AgentError {

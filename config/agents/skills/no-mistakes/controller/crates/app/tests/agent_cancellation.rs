@@ -69,6 +69,7 @@ fn canceling_app<'a>(
             harness: canceling,
             process: fake,
             clock: fake,
+            tracer: fake,
         },
     ))
 }

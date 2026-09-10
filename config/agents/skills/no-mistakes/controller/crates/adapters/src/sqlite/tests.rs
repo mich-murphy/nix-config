@@ -47,3 +47,23 @@ fn status_matches_fold() -> Result<(), StoreError> {
     assert!(store.state()?.tasks.is_empty());
     Ok(())
 }
+
+#[test]
+fn trace_state_survives_reopen_and_is_not_an_event() -> Result<(), Box<dyn std::error::Error>> {
+    use domain::ports::TraceState;
+    let directory = tempfile::tempdir()?;
+    {
+        let mut store = Store::create(directory.path())?;
+        store.commit(Actor::Coordinator, 1, &[launch(1)])?;
+        assert_eq!(store.get("instance")?, None);
+        store.set("instance", "i1")?;
+        store.set("instance", "i2")?;
+    }
+    let mut store = Store::open(directory.path())?;
+    assert_eq!(store.get("instance")?, Some("i2".into()));
+    assert_eq!(store.events()?.len(), 1);
+    store.verify()?;
+    store.remove("instance")?;
+    assert_eq!(store.get("instance")?, None);
+    Ok(())
+}

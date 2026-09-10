@@ -1,0 +1,27 @@
+[harness]
+kind = "claude"
+
+[models]
+"anthropic/claude-haiku-4-5" = { rank = 1 }
+"anthropic/claude-sonnet-5" = { rank = 2, fallback_for = ["anthropic/claude-haiku-4-5"] }
+"anthropic/claude-opus-5" = { rank = 3 }
+"anthropic/claude-fable-5-1" = { rank = 4 }
+
+[coordinator]
+model = "anthropic/claude-fable-5-1"
+effort = "medium"
+
+[tier.trivial]
+implementer = { model = "anthropic/claude-haiku-4-5", effort = "medium" }
+reviewer = { model = "anthropic/claude-sonnet-5", effort = "medium" }
+
+[tier.lite]
+implementer = { model = "anthropic/claude-sonnet-5", effort = "medium" }
+reviewer = { model = "anthropic/claude-sonnet-5", effort = "medium" }
+
+[tier.full]
+implementer = { model = "anthropic/claude-sonnet-5", effort = "high" }
+reviewer = { model = "anthropic/claude-opus-5", effort = "high" }
+
+[escalation]
+reviewer = { model = "anthropic/claude-fable-5-1", effort = "high" }

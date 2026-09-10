@@ -31,8 +31,11 @@ impl App<'_> {
         })
     }
 
-    pub(super) fn usage(&self) -> Result<Output, AgentError> {
+    /// The handoff step: it also closes the run's trace instance, so a
+    /// later command opens a fresh one.
+    pub(super) fn usage(&mut self) -> Result<Output, AgentError> {
         let state = self.state("usage-report")?;
+        self.services.tracer.finish(&mut self.store);
         Ok(Output {
             events: Vec::new(),
             result: ResultData::Usage {

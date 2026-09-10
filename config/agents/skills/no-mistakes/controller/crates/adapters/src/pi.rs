@@ -70,7 +70,7 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         cwd: launch.cwd.clone(),
         stdin: None,
         env: BTreeMap::new(),
-        remove_env: Vec::new(),
+        remove_env: vec!["PREFACTOR_API_TOKEN".into()],
         timeout_seconds: 3600,
     }
 }

@@ -83,7 +83,11 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         cwd: launch.cwd.clone(),
         stdin: Some(launch.prompt.clone()),
         env: BTreeMap::new(),
-        remove_env: vec!["OPENAI_API_KEY".into(), "CODEX_API_KEY".into()],
+        remove_env: vec![
+            "OPENAI_API_KEY".into(),
+            "CODEX_API_KEY".into(),
+            "PREFACTOR_API_TOKEN".into(),
+        ],
         timeout_seconds: 3600,
     }
 }

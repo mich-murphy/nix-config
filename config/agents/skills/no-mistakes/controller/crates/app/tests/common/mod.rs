@@ -33,6 +33,7 @@ pub fn services_with_process<'a>(fake: &'a Fake, process: &'a dyn Process) -> Se
         harness: fake,
         process,
         clock: fake,
+        tracer: fake,
     }
 }
 
@@ -43,6 +44,7 @@ pub fn services(fake: &Fake) -> Services<'_> {
         harness: fake,
         process: fake,
         clock: fake,
+        tracer: fake,
     }
 }
 

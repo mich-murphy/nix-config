@@ -372,5 +372,7 @@ fn error(value: impl std::fmt::Display) -> StoreError {
     StoreError(value.to_string())
 }
 
+mod trace;
+
 #[cfg(test)]
 mod tests;

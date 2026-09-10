@@ -37,6 +37,7 @@ pub struct Services<'a> {
     pub harness: &'a dyn Harness,
     pub process: &'a dyn Process,
     pub clock: &'a dyn Clock,
+    pub tracer: &'a dyn domain::ports::Tracer,
 }
 
 /// `initialize` runs before any `App` exists, so it cannot use `App::ctx`;
@@ -73,6 +74,7 @@ pub fn initialize(
     let events = store
         .commit(Actor::Coordinator, services.clock.now(), &[event])
         .map_err(|error| init_error(Rejection::Internal(error.to_string())))?;
+    services.tracer.record(&mut store, &events);
     Ok(Output {
         events,
         result: ResultData::Initialized { capabilities },
@@ -300,9 +302,12 @@ impl<'a> App<'a> {
                 })
                 .collect());
         }
-        self.store
+        let records = self
+            .store
             .commit(Actor::Coordinator, at, &events)
-            .map_err(|error| self.error(command, task, Rejection::Internal(error.to_string())))
+            .map_err(|error| self.error(command, task, Rejection::Internal(error.to_string())))?;
+        self.services.tracer.record(&mut self.store, &records);
+        Ok(records)
     }
 
     /// Convenience for a handler with a single fallible step: the same

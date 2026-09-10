@@ -3,6 +3,7 @@ pub mod codex;
 pub mod git;
 pub mod github;
 pub mod pi;
+pub mod prefactor;
 pub mod process;
 pub mod sqlite;
 

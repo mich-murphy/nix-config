@@ -24,6 +24,7 @@ pub(super) fn invoke(
         &mut app.store,
         app.services.harness,
         app.services.clock,
+        app.services.tracer,
         request,
         events,
     )
@@ -44,6 +45,7 @@ fn invoke_harness(
     store: &mut Store,
     harness: &dyn Harness,
     clock: &dyn Clock,
+    tracer: &dyn domain::ports::Tracer,
     request: &LaunchRequest,
     events: Vec<Event>,
 ) -> Result<(Vec<EventRecord>, LaunchResult), PortError> {
@@ -54,6 +56,7 @@ fn invoke_harness(
         records = store
             .commit(Actor::Coordinator, clock.now(), &batch)
             .map_err(|error| PortError(error.to_string()))?;
+        tracer.record(store, &records);
         Ok(())
     })?;
     Ok((records, result))
