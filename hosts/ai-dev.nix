@@ -11,6 +11,11 @@
 
     # /tmp is a quota-limited RAM tmpfs; agent scratch belongs on disk.
     sessionVariables.TMPDIR = "/var/tmp/michael";
+
+    # ai-dev is headless: pi-mcp-adapter has no browser or display to open
+    # MCP UI sessions in, so keep tool results inline only. Hosts with a
+    # browser keep the default viewer behaviour.
+    sessionVariables.MCP_UI_VIEWER = "none";
   };
 
   # Home Manager still uses the deprecated `nix profile install` alias.
