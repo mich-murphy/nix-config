@@ -45,6 +45,15 @@ pub(super) fn held_action(state: &State, now: Instant) -> Option<NextAction> {
     ordered_held(state)
         .filter_map(|task| {
             let hold = task.hold.as_ref()?;
+            if matches!(hold.reason, HoldReason::NeedsHuman { .. })
+                && task
+                    .spec
+                    .dependencies
+                    .iter()
+                    .any(|dependency| dependency.code && dependency.main_commit.is_none())
+            {
+                return None;
+            }
             let priority = hold_priority(&hold.reason, now)?;
             Some((priority, task, &hold.reason))
         })

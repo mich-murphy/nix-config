@@ -89,11 +89,15 @@ pub(super) fn apply_refresh(state: &mut State, changed: &[DiscoveredTask], remov
         }
     }
     for id in removed {
+        if state.active.as_ref() == Some(id) {
+            state.active = None;
+        }
         state
             .questions
             .retain(|question| question.task.as_ref() != Some(id));
         with_task(state, id, |task| {
-            task.phase = Phase::Excluded(ExclusionReason::NotMember)
+            task.phase = Phase::Excluded(ExclusionReason::NotMember);
+            task.hold = None;
         });
     }
 }

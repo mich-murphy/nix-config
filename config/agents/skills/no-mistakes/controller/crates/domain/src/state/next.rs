@@ -1,8 +1,10 @@
+mod dependencies;
 mod format;
 mod holds;
 mod publish;
 mod sync;
 
+use self::dependencies::held_dependency_candidate;
 use self::format::{command_for, template_for};
 use self::holds::{held_action, pending_ci_wait};
 use self::publish::{publish_action, verification_action};
@@ -112,6 +114,9 @@ impl State {
             .collect();
         if unfinished.len() >= config.max_open_prs as usize {
             return Some(NextAction::RecoverUnfinished { tasks: unfinished });
+        }
+        if let Some(task) = held_dependency_candidate(self) {
+            return Some(NextAction::Claim { task });
         }
         if let Some(task) = self.order.iter().find_map(|id| self.eligible(id)) {
             return Some(NextAction::Claim { task });

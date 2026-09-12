@@ -165,6 +165,7 @@ fn parse_pr(text: &str) -> Result<PullRequest, PortError> {
     let checks = value
         .status_check_rollup
         .into_iter()
+        .filter(|check| !check.name.is_empty())
         .map(parse_check)
         .collect();
     Ok(PullRequest {
@@ -217,6 +218,18 @@ mod tests {
         let pr = parse_pr(&text)?;
         assert_eq!(pr.state, PrState::Merged);
         assert_eq!(pr.checks[0].state, CheckState::Pass);
+        Ok(())
+    }
+
+    #[test]
+    fn github_observation_ignores_nameless_rollup_placeholders() -> Result<(), PortError> {
+        let text = format!(
+            "{{\"number\":7,\"state\":\"OPEN\",\"isDraft\":false,\"headRefOid\":\"{}\",\"mergeCommit\":null,\"statusCheckRollup\":[{{\"name\":\"test\",\"status\":\"COMPLETED\",\"conclusion\":\"SUCCESS\"}},{{}}]}}",
+            "a".repeat(40),
+        );
+        let pr = parse_pr(&text)?;
+        assert_eq!(pr.checks.len(), 1);
+        assert_eq!(pr.checks[0].name, "test");
         Ok(())
     }
 }

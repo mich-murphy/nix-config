@@ -50,10 +50,18 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
         .as_ref()
         .split_once('/')
         .map_or(launch.assignment.model.as_ref(), |(_, id)| id);
-    // The codex CLI grammar is `codex exec resume <SESSION_ID> [OPTIONS]`:
-    // the session id is a positional argument to `resume`, immediately
-    // after `exec`, not a trailing flag.
     let mut args = vec!["exec".into()];
+    args.extend([
+        "--sandbox".into(),
+        if launch.reviewer {
+            "read-only"
+        } else {
+            "workspace-write"
+        }
+        .into(),
+    ]);
+    // `--sandbox` belongs to `exec`, so it must precede the `resume`
+    // subcommand. Resume-specific options may follow the session id.
     if let Some(session) = &launch.session {
         args.extend(["resume".into(), session.clone()]);
     }
@@ -64,15 +72,6 @@ fn request(launch: &LaunchRequest) -> ProcessRequest {
             "model_reasoning_effort=\"{}\"",
             effort(launch.assignment.effort)
         ),
-    ]);
-    args.extend([
-        "--sandbox".into(),
-        if launch.reviewer {
-            "read-only"
-        } else {
-            "workspace-write"
-        }
-        .into(),
     ]);
     if let Some(schema) = &launch.output_schema {
         args.extend(["--output-schema".into(), schema.display().to_string()]);
@@ -220,8 +219,9 @@ mod tests {
     fn codex_resume_follows_exec() -> Result<(), domain::ids::InvalidId> {
         let request = request(&launch()?);
         assert_eq!(request.args[0], "exec");
-        assert_eq!(request.args[1], "resume");
-        assert_eq!(request.args[2], "old");
+        assert_eq!(&request.args[1..3], ["--sandbox", "read-only"]);
+        assert_eq!(request.args[3], "resume");
+        assert_eq!(request.args[4], "old");
         Ok(())
     }
 
