@@ -14,7 +14,6 @@ local parsers = {
 	"jsdoc",
 	"json",
 	"json5",
-	"jsonc",
 	"lua",
 	"luadoc",
 	"luap",
@@ -56,6 +55,8 @@ return {
 		config = function()
 			local treesitter = require("nvim-treesitter")
 			treesitter.setup()
+
+			vim.treesitter.language.register("json", "jsonc")
 
 			local installed = {}
 			for _, parser in ipairs(treesitter.get_installed()) do
