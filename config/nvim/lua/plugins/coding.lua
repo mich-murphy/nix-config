@@ -56,8 +56,6 @@ return {
 			local treesitter = require("nvim-treesitter")
 			treesitter.setup()
 
-			vim.treesitter.language.register("json", "jsonc")
-
 			local installed = {}
 			for _, parser in ipairs(treesitter.get_installed()) do
 				installed[parser] = true
