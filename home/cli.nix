@@ -1,4 +1,14 @@
 {pkgs, ...}: let
+  # Upstream nixpkgs bug: the containerapp wheel pins kubernetes==24.2.0
+  # while the azure-cli python env ships kubernetes 35.x, failing the strict
+  # runtime deps check. The kubernetes client is only used by a few containerapp
+  # subcommands (compose, kubernetes-yaml), so skip the check until nixpkgs
+  # catches up. Note: withExtensions also bundles pip, so `az extension add`
+  # keeps working for extensions not packaged in nixpkgs.
+  containerapp = pkgs.azure-cli.extensions.containerapp.overrideAttrs (oldAttrs: {
+    dontCheckRuntimeDeps = true;
+  });
+  azureCliWithExtensions = pkgs.azure-cli.withExtensions [containerapp];
   btopWithManpage = pkgs.btop.overrideAttrs (previousAttrs: {
     nativeBuildInputs =
       (previousAttrs.nativeBuildInputs or [])
@@ -6,7 +16,7 @@
   });
 in {
   home.packages = [
-    pkgs.azure-cli
+    azureCliWithExtensions
     pkgs.cargo
     pkgs.curl
     pkgs.doctl
