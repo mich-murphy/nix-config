@@ -7,11 +7,9 @@ Manager refactor.
 
 ## Configuration
 
-- [ ] **Retire the ai-dev legacy Neovim bootstrap**
-  - This flake now installs Neovim and links `~/.config/nvim` to the
-    repository-owned configuration on both hosts.
-  - Update the external `home-infra` Ansible role so Pacman packages and the old
-    standalone configuration clone do not compete with Home Manager.
+- [x] **Retire the ai-dev legacy Neovim bootstrap** — moot; the ai-dev host is
+  no longer managed by this flake, and the external `home-infra` role no
+  longer provisions Neovim there at all.
 
 - [ ] **Record the source revision in Darwin generations**
   - Set `system.configurationRevision` from the flake revision without passing

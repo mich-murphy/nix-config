@@ -1,5 +1,5 @@
 {
-  description = "Nix flake for a MacBook and the ai-dev Linux home";
+  description = "Nix flake for a MacBook";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     darwin.url = "github:nix-darwin/nix-darwin/master";
@@ -16,10 +16,7 @@
     hunk,
     ...
   }: let
-    systems = [
-      "aarch64-darwin"
-      "x86_64-linux"
-    ];
+    systems = ["aarch64-darwin"];
     forAllSystems = nixpkgs.lib.genAttrs systems;
     packagesFor = system:
       import nixpkgs {
@@ -31,17 +28,6 @@
       modules = [
         home-manager.darwinModules.home-manager
         ./configuration.nix
-      ];
-    };
-    aiDev = home-manager.lib.homeManagerConfiguration {
-      pkgs = packagesFor "x86_64-linux";
-      extraSpecialArgs = {
-        inherit hunk;
-        repoRoot = "/home/michael/dev/nix-config";
-      };
-      modules = [
-        ./home.nix
-        ./hosts/ai-dev.nix
       ];
     };
   in {
@@ -57,25 +43,12 @@
       });
 
     darwinConfigurations.macbook = darwinConfig;
-    homeConfigurations."michael@ai-dev" = aiDev;
 
     checks.aarch64-darwin = {
       macbook-system = darwinConfig.config.system.build.toplevel;
       macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
       hunk = hunk.packages.aarch64-darwin.hunk;
       opencode = (packagesFor "aarch64-darwin").opencode;
-    };
-    checks.x86_64-linux = {
-      ai-dev-home = aiDev.activationPackage;
-      ai-dev-profile-command = (packagesFor "x86_64-linux").runCommand "ai-dev-profile-command" {} ''
-        if grep -q "profile install" ${aiDev.activationPackage}/activate; then
-          echo "ai-dev activation uses deprecated nix profile install" >&2
-          exit 1
-        fi
-        touch "$out"
-      '';
-      hunk = hunk.packages.x86_64-linux.hunk;
-      opencode = (packagesFor "x86_64-linux").opencode;
     };
   };
 }

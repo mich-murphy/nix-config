@@ -1,13 +1,12 @@
 # AGENTS.md
 
 Nix flake configuring one macOS M2 MacBook Air (`aarch64-darwin`) with
-nix-darwin and embedded Home Manager, plus a standalone Home Manager profile
-for the ai-dev host (`x86_64-linux`).
+nix-darwin and embedded Home Manager.
 
 ## Project map
 
-- `flake.nix` — inputs, formatters, checks, `darwinConfigurations.macbook`,
-  and `homeConfigurations."michael@ai-dev"`
+- `flake.nix` — inputs, formatters, checks, and
+  `darwinConfigurations.macbook`
 - `configuration.nix` — machine entry point, identity, platform, state
   compatibility, Determinate integration, and Home Manager wiring
 - `darwin/default.nix` — static manifest for Darwin concern files
@@ -31,8 +30,7 @@ for the ai-dev host (`x86_64-linux`).
 | `nix fmt -- file1.nix file2.nix` | Format specific files |
 | `nix fmt -- --check .` | Check Nix formatting without writing |
 | `npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"` | Lint Markdown |
-| `nix flake check --all-systems --print-build-logs` | Run all flake checks |
-| `nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'` | Build the ai-dev home without activation |
+| `nix flake check --print-build-logs` | Run all flake checks |
 | `nix flake update` | Update all flake inputs |
 | `nix flake update nixpkgs` | Update a single input |
 | `nix run nix-darwin -- switch --flake ~/dev/nix-config` | First-time bootstrap |
@@ -58,7 +56,7 @@ platform-specific definitions.
 </important>
 
 <important if="you are adding, removing, or modifying packages">
-- **Prefer Home Manager** for portable CLI tools on both hosts
+- **Prefer Home Manager** for portable CLI tools
 - **Prefer Nix** (`environment.systemPackages`) for Darwin-only CLI tools
 - **Use Homebrew casks** only for GUI macOS apps unavailable or broken in nixpkgs
 - **Use Homebrew formulae** only as a last resort when a package is missing in nixpkgs for `aarch64-darwin`
