@@ -1,12 +1,11 @@
 [![build](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml)
 
-# MacBook and ai-dev Nix configuration
+# MacBook Nix configuration
 
-The flake exposes the M2 MacBook Air as `darwinConfigurations.macbook` and the
-x86_64 Linux ai-dev user as `homeConfigurations."michael@ai-dev"`. nix-darwin
-owns Mac machine settings and applications. Home Manager owns the shared
-portable user environment for `mm` on macOS and `michael` on ai-dev. Nix itself
-remains managed by the Determinate installer on both hosts.
+The flake exposes the M2 MacBook Air as `darwinConfigurations.macbook`.
+nix-darwin owns Mac machine settings and applications, and Home Manager —
+embedded in the system configuration — owns the portable user environment for
+`mm` on macOS. Nix itself remains managed by the Determinate installer.
 
 ## Structure
 
@@ -19,18 +18,17 @@ flake.nix
 │   └── home/default.nix
 │       └── portable user concern files
 └── hosts
-    ├── macbook.nix
-    └── ai-dev.nix
+    └── macbook.nix
 ```
 
 Each `default.nix` is the static manifest for its directory. Concern files
-directly define existing nix-darwin or Home Manager options. The shared home
-and a dedicated host module are composed in each Home Manager configuration,
-so Darwin-only concerns never enter the ai-dev module graph. This follows the
-[nix-darwin flake guide](https://github.com/nix-darwin/nix-darwin#flakes-recommended-for-beginners),
-[Home Manager's nix-darwin integration](https://nix-community.github.io/home-manager/nix-flakes/nix-darwin.html),
-and [Home Manager's standalone flake
-guide](https://nix-community.github.io/home-manager/nix-flakes/standalone.html).
+directly define existing nix-darwin or Home Manager options. A dedicated host
+module composes the host-only concerns on top of the shared home, so
+Darwin-only concerns never enter the portable home module graph. This
+follows the
+[nix-darwin flake guide](https://github.com/nix-darwin/nix-darwin#flakes-recommended-for-beginners)
+and
+[Home Manager's nix-darwin integration](https://nix-community.github.io/home-manager/nix-flakes/nix-darwin.html).
 
 The former media/NixOS configuration and encrypted age files were removed from
 HEAD. They remain recoverable from ordinary Git history; that removal does not
@@ -47,37 +45,6 @@ purge historical objects.
    ```sh
    nix run nix-darwin -- switch --flake ~/dev/nix-config
    ```
-
-## ai-dev deployment
-
-The `home-infra` Ansible role is the supported Linux deployment path. It clones
-this public repository to `/home/michael/dev/nix-config`, fast-forwards the
-checkout to `origin/main`, builds the activation package, and activates it as
-`michael`. Check mode evaluates and builds without activation.
-
-To validate the profile directly on ai-dev:
-
-```sh
-nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'
-```
-
-Home Manager owns portable CLI tools, Fish, Starship, FZF, Git behavior, Hunk,
-Herdr configuration, Neovim, Yazi, OpenCode, shared agent instructions/skills,
-and the Moshi user unit. The `home-infra` Ansible role owns and deploys
-`ai-dev-maintenance`, invokes its `ensure-present` mode to repair missing mutable
-tools, and writes vaulted ai-dev Git identity fragments. Ongoing agent updates
-are deliberate host-local operations:
-
-```sh
-ai-dev-maintenance update
-ai-dev-maintenance status
-```
-
-Ansible must not clone or otherwise manage `~/.config/nvim`; Home Manager
-deploys that path as a live link to this repository's `config/nvim`. macOS
-keeps its Home Manager-owned personal and BusinessCraft identities under
-`~/businesscraft/`; ai-dev selects its separate `0600` fragments under the same
-path.
 
 ## Commit hooks
 
@@ -104,9 +71,8 @@ Validate without changing the running system:
 
 ```sh
 prek run --all-files
-nix flake check --all-systems --print-build-logs
+nix flake check --print-build-logs
 darwin-rebuild build --flake .
-nix build --no-link '.#homeConfigurations."michael@ai-dev".activationPackage'
 ```
 
 Activation is intentionally separate:
@@ -115,13 +81,13 @@ Activation is intentionally separate:
 darwin-rebuild switch --flake .
 ```
 
-CI runs formatting, Markdown lint, and platform checks on ARM macOS and x86_64
-Linux runners. It never activates either runner.
+CI runs formatting, Markdown lint, and platform checks on an ARM macOS runner.
+It never activates the runner.
 
 ## Live configuration
 
-Each host passes its checkout as `repoRoot`: `/Users/mm/dev/nix-config` on the
-Mac and `/home/michael/dev/nix-config` on ai-dev. Home Manager uses
+Home Manager receives its checkout path as `repoRoot`:
+`/Users/mm/dev/nix-config` on the Mac. Home Manager uses
 [out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
 only for configurations that are intentionally edited live:
 
@@ -140,7 +106,7 @@ Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the
 reload.
 
-On both hosts, Nix installs Neovim and its foundational runtime dependencies.
+Nix installs Neovim and its foundational runtime dependencies.
 Home Manager links `~/.config/nvim` directly to this checkout's `config/nvim`,
 while Mason owns the declared editor-only tools. Before the first activation of
 this model, move any existing `~/.config/nvim` directory out of the way so Home
