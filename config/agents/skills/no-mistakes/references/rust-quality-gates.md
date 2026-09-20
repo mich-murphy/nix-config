@@ -8,6 +8,15 @@ Use this contract when changing the bundled controller.
 "$EPIC_SKILL/controller/quality.sh"
 ```
 
+The full gate requires Linux x86_64: the pinned complexity analyzer ships only
+a Linux binary, and the process-recovery proof tests exercise Linux process
+identity. On macOS it fails closed at that check. The macOS subset — run it,
+it is not a substitute — is the pinned toolchain's `cargo fmt --all --check`,
+`cargo clippy --workspace --all-targets -- -D warnings`, the 400-line file
+limit, `cargo test --workspace --no-fail-fast` (expecting the Linux-only
+process and gate-harness failures), and `cargo build --release --locked`.
+Run the canonical gate on Linux before shipping controller changes.
+
 `controller/env.sh` places the pinned Rust toolchain on `PATH` and moves Cargo
 output under `${XDG_CACHE_HOME:-$HOME/.cache}/no-mistakes`. Always source it for
 manual Cargo commands. `quality.sh` also exports `NO_MISTAKES_CONTROLLER`, the

@@ -38,6 +38,7 @@ pub(super) fn command_for(action: &NextAction) -> String {
         NextAction::Complete { .. } => "complete",
         NextAction::Cleanup { .. } => "cleanup",
         NextAction::OpenDelivery { .. } => "open-delivery",
+        NextAction::RequestMergeAuthority { .. } => "grant",
     }
     .to_owned()
 }
@@ -108,6 +109,7 @@ pub(super) fn template_for(action: &NextAction) -> Template {
         | NextAction::Snapshot { .. }
         | NextAction::Resume { .. }
         | NextAction::AwaitHumanReview { .. }
+        | NextAction::RequestMergeAuthority { .. }
         | NextAction::Complete { .. } => {}
     }
     Template { values }
@@ -138,7 +140,8 @@ fn action_task(action: &NextAction) -> Option<&TaskId> {
         | NextAction::Complete { task }
         | NextAction::Cleanup { task, .. }
         | NextAction::Hold { task, .. }
-        | NextAction::OpenDelivery { task, .. } => Some(task),
+        | NextAction::OpenDelivery { task, .. }
+        | NextAction::RequestMergeAuthority { task } => Some(task),
         NextAction::RecoverUnfinished { .. }
         | NextAction::AnswerQuestions { .. }
         | NextAction::Report { .. }

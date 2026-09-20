@@ -55,6 +55,11 @@ pub enum Grant {
         historical: TaskId,
         slot: SlotId,
     },
+    /// One merge of the task's current delivery once every other gate has
+    /// passed: consumed by the first confirmed merge operation, so a
+    /// follow-up delivery needs a fresh receipt. Criteria binding comes
+    /// from the receipt's requirements digest, like every other grant.
+    Merge,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -111,6 +116,10 @@ pub enum AuthorityError {
     SlotOwnerUnknown,
     /// `bind-slot` named an authority id the task has no record of.
     UnknownAuthorityId,
+    /// The run's merge policy is receipt-required and the task has no
+    /// unused `Grant::Merge` authority. The user grants one merge at a
+    /// time; the controller never merges without one in this mode.
+    MergeRequiresReceipt,
 }
 
 pub fn register(all: &[Authority], new: &Authority, idle: bool) -> Result<(), AuthorityError> {
@@ -197,7 +206,7 @@ pub fn spend_pair(
 pub fn paths(grant: &Grant) -> Option<&[PathGlob]> {
     match grant {
         Grant::Pair { paths } | Grant::Delivery { paths, .. } => paths.as_deref(),
-        Grant::Narrowing { .. } | Grant::SlotReuse { .. } => None,
+        Grant::Narrowing { .. } | Grant::SlotReuse { .. } | Grant::Merge => None,
     }
 }
 

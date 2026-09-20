@@ -131,4 +131,10 @@ pub enum NextAction {
         task: TaskId,
         remaining: Vec<CriterionId>,
     },
+    /// The delivery is ready to merge but the run's merge policy requires
+    /// a receipt the task does not have: put the decision to the user and
+    /// register their answer with `grant` (`Grant::Merge`).
+    RequestMergeAuthority {
+        task: TaskId,
+    },
 }

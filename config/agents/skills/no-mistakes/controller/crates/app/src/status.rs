@@ -22,6 +22,7 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let ctx = self.ctx("set-status", Some(&task));
         let state = self.state("set-status")?;
+        require_tracker(&ctx, &state)?;
         let value = task_ref(&state, &task, "set-status", self)?;
         validate_done(&ctx, &state, value, &issue, &target)?;
         let transition = select_transition(&ctx, &target, &transitions)?;
@@ -63,6 +64,7 @@ impl App<'_> {
     ) -> Result<Output, AgentError> {
         let ctx = self.ctx("observe-status", Some(&task));
         let state = self.state("observe-status")?;
+        require_tracker(&ctx, &state)?;
         let value = task_ref(&state, &task, "observe-status", self)?;
         if evidence.trim().is_empty() {
             return Err(ctx.reject(Rejection::Invalid(
@@ -84,6 +86,20 @@ impl App<'_> {
             }],
             check,
         )
+    }
+}
+
+/// Tracker commands are meaningful only when the run config names an
+/// external tracker; without one the ledger is the whole status record.
+fn require_tracker(ctx: &Ctx, state: &domain::state::State) -> Result<(), AgentError> {
+    let configured = state
+        .config
+        .as_ref()
+        .is_some_and(|config| config.jira.is_some());
+    if configured {
+        Ok(())
+    } else {
+        Err(ctx.reject(ConflictReason::NoExternalTracker))
     }
 }
 
@@ -120,7 +136,8 @@ fn validate_done(
     let done = state
         .config
         .as_ref()
-        .is_some_and(|config| target == &config.jira.statuses.done);
+        .and_then(|config| config.jira.as_ref())
+        .is_some_and(|jira| target == &jira.statuses.done);
     if !done {
         return Ok(());
     }

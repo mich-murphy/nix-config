@@ -4,6 +4,7 @@ use crate::task_support::digest_file;
 use crate::{ConflictReason, EvidenceError, Rejection};
 use domain::{
     acceptance::{self, Snapshot},
+    authority::{self, AuthorityError},
     command::{JiraRead, PublishStep, ReviewMode},
     delivery::{CheckState, Delivery, DeliveryKind, Outcome, PrState},
     event::{Event, GitHubAction},
@@ -14,7 +15,11 @@ use domain::{
 };
 use std::collections::BTreeMap;
 
-pub(super) fn validate_open(task: &Task, jira: &JiraRead) -> Result<(), ConflictReason> {
+pub(super) fn validate_open(
+    task: &Task,
+    jira: Option<&JiraRead>,
+    external: bool,
+) -> Result<(), ConflictReason> {
     if !matches!(
         task.hold.as_ref().map(|hold| &hold.reason),
         Some(HoldReason::NeedsHuman { .. })
@@ -29,10 +34,29 @@ pub(super) fn validate_open(task: &Task, jira: &JiraRead) -> Result<(), Conflict
     if terminal {
         return Err(ConflictReason::TerminalTaskCannotOpen);
     }
-    if !jira.member || jira.resolved || !jira.ownership_clear {
+    validate_tracker_read(task, jira, external)
+}
+
+/// The fresh-read rule for reopening a held task: a run with an external
+/// tracker must prove membership, unresolved status, clear ownership, and
+/// unchanged criteria from a read taken after the hold; a run without one
+/// has no external state to re-read, and its frozen scope stands.
+pub(super) fn validate_tracker_read(
+    task: &Task,
+    jira: Option<&JiraRead>,
+    external: bool,
+) -> Result<(), ConflictReason> {
+    let Some(read) = jira else {
+        return if external {
+            Err(ConflictReason::TrackerReadRequired)
+        } else {
+            Ok(())
+        };
+    };
+    if !read.member || read.resolved || !read.ownership_clear {
         return Err(ConflictReason::JiraOwnershipUnresolved);
     }
-    if jira.requirements != task.spec.requirements {
+    if read.requirements != task.spec.requirements {
         return Err(ConflictReason::CriteriaChanged);
     }
     Ok(())
@@ -97,18 +121,52 @@ pub(super) fn review_snapshot(delivery: &Delivery) -> Option<&Snapshot> {
 
 pub(super) fn publish_ready(
     state: &domain::state::State,
+    task: &Task,
     delivery: &Delivery,
     input: &PublishInput,
-) -> Result<(), EvidenceError> {
+) -> Result<(), Rejection> {
     if !matches!(delivery.outcome, Outcome::Open)
         || !matches!(delivery.kind, DeliveryKind::Code { .. })
     {
-        return Err(other("publish needs an open code delivery"));
+        return Err(Rejection::Evidence(other(
+            "publish needs an open code delivery",
+        )));
     }
     if input.step != PublishStep::Merge {
         return Ok(());
     }
-    merge_ready(state, delivery)
+    merge_ready(state, delivery)?;
+    merge_receipt(state, task)
+}
+
+/// The merge-policy gate: with `autonomous_merge` off, a merge needs an
+/// unused `Grant::Merge` receipt on the task whose artifact still matches
+/// and whose requirements digest still binds the task's criteria. The
+/// artifact is re-read here, at the irreversible boundary, rather than
+/// trusted from registration time.
+fn merge_receipt(state: &domain::state::State, task: &Task) -> Result<(), Rejection> {
+    let autonomous = state
+        .config
+        .as_ref()
+        .is_some_and(|config| config.autonomous_merge);
+    if autonomous {
+        return Ok(());
+    }
+    let grant = merge_grant(task).ok_or(AuthorityError::MergeRequiresReceipt)?;
+    let digest = digest_file(&grant.artifact).map_err(Rejection::External)?;
+    authority::validate_receipt(grant, &digest)?;
+    authority::validate_use(grant, &task.spec.requirements)?;
+    Ok(())
+}
+
+/// The task's unused `Grant::Merge` authority, if one exists. Both the
+/// pre-merge gate and the successful-merge consumption find it through
+/// this one predicate so they can never disagree about which receipt a
+/// merge used.
+pub(super) fn merge_grant(task: &Task) -> Option<&domain::authority::Authority> {
+    task.authorities.iter().find(|authority| {
+        matches!(authority.grant, authority::Grant::Merge) && authority.used.whole.is_none()
+    })
 }
 
 fn merge_ready(state: &domain::state::State, delivery: &Delivery) -> Result<(), EvidenceError> {

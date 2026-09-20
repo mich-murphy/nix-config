@@ -46,12 +46,12 @@ fn open_verification_delivery(
                     paths: None,
                 },
             }),
-            jira: JiraRead {
+            jira: Some(JiraRead {
                 member: true,
                 resolved: false,
                 ownership_clear: true,
                 requirements,
-            },
+            }),
         }),
     ))
 }
@@ -203,12 +203,12 @@ fn grant_then_repurpose_pair(
                     paths: None,
                 },
             }),
-            jira: JiraRead {
+            jira: Some(JiraRead {
                 member: true,
                 resolved: false,
                 ownership_clear: true,
                 requirements,
-            },
+            }),
         },
         false,
     )?;

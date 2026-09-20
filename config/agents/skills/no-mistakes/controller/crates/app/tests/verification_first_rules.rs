@@ -50,7 +50,7 @@ fn open_first_verification(
             task: task.clone(),
             kind: DeliveryKind::Verification { of: commit.clone() },
             receipt: None,
-            jira: jira_read(requirements),
+            jira: Some(jira_read(requirements)),
         },
         false,
     )?;
@@ -199,7 +199,7 @@ fn later_delivery_still_needs_hold() -> Result<(), Box<dyn std::error::Error>> {
             task: task.clone(),
             kind: DeliveryKind::Verification { of: sha('a')? },
             receipt: None,
-            jira: jira_read(requirements),
+            jira: Some(jira_read(requirements)),
         },
         false,
     );
@@ -241,7 +241,7 @@ fn verification_commit_must_be_on_main() -> Result<(), Box<dyn std::error::Error
             task: task.clone(),
             kind: DeliveryKind::Verification { of: sha('a')? },
             receipt: None,
-            jira: jira_read(requirements),
+            jira: Some(jira_read(requirements)),
         },
         false,
     );

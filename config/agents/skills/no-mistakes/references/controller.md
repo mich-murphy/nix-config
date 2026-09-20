@@ -45,11 +45,20 @@ carries the same `next` when one applies.
 
 ## Configuration
 
-The immutable TOML run config names the repository, GitHub repository, epic,
-review mode, Jira status IDs, open-PR cap, optional feedback file, sensitive path
-globs, optional tier cap overrides, and `follow_up_deliveries`, the number of
-code deliveries per task that may reopen after a hold without a receipt
-(default 0). Use actual status IDs and an absolute repository path.
+The immutable TOML run config names the repository, GitHub repository, work key
+(`epic`), review mode, open-PR cap, optional feedback file, sensitive path
+globs, optional tier cap overrides, `follow_up_deliveries` (standing
+authorization for that many receipt-free code follow-ups per task; default 0),
+an optional external tracker (`jira` with its status IDs), and
+`autonomous_merge` (default false). Use actual status IDs and an absolute
+repository path.
+
+Omitting `jira` makes a self-contained run: the discovered work definition is
+the whole scope, `set-status`, `observe-status`, and `subtask-record` reject,
+`open-delivery` takes no tracker read, and `complete` needs verified delivery
+only. With `autonomous_merge: false` (the default), every merge additionally
+needs an unused `Grant::Merge` receipt on the task; `true` is the user's
+per-run opt-in to merge once the other gates pass.
 
 The profile selects `codex`, `pi`, or `claude`. It declares every model, rank,
 fallback, coordinator assignment, tier assignment, and escalation reviewer.
@@ -83,7 +92,7 @@ The public surface has exactly 37 commands.
 | Agents | `run-agent`, `review-schema`, `validate-review`, `disposition`, `human-review`, `lesson-record` |
 | Delivery | `publish`, `observe-pr`, `poll-checks`, `final-verify`, `complete` |
 | Quality | `judge` |
-| Jira | `set-status`, `observe-status` |
+| Tracker | `set-status`, `observe-status` |
 | Authority | `grant`, `open-delivery`, `narrow-acceptance` |
 | Recovery | `recover-operation` |
 
@@ -92,7 +101,8 @@ The public surface has exactly 37 commands.
 `checkpoint` snapshots the turn it marks; `snapshot` alone is for an
 integration commit with no implementer turn. `open-delivery` without a
 receipt opens a briefed task's first delivery as verification of a commit on
-main, for work that is already delivered. `judge`
+main, for work that is already delivered. Its tracker read is required in
+tracked runs and omitted in self-contained ones. `judge`
 runs the LLM-as-judge for one task in the background of a run; `complete` and
 `usage-report` start it, so the coordinator never calls it directly. See
 [quality.md](quality.md). `poll-checks
@@ -118,9 +128,9 @@ closed by `usage-report`, or by the last background judge when judges are
 still running at that point; a later command opens a fresh one. Every committed
 event is one span named after its kind and carrying the event body, its
 sequence, and its actor, so briefs, plans, checkpoints, proofs, review
-findings and verdicts, dispositions, PR observations, Jira transitions,
+findings and verdicts, dispositions, PR observations, tracker transitions,
 budgets, and holds all appear in order. A launch, a GitHub operation, and a
-Jira status change each open a span and finish it with the ending event as
+tracker status change each open a span and finish it with the ending event as
 the result. The launch span adds the prompt text; the ending carries the
 output and usage. Prompt and output are sent as Prefactor sensitive values,
 redacted by default, and any string is cut at 100,000 characters.
@@ -134,12 +144,13 @@ worker environments. Inspect a run with `prefactor agent_instances list
 --agent_id` and `prefactor agent_spans list --agent_instance_id <id>
 --start_time <iso> --end_time <iso>`.
 
-## Jira bridge
+## Tracker bridge
 
-The controller has no Jira credential. Before changing status, read the issue and
-available transitions through the approved connector. Send the fresh status,
-target, and transition list to `set-status`. Perform only the selected transition.
-Read the issue again and settle it with `observe-status`.
+Applies when the run config names a tracker (`jira`); the bundled integration
+is Jira. The controller has no tracker credential. Before changing status, read
+the issue and available transitions through the approved connector. Send the
+fresh status, target, and transition list to `set-status`. Perform only the
+selected transition. Read the issue again and settle it with `observe-status`.
 
 The intent event precedes the connector mutation. An interruption therefore
 leaves synchronization unknown. `next` asks for observation before another
@@ -166,7 +177,7 @@ launch.
 
 ## Delivery history and authority
 
-A task has one phase, an optional orthogonal hold, Jira synchronization, monotonic
+A task has one phase, an optional orthogonal hold, tracker synchronization, monotonic
 budgets, authorities, and ordered deliveries. A merge is a fact, not acceptance.
 Only `Verified` means every full criterion passed.
 
@@ -174,7 +185,7 @@ A task's first delivery needs no authority, whether it is the code delivery
 `bind-slot` opens or a verification delivery of a commit already on main that
 `open-delivery` opens without a receipt. A later delivery opened without a
 receipt is a standing follow-up: it needs the same needs-human hold, fresh
-Jira read, unchanged criteria, closed prior delivery, and intact history as a
+tracker read (tracked runs), unchanged criteria, closed prior delivery, and intact history as a
 granted one, counts against `follow_up_deliveries` when it is a code delivery,
 and is recorded with no authority. Every other later delivery carries one
 `Delivery` grant. A `Verification` delivery has no worktree and rejects an
@@ -188,11 +199,14 @@ tracks its use. The artifact must remain readable and unchanged. A digest
 registers once. A grant is consumed once. One unused pair may exist. A wholly
 unused pair may become the next delivery grant; a partially spent pair cannot.
 Path-scoped grants apply to every commit in the range, including reverted work.
+A `Merge` grant authorizes one merge of the task's current delivery once every
+other gate passes; it is consumed by the confirmed merge operation, and the
+receipt artifact is re-validated at the merge boundary.
 
-A later delivery requires a needs-human hold, fresh unresolved Jira membership
-and ownership, unchanged criteria, a closed prior delivery, and intact history.
-Every prior merge must remain on main. Every replacement must retain its recorded
-PR, head, and merge identity.
+A later delivery requires a needs-human hold, a fresh tracker read proving
+unresolved membership and ownership (tracked runs only), unchanged criteria, a
+closed prior delivery, and intact history. Every prior merge must remain on
+main. Every replacement must retain its recorded PR, head, and merge identity.
 
 ## Worktrees
 
@@ -207,6 +221,14 @@ slot. The current delivery must have no work, launches, operations, proof, or
 review. The checkout must be clean and owned. The adapter switches it to the new
 branch at current `origin/main`, resets it, and cleans untracked files. The grant
 is consumed by the bind. No authority permits deleting an unfinished worker.
+
+Every destructive slot operation — historical-reuse reset and clean, cleanup
+reset or removal — first pins the slot's current head under an append-only
+custody ref, `refs/no-mistakes/custody/<slot>/<head>`, written in the main
+repository so the commit object stays reachable. The operation refuses when
+the anchor cannot be written; a destroyed head is recovered from the custody
+ref with `git branch` or `git update-ref`. Custody protects commits; untracked,
+uncommitted content has no head to anchor and is never protected.
 
 ## Agent and review settlement
 
@@ -234,9 +256,10 @@ review and one escalation unit. Rejected preconditions spend neither.
 
 Create a draft PR from a recorded snapshot. Ready and merge operations require
 the same head. Merge also requires independent PASS, all findings dispositioned,
-green required checks, and a current human receipt when human-review mode is
-selected. The GitHub adapter uses exact-head protection and does not bypass
-branch rules.
+green required checks, a current human receipt when human-review mode is
+selected, and — unless `autonomous_merge` is on — an unused `Grant::Merge`
+receipt, consumed by the confirmed merge. The GitHub adapter uses exact-head
+protection and does not bypass branch rules.
 
 `observe-pr` records open, closed, merged, or externally replaced outcomes. A
 closed historical delivery is immutable. `poll-checks --wait` keeps one
@@ -246,7 +269,7 @@ seconds; holding and resuming do not restart it.
 `final-verify` checks the recorded PR head against the reviewed snapshot, the
 recorded merge identity against the supplied commit, and the merge commit on
 main. This supports squash merges without pretending the PR head equals the
-merge commit. `complete` also requires confirmed Jira Done for the parent and all
-recorded subtasks. Cleanup requires completed delivery and acts only on its owned
-slot; a task verified without a slot has nothing to clean and releases the
-queue at `complete`.
+merge commit. `complete` also requires confirmed tracker Done for the parent
+and all recorded subtasks when a tracker is configured. Cleanup requires
+completed delivery and acts only on its owned slot; a task verified without a
+slot has nothing to clean and releases the queue at `complete`.

@@ -66,7 +66,7 @@ impl App<'_> {
         task: TaskId,
         kind: DeliveryKind,
         receipt: Option<AuthorityReceipt>,
-        jira: JiraRead,
+        jira: Option<JiraRead>,
         check: bool,
     ) -> Result<Output, AgentError> {
         let Some(receipt) = receipt else {
@@ -75,7 +75,11 @@ impl App<'_> {
         let ctx = self.ctx("open-delivery", Some(&task));
         let state = self.state("open-delivery")?;
         let value = task_ref(&state, &task, "open-delivery", self)?;
-        validate_open(value, &jira).map_err(|reason| ctx.reject(reason))?;
+        let external = state
+            .config
+            .as_ref()
+            .is_some_and(|config| config.jira.is_some());
+        validate_open(value, jira.as_ref(), external).map_err(|reason| ctx.reject(reason))?;
         domain::delivery::can_open(&value.deliveries).map_err(|error| ctx.reject(error))?;
         let (authority, repurposed) = resolved_authority(self, value, &receipt);
         validate_open_authority(&ctx, value, &kind, &authority, repurposed)?;

@@ -84,17 +84,27 @@ pub fn initialized_with(
     Ok((directory, fake))
 }
 
+/// Every fixture variant differs from `initialized` only by which
+/// `RunConfig` field it edits; they share this body. The caller's `fake`
+/// is used so callers keep the handle they constructed.
+fn initialize_edited(
+    fake: Fake,
+    edit: impl FnOnce(&mut RunConfig),
+) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
+    let directory = tempfile::tempdir()?;
+    let mut run_config = config(directory.path(), ReviewMode::Autonomous)?;
+    edit(&mut run_config);
+    initialize(directory.path(), run_config, profile()?, services(&fake))?;
+    Ok((directory, fake))
+}
+
 /// Like `initialized_with`, but with `RunConfig.feedback_file` pointed at
 /// `feedback_file` instead of left unset.
 pub fn initialized_with_feedback(
     fake: Fake,
     feedback_file: std::path::PathBuf,
 ) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
-    let directory = tempfile::tempdir()?;
-    let mut run_config = config(directory.path(), ReviewMode::Autonomous)?;
-    run_config.feedback_file = Some(feedback_file);
-    initialize(directory.path(), run_config, profile()?, services(&fake))?;
-    Ok((directory, fake))
+    initialize_edited(fake, |config| config.feedback_file = Some(feedback_file))
 }
 
 /// Like `initialized_with`, but with `RunConfig.review_mode` set to
@@ -105,14 +115,7 @@ pub fn initialized_with_review_mode(
     fake: Fake,
     review_mode: ReviewMode,
 ) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
-    let directory = tempfile::tempdir()?;
-    initialize(
-        directory.path(),
-        config(directory.path(), review_mode)?,
-        profile()?,
-        services(&fake),
-    )?;
-    Ok((directory, fake))
+    initialize_edited(fake, |config| config.review_mode = review_mode)
 }
 
 /// Like `initialized`, but with `RunConfig.follow_up_deliveries` set to
@@ -120,12 +123,24 @@ pub fn initialized_with_review_mode(
 pub fn initialized_with_follow_ups(
     follow_ups: u32,
 ) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
-    let directory = tempfile::tempdir()?;
-    let fake = fake();
-    let mut run_config = config(directory.path(), ReviewMode::Autonomous)?;
-    run_config.follow_up_deliveries = follow_ups;
-    initialize(directory.path(), run_config, profile()?, services(&fake))?;
-    Ok((directory, fake))
+    initialize_edited(fake(), |config| config.follow_up_deliveries = follow_ups)
+}
+
+/// Like `initialized`, but with `RunConfig.autonomous_merge` set to
+/// `autonomous`: receipt-required mode is the product default, so its
+/// rules get dedicated coverage rather than piggybacking on the golden
+/// paths.
+pub fn initialized_with_merge_policy(
+    autonomous: bool,
+) -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
+    initialize_edited(fake(), |config| config.autonomous_merge = autonomous)
+}
+
+/// Like `initialized`, but with no external tracker: the discovered work
+/// definition is the whole scope, and completion needs verified delivery
+/// only. Tracker commands must reject in this mode.
+pub fn initialized_internal() -> Result<(tempfile::TempDir, Fake), Box<dyn std::error::Error>> {
+    initialize_edited(fake(), |config| config.jira = None)
 }
 
 pub fn config(repo: &Path, review_mode: ReviewMode) -> Result<RunConfig, domain::ids::InvalidId> {
@@ -136,19 +151,22 @@ pub fn config(repo: &Path, review_mode: ReviewMode) -> Result<RunConfig, domain:
         review_mode,
         max_open_prs: 2,
         feedback_file: None,
-        jira: JiraConfig {
+        jira: Some(JiraConfig {
             statuses: StatusMap {
                 todo: JiraStatus::from_str("todo")?,
                 progress: JiraStatus::from_str("progress")?,
                 review: JiraStatus::from_str("review")?,
                 done: JiraStatus::from_str("done")?,
             },
-        },
+        }),
         risk: RiskConfig {
             sensitive: vec!["auth/**".into()],
         },
         caps: BTreeMap::new(),
         follow_up_deliveries: 1,
+        // Existing golden paths merge without receipts; the receipt-required
+        // policy gets its own fixture (`initialized_with_merge_policy`).
+        autonomous_merge: true,
     })
 }
 

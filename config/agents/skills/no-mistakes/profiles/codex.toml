@@ -7,7 +7,7 @@ kind = "codex"
 "openai/gpt-6-astra" = { rank = 3 }
 
 [coordinator]
-model = "openai/gpt-5.6-sol"
+model = "openai/gpt-6-astra"
 effort = "medium"
 
 [tier.trivial]

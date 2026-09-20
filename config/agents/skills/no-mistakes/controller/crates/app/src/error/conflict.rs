@@ -63,6 +63,14 @@ pub enum ConflictReason {
     /// binding. Carries the debug-formatted `SlotState`, which is not
     /// itself a serialisable domain type.
     SlotUnsafe(String),
+    /// `set-status`, `observe-status`, or `subtask-record` in a run whose
+    /// config names no external tracker: the ledger is the only status
+    /// record, so there is nothing to transition.
+    NoExternalTracker,
+    /// A run with an external tracker requires its fresh read on every
+    /// follow-up `open-delivery`; omitting it would skip membership,
+    /// ownership, and criteria-freshness validation.
+    TrackerReadRequired,
     History(DeliveryError),
     Status(SyncError),
 }
@@ -172,6 +180,12 @@ impl fmt::Display for ConflictReason {
             }
             Self::SlotUnsafe(state) => {
                 write!(formatter, "slot is not safe for this binding: {state}")
+            }
+            Self::NoExternalTracker => {
+                formatter.write_str("run has no external tracker configured")
+            }
+            Self::TrackerReadRequired => {
+                formatter.write_str("open-delivery requires a fresh tracker read")
             }
             Self::History(error) => write!(formatter, "delivery history: {error:?}"),
             Self::Status(error) => write!(formatter, "status synchronisation: {error:?}"),

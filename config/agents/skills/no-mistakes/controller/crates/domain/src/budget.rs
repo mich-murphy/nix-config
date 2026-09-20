@@ -140,7 +140,7 @@ fn grants_counted_pair(authority: &Authority, kind: BudgetKind) -> bool {
     );
     let unscoped = match &authority.grant {
         Grant::Pair { paths } | Grant::Delivery { paths, .. } => paths.is_none(),
-        Grant::Narrowing { .. } | Grant::SlotReuse { .. } => false,
+        Grant::Narrowing { .. } | Grant::SlotReuse { .. } | Grant::Merge => false,
     };
     pair_kind && unscoped
 }

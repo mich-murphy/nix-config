@@ -5,9 +5,9 @@ Read this after interruption or when preparing an independent review.
 ## Resume from recorded facts
 
 Start with `status` and `next` in the original run directory. Inspect any process,
-GitHub, and Jira outcome that remains unsettled. Do not repeat a mutation because
+GitHub, and tracker outcome that remains unsettled. Do not repeat a mutation because
 a later status update failed. Reuse confirmed closed-delivery receipts unless a
-new observation contradicts their PR, head, merge, or Jira identity.
+new observation contradicts their PR, head, merge, or tracker identity.
 
 A compact handoff keeps these facts separate:
 
@@ -28,7 +28,7 @@ whole run to one task.
 ## Review packet
 
 Resolve readiness failures before launching a normal reviewer. Keep review,
-merge, Jira Done, and controller settlement out of product criteria that must
+merge, tracker Done, and controller settlement out of product criteria that must
 precede those gates.
 
 Give the reviewer the immutable base and head, full current delivery criteria,

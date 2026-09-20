@@ -172,7 +172,11 @@ pub enum Command {
         /// commit already on main, which needs no authority because it
         /// writes no code; every other delivery carries a receipt.
         receipt: Option<AuthorityReceipt>,
-        jira: JiraRead,
+        /// The fresh tracker read a follow-up delivery is validated
+        /// against. Required when the run has an external tracker,
+        /// meaningless (and ignored) when it does not.
+        #[serde(default)]
+        jira: Option<JiraRead>,
     },
     NarrowAcceptance {
         task: TaskId,
@@ -194,7 +198,13 @@ pub struct RunConfig {
     pub review_mode: ReviewMode,
     pub max_open_prs: u32,
     pub feedback_file: Option<PathBuf>,
-    pub jira: JiraConfig,
+    /// The external tracker the run synchronizes task status with, or
+    /// `None` for a self-contained run: the work definition the
+    /// coordinator supplied at discovery is the whole scope, completion
+    /// needs verified delivery only, and the tracker commands
+    /// (`set-status`, `observe-status`, `subtask-record`) are rejected.
+    #[serde(default)]
+    pub jira: Option<JiraConfig>,
     pub risk: RiskConfig,
     #[serde(default)]
     pub caps: BTreeMap<Tier, crate::budget::Limits>,
@@ -204,6 +214,13 @@ pub struct RunConfig {
     /// never count, since they write no code.
     #[serde(default)]
     pub follow_up_deliveries: u32,
+    /// When false (the default), `publish --step merge` also needs an
+    /// unused `Grant::Merge` receipt on the task: the most irreversible
+    /// step of a run is opt-in per merge, never implied by green gates.
+    /// When true, the user has authorized this run to merge every task
+    /// whose review, checks, and human-review gates pass.
+    #[serde(default)]
+    pub autonomous_merge: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]

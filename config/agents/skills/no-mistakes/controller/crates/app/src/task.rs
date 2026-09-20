@@ -237,6 +237,19 @@ impl App<'_> {
         check: bool,
     ) -> Result<Output, AgentError> {
         let state = self.state("subtask-record")?;
+        // Subtasks are tracker issues; a run without an external tracker
+        // records sub-scope as criteria on the task itself instead.
+        if state
+            .config
+            .as_ref()
+            .is_none_or(|config| config.jira.is_none())
+        {
+            return Err(self.error(
+                "subtask-record",
+                Some(&task),
+                ConflictReason::NoExternalTracker,
+            ));
+        }
         task_ref(&state, &task, "subtask-record", self)?;
         let subtask = Subtask {
             criteria: input.criteria,

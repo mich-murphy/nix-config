@@ -10,8 +10,13 @@ use crate::{
 /// a verification delivery (final acceptance, never a PR). Once required
 /// checks are pending, a deadline already recorded by a prior
 /// `poll-checks --wait` decides between waiting it out and asking the
-/// coordinator to start that wait.
-pub(super) fn publish_action(task: &Task, delivery: &Delivery) -> Option<NextAction> {
+/// coordinator to start that wait. A merge the run's policy gates behind
+/// a receipt asks for that receipt instead of naming the merge.
+pub(super) fn publish_action(
+    task: &Task,
+    delivery: &Delivery,
+    autonomous_merge: bool,
+) -> Option<NextAction> {
     match &delivery.kind {
         DeliveryKind::Verification { .. } => Some(NextAction::FinalVerify {
             task: task.id.clone(),
@@ -28,34 +33,52 @@ pub(super) fn publish_action(task: &Task, delivery: &Delivery) -> Option<NextAct
             })
         }
         DeliveryKind::Code { pr: Some(pr) } if pr.state == PrState::Open => {
-            Some(open_pr_action(task, delivery, pr))
+            Some(open_pr_action(task, delivery, pr, autonomous_merge))
         }
         DeliveryKind::Code { pr: Some(_) } => None,
     }
 }
 
-fn open_pr_action(task: &Task, delivery: &Delivery, pr: &PullRequest) -> NextAction {
+fn open_pr_action(
+    task: &Task,
+    delivery: &Delivery,
+    pr: &PullRequest,
+    autonomous_merge: bool,
+) -> NextAction {
     let pending = pr
         .checks
         .iter()
         .any(|check| check.required && check.state == CheckState::Pending);
-    if !pending {
-        return NextAction::Publish {
+    if pending {
+        return delivery.check_deadlines.get(&pr.head).map_or(
+            NextAction::PollChecks {
+                task: task.id.clone(),
+                pr: pr.number,
+            },
+            |deadline| NextAction::AwaitChecks {
+                task: task.id.clone(),
+                pr: pr.number,
+                deadline: *deadline,
+            },
+        );
+    }
+    if !autonomous_merge && !has_merge_receipt(task) {
+        return NextAction::RequestMergeAuthority {
             task: task.id.clone(),
-            step: PublishStep::Merge,
         };
     }
-    delivery.check_deadlines.get(&pr.head).map_or(
-        NextAction::PollChecks {
-            task: task.id.clone(),
-            pr: pr.number,
-        },
-        |deadline| NextAction::AwaitChecks {
-            task: task.id.clone(),
-            pr: pr.number,
-            deadline: *deadline,
-        },
-    )
+    NextAction::Publish {
+        task: task.id.clone(),
+        step: PublishStep::Merge,
+    }
+}
+
+/// An unused `Grant::Merge` on the task: the receipt a receipt-required
+/// run consumes at the merge. A used one never reopens.
+fn has_merge_receipt(task: &Task) -> bool {
+    task.authorities.iter().any(|authority| {
+        matches!(authority.grant, crate::authority::Grant::Merge) && authority.used.whole.is_none()
+    })
 }
 
 pub(super) fn verification_action(

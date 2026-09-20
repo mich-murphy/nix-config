@@ -28,7 +28,7 @@ impl App<'_> {
         }
         let snapshot =
             current_snapshot(value).ok_or_else(|| ctx.reject(EvidenceError::MissingSnapshot))?;
-        publish_ready(&state, delivery, &input).map_err(|error| ctx.reject(error))?;
+        publish_ready(&state, value, delivery, &input).map_err(|error| ctx.reject(error))?;
         let operation = publish_operation(&ctx, &state, &task, delivery, snapshot, &input)?;
         self.execute_publish_flow(value, delivery, snapshot, &input, operation, check)
     }
@@ -61,6 +61,7 @@ impl App<'_> {
             self.error("publish", Some(&task.id), Rejection::External(message))
         })?;
         let events = publish_events(self, task, delivery, id, observed)?;
+        let events = consume_merge_grant(events, task, input, id);
         records.extend(self.write("publish", Some(&task.id), events, false)?);
         Ok(Output {
             events: records,
@@ -68,6 +69,28 @@ impl App<'_> {
             result: ResultData::Applied,
         })
     }
+}
+
+/// A confirmed merge spends the receipt that authorized it: one
+/// `Grant::Merge`, one merge, recorded against the merge operation so the
+/// ledger shows which receipt the irreversible step consumed. Create and
+/// ready steps never touch it, and an autonomous run has nothing to spend.
+fn consume_merge_grant(
+    mut events: Vec<Event>,
+    task: &domain::task::Task,
+    input: &PublishInput,
+    operation: domain::ids::OperationId,
+) -> Vec<Event> {
+    let merge = matches!(input.step, domain::command::PublishStep::Merge);
+    let grant = merge.then(|| crate::delivery_support::merge_grant(task));
+    if let Some(authority) = grant.flatten() {
+        events.push(Event::GrantUsed {
+            task: task.id.clone(),
+            authority: authority.id,
+            by: domain::ids::UseId(operation.0),
+        });
+    }
+    events
 }
 
 /// A create/ready/merge already dispatched for `delivery` and not yet

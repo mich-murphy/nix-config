@@ -6,7 +6,7 @@
 //! (`follow_up_deliveries`), which the user granted at init; verification
 //! follow-ups are always free for the same reason as the first.
 
-use crate::delivery_support::{validate_history, validate_open};
+use crate::delivery_support::{validate_history, validate_open, validate_tracker_read};
 use crate::task_support::{next_delivery, task_ref};
 use crate::{AgentError, App, ConflictReason, Output, Rejection};
 use domain::{
@@ -23,7 +23,7 @@ impl App<'_> {
         &mut self,
         task: TaskId,
         kind: DeliveryKind,
-        jira: JiraRead,
+        jira: Option<JiraRead>,
         check: bool,
     ) -> Result<Output, AgentError> {
         let ctx = self.ctx("open-delivery", Some(&task));
@@ -32,7 +32,11 @@ impl App<'_> {
         if value.deliveries.is_empty() {
             return self.open_verification(task, kind, jira, check);
         }
-        validate_open(value, &jira).map_err(|reason| ctx.reject(reason))?;
+        let external = state
+            .config
+            .as_ref()
+            .is_some_and(|config| config.jira.is_some());
+        validate_open(value, jira.as_ref(), external).map_err(|reason| ctx.reject(reason))?;
         domain::delivery::can_open(&value.deliveries).map_err(|error| ctx.reject(error))?;
         validate_history(self, value).map_err(|reason| ctx.reject(reason))?;
         standing_allows(&state, value, &kind).map_err(|reason| ctx.reject(reason))?;
@@ -73,14 +77,19 @@ impl App<'_> {
         &mut self,
         task: TaskId,
         kind: DeliveryKind,
-        jira: JiraRead,
+        jira: Option<JiraRead>,
         check: bool,
     ) -> Result<Output, AgentError> {
         let ctx = self.ctx("open-delivery", Some(&task));
         let state = self.state("open-delivery")?;
         let value = task_ref(&state, &task, "open-delivery", self)?;
         let of = first_verification_target(value, &kind).map_err(|reason| ctx.reject(reason))?;
-        validate_jira(value, &jira).map_err(|reason| ctx.reject(reason))?;
+        let external = state
+            .config
+            .as_ref()
+            .is_some_and(|config| config.jira.is_some());
+        validate_tracker_read(value, jira.as_ref(), external)
+            .map_err(|reason| ctx.reject(reason))?;
         let on_main = self
             .services
             .vcs
@@ -150,16 +159,6 @@ fn first_verification_target<'a>(
     } else {
         Err(ConflictReason::ReceiptRequired)
     }
-}
-
-fn validate_jira(task: &Task, jira: &JiraRead) -> Result<(), ConflictReason> {
-    if !jira.member || jira.resolved || !jira.ownership_clear {
-        return Err(ConflictReason::JiraOwnershipUnresolved);
-    }
-    if jira.requirements != task.spec.requirements {
-        return Err(ConflictReason::CriteriaChanged);
-    }
-    Ok(())
 }
 
 /// A delivery with no authority behind it: full criteria, no path scope,

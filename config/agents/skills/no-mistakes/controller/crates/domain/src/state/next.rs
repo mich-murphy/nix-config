@@ -168,14 +168,15 @@ impl State {
     }
 
     fn claimed_action(&self, task: &Task) -> NextAction {
+        // A run with no external tracker has nothing to sync at claim:
+        // the task goes straight to brief or slot binding.
         let Some(progress) = self
             .config
             .as_ref()
-            .map(|config| config.jira.statuses.progress.clone())
+            .and_then(|config| config.jira.as_ref())
+            .map(|jira| jira.statuses.progress.clone())
         else {
-            return NextAction::Brief {
-                task: task.id.clone(),
-            };
+            return claimed_ready(task);
         };
         let issue = IssueKey::from(task.id.clone());
         sync_step(&task.id, &issue, &task.sync, &progress).unwrap_or_else(|| claimed_ready(task))
@@ -282,21 +283,11 @@ impl State {
         if let Some(action) = self.review_sync_gate(task, delivery) {
             return Some(action);
         }
-        publish_action(task, delivery)
-    }
-
-    /// Once the current code delivery has a PR (draft or ready), Jira must
-    /// reflect Review before any further publish step (design Section 11).
-    fn review_sync_gate(&self, task: &Task, delivery: &Delivery) -> Option<NextAction> {
-        let DeliveryKind::Code { pr: Some(pr) } = &delivery.kind else {
-            return None;
-        };
-        if pr.state != PrState::Open {
-            return None;
-        }
-        let review = self.config.as_ref()?.jira.statuses.review.clone();
-        let issue = IssueKey::from(task.id.clone());
-        sync_step(&task.id, &issue, &task.sync, &review)
+        let autonomous_merge = self
+            .config
+            .as_ref()
+            .is_some_and(|config| config.autonomous_merge);
+        publish_action(task, delivery, autonomous_merge)
     }
 
     fn merged_action(&self, task: &Task, commit: &crate::ids::Sha) -> Option<NextAction> {
@@ -309,22 +300,6 @@ impl State {
         Some(NextAction::FinalVerify {
             task: task.id.clone(),
             commit: commit.clone(),
-        })
-    }
-
-    /// After `Verified`, Jira must confirm Done for the parent and every
-    /// recorded subtask before `Complete` (design Section 11).
-    fn verified_action(&self, task: &Task) -> Option<NextAction> {
-        let done = self.config.as_ref()?.jira.statuses.done.clone();
-        let issue = IssueKey::from(task.id.clone());
-        if let Some(action) = sync_step(&task.id, &issue, &task.sync, &done) {
-            return Some(action);
-        }
-        if let Some(action) = subtasks_sync_step(task, &done) {
-            return Some(action);
-        }
-        Some(NextAction::Complete {
-            task: task.id.clone(),
         })
     }
 
@@ -358,12 +333,6 @@ fn entry_stale_or_missing(
         None => true,
         Some(entry) => snapshot.is_none_or(|snapshot| &entry.snapshot != snapshot),
     }
-}
-
-fn subtasks_sync_step(task: &Task, target: &crate::ids::JiraStatus) -> Option<NextAction> {
-    task.subtasks
-        .iter()
-        .find_map(|(issue, subtask)| sync_step(&task.id, issue, &subtask.sync, target))
 }
 
 fn claimed_ready(task: &Task) -> NextAction {

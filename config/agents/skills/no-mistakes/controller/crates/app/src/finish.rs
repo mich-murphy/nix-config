@@ -54,14 +54,20 @@ impl App<'_> {
     pub(super) fn complete(&mut self, task: TaskId, check: bool) -> Result<Output, AgentError> {
         let state = self.state("complete")?;
         let value = task_ref(&state, &task, "complete", self)?;
-        let done = state
+        // A run with an external tracker completes only when the tracker
+        // confirms Done for the parent and every recorded subtask; a run
+        // without one has no external status to wait for, and verified
+        // delivery is the whole completion bar.
+        let jira = state
             .config
             .as_ref()
-            .is_some_and(|config| match &value.sync {
-                Sync::Confirmed(receipt) => receipt.status == config.jira.statuses.done,
-                _ => false,
-            });
-        let subtasks_done = value.subtasks.values().all(|subtask| matches!(&subtask.sync, Sync::Confirmed(receipt) if state.config.as_ref().is_some_and(|config| receipt.status == config.jira.statuses.done)));
+            .and_then(|config| config.jira.as_ref());
+        let done = jira.is_none_or(|jira| {
+            matches!(&value.sync, Sync::Confirmed(receipt) if receipt.status == jira.statuses.done)
+        });
+        let subtasks_done = value.subtasks.values().all(|subtask| {
+            jira.is_none_or(|jira| matches!(&subtask.sync, Sync::Confirmed(receipt) if receipt.status == jira.statuses.done))
+        });
         if !matches!(value.phase, Phase::Verified { .. }) || !done || !subtasks_done {
             return Err(self.error(
                 "complete",

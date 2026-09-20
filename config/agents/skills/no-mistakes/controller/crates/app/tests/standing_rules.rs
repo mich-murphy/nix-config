@@ -23,12 +23,12 @@ fn open_without_receipt(
             task: task.clone(),
             kind,
             receipt: None,
-            jira: JiraRead {
+            jira: Some(JiraRead {
                 member: true,
                 resolved: false,
                 ownership_clear: true,
                 requirements,
-            },
+            }),
         },
         false,
     )?)
@@ -80,12 +80,12 @@ fn standing_follow_ups_are_counted() -> Result<(), Box<dyn std::error::Error>> {
             task: task.clone(),
             kind: DeliveryKind::Code { pr: None },
             receipt: None,
-            jira: JiraRead {
+            jira: Some(JiraRead {
                 member: true,
                 resolved: false,
                 ownership_clear: true,
                 requirements,
-            },
+            }),
         },
         false,
     );

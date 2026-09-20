@@ -149,6 +149,7 @@ impl<P: Process> Vcs for Git<P> {
 
     fn reuse_slot(&self, slot: &SlotId, branch: &str) -> Result<(), PortError> {
         let path = self.repo.join(".worktrees").join(slot.as_ref());
+        self.anchor_custody(slot, &path)?;
         self.git(&["switch", "-C", branch, "origin/main"], &path)?;
         self.git(&["reset", "--hard", "origin/main"], &path)?;
         self.git(&["clean", "-fd"], &path)?;
@@ -158,12 +159,31 @@ impl<P: Process> Vcs for Git<P> {
     fn clean_slot(&self, slot: &SlotId, delete: bool) -> Result<(), PortError> {
         let path = self.repo.join(".worktrees").join(slot.as_ref());
         let path_text = path.to_string_lossy();
+        self.anchor_custody(slot, &path)?;
         if delete {
             self.git(&["worktree", "remove", &path_text], &self.repo)?;
         } else {
             self.git(&["reset", "--hard", "origin/main"], &path)?;
             self.git(&["clean", "-fd"], &path)?;
         }
+        Ok(())
+    }
+}
+
+impl<P: Process> Git<P> {
+    /// Pins the slot's current head under an append-only custody ref
+    /// before anything destructive runs, so a reset, clean, or worktree
+    /// removal can never strand a commit: the ref keeps the object
+    /// reachable from the main repository and names the exact head that
+    /// was destroyed. Fails closed — an unanchorable slot is left
+    /// untouched. Untracked, uncommitted content has no head to anchor
+    /// and is not protected; callers own that distinction.
+    fn anchor_custody(&self, slot: &SlotId, path: &Path) -> Result<(), PortError> {
+        let head = self.git(&["rev-parse", "HEAD"], path)?;
+        let head = head.trim();
+        parse_sha(head)?;
+        let reference = format!("refs/no-mistakes/custody/{slot}/{head}");
+        self.git(&["update-ref", &reference, head], &self.repo)?;
         Ok(())
     }
 }
@@ -248,6 +268,103 @@ mod tests {
             !git.reserve(&task)
                 .map_err(|_| domain::ids::InvalidId("reserve"))?
         );
+        Ok(())
+    }
+
+    /// Records every argv so custody tests can assert the anchor lands
+    /// before the destructive command, and can fail the anchor write.
+    struct Recording {
+        calls: std::cell::RefCell<Vec<Vec<String>>>,
+        fail_anchor: bool,
+    }
+
+    impl Recording {
+        fn git(&self) -> Git<&Self> {
+            Git::new(self, PathBuf::from("/repo"))
+        }
+
+        fn position(&self, needle: &str) -> Option<usize> {
+            self.calls
+                .borrow()
+                .iter()
+                .position(|args| args.iter().any(|arg| arg.contains(needle)))
+        }
+    }
+
+    impl Process for &Recording {
+        fn run(&self, request: &ProcessRequest) -> Result<crate::ProcessOutput, PortError> {
+            self.calls.borrow_mut().push(request.args.clone());
+            let rev = request.args.first().is_some_and(|arg| arg == "rev-parse");
+            let anchor = request.args.first().is_some_and(|arg| arg == "update-ref")
+                && request
+                    .args
+                    .get(1)
+                    .is_some_and(|arg| arg.contains("custody"));
+            let code = Some(u8::from(anchor && self.fail_anchor).into());
+            Ok(crate::ProcessOutput {
+                code,
+                stdout: canned_stdout(rev),
+                stderr: String::new(),
+            })
+        }
+    }
+
+    fn canned_stdout(rev: bool) -> String {
+        if rev {
+            format!("{}\n", "b".repeat(40))
+        } else {
+            String::new()
+        }
+    }
+
+    #[test]
+    fn reuse_anchors_head_before_rewrite() -> Result<(), domain::ids::InvalidId> {
+        let recording = Recording {
+            calls: std::cell::RefCell::new(Vec::new()),
+            fail_anchor: false,
+        };
+        let slot = SlotId::from_str("worker1")?;
+        recording
+            .git()
+            .reuse_slot(&slot, "agent/worker1/GAIN-2")
+            .map_err(|_| domain::ids::InvalidId("reuse"))?;
+        let anchor = recording.position("refs/no-mistakes/custody/worker1/");
+        let rewrite = recording.position("switch");
+        assert!(anchor.is_some_and(|at| Some(at) < rewrite));
+        Ok(())
+    }
+
+    #[test]
+    fn cleanup_anchors_head_before_removal() -> Result<(), domain::ids::InvalidId> {
+        let recording = Recording {
+            calls: std::cell::RefCell::new(Vec::new()),
+            fail_anchor: false,
+        };
+        let slot = SlotId::from_str("worker1")?;
+        recording
+            .git()
+            .clean_slot(&slot, true)
+            .map_err(|_| domain::ids::InvalidId("cleanup"))?;
+        let anchor = recording.position("refs/no-mistakes/custody/worker1/");
+        let removal = recording.position("remove");
+        assert!(anchor.is_some_and(|at| Some(at) < removal));
+        Ok(())
+    }
+
+    #[test]
+    fn failed_anchor_blocks_the_destructive_step() -> Result<(), domain::ids::InvalidId> {
+        let recording = Recording {
+            calls: std::cell::RefCell::new(Vec::new()),
+            fail_anchor: true,
+        };
+        let slot = SlotId::from_str("worker1")?;
+        assert!(
+            recording
+                .git()
+                .reuse_slot(&slot, "agent/worker1/GAIN-2")
+                .is_err()
+        );
+        assert!(recording.position("switch").is_none());
         Ok(())
     }
 }
