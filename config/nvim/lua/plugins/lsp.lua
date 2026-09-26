@@ -1,6 +1,8 @@
 local servers = {
+	"bashls",
 	"docker_compose_language_service",
 	"dockerls",
+	"eslint",
 	"gopls",
 	"jsonls",
 	"lua_ls",
@@ -11,6 +13,8 @@ local servers = {
 	"rust_analyzer",
 	"taplo",
 	"texlab",
+	"tinymist",
+	"vtsls",
 	"yamlls",
 }
 
@@ -56,4 +60,7 @@ return {
 			vim.lsp.enable(servers)
 		end,
 	},
+
+	-- Loaded by the jsonls and yamlls configs in after/lsp when those servers start.
+	{ "b0o/SchemaStore.nvim" },
 }

@@ -1,6 +1,8 @@
 local tools = {
+	"bash-language-server",
 	"docker-compose-language-service",
 	"dockerfile-language-server",
+	"eslint-lsp",
 	"gofumpt",
 	"goimports",
 	"golangci-lint",
@@ -15,10 +17,13 @@ local tools = {
 	"pyright",
 	"ruff",
 	"rust-analyzer",
+	"shellcheck",
 	"shfmt",
 	"stylua",
 	"taplo",
 	"texlab",
+	"tinymist",
+	"vtsls",
 	"yaml-language-server",
 }
 

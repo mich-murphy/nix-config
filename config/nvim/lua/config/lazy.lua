@@ -41,7 +41,6 @@ require("lazy").setup({
 				"rplugin",
 				"spellfile",
 				"tarPlugin",
-				"tohtml",
 				"tutor",
 				"zipPlugin",
 			},

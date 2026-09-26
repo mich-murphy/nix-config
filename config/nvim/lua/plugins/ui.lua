@@ -33,7 +33,6 @@ return {
 				{ "<leader>c", group = "code" },
 				{ "<leader>f", group = "files" },
 				{ "<leader>g", group = "git" },
-				{ "<leader>gh", group = "hunks" },
 				{ "<leader>q", group = "quit" },
 				{ "<leader>s", group = "search" },
 				{ "<leader>u", group = "ui" },

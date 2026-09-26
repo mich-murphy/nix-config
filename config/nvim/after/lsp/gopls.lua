@@ -3,7 +3,6 @@ return {
 		gopls = {
 			gofumpt = true,
 			codelenses = {
-				gc_details = false,
 				generate = true,
 				regenerate_cgo = true,
 				run_govulncheck = true,
@@ -26,7 +25,6 @@ return {
 				nilness = true,
 				unusedparams = true,
 				unusedwrite = true,
-				useany = true,
 			},
 			usePlaceholders = true,
 			completeUnimported = true,

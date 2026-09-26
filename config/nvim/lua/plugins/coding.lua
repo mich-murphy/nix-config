@@ -14,6 +14,7 @@ local parsers = {
 	"jsdoc",
 	"json",
 	"json5",
+	"latex",
 	"lua",
 	"luadoc",
 	"luap",
@@ -38,6 +39,10 @@ local parsers = {
 	"yaml",
 }
 
+-- Treesitter highlighting re-walks every markdown inline injection on each
+-- keystroke (~10ms per key, 200ms+ in long documents); regex syntax takes ~1ms.
+local regex_highlight = { markdown = true }
+
 local textobject_moves = {
 	goto_next_start = { ["]f"] = "@function.outer", ["]c"] = "@class.outer", ["]a"] = "@parameter.inner" },
 	goto_next_end = { ["]F"] = "@function.outer", ["]C"] = "@class.outer", ["]A"] = "@parameter.inner" },
@@ -49,8 +54,7 @@ return {
 	{
 		"nvim-treesitter/nvim-treesitter",
 		branch = "main",
-		event = { "BufReadPre", "BufNewFile" },
-		cmd = { "TSUpdate", "TSInstall" },
+		lazy = false,
 		build = ":TSUpdate",
 		config = function()
 			local treesitter = require("nvim-treesitter")
@@ -71,6 +75,11 @@ return {
 				group = vim.api.nvim_create_augroup("nvim_treesitter", { clear = true }),
 				callback = function(event)
 					local language = vim.treesitter.language.get_lang(event.match)
+					if regex_highlight[language] then
+						-- Nvim's markdown ftplugin starts treesitter highlighting itself;
+						-- stopping it restores regex syntax.
+						vim.treesitter.stop(event.buf)
+					end
 					if not language or not vim.tbl_contains(treesitter.get_installed(), language) then
 						return
 					end
@@ -80,7 +89,7 @@ return {
 						return ok and query ~= nil
 					end
 
-					if has_query("highlights") then
+					if has_query("highlights") and not regex_highlight[language] then
 						pcall(vim.treesitter.start, event.buf, language)
 					end
 					if has_query("indents") then
