@@ -11,6 +11,16 @@
     reattach = true;
   };
 
+  # launchd binds sshd on every interface, so AllowUsers limits it to the tailnet
+  services.openssh = {
+    enable = true;
+    extraConfig = ''
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      AllowUsers mm@100.64.0.0/10 mm@fd7a:115c:a1e0::/48
+    '';
+  };
+
   networking.applicationFirewall = {
     enable = true;
     allowSigned = true;
