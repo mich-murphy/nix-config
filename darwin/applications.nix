@@ -24,6 +24,12 @@
       upgrade = true;
       cleanup = "zap";
     };
+    taps = [
+      {
+        name = "rjyo/moshi";
+        trusted = true;
+      }
+    ];
     casks = [
       "claude-code@latest"
       "codex"
@@ -60,6 +66,11 @@
     brews = [
       "herdr"
       "pi-coding-agent"
+      {
+        name = "moshi-hook";
+        start_service = true;
+        restart_service = "changed";
+      }
       "mas"
       "mole"
       "xcodes"
