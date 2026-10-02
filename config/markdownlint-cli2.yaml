@@ -1,5 +1,9 @@
 ignores:
   - "**/node_modules/**"
+  # Vendored verbatim from upstream. unslop's rule numbers are stable ids with
+  # gaps, which MD029 rejects. show-me has a bare code fence, which MD040 rejects.
+  - "config/agents/skills/unslop/SKILL.md"
+  - "config/agents/skills/show-me/SKILL.md"
 config:
   line-length: false
   first-line-heading: false
