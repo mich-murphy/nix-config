@@ -1,5 +1,15 @@
-font-family = Berkeley Mono
+# Monaspace Neon for code; Radon takes over every italic span, which is how
+# comments (nvim) and emphasis (pi markdown) get their handwriting voice.
+font-family = MonaspiceNe Nerd Font Mono
+font-family-italic = MonaspiceRn Nerd Font Mono
+font-family-bold-italic = MonaspiceRn Nerd Font Mono
 font-size = 13
+
+# Texture healing (calt) only. Monaspace ships its coding ligatures in the
+# stylistic sets (ss01-ss10, off by default) and liga/dlig, so disable those.
+font-feature = +calt
+font-feature = -liga
+font-feature = -dlig
 theme = TokyoNight Night
 window-decoration = auto
 macos-titlebar-style = hidden

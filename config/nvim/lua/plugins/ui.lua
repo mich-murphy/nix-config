@@ -3,7 +3,12 @@ return {
 		"folke/tokyonight.nvim",
 		lazy = false,
 		priority = 1000,
-		opts = { style = "night" },
+		opts = {
+			style = "night",
+			-- Italic spans render in Monaspace Radon (see ghostty config); keep
+			-- keywords upright so Radon stays reserved for comments.
+			styles = { keywords = { italic = false } },
+		},
 		config = function(_, opts)
 			require("tokyonight").setup(opts)
 			vim.cmd.colorscheme("tokyonight-night")
