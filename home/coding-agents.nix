@@ -5,7 +5,19 @@
 }: let
   agentConfig = "${repoRoot}/config/agents";
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
+
+  # Shell-launched Claude Code goes through the CLIProxyAPI proxy on ai-dev.
+  # The proxy has no client keys; the placeholder token only stops Claude
+  # Code sending the real OAuth token. GUI launches outside a shell stay direct.
+  claudeProxyEnv = {
+    ANTHROPIC_BASE_URL = "http://ai-dev:8317";
+    ANTHROPIC_AUTH_TOKEN = "cliproxy-placeholder-not-a-secret";
+    CLAUDE_CODE_PROMPT_CACHE_TTL = "1h";
+    CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL = "1h";
+  };
 in {
+  home.sessionVariables = claudeProxyEnv;
+
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     # Per-skill links keep ~/.claude/skills a real directory so Claude
