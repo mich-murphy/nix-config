@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   repoRoot,
   ...
 }: let
@@ -17,6 +18,24 @@
   };
 in {
   home.sessionVariables = claudeProxyEnv;
+
+  # Direct fallbacks that bypass the proxy for a single invocation.
+  programs.fish.functions = {
+    claude-direct = {
+      description = "Run Claude Code directly, bypassing CLIProxyAPI";
+      wraps = "claude";
+      body = ''
+        env ${lib.concatMapStringsSep " " (name: "-u ${name}") (lib.attrNames claudeProxyEnv)} claude $argv
+      '';
+    };
+    codex-direct = {
+      description = "Run Codex directly, bypassing CLIProxyAPI";
+      wraps = "codex";
+      body = ''
+        command codex -c model_provider=openai $argv
+      '';
+    };
+  };
 
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
