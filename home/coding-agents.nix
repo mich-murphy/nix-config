@@ -11,7 +11,7 @@
   # The proxy has no client keys; the placeholder token only stops Claude
   # Code sending the real OAuth token. GUI launches outside a shell stay direct.
   claudeProxyEnv = {
-    ANTHROPIC_BASE_URL = "http://ai-dev:8317";
+    ANTHROPIC_BASE_URL = "https://ai-dev.zonkey-goblin.ts.net";
     ANTHROPIC_AUTH_TOKEN = "cliproxy-placeholder-not-a-secret";
     CLAUDE_CODE_PROMPT_CACHE_TTL = "1h";
     CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL = "1h";
