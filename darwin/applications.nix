@@ -62,6 +62,7 @@
       "wispr-flow"
       "chatgpt"
       "nextcloud"
+      "t3-code"
     ];
     brews = [
       "herdr"
