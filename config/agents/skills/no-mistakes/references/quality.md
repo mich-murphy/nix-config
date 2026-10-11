@@ -62,9 +62,11 @@ The rendered summary line reads, for example:
 ## Recovery
 
 A judge that was killed leaves an unsettled launch with role `judge`. Settle
-it with `recover-operation --launch <id>` like any other launch, then run
-`judge <task>` again. If the trace instance never closed because a judge died,
-run `usage-report` again once no judge is pending.
+it like any other launch with
+`recover-operation --terminate false --input <file|->`, where the request is
+`{"target": {"kind": "launch", "launch": <id>}}` and `<id>` is the numeric
+launch ID. Then run `judge <task>` again. If the trace instance never closed
+because a judge died, run `usage-report` again once no judge is pending.
 
 If the brief says the coordinator transcript is unavailable, the hook did not
 record a note for the working directory the controller ran from. The hook
