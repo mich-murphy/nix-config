@@ -105,10 +105,10 @@ main, for work that is already delivered. Its tracker read is required in
 tracked runs and omitted in self-contained ones. `judge`
 runs the LLM-as-judge for one task in the background of a run; `complete` and
 `usage-report` start it, so the coordinator never calls it directly. See
-[quality.md](quality.md). `poll-checks
---wait` polls every 30 seconds until no required check is pending or its
-per-head deadline passes, then records the hold; without `--wait` it observes
-once. `bind-slot` reserves and creates a fresh worktree, or performs explicitly
+[quality.md](quality.md). `poll-checks --wait true` polls every 30 seconds
+until no required check is pending or its per-head deadline passes, then
+records the hold; `--wait false` observes once. `bind-slot` reserves and
+creates a fresh worktree, or performs explicitly
 authorized historical reuse. `record-proof` accepts an atomic array of
 criterion results.
 
@@ -166,9 +166,10 @@ process-group ID, Linux start ticks, and timeout, then release them. Timeout
 terminates the owned process group and records failure. Recovery compares every
 identity field before inspection or termination. A reused PID does not match.
 
-`recover-operation` never trusts a `terminate` claim. With no flag it reports a
-still-running owned process. With `--terminate` it may stop only the matching
-process group. A stopped process can settle failed, and an owned harness launch
+`recover-operation` never trusts a `terminate` claim. With `--terminate false`
+it reports a still-running owned process. With `--terminate true` it may stop
+only the matching process group. A stopped process can settle failed, and an
+owned harness launch
 can settle failed or cancelled without refunding recorded spend. GitHub
 operations have no recoverable local process receipt in controller state, so
 observe the PR instead of treating process termination as proof of remote
@@ -262,7 +263,7 @@ receipt, consumed by the confirmed merge. The GitHub adapter uses exact-head
 protection and does not bypass branch rules.
 
 `observe-pr` records open, closed, merged, or externally replaced outcomes. A
-closed historical delivery is immutable. `poll-checks --wait` keeps one
+closed historical delivery is immutable. `poll-checks --wait true` keeps one
 deadline per PR head, set to the first observed pending check plus 1800
 seconds; holding and resuming do not restart it.
 

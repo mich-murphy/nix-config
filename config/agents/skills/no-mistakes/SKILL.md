@@ -254,7 +254,7 @@ snapshot; keep the repair prompt itself short.
 
 Create one draft PR from a safe committed checkpoint. Keep its head tied to the
 recorded snapshot. Mark it ready when coherent. Required checks must be present
-and green. `poll-checks --wait` preserves one deadline per head.
+and green. `poll-checks --wait true` preserves one deadline per head.
 
 Do not bypass branch protection. Observe GitHub's merged state and the merge
 commit on main. When the merge policy is receipt-required (the default), `next`
