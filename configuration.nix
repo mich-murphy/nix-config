@@ -27,7 +27,6 @@ in {
   users.users.mm = {
     home = "/Users/mm";
     shell = pkgs.fish;
-    createHome = true;
   };
 
   programs.fish.enable = true;

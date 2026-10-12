@@ -2,7 +2,6 @@
   environment.variables.HOMEBREW_NO_ENV_HINTS = "1";
 
   environment.systemPackages = [
-    pkgs.xcode-install
     pkgs.tmux
     pkgs.mosh
     pkgs.nmap
@@ -57,12 +56,10 @@
       "displaylink"
       "raycast"
       "winbox"
-      "xcodes-app"
       "linearmouse"
       "wispr-flow"
       "chatgpt"
       "nextcloud"
-      "t3-code"
     ];
     brews = [
       "herdr"
@@ -74,7 +71,6 @@
       }
       "mas"
       "mole"
-      "xcodes"
     ];
     masApps = {
       "Xcode" = 497799835;

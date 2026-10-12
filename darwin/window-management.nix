@@ -7,9 +7,6 @@
   services = {
     yabai = {
       enable = true;
-      package = pkgs.yabai.overrideAttrs (_old: {
-        enableParallelBuilding = false;
-      });
       config = {
         focus_follows_mouse = "off";
         mouse_follows_focus = "off";
@@ -23,7 +20,6 @@
         bottom_padding = 5;
         left_padding = 5;
         right_padding = 5;
-        window_shadow = "float";
         window_gap = 5;
         window_placement = "second_child";
       };
@@ -48,10 +44,7 @@
     };
 
     # Keep nix-darwin's package and LaunchAgent, but point it at the live file.
-    skhd = {
-      enable = true;
-      skhdConfig = "";
-    };
+    skhd.enable = true;
   };
 
   launchd.user.agents.skhd.serviceConfig.ProgramArguments = lib.mkForce [

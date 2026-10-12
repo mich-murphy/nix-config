@@ -10,7 +10,6 @@
     vimAlias = true;
     defaultEditor = true;
     withPython3 = false;
-    withNodeJs = false;
     withRuby = false;
     sideloadInitLua = true;
     extraPackages = [

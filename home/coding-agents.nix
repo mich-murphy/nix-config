@@ -1,11 +1,14 @@
 {
   config,
+  pkgs,
   repoRoot,
   ...
 }: let
   agentConfig = "${repoRoot}/config/agents";
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
 in {
+  # The harness hooks (~/dev/harness/skills/mm-mode/hooks) run on Bun.
+  home.packages = [pkgs.bun];
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     # Per-skill links keep ~/.claude/skills a real directory so Claude
@@ -15,6 +18,7 @@ in {
     ".claude/skills/no-mistakes".source =
       liveLink "${agentConfig}/skills/no-mistakes";
     ".claude/skills/research".source = liveLink "${agentConfig}/skills/research";
+    ".claude/skills/show-me".source = liveLink "${agentConfig}/skills/show-me";
     ".claude/skills/typescript".source =
       liveLink "${agentConfig}/skills/typescript";
     ".claude/skills/unslop".source = liveLink "${agentConfig}/skills/unslop";

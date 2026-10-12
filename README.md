@@ -11,14 +11,14 @@ embedded in the system configuration — owns the portable user environment for
 
 ```text
 flake.nix
-├── configuration.nix
-│   └── darwin/default.nix
-│       └── Darwin concern files
-├── home.nix
-│   └── home/default.nix
-│       └── portable user concern files
-└── hosts
-    └── macbook.nix
+└── configuration.nix
+    ├── darwin/default.nix
+    │   └── Darwin concern files
+    └── home-manager.users.mm
+        ├── home.nix
+        │   └── home/default.nix
+        │       └── portable user concern files
+        └── hosts/macbook.nix
 ```
 
 Each `default.nix` is the static manifest for its directory. Concern files
@@ -91,7 +91,7 @@ Home Manager receives its checkout path as `repoRoot`:
 [out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
 only for configurations that are intentionally edited live:
 
-- coding-agent instructions and skills;
+- coding-agent skills;
 - Ghostty and WezTerm;
 - Herdr;
 - Karabiner;

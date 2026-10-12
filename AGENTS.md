@@ -11,7 +11,7 @@ nix-darwin and embedded Home Manager.
   compatibility, Determinate integration, and Home Manager wiring
 - `darwin/default.nix` — static manifest for Darwin concern files
 - `darwin/system.nix` — networking, security, power, and macOS defaults
-- `darwin/maintenance.nix` — Determinate-compatible generation and GC agents
+- `darwin/maintenance.nix` — Determinate-compatible system generation GC daemon
 - `darwin/applications.nix` — packages, fonts, Homebrew, and MAS inventory
 - `darwin/window-management.nix` — yabai, skhd, and the live skhd path
 - `home.nix` — portable Home Manager entry point and baseline

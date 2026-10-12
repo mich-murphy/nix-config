@@ -17,7 +17,6 @@
 in {
   home.packages = [
     azureCliWithExtensions
-    pkgs.cargo
     pkgs.curl
     pkgs.doctl
     pkgs.dust
@@ -42,7 +41,6 @@ in {
   programs = {
     direnv = {
       enable = true;
-      enableFishIntegration = true;
       nix-direnv.enable = true;
     };
     bat = {
@@ -57,7 +55,6 @@ in {
     };
     starship = {
       enable = true;
-      enableFishIntegration = true;
       settings = {
         scan_timeout = 10;
         git_status = {
@@ -72,10 +69,7 @@ in {
         "--group-directories-first"
       ];
     };
-    zoxide = {
-      enable = true;
-      enableFishIntegration = true;
-    };
+    zoxide.enable = true;
     tealdeer = {
       enable = true;
       enableAutoUpdates = false;

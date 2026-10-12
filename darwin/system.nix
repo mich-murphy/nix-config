@@ -29,7 +29,6 @@
   };
 
   system.activationScripts.postActivation.text = ''
-    killall Dock || true
     killall Finder || true
     killall SystemUIServer || true
   '';
@@ -38,26 +37,28 @@
   # values for AC and battery power.
   system.activationScripts.extraActivation.text = ''
     pmset -c sleep 1 displaysleep 10 disksleep 10
-    pmset -b sleep 1 displaysleep 2 disksleep 10
+    pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
   '';
 
   system = {
-    checks.verifyNixPath = false;
     defaults = {
       CustomUserPreferences = {
-        "com.apple.BluetoothAudioAgent"."Apple Bitpool Min (editable)" = 40;
         "com.apple.AdLib".allowApplePersonalizedAdvertising = false;
         "com.apple.desktopservices" = {
           DSDontWriteNetworkStores = true;
           DSDontWriteUSBStores = true;
         };
-        "com.apple.SoftwareUpdate" = {
-          AutomaticCheckEnabled = true;
-          ScheduleFrequency = 1;
-          AutomaticDownload = 1;
-          CriticalUpdateInstall = 1;
-        };
       };
+      # softwareupdated reads the system domain, and this option takes the
+      # domain verbatim as root, so it needs the full path.
+      CustomSystemPreferences."/Library/Preferences/com.apple.SoftwareUpdate" = {
+        AutomaticCheckEnabled = true;
+        ScheduleFrequency = 1;
+        AutomaticDownload = 1;
+        CriticalUpdateInstall = 1;
+        ConfigDataInstall = 1;
+      };
+      SoftwareUpdate.AutomaticallyInstallMacOSUpdates = true;
       dock = {
         autohide = true;
         autohide-delay = 0.1;
@@ -95,7 +96,7 @@
       NSGlobalDomain = {
         AppleEnableMouseSwipeNavigateWithScrolls = false;
         AppleEnableSwipeNavigateWithScrolls = false;
-        AppleKeyboardUIMode = 3;
+        AppleKeyboardUIMode = 2;
         ApplePressAndHoldEnabled = false;
         AppleInterfaceStyle = "Dark";
         InitialKeyRepeat = 15;
@@ -117,9 +118,14 @@
         ShowSeconds = false;
       };
       spaces.spans-displays = false;
-      WindowManager.EnableStandardClickToShowDesktop = false;
-      LaunchServices.LSQuarantine = false;
+      # Keep Stage Manager and native edge tiling out of yabai's way.
+      WindowManager = {
+        GloballyEnabled = false;
+        EnableStandardClickToShowDesktop = false;
+        EnableTilingByEdgeDrag = false;
+        EnableTopTilingByEdgeDrag = false;
+        EnableTilingOptionAccelerator = false;
+      };
     };
-    keyboard.enableKeyMapping = true;
   };
 }

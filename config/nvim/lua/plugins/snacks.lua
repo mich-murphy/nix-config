@@ -45,7 +45,10 @@ return {
 				trash = true,
 			},
 			indent = { enabled = true },
-			image = { enabled = true },
+			image = {
+				enabled = true,
+				math = { enabled = false },
+			},
 			input = { enabled = true },
 			notifier = { enabled = true, style = "compact", timeout = 3000 },
 			picker = { enabled = true },

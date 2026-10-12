@@ -47,8 +47,6 @@
     checks.aarch64-darwin = {
       macbook-system = darwinConfig.config.system.build.toplevel;
       macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
-      hunk = hunk.packages.aarch64-darwin.hunk;
-      opencode = (packagesFor "aarch64-darwin").opencode;
     };
   };
 }
