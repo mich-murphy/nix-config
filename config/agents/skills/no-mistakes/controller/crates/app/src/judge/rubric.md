@@ -39,19 +39,21 @@ transcript quotes).
 - **friction**: how much human or coordinator administration was needed to
   keep the run moving. 100 means none: the coordinator issued controller
   commands, they were accepted, workers ran, and the human never had to
-  intervene. Friction is any moment where a person or the coordinator had to
-  clear, reset, approve, re-supply, retry, work around, explain, or wait on
-  something the skill or controller should have handled. Examples, not an
-  exhaustive list: clearing or reusing a worker slot, reconciling an existing
-  or outdated PR, supplying evidence or a receipt for an unlikely scenario,
-  granting authority repeatedly, answering controller questions, holds that
-  needed a human, recovering a stuck launch or operation, rejected commands
-  the coordinator had to reinterpret, and the human repeating or clarifying
-  instructions. Record every such moment as a friction event; invent a kind
-  when none of the examples fits. Mark it avoidable when a change to the
-  skill or controller would have prevented it while keeping the safety
-  property it enforces. Severity: minor is a single extra step, moderate cost
-  a turn or a human message, severe stalled or derailed the task.
+  intervene. A merge receipt the run's merge policy requires (the default) is
+  expected, not friction. Friction is any moment where a person or the
+  coordinator had to clear, reset, approve, re-supply, retry, work around,
+  explain, or wait on something the skill or controller should have handled.
+  Examples, not an exhaustive list: clearing or reusing a worker slot,
+  reconciling an existing or outdated PR, supplying evidence or a receipt for
+  an unlikely scenario, granting authority repeatedly, answering controller
+  questions, holds that needed a human, recovering a stuck launch or
+  operation, rejected commands the coordinator had to reinterpret, and the
+  human repeating or clarifying instructions. Record every such moment as a
+  friction event; invent a kind when none of the examples fits. Mark it
+  avoidable when a change to the skill or controller would have prevented it
+  while keeping the safety property it enforces. Severity: minor is a single
+  extra step, moderate cost a turn or a human message, severe stalled or
+  derailed the task.
 - **process**: whether the controller's own rules held: one active task,
   intent before mutation, observation before retry, verification before Jira
   Done when tracked, cleanup only of the owned slot, no unrecorded side
