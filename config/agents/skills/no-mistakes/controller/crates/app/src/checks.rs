@@ -93,7 +93,7 @@ impl App<'_> {
         )
     }
 
-    /// Without `--wait`, observes once and returns. With `--wait`, polls
+    /// With `--wait false`, observes once and returns. With `--wait true`, polls
     /// GitHub every 30 seconds until no required check is pending or the
     /// per-head deadline passes (first observed pending, plus 1800
     /// seconds, persisted in `check_deadlines` so it survives a hold and

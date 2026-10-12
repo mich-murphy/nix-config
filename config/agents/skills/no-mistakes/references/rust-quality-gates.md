@@ -49,7 +49,7 @@ crate carries its own separate `[lints]` table with neither lint denied.
 hashes. Complexity exceptions name an exact repository-relative path, function,
 and reason. Bare function names are forbidden because they could exempt an
 unrelated function added later. The current exceptions are the exhaustive
-event fold (`apply`), the single command dispatcher (`execute`), the
+event fold (`apply`), the single command dispatcher (`dispatch`), the
 exhaustive `ConflictReason` display, and the two next-action formatters that
 turn a `NextAction` into its command tag and filled template. Do not add one
 to hide mixed responsibilities.

@@ -144,7 +144,7 @@ impl fmt::Display for ConflictReason {
                 formatter.write_str("operation has no owned process; observe its external state")
             }
             Self::ProcessStillRunning => {
-                formatter.write_str("owned process is still running; use --terminate to stop it")
+                formatter.write_str("owned process is still running; use --terminate true to stop it")
             }
             Self::LaunchStillRunning => formatter.write_str("owned launch is still running"),
             Self::LaunchNotRecoverable => {

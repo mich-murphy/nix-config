@@ -17,9 +17,9 @@ can approve that sequence. With approval, use `narrow-acceptance` on the current
 code delivery. The narrowed merge does not verify the task.
 
 After a narrowed merge, use a `Verification` delivery when no code remains. Use a
-new `Code` delivery with a fresh receipt when cleanup or correction code remains.
-Do not weaken `brief`, relabel operational proof, or mark tracker Done between these
-deliveries.
+new `Code` delivery, opened with `open-delivery` under the standing count or with
+a fresh receipt, when cleanup or correction code remains. Do not weaken `brief`,
+relabel operational proof, or mark tracker Done between these deliveries.
 
 ## Record a useful hold
 
