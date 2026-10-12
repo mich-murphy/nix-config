@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Cut AI tells from any writing. Must always apply.
+description: "Cut AI tells from prose a person reads. Use when writing or editing docs, release notes, a status update, a handover, a post, or a PR description, and when opening a PR or committing and pushing work."
 disable-model-invocation: true
 ---
 
