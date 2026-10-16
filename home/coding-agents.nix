@@ -2,13 +2,19 @@
   config,
   pkgs,
   repoRoot,
+  agent-sessions,
   ...
 }: let
   agentConfig = "${repoRoot}/config/agents";
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
 in {
-  # The harness hooks (~/dev/harness/skills/mm-mode/hooks) run on Bun.
-  home.packages = [pkgs.bun];
+  home.packages = [
+    # The harness hooks (~/dev/harness/skills/mm-mode/hooks) run on Bun.
+    pkgs.bun
+    # Session collector. Its hooks run the profile path, which survives upgrades, so
+    # Codex's hook trust stays valid; run `agent-sessions install` once after the first switch.
+    agent-sessions.packages.${pkgs.stdenv.hostPlatform.system}.default
+  ];
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     # Per-skill links keep ~/.claude/skills a real directory so Claude

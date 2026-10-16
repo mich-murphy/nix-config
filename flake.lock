@@ -1,5 +1,24 @@
 {
   "nodes": {
+    "agent-sessions": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1792103644,
+        "narHash": "sha256-5dEVLqFu88tlgxwNQ9CYcHGKZWxyRdgiwI6XAlEU8nU=",
+        "ref": "refs/tags/v0.3.0-rc.1",
+        "rev": "9ff2b42dfffdaf8465d6fecf6279863550a20eed",
+        "revCount": 165,
+        "type": "git",
+        "url": "ssh://git@github.com/mich-murphy/memory"
+      },
+      "original": {
+        "ref": "refs/tags/v0.3.0-rc.1",
+        "type": "git",
+        "url": "ssh://git@github.com/mich-murphy/memory"
+      }
+    },
     "bun2nix": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -90,15 +109,15 @@
     "hunk": {
       "inputs": {
         "bun2nix": "bun2nix",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": "nixpkgs_2",
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1791755396,
-        "narHash": "sha256-c1hGQh6V32tllX4ufjdzwX7+/awSZZtzqFuZMGtrk0E=",
+        "lastModified": 1791927170,
+        "narHash": "sha256-GFK2j7fyOzuwEUCngPeR7obn2quf7bGo7xQjy1jLzPo=",
         "owner": "modem-dev",
         "repo": "hunk",
-        "rev": "d2e85a0847fcee8911ce386ea7b03888586049e4",
+        "rev": "654a14a8d13caabc1f56b5888d4d960cd1b74c88",
         "type": "github"
       },
       "original": {
@@ -124,16 +143,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1777954456,
-        "narHash": "sha256-hGdgeU2Nk87RAuZyYjyDjFL6LK7dAZN5RE9+hrDTkDU=",
+        "lastModified": 1791637130,
+        "narHash": "sha256-TuvwvSjJrpqyIYdjhQ7Wu+ADVfeOpO2Um21/V7TOubw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "549bd84d6279f9852cae6225e372cc67fb91a4c1",
+        "rev": "ca1659429c950a11a565b5764e37a1b704e17ec8",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -155,6 +174,22 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 1777954456,
+        "narHash": "sha256-hGdgeU2Nk87RAuZyYjyDjFL6LK7dAZN5RE9+hrDTkDU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "549bd84d6279f9852cae6225e372cc67fb91a4c1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1791487292,
         "narHash": "sha256-tqM7xDEsaeK1p6VvRygeZ9LkQRpUUkbRT02BHv6hnTM=",
         "owner": "nixos",
@@ -171,10 +206,11 @@
     },
     "root": {
       "inputs": {
+        "agent-sessions": "agent-sessions",
         "darwin": "darwin",
         "home-manager": "home-manager",
         "hunk": "hunk",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
       }
     },
     "systems": {

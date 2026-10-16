@@ -7,6 +7,9 @@
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     hunk.url = "github:modem-dev/hunk";
+    # Private repo, fetched over SSH. Pinned to an immutable release tag; built from source
+    # with the toolchain locked in that repo, so it doesn't follow this nixpkgs.
+    agent-sessions.url = "git+ssh://git@github.com/mich-murphy/memory?ref=refs/tags/v0.3.0-rc.1";
   };
 
   outputs = {
@@ -14,6 +17,7 @@
     darwin,
     home-manager,
     hunk,
+    agent-sessions,
     ...
   }: let
     systems = ["aarch64-darwin"];
@@ -24,7 +28,7 @@
         config.allowUnfree = true;
       };
     darwinConfig = darwin.lib.darwinSystem {
-      specialArgs = {inherit hunk;};
+      specialArgs = {inherit hunk agent-sessions;};
       modules = [
         home-manager.darwinModules.home-manager
         ./configuration.nix
