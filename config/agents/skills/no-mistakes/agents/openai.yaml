@@ -1,4 +1,0 @@
-interface:
-  display_name: "No mistakes"
-  short_description: "Deliver bounded work with measured progress and verified completion"
-  default_prompt: "Use $no-mistakes to deliver this work order through verified merge: <task list, spec, or tracker epic URL>."

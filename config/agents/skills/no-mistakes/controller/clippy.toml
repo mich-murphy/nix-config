@@ -1,3 +1,0 @@
-# Complexity is also measured by the AST-based gate; these bound local readability.
-excessive-nesting-threshold = 3
-too-many-lines-threshold = 80
