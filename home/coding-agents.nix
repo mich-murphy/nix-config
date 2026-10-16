@@ -20,6 +20,8 @@ in {
     # Per-skill links keep ~/.claude/skills a real directory so Claude
     # Code's managed-skills sync cannot write into the repo.
     ".claude/skills/bro".source = liveLink "${agentConfig}/skills/bro";
+    ".claude/skills/create-verification".source =
+      liveLink "${agentConfig}/skills/create-verification";
     ".claude/skills/research".source = liveLink "${agentConfig}/skills/research";
     ".claude/skills/show-me".source = liveLink "${agentConfig}/skills/show-me";
     ".claude/skills/unslop".source = liveLink "${agentConfig}/skills/unslop";
