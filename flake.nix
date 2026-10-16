@@ -9,7 +9,7 @@
     hunk.url = "github:modem-dev/hunk";
     # Private repo, fetched over SSH. Pinned to an immutable release tag; built from source
     # with the toolchain locked in that repo, so it doesn't follow this nixpkgs.
-    agent-sessions.url = "git+ssh://git@github.com/mich-murphy/memory?ref=refs/tags/v0.3.0-rc.1";
+    agent-sessions.url = "git+ssh://git@github.com/mich-murphy/memory?ref=refs/tags/v0.3.0";
   };
 
   outputs = {
@@ -49,6 +49,16 @@
     darwinConfigurations.macbook = darwinConfig;
 
     checks.aarch64-darwin = {
+      git-branch-cleanup = let
+        pkgs = packagesFor "aarch64-darwin";
+      in
+        pkgs.runCommand "git-branch-cleanup" {
+          nativeBuildInputs = [pkgs.git pkgs.bash];
+          RM_MERGED_ALIAS = darwinConfig.config.home-manager.users.mm.programs.git.settings.alias.rm-merged;
+        } ''
+          bash ${./tests/git-branch-cleanup.sh}
+          touch "$out"
+        '';
       macbook-system = darwinConfig.config.system.build.toplevel;
       macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
     };

@@ -7,14 +7,14 @@
       "locked": {
         "lastModified": 1792103644,
         "narHash": "sha256-5dEVLqFu88tlgxwNQ9CYcHGKZWxyRdgiwI6XAlEU8nU=",
-        "ref": "refs/tags/v0.3.0-rc.1",
+        "ref": "refs/tags/v0.3.0",
         "rev": "9ff2b42dfffdaf8465d6fecf6279863550a20eed",
         "revCount": 165,
         "type": "git",
         "url": "ssh://git@github.com/mich-murphy/memory"
       },
       "original": {
-        "ref": "refs/tags/v0.3.0-rc.1",
+        "ref": "refs/tags/v0.3.0",
         "type": "git",
         "url": "ssh://git@github.com/mich-murphy/memory"
       }
