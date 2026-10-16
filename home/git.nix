@@ -27,12 +27,6 @@
         format = null;
       };
       settings = {
-        alias = {
-          switch-recent = "!git branch --sort=-committerdate --format='%(refname:short)' | fzf --preview='git log --date=relative --color main..{}' | xargs git switch";
-          rm-merged = "!git branch --format '%(refname:short) %(upstream:track)' | awk '$2 == \"[gone]\" { print $1 }' | xargs -r git branch -D";
-          sync = "!git switch main && git pull && git rm-merged";
-          edit-unmerged = "!git diff --name-only --diff-filter U | xargs -r $(git var GIT_EDITOR)";
-        };
         init.defaultBranch = "main";
         fetch.prune = true;
         pull.rebase = true;

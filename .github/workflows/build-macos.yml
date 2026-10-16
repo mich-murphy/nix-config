@@ -1,9 +1,7 @@
 name: build
 
+# GitHub usage limits currently prevent CI; local validation is required.
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -28,4 +26,4 @@ jobs:
       - name: Lint Markdown
         run: npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"
       - name: Check flake
-        run: nix flake check --print-build-logs
+        run: nix flake check --print-build-logs --no-write-lock-file

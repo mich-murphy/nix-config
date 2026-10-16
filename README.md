@@ -1,5 +1,3 @@
-[![build](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml/badge.svg?branch=main)](https://github.com/mich-murphy/nix-config/actions/workflows/build-macos.yml)
-
 # MacBook Nix configuration
 
 The flake exposes the M2 MacBook Air as `darwinConfigurations.macbook`.
@@ -40,7 +38,15 @@ purge historical objects.
    [Determinate installer](https://docs.determinate.systems/).
 2. Install [Homebrew](https://brew.sh/).
 3. Clone this repository to `/Users/mm/dev/nix-config`.
-4. Bootstrap and activate:
+4. From the checkout, run `nix fmt -- --check .` and
+   `nix flake check --print-build-logs --no-write-lock-file` before activation.
+   For the first build, before `darwin-rebuild` is installed, use:
+
+   ```sh
+   nix run nix-darwin -- build --flake ~/dev/nix-config --no-write-lock-file
+   ```
+
+5. Bootstrap and activate only after validation succeeds:
 
    ```sh
    nix run nix-darwin -- switch --flake ~/dev/nix-config
@@ -70,9 +76,10 @@ instead of every commit.
 Validate without changing the running system:
 
 ```sh
+nix fmt -- --check .
 prek run --all-files
-nix flake check --print-build-logs
-darwin-rebuild build --flake .
+nix flake check --print-build-logs --no-write-lock-file
+darwin-rebuild build --flake . --no-write-lock-file
 ```
 
 Activation is intentionally separate:
@@ -81,8 +88,53 @@ Activation is intentionally separate:
 darwin-rebuild switch --flake .
 ```
 
-CI runs formatting, Markdown lint, and platform checks on an ARM macOS runner.
-It never activates the runner.
+Local validation is required: GitHub Actions is currently unavailable because
+of usage limits, so a badge or remote workflow result is not a readiness gate.
+The flake checks include regression tests for safe Git branch cleanup and the
+built GC launch daemon's weekly schedule. Builds validate generated
+configuration but do not activate services, run Homebrew upgrades, or prove a
+complete fresh-machine bootstrap.
+
+The GitHub workflow is manual-only to avoid automatic attempts while limits
+apply. It never activates the runner. Flake evaluation and builds do not need
+access to the private session-collector repository or any deploy-key secret.
+
+## Agent session collector
+
+`agent-sessions` is installed separately from Nix using the release installer
+in `~/dev/memory/install.sh`. Authenticate `gh` with an account that can read
+`mich-murphy/memory`, then install an explicit release as your regular user:
+
+```sh
+VERSION=v0.3.0 sh ~/dev/memory/install.sh
+~/.local/bin/agent-sessions install
+```
+
+The installer verifies the immutable release's attestation and checksums before
+installing the binary in `~/.local/bin`, which Home Manager already puts on
+`PATH`. Run it again with a new explicit version to upgrade. Nothing is added
+to `flake.lock`, and neither Nix builds nor CI need private-repository access.
+
+On a new machine without the checkout, download and verify the same installer:
+
+```sh
+(
+  set -eu
+  workdir=$(mktemp -d)
+  trap 'rm -rf "$workdir"' EXIT
+  gh release download v0.3.0 -R mich-murphy/memory -p install.sh -D "$workdir"
+  gh release verify-asset v0.3.0 "$workdir/install.sh" -R mich-murphy/memory
+  VERSION=v0.3.0 sh "$workdir/install.sh"
+)
+~/.local/bin/agent-sessions install
+```
+
+When migrating an existing Nix installation, install the release binary and
+rerun its `install` command before removing the old active profile. This moves
+managed hooks to the stable `~/.local/bin/agent-sessions` path. Preserve existing
+credentials, state and machine identity; do not generate a new machine ID.
+Review changed hooks in Codex `/hooks` and run `agent-sessions doctor` after
+configuring the collector. See the collector's `docs/install.md` for details.
 
 ## Live configuration
 

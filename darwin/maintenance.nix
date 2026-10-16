@@ -12,6 +12,7 @@
       {
         Weekday = 7;
         Hour = 9;
+        Minute = 0;
       }
     ];
     StandardOutPath = "/tmp/nix-gc.log";

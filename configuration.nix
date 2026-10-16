@@ -1,6 +1,5 @@
 {
   hunk,
-  agent-sessions,
   pkgs,
   ...
 }: let
@@ -36,7 +35,7 @@ in {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
-    extraSpecialArgs = {inherit hunk agent-sessions repoRoot;};
+    extraSpecialArgs = {inherit hunk repoRoot;};
     users.mm.imports = [
       ./home.nix
       ./hosts/macbook.nix
