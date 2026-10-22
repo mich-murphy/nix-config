@@ -13,6 +13,9 @@ in {
   ];
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
+    ".claude/CLAUDE.md".source = liveLink "${agentConfig}/AGENTS.md";
+    ".codex/AGENTS.md".source = liveLink "${agentConfig}/AGENTS.md";
+    ".pi/agent/AGENTS.md".source = liveLink "${agentConfig}/AGENTS.md";
     # Per-skill links keep ~/.claude/skills a real directory so Claude
     # Code's managed-skills sync cannot write into the repo.
     ".claude/skills/bro".source = liveLink "${agentConfig}/skills/bro";
