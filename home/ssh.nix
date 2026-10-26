@@ -4,10 +4,16 @@
     enableDefaultConfig = false;
     settings = {
       # pin the key; the 1password agent otherwise offers every key and the
-      # server disconnects after 6 failures
+      # server disconnects after 6 failures. For github.com the agent would
+      # also sign in as the work account instead of mich-murphy.
       "ai-dev" = {
         User = "michael";
         IdentityFile = "~/.ssh/ai-dev.pub";
+        IdentitiesOnly = true;
+      };
+
+      "github.com" = {
+        IdentityFile = "~/.ssh/id_ed25519";
         IdentitiesOnly = true;
       };
 
