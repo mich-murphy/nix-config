@@ -30,6 +30,9 @@
       }
     ];
     casks = [
+      # nixpkgs azure-cli depends on fabric, which is marked broken with
+      # invoke >= 3 (https://github.com/fabric/fabric/issues/2376).
+      "azure-cli"
       "claude-code@latest"
       "codex"
       "ghostty"
