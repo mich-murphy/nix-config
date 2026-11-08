@@ -85,9 +85,15 @@ nvd diff /run/current-system ./result
 ```
 
 `nix flake check` is the single gate: its `lint` check runs `nixfmt --check` and
-`nixf-diagnose` over every `.nix` file, and it builds every host. `nix develop`
-provides nixfmt, nixf-diagnose and nvd. For direnv, create a local `.envrc`
-containing `use flake`; it is globally ignored and never tracked.
+`nixf-diagnose` over every `.nix` file, and it builds every host. Each
+`<host>-links` check confirms every writable link points into the checkout at a
+file that exists in the repository. `nix develop` provides nixfmt,
+nixf-diagnose and nvd. For direnv, create a local `.envrc` containing
+`use flake`; it is globally ignored and never tracked.
+
+Each generation records the commit it was built from (with `-dirty` for an
+uncommitted tree): `darwin-version --configuration-revision` on a Mac, and
+`~/.local/state/nix-config/revision` on every host.
 
 Activation is intentionally separate:
 

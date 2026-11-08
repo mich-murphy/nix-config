@@ -47,5 +47,11 @@
     };
 
     manual.manpages.enable = false;
+
+    # The nix-config commit this generation was built from. Home Manager has no
+    # configurationRevision equivalent, and standalone hosts need one too.
+    xdg.stateFile."nix-config/revision".text = "${
+      inputs.self.rev or inputs.self.dirtyRev or "unknown"
+    }\n";
   };
 }
