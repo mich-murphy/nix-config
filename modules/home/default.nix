@@ -26,6 +26,15 @@
     '';
   };
 
+  options.nixConfig.skills = lib.mkOption {
+    type = lib.types.str;
+    default = "${config.home.homeDirectory}/dev/skills";
+    description = ''
+      Absolute path of the mich-murphy/skills checkout, linked live into each
+      coding agent's skills directory.
+    '';
+  };
+
   config = {
     home = {
       sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];

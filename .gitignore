@@ -13,5 +13,3 @@ result
 result-*
 .markdownlint-cli2.yaml
 .scratch
-# Claude Code managed-skills sync cache (lands here via the ~/.claude/skills live link)
-config/agents/skills/synced/
