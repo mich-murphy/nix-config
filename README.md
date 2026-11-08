@@ -7,7 +7,7 @@ configuration — owns the portable user environment for `mm` on macOS. The
 Determinate installer installs Nix; Determinate's nix-darwin module
 (`determinateNix.enable`) stops nix-darwin managing it and writes
 `/etc/nix/nix.custom.conf`. Determinate Nixd collects garbage automatically; a
-weekly launch daemon expires system generations older than 14 days.
+weekly launch daemon expires system generations older than 7 days.
 
 ## Structure
 
