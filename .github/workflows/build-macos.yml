@@ -21,9 +21,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v1
       - name: Cache Nix builds
         uses: DeterminateSystems/magic-nix-cache-action@v1
-      - name: Check Nix formatting
-        run: nix fmt -- --ci
-      - name: Lint Markdown
-        run: npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"
+      - name: Run commit hooks
+        run: nix shell --inputs-from . nixpkgs#prek --command prek run --all-files
       - name: Check flake
         run: nix flake check --print-build-logs --no-write-lock-file

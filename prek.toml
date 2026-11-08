@@ -15,16 +15,18 @@ hooks = [
   { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"] },
 ]
 
-[[repos]]
-repo = "https://github.com/DavidAnson/markdownlint-cli2"
-rev = "v0.23.2"
-hooks = [
-  { id = "markdownlint-cli2", args = ["--config", "config/markdownlint-cli2.yaml"] },
-]
-
+# Tools come from the flake's locked nixpkgs, so hooks, CI and `nix flake check`
+# use the same versions.
 [[repos]]
 repo = "local"
 hooks = [
+  {
+    id = "markdownlint",
+    name = "markdownlint",
+    language = "system",
+    entry = "nix shell --inputs-from . nixpkgs#markdownlint-cli2 --command markdownlint-cli2 --config config/markdownlint-cli2.yaml",
+    types = ["markdown"],
+  },
   {
     id = "nix-format",
     name = "nix format",
@@ -32,6 +34,13 @@ hooks = [
     entry = "nix fmt -- --fail-on-change",
     types = ["nix"],
     require_serial = true,
+  },
+  {
+    id = "nix-lint",
+    name = "nix lint",
+    language = "system",
+    entry = "nix shell --inputs-from . nixpkgs#nixf-diagnose --command nixf-diagnose",
+    types = ["nix"],
   },
 ]
 
