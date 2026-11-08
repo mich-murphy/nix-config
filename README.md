@@ -159,11 +159,15 @@ to `~/dev/nix-config`. Home Manager uses
 [out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
 only for configurations that are intentionally edited live:
 
-- coding-agent skills;
 - Ghostty and WezTerm;
 - Herdr;
 - Karabiner;
 - skhd, passed directly to its launch agent.
+
+Coding-agent skills live in the private `mich-murphy/skills` repository, cloned
+to `~/dev/skills` (the `nixConfig.skills` option). Home Manager links it to
+`~/.agents/skills` for Codex and Pi, and links individual skills into
+`~/.claude/skills` for Claude Code.
 
 If the checkout moves, set `nixConfig.checkout` (and the skhd path in
 `modules/darwin/window-management.nix`) and rebuild. Karabiner owns and watches

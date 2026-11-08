@@ -132,10 +132,12 @@
         }
         # Build every Mac's system and home: <host>-system, <host>-home.
         # <host>-links: mkOutOfStoreSymlink makes a store path that is itself a
-        # symlink. Each one must point into the checkout (a path literal would
-        # leave a read-only store copy) at a file that exists in this repo (a
-        # typo or moved file would leave a dangling link). A wrong checkout
-        # root cannot be seen from a build.
+        # symlink. Each one must point into the checkout or the skills clone (a
+        # path literal would leave a read-only store copy). Links into the
+        # checkout must name a file that exists in this repo (a typo or moved
+        # file would leave a dangling link); the skills repo is not a flake
+        # input, so its targets cannot be checked. A wrong root cannot be seen
+        # from a build.
         // lib.concatMapAttrs (
           host: darwin:
           let
@@ -146,6 +148,7 @@
             "${host}-home" = home.home.activationPackage;
             "${host}-links" = pkgs.runCommand "${host}-links" { } ''
               checkout=${lib.escapeShellArg home.nixConfig.checkout}
+              skills=${lib.escapeShellArg home.nixConfig.skills}
               found=0
               while IFS= read -r -d "" link; do
                 target=$(readlink "$link")
@@ -153,22 +156,24 @@
                 found=$((found + 1))
                 dest=$(readlink "$target")
                 case "$dest" in
-                  "$checkout"/*) ;;
+                  "$skills" | "$skills"/*) ;;
+                  "$checkout"/*)
+                    if [ ! -e "${inputs.self}/''${dest#"$checkout"/}" ]; then
+                      echo "$link -> $dest does not exist in the repository"
+                      exit 1
+                    fi
+                    ;;
                   *)
-                    echo "$link -> $dest is not in $checkout"
+                    echo "$link -> $dest is not in $checkout or $skills"
                     exit 1
                     ;;
                 esac
-                if [ ! -e "${inputs.self}/''${dest#"$checkout"/}" ]; then
-                  echo "$link -> $dest does not exist in the repository"
-                  exit 1
-                fi
               done < <(find ${home.home-files} -type l -print0)
               if [ "$found" -eq 0 ]; then
                 echo "no writable links found"
                 exit 1
               fi
-              echo "$found writable links point into $checkout"
+              echo "$found writable links point into $checkout or $skills"
               touch "$out"
             '';
           }
