@@ -42,6 +42,9 @@
               {
                 nixpkgs.config.allowUnfree = true;
 
+                # Shown by `darwin-version --configuration-revision`.
+                system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
+
                 # Nix is managed by the Determinate installer.
                 nix.enable = false;
 
@@ -118,9 +121,47 @@
               '';
         }
         # Build every Mac's system and home: <host>-system, <host>-home.
-        // lib.concatMapAttrs (host: darwin: {
-          "${host}-system" = darwin.config.system.build.toplevel;
-          "${host}-home" = darwin.config.home-manager.users.mm.home.activationPackage;
-        }) inputs.self.darwinConfigurations;
+        # <host>-links: mkOutOfStoreSymlink makes a store path that is itself a
+        # symlink. Each one must point into the checkout (a path literal would
+        # leave a read-only store copy) at a file that exists in this repo (a
+        # typo or moved file would leave a dangling link). A wrong checkout
+        # root cannot be seen from a build.
+        // lib.concatMapAttrs (
+          host: darwin:
+          let
+            home = darwin.config.home-manager.users.mm;
+          in
+          {
+            "${host}-system" = darwin.config.system.build.toplevel;
+            "${host}-home" = home.home.activationPackage;
+            "${host}-links" = pkgs.runCommand "${host}-links" { } ''
+              checkout=${lib.escapeShellArg home.nixConfig.checkout}
+              found=0
+              while IFS= read -r -d "" link; do
+                target=$(readlink "$link")
+                [ -L "$target" ] || continue
+                found=$((found + 1))
+                dest=$(readlink "$target")
+                case "$dest" in
+                  "$checkout"/*) ;;
+                  *)
+                    echo "$link -> $dest is not in $checkout"
+                    exit 1
+                    ;;
+                esac
+                if [ ! -e "${inputs.self}/''${dest#"$checkout"/}" ]; then
+                  echo "$link -> $dest does not exist in the repository"
+                  exit 1
+                fi
+              done < <(find ${home.home-files} -type l -print0)
+              if [ "$found" -eq 0 ]; then
+                echo "no writable links found"
+                exit 1
+              fi
+              echo "$found writable links point into $checkout"
+              touch "$out"
+            '';
+          }
+        ) inputs.self.darwinConfigurations;
     };
 }
