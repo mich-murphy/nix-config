@@ -175,11 +175,11 @@ Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the
 reload.
 
-Nix installs Neovim and its foundational runtime dependencies.
-Home Manager links `~/.config/nvim` directly to this checkout's `config/nvim`,
-while Mason owns the declared editor-only tools. Before the first activation of
-this model, move any existing `~/.config/nvim` directory out of the way so Home
-Manager can create the directory link.
+Nix installs Neovim and its foundational runtime dependencies. The editor
+configuration is [mich-murphy/neovim](https://github.com/mich-murphy/neovim),
+cloned to `~/.config/nvim`; Mason owns the declared editor-only tools. This
+repository's `.nvim.lua` points nixd at the flake's nixpkgs and option sets;
+run `:trust` once in Neovim to allow it.
 
 ## Homebrew warning
 

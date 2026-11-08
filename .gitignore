@@ -7,7 +7,6 @@ coverage/
 .env
 .env.*
 !.env.example
-config/nvim/nvim.log
 config/karabiner/automatic_backups/
 config/karabiner/assets/complex_modifications/
 result
