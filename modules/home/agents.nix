@@ -1,11 +1,10 @@
 {
   config,
   pkgs,
-  repoRoot,
   ...
 }:
 let
-  agentConfig = "${repoRoot}/config/agents";
+  agentConfig = "${config.nixConfig.checkout}/config/agents";
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
 in
 {

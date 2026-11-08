@@ -8,21 +8,22 @@ embedded in the system configuration — owns the portable user environment for
 ## Structure
 
 ```text
-flake.nix
-└── configuration.nix
-    ├── darwin/default.nix
-    │   └── Darwin concern files
-    └── home-manager.users.mm
-        ├── home.nix
-        │   └── home/default.nix
-        │       └── portable user concern files
-        └── hosts/macbook.nix
+flake.nix              inputs; mkDarwin (user, Home Manager wiring); checks
+hosts/<host>/
+├── default.nix        nix-darwin: host name, platform, stateVersion
+└── home.nix           Home Manager: host-only modules, stateVersion, identity
+modules/darwin/        nix-darwin modules shared by every Mac
+modules/home/          Home Manager modules shared by every host
+└── mac/               Home Manager modules only Macs import
+config/                raw application files, linked or read by the modules
 ```
 
-Each `default.nix` is the static manifest for its directory. Concern files
-directly define existing nix-darwin or Home Manager options. A dedicated host
-module composes the host-only concerns on top of the shared home, so
-Darwin-only concerns never enter the portable home module graph. This
+To add a setting, put it in the shared module for its concern, or in
+`hosts/<host>/` when only one machine needs it. Each `default.nix` lists the
+modules for its directory. Concern files directly define existing nix-darwin
+or Home Manager options. Modules receive the flake's `inputs` as a module
+argument. A host's `home.nix` adds host-only concerns on top of the shared
+home, so Darwin-only concerns never enter the portable home module graph. This
 follows the
 [nix-darwin flake guide](https://github.com/nix-darwin/nix-darwin#flakes-recommended-for-beginners)
 and
@@ -143,8 +144,8 @@ configuring the collector. See the collector's `docs/install.md` for details.
 
 ## Live configuration
 
-Home Manager receives its checkout path as `repoRoot`:
-`/Users/mm/dev/nix-config` on the Mac. Home Manager uses
+The `nixConfig.checkout` Home Manager option holds the checkout path, defaulting
+to `~/dev/nix-config`. Home Manager uses
 [out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
 only for configurations that are intentionally edited live:
 
@@ -154,7 +155,8 @@ only for configurations that are intentionally edited live:
 - Karabiner;
 - skhd, passed directly to its launch agent.
 
-If the checkout moves, update `repoRoot` and rebuild. Karabiner owns and watches
+If the checkout moves, set `nixConfig.checkout` (and the skhd path in
+`modules/darwin/window-management.nix`) and rebuild. Karabiner owns and watches
 its whole configuration directory, so generated backups and complex
 modifications are ignored while `config/karabiner/karabiner.json` remains
 tracked.

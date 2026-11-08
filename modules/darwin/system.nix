@@ -1,7 +1,6 @@
-{ ... }: {
+{ config, ... }:
+{
   networking = {
-    computerName = "macbook";
-    hostName = "macbook";
     dns = [
       "100.100.100.100"
       "1.1.1.1"
@@ -11,6 +10,13 @@
       "Wi-Fi"
       "Thunderbolt Bridge"
     ];
+
+    applicationFirewall = {
+      enable = true;
+      allowSigned = true;
+      allowSignedApp = true;
+      enableStealthMode = true;
+    };
   };
 
   security.pam.services.sudo_local = {
@@ -24,30 +30,25 @@
     extraConfig = ''
       PasswordAuthentication no
       KbdInteractiveAuthentication no
-      AllowUsers mm@100.64.0.0/10 mm@fd7a:115c:a1e0::/48
+      AllowUsers ${config.system.primaryUser}@100.64.0.0/10 ${config.system.primaryUser}@fd7a:115c:a1e0::/48
     '';
   };
 
-  networking.applicationFirewall = {
-    enable = true;
-    allowSigned = true;
-    allowSignedApp = true;
-    enableStealthMode = true;
-  };
-
-  system.activationScripts.postActivation.text = ''
-    killall Finder || true
-    killall SystemUIServer || true
-  '';
-
-  # Pin power management via pmset because power.sleep cannot set separate
-  # values for AC and battery power.
-  system.activationScripts.extraActivation.text = ''
-    pmset -c sleep 1 displaysleep 10 disksleep 10
-    pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
-  '';
-
   system = {
+    activationScripts = {
+      postActivation.text = ''
+        killall Finder || true
+        killall SystemUIServer || true
+      '';
+
+      # Pin power management via pmset because power.sleep cannot set separate
+      # values for AC and battery power.
+      extraActivation.text = ''
+        pmset -c sleep 1 displaysleep 10 disksleep 10
+        pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
+      '';
+    };
+
     defaults = {
       CustomUserPreferences = {
         "com.apple.AdLib".allowApplePersonalizedAdvertising = false;
