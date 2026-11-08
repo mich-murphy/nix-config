@@ -1,6 +1,6 @@
 {
   # Determinate Nixd collects garbage automatically but does not prune
-  # generations, so expire system generations older than 14 days and let its
+  # generations, so expire system generations older than 7 days and let its
   # GC free them. Embedded Home Manager generations live inside each system
   # generation and need no separate pruning.
   launchd.daemons.nix-wipe-history.serviceConfig = {
@@ -11,7 +11,7 @@
       "--profile"
       "/nix/var/nix/profiles/system"
       "--older-than"
-      "14d"
+      "7d"
     ];
     StartCalendarInterval = [
       {
