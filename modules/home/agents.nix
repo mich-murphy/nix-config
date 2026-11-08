@@ -1,17 +1,9 @@
-{
-  config,
-  pkgs,
-  ...
-}:
+{ config, ... }:
 let
   agentConfig = "${config.nixConfig.checkout}/config/agents";
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
 in
 {
-  home.packages = [
-    # The harness hooks (~/dev/harness/skills/mm-mode/hooks) run on Bun.
-    pkgs.bun
-  ];
   home.file = {
     ".agents/skills".source = liveLink "${agentConfig}/skills";
     ".claude/CLAUDE.md".source = liveLink "${agentConfig}/AGENTS.md";

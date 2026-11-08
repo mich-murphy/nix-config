@@ -34,7 +34,7 @@ return {
 				lua = { "stylua" },
 				markdown = { "prettier", "markdownlint-cli2", "markdown-toc" },
 				["markdown.mdx"] = { "prettier", "markdownlint-cli2", "markdown-toc" },
-				nix = { "alejandra" },
+				nix = { "nixfmt" },
 				python = { "ruff_format" },
 				sh = { "shfmt" },
 				typescript = { "prettier" },

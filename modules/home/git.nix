@@ -74,8 +74,8 @@
         ".DS_Store"
         ".AppleDouble"
         "LSOverride"
-        # icon must end with two \r
-        "Icon^M^M"
+        # Finder custom-folder icon files are named "Icon\r".
+        "Icon[\r]"
         # thumbnails
         "._*"
         # files which may appear on root of volume
