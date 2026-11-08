@@ -85,12 +85,14 @@
         }
       );
 
-      darwinConfigurations.macbook = mkDarwin "macbook";
+      darwinConfigurations = lib.genAttrs [
+        "macbook"
+        "laptop"
+      ] mkDarwin;
 
       checks.aarch64-darwin =
         let
           pkgs = packagesFor "aarch64-darwin";
-          macbook = inputs.self.darwinConfigurations.macbook;
           # Only .nix files, so editing docs or app config does not rerun lint.
           nixFiles = lib.fileset.toSource {
             root = ./.;
@@ -113,8 +115,11 @@
                 nixf-diagnose $files
                 touch "$out"
               '';
-          macbook-system = macbook.config.system.build.toplevel;
-          macbook-home = macbook.config.home-manager.users.mm.home.activationPackage;
-        };
+        }
+        # Build every Mac's system and home: <host>-system, <host>-home.
+        // lib.concatMapAttrs (host: darwin: {
+          "${host}-system" = darwin.config.system.build.toplevel;
+          "${host}-home" = darwin.config.home-manager.users.mm.home.activationPackage;
+        }) inputs.self.darwinConfigurations;
     };
 }
