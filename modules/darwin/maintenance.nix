@@ -1,12 +1,17 @@
-{ ... }: {
-  # nix.gc requires nix.enable, so this daemon expires old system generations
-  # while Determinate keeps ownership of Nix. Embedded Home Manager generations
-  # live inside each system generation and need no separate pruning.
-  launchd.daemons.nix-gc.serviceConfig = {
+{
+  # Determinate Nixd collects garbage automatically but does not prune
+  # generations, so expire system generations older than 14 days and let its
+  # GC free them. Embedded Home Manager generations live inside each system
+  # generation and need no separate pruning.
+  launchd.daemons.nix-wipe-history.serviceConfig = {
     ProgramArguments = [
-      "/bin/sh"
-      "-lc"
-      "/nix/var/nix/profiles/default/bin/nix profile wipe-history --profile /nix/var/nix/profiles/system --older-than 14d && exec /nix/var/nix/profiles/default/bin/nix store gc"
+      "/nix/var/nix/profiles/default/bin/nix"
+      "profile"
+      "wipe-history"
+      "--profile"
+      "/nix/var/nix/profiles/system"
+      "--older-than"
+      "14d"
     ];
     StartCalendarInterval = [
       {
@@ -15,7 +20,7 @@
         Minute = 0;
       }
     ];
-    StandardOutPath = "/tmp/nix-gc.log";
-    StandardErrorPath = "/tmp/nix-gc.log";
+    StandardOutPath = "/var/log/nix-wipe-history.log";
+    StandardErrorPath = "/var/log/nix-wipe-history.log";
   };
 }
