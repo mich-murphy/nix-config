@@ -1,9 +1,9 @@
-# MacBook Nix configuration
+# Nix configuration
 
-The flake exposes the M2 MacBook Air as `darwinConfigurations.macbook`.
-nix-darwin owns Mac machine settings and applications, and Home Manager —
-embedded in the system configuration — owns the portable user environment for
-`mm` on macOS. Nix itself remains managed by the Determinate installer.
+The flake exposes the M2 MacBook Air as `darwinConfigurations.macbook` and the
+M5 MacBook Pro as `darwinConfigurations.laptop`. nix-darwin owns Mac machine
+settings and applications, and Home Manager — embedded in the system
+configuration — owns the portable user environment for `mm` on macOS. Nix itself remains managed by the Determinate installer.
 
 ## Structure
 
@@ -14,7 +14,7 @@ hosts/<host>/
 └── home.nix           Home Manager: host-only modules, stateVersion, identity
 modules/darwin/        nix-darwin modules shared by every Mac
 modules/home/          Home Manager modules shared by every host
-└── mac/               Home Manager modules only Macs import
+└── mac/               Home Manager modules only Macs import (incl. Git identity)
 config/                raw application files, linked or read by the modules
 ```
 
