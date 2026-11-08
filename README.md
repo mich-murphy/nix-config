@@ -38,7 +38,7 @@ purge historical objects.
    [Determinate installer](https://docs.determinate.systems/).
 2. Install [Homebrew](https://brew.sh/).
 3. Clone this repository to `/Users/mm/dev/nix-config`.
-4. From the checkout, run `nix fmt -- --ci` and
+4. From the checkout, run
    `nix flake check --print-build-logs --no-write-lock-file` before activation.
    For the first build, before `darwin-rebuild` is installed, use:
 
@@ -68,7 +68,8 @@ prek run --all-files
 ```
 
 The hooks perform fast file hygiene and syntax checks, lint Markdown, and check
-Nix formatting. Flake evaluation remains part of the validation commands below
+Nix formatting and lint on the changed files. Hook tools come from the flake's
+locked nixpkgs. Building the hosts remains part of the validation commands below
 instead of every commit.
 
 ## Validate and activate
@@ -76,11 +77,16 @@ instead of every commit.
 Validate without changing the running system:
 
 ```sh
-nix fmt -- --ci
 prek run --all-files
 nix flake check --print-build-logs --no-write-lock-file
 darwin-rebuild build --flake . --no-write-lock-file
+nvd diff /run/current-system ./result
 ```
+
+`nix flake check` is the single gate: its `lint` check runs `nixfmt --check` and
+`nixf-diagnose` over every `.nix` file, and it builds every host. `nix develop`
+provides nixfmt, nixf-diagnose and nvd. For direnv, create a local `.envrc`
+containing `use flake`; it is globally ignored and never tracked.
 
 Activation is intentionally separate:
 
@@ -90,8 +96,7 @@ darwin-rebuild switch --flake .
 
 Local validation is required: GitHub Actions is currently unavailable because
 of usage limits, so a badge or remote workflow result is not a readiness gate.
-The flake checks include regression tests for safe Git branch cleanup and the
-built GC launch daemon's weekly schedule. Builds validate generated
+Builds validate generated
 configuration but do not activate services, run Homebrew upgrades, or prove a
 complete fresh-machine bootstrap.
 

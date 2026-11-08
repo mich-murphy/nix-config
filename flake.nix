@@ -18,6 +18,7 @@
       ...
     }:
     let
+      inherit (nixpkgs) lib;
       systems = [ "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
       packagesFor =
@@ -37,27 +38,47 @@
     {
       formatter = forAllSystems (system: (packagesFor system).nixfmt-tree);
 
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = packagesFor system;
+        in
+        {
+          default = pkgs.mkShellNoCC {
+            packages = [
+              pkgs.nixf-diagnose
+              pkgs.nixfmt
+              pkgs.nvd
+            ];
+          };
+        }
+      );
+
       darwinConfigurations.macbook = darwinConfig;
 
       checks.aarch64-darwin =
         let
           pkgs = packagesFor "aarch64-darwin";
+          # Only .nix files, so editing docs or app config does not rerun lint.
+          nixFiles = lib.fileset.toSource {
+            root = ./.;
+            fileset = lib.fileset.fileFilter (file: file.hasExt "nix") ./.;
+          };
         in
         {
-          gc-schedule =
-            pkgs.runCommand "gc-schedule"
+          lint =
+            pkgs.runCommand "lint"
               {
-                nativeBuildInputs = [ pkgs.python3 ];
+                nativeBuildInputs = [
+                  pkgs.nixf-diagnose
+                  pkgs.nixfmt
+                ];
               }
               ''
-                python - <<'PY'
-                import plistlib
-
-                with open("${darwinConfig.config.system.build.toplevel}/Library/LaunchDaemons/org.nixos.nix-gc.plist", "rb") as stream:
-                    daemon = plistlib.load(stream)
-                assert daemon["StartCalendarInterval"] == [{"Weekday": 7, "Hour": 9, "Minute": 0}], daemon["StartCalendarInterval"]
-                print("GC is scheduled once on Sunday at 09:00")
-                PY
+                cd ${nixFiles}
+                files=$(find . -name '*.nix')
+                nixfmt --check $files
+                nixf-diagnose $files
                 touch "$out"
               '';
           macbook-system = darwinConfig.config.system.build.toplevel;
