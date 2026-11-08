@@ -29,7 +29,7 @@ hooks = [
     id = "nix-format",
     name = "nix format",
     language = "system",
-    entry = "nix fmt -- --check",
+    entry = "nix fmt -- --fail-on-change",
     types = ["nix"],
     require_serial = true,
   },

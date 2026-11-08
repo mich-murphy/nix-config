@@ -3,12 +3,11 @@
   lib,
   repoRoot,
   ...
-}: {
+}:
+{
   xdg.configFile = {
-    "ghostty".source =
-      config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/ghostty";
-    "wezterm".source =
-      config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/wezterm";
+    "ghostty".source = config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/ghostty";
+    "wezterm".source = config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/wezterm";
   };
 
   # Ghostty's macOS app prefers this native path over the XDG path. Manage
@@ -22,7 +21,6 @@
     TERMINFO_DIRS = "/usr/share/terminfo";
 
     # Prefer Ghostty while allowing a regular-priority definition to win.
-    TERMINAL =
-      lib.mkOverride 900 "/Applications/Ghostty.app/Contents/MacOS/ghostty";
+    TERMINAL = lib.mkOverride 900 "/Applications/Ghostty.app/Contents/MacOS/ghostty";
   };
 }

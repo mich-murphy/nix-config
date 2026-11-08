@@ -2,14 +2,15 @@
   config,
   lib,
   ...
-}: {
+}:
+{
   imports = [
     ./home
   ];
 
   home = {
     stateVersion = "22.05";
-    sessionPath = ["${config.home.homeDirectory}/.local/bin"];
+    sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 
     shellAliases = {
       ls = "eza -la";

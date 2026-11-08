@@ -2,7 +2,8 @@
   hunk,
   pkgs,
   ...
-}: {
+}:
+{
   programs = {
     hunk = {
       enable = true;

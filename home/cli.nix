@@ -1,10 +1,10 @@
-{pkgs, ...}: let
+{ pkgs, ... }:
+let
   btopWithManpage = pkgs.btop.overrideAttrs (previousAttrs: {
-    nativeBuildInputs =
-      (previousAttrs.nativeBuildInputs or [])
-      ++ [pkgs.lowdown-unsandboxed];
+    nativeBuildInputs = (previousAttrs.nativeBuildInputs or [ ]) ++ [ pkgs.lowdown-unsandboxed ];
   });
-in {
+in
+{
   home.packages = [
     pkgs.curl
     pkgs.doctl

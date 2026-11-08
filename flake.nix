@@ -9,60 +9,59 @@
     hunk.url = "github:modem-dev/hunk";
   };
 
-  outputs = {
-    nixpkgs,
-    darwin,
-    home-manager,
-    hunk,
-    ...
-  }: let
-    systems = ["aarch64-darwin"];
-    forAllSystems = nixpkgs.lib.genAttrs systems;
-    packagesFor = system:
-      import nixpkgs {
-        inherit system;
-        config.allowUnfree = true;
+  outputs =
+    {
+      nixpkgs,
+      darwin,
+      home-manager,
+      hunk,
+      ...
+    }:
+    let
+      systems = [ "aarch64-darwin" ];
+      forAllSystems = nixpkgs.lib.genAttrs systems;
+      packagesFor =
+        system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+      darwinConfig = darwin.lib.darwinSystem {
+        specialArgs = { inherit hunk; };
+        modules = [
+          home-manager.darwinModules.home-manager
+          ./configuration.nix
+        ];
       };
-    darwinConfig = darwin.lib.darwinSystem {
-      specialArgs = {inherit hunk;};
-      modules = [
-        home-manager.darwinModules.home-manager
-        ./configuration.nix
-      ];
-    };
-  in {
-    formatter = forAllSystems (system: let
-      pkgs = packagesFor system;
     in
-      pkgs.writeShellApplication {
-        name = "nix-config-fmt";
-        runtimeInputs = [pkgs.alejandra];
-        text = ''
-          exec alejandra "''${@:-.}"
-        '';
-      });
+    {
+      formatter = forAllSystems (system: (packagesFor system).nixfmt-tree);
 
-    darwinConfigurations.macbook = darwinConfig;
+      darwinConfigurations.macbook = darwinConfig;
 
-    checks.aarch64-darwin = let
-      pkgs = packagesFor "aarch64-darwin";
-    in {
-      gc-schedule =
-        pkgs.runCommand "gc-schedule" {
-          nativeBuildInputs = [pkgs.python3];
-        } ''
-          python - <<'PY'
-          import plistlib
+      checks.aarch64-darwin =
+        let
+          pkgs = packagesFor "aarch64-darwin";
+        in
+        {
+          gc-schedule =
+            pkgs.runCommand "gc-schedule"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python - <<'PY'
+                import plistlib
 
-          with open("${darwinConfig.config.system.build.toplevel}/Library/LaunchDaemons/org.nixos.nix-gc.plist", "rb") as stream:
-              daemon = plistlib.load(stream)
-          assert daemon["StartCalendarInterval"] == [{"Weekday": 7, "Hour": 9, "Minute": 0}], daemon["StartCalendarInterval"]
-          print("GC is scheduled once on Sunday at 09:00")
-          PY
-          touch "$out"
-        '';
-      macbook-system = darwinConfig.config.system.build.toplevel;
-      macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
+                with open("${darwinConfig.config.system.build.toplevel}/Library/LaunchDaemons/org.nixos.nix-gc.plist", "rb") as stream:
+                    daemon = plistlib.load(stream)
+                assert daemon["StartCalendarInterval"] == [{"Weekday": 7, "Hour": 9, "Minute": 0}], daemon["StartCalendarInterval"]
+                print("GC is scheduled once on Sunday at 09:00")
+                PY
+                touch "$out"
+              '';
+          macbook-system = darwinConfig.config.system.build.toplevel;
+          macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
+        };
     };
-  };
 }

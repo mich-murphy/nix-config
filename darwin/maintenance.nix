@@ -1,4 +1,4 @@
-{...}: {
+{ ... }: {
   # nix.gc requires nix.enable, so this daemon expires old system generations
   # while Determinate keeps ownership of Nix. Embedded Home Manager generations
   # live inside each system generation and need no separate pruning.

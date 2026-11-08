@@ -1,4 +1,4 @@
-{...}: {
+{ ... }: {
   imports = [
     ../home/ssh.nix
     ../home/terminals.nix
