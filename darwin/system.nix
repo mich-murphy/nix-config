@@ -1,9 +1,16 @@
-{...}: {
+{ ... }: {
   networking = {
     computerName = "macbook";
     hostName = "macbook";
-    dns = ["100.100.100.100" "1.1.1.1" "1.0.0.1"];
-    knownNetworkServices = ["Wi-Fi" "Thunderbolt Bridge"];
+    dns = [
+      "100.100.100.100"
+      "1.1.1.1"
+      "1.0.0.1"
+    ];
+    knownNetworkServices = [
+      "Wi-Fi"
+      "Thunderbolt Bridge"
+    ];
   };
 
   security.pam.services.sudo_local = {

@@ -2,9 +2,11 @@
   hunk,
   pkgs,
   ...
-}: let
+}:
+let
   repoRoot = "/Users/mm/dev/nix-config";
-in {
+in
+{
   imports = [
     ./darwin
   ];
@@ -35,7 +37,7 @@ in {
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "backup";
-    extraSpecialArgs = {inherit hunk repoRoot;};
+    extraSpecialArgs = { inherit hunk repoRoot; };
     users.mm.imports = [
       ./home.nix
       ./hosts/macbook.nix

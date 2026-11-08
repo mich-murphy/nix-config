@@ -22,7 +22,7 @@ jobs:
       - name: Cache Nix builds
         uses: DeterminateSystems/magic-nix-cache-action@v1
       - name: Check Nix formatting
-        run: nix fmt -- --check .
+        run: nix fmt -- --ci
       - name: Lint Markdown
         run: npx --yes markdownlint-cli2 --config config/markdownlint-cli2.yaml "**/*.md" "#node_modules" "#.claude/skills"
       - name: Check flake

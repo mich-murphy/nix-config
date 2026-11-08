@@ -3,7 +3,8 @@
   pkgs,
   repoRoot,
   ...
-}: {
+}:
+{
   programs.neovim = {
     enable = true;
     package = pkgs.neovim-unwrapped;
@@ -27,6 +28,5 @@
     ];
   };
 
-  xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/nvim";
+  xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/nvim";
 }

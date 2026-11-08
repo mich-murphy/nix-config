@@ -38,7 +38,7 @@ purge historical objects.
    [Determinate installer](https://docs.determinate.systems/).
 2. Install [Homebrew](https://brew.sh/).
 3. Clone this repository to `/Users/mm/dev/nix-config`.
-4. From the checkout, run `nix fmt -- --check .` and
+4. From the checkout, run `nix fmt -- --ci` and
    `nix flake check --print-build-logs --no-write-lock-file` before activation.
    For the first build, before `darwin-rebuild` is installed, use:
 
@@ -76,7 +76,7 @@ instead of every commit.
 Validate without changing the running system:
 
 ```sh
-nix fmt -- --check .
+nix fmt -- --ci
 prek run --all-files
 nix flake check --print-build-logs --no-write-lock-file
 darwin-rebuild build --flake . --no-write-lock-file

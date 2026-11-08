@@ -1,4 +1,4 @@
-{...}: {
+{ ... }: {
   imports = [
     ./system.nix
     ./maintenance.nix

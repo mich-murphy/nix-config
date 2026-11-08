@@ -3,7 +3,8 @@
   pkgs,
   repoRoot,
   ...
-}: {
+}:
+{
   services = {
     yabai = {
       enable = true;
