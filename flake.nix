@@ -1,5 +1,5 @@
 {
-  description = "Nix flake for a MacBook";
+  description = "nix-darwin and Home Manager configuration for my machines";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     darwin.url = "github:nix-darwin/nix-darwin/master";
@@ -10,30 +10,61 @@
   };
 
   outputs =
-    {
+    inputs@{
       nixpkgs,
       darwin,
       home-manager,
-      hunk,
       ...
     }:
     let
       inherit (nixpkgs) lib;
       systems = [ "aarch64-darwin" ];
-      forAllSystems = nixpkgs.lib.genAttrs systems;
+      forAllSystems = lib.genAttrs systems;
       packagesFor =
         system:
         import nixpkgs {
           inherit system;
           config.allowUnfree = true;
         };
-      darwinConfig = darwin.lib.darwinSystem {
-        specialArgs = { inherit hunk; };
-        modules = [
-          home-manager.darwinModules.home-manager
-          ./configuration.nix
-        ];
-      };
+
+      # A Mac: hosts/<host>/default.nix for the system and
+      # hosts/<host>/home.nix for its Home Manager additions.
+      mkDarwin =
+        host:
+        darwin.lib.darwinSystem {
+          specialArgs = { inherit inputs; };
+          modules = [
+            home-manager.darwinModules.home-manager
+            ./hosts/${host}
+            (
+              { pkgs, ... }:
+              {
+                nixpkgs.config.allowUnfree = true;
+
+                # Nix is managed by the Determinate installer.
+                nix.enable = false;
+
+                system.primaryUser = "mm";
+                users.users.mm = {
+                  home = "/Users/mm";
+                  shell = pkgs.fish;
+                };
+                programs.fish.enable = true;
+
+                home-manager = {
+                  useGlobalPkgs = true;
+                  useUserPackages = true;
+                  backupFileExtension = "backup";
+                  extraSpecialArgs = { inherit inputs; };
+                  users.mm.imports = [
+                    ./modules/home
+                    ./hosts/${host}/home.nix
+                  ];
+                };
+              }
+            )
+          ];
+        };
     in
     {
       formatter = forAllSystems (system: (packagesFor system).nixfmt-tree);
@@ -54,11 +85,12 @@
         }
       );
 
-      darwinConfigurations.macbook = darwinConfig;
+      darwinConfigurations.macbook = mkDarwin "macbook";
 
       checks.aarch64-darwin =
         let
           pkgs = packagesFor "aarch64-darwin";
+          macbook = inputs.self.darwinConfigurations.macbook;
           # Only .nix files, so editing docs or app config does not rerun lint.
           nixFiles = lib.fileset.toSource {
             root = ./.;
@@ -81,8 +113,8 @@
                 nixf-diagnose $files
                 touch "$out"
               '';
-          macbook-system = darwinConfig.config.system.build.toplevel;
-          macbook-home = darwinConfig.config.home-manager.users.mm.home.activationPackage;
+          macbook-system = macbook.config.system.build.toplevel;
+          macbook-home = macbook.config.home-manager.users.mm.home.activationPackage;
         };
     };
 }

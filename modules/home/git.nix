@@ -1,5 +1,5 @@
 {
-  hunk,
+  inputs,
   pkgs,
   ...
 }:
@@ -8,7 +8,7 @@
     hunk = {
       enable = true;
       enableGitIntegration = true;
-      package = hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk;
+      package = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk;
       settings = {
         theme = "tokyo-night";
         mode = "auto";

@@ -1,14 +1,13 @@
-{ ... }: {
+{ ... }:
+{
   imports = [
-    ../home/ssh.nix
-    ../home/terminals.nix
-    ../home/karabiner.nix
+    ../../modules/home/mac/ssh.nix
+    ../../modules/home/mac/terminals.nix
+    ../../modules/home/mac/karabiner.nix
   ];
 
-  home = {
-    username = "mm";
-    homeDirectory = "/Users/mm";
-  };
+  # Set once at first activation; never bump it to track releases.
+  home.stateVersion = "22.05";
 
   programs.git = {
     includes = [

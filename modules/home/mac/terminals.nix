@@ -1,19 +1,20 @@
 {
   config,
   lib,
-  repoRoot,
   ...
 }:
 {
   xdg.configFile = {
-    "ghostty".source = config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/ghostty";
-    "wezterm".source = config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/wezterm";
+    "ghostty".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/ghostty";
+    "wezterm".source =
+      config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/wezterm";
   };
 
   # Ghostty's macOS app prefers this native path over the XDG path. Manage
   # both so the GUI and CLI resolve the same live configuration.
   home.file."Library/Application Support/com.mitchellh.ghostty/config.ghostty".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/ghostty/config";
+    config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/ghostty/config";
 
   home.sessionVariables = {
     # Avoid Nix profile paths that Codex cannot inspect from its restricted

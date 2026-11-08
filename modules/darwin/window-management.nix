@@ -1,9 +1,12 @@
 {
+  config,
   lib,
   pkgs,
-  repoRoot,
   ...
 }:
+let
+  checkout = "${config.users.users.${config.system.primaryUser}.home}/dev/nix-config";
+in
 {
   services = {
     yabai = {
@@ -51,6 +54,6 @@
   launchd.user.agents.skhd.serviceConfig.ProgramArguments = lib.mkForce [
     "${pkgs.skhd}/bin/skhd"
     "-c"
-    "${repoRoot}/config/skhd/skhdrc"
+    "${checkout}/config/skhd/skhdrc"
   ];
 }

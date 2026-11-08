@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  repoRoot,
   ...
 }:
 {
@@ -28,5 +27,6 @@
     ];
   };
 
-  xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink "${repoRoot}/config/nvim";
+  xdg.configFile."nvim".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/nvim";
 }
