@@ -29,7 +29,7 @@ return {
 	settings = {
 		nixd = {
 			nixpkgs = { expr = ("import %s.inputs.nixpkgs { }"):format(flake) },
-			formatting = { command = { "alejandra" } },
+			formatting = { command = { "nixfmt" } },
 			options = {
 				["nix-darwin"] = { expr = darwin .. ".options" },
 				["home-manager"] = { expr = darwin .. ".options.home-manager.users.type.getSubOptions [ ]" },

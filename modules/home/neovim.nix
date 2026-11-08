@@ -13,12 +13,12 @@
     withRuby = false;
     sideloadInitLua = true;
     extraPackages = [
-      pkgs.alejandra
       pkgs.gnutar
       pkgs.gzip
       pkgs.ghostscript
       pkgs.imagemagick
       pkgs.mermaid-cli
+      pkgs.nixfmt
       pkgs.nixd
       pkgs.stdenv.cc
       pkgs.tectonic
