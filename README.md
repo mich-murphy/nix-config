@@ -3,7 +3,11 @@
 The flake exposes the M2 MacBook Air as `darwinConfigurations.macbook` and the
 M5 MacBook Pro as `darwinConfigurations.laptop`. nix-darwin owns Mac machine
 settings and applications, and Home Manager — embedded in the system
-configuration — owns the portable user environment for `mm` on macOS. Nix itself remains managed by the Determinate installer.
+configuration — owns the portable user environment for `mm` on macOS. The
+Determinate installer installs Nix; Determinate's nix-darwin module
+(`determinateNix.enable`) stops nix-darwin managing it and writes
+`/etc/nix/nix.custom.conf`. Determinate Nixd collects garbage automatically; a
+weekly launch daemon expires system generations older than 14 days.
 
 ## Structure
 
@@ -179,9 +183,8 @@ Manager can create the directory link.
 
 ## Homebrew warning
 
-Homebrew activation uses `cleanup = "zap"` with forced cleanup. Removing a cask
-or formula declaration can uninstall the application and associated files on
-the next switch. Preserve the complete declaration set unless that uninstall is
-intentional. See the
-[nix-darwin cleanup option](https://nix-darwin.github.io/nix-darwin/manual/#opt-homebrew.onActivation.cleanup)
-and [Homebrew's zap warning](https://docs.brew.sh/Cask-Cookbook#stanza-zap).
+Homebrew activation updates Homebrew, upgrades packages and uses
+`cleanup = "uninstall"`. Removing a cask or formula declaration uninstalls it on
+the next switch, but leaves its associated files in place (no `zap`). Preserve
+the complete declaration set unless that uninstall is intentional. See the
+[nix-darwin cleanup option](https://nix-darwin.github.io/nix-darwin/manual/#opt-homebrew.onActivation.cleanup).
