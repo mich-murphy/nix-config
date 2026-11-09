@@ -10,6 +10,9 @@
     stateVersion = "26.05";
     # Codex's sandbox on Linux.
     packages = [ pkgs.bubblewrap ];
+    # Node's os.tmpdir() and audit caches can reach hundreds of MiB, so keep
+    # them on the data disk; bootstrap creates this directory after mounting it.
+    sessionVariables.TMPDIR = "/home/dev/businesscraft/.scratch";
   };
 
   # Work identity, written by bootstrap.
