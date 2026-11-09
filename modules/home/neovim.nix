@@ -13,13 +13,9 @@
     extraPackages = [
       pkgs.gnutar
       pkgs.gzip
-      pkgs.ghostscript
-      pkgs.imagemagick
-      pkgs.mermaid-cli
       pkgs.nixfmt
       pkgs.nixd
       pkgs.stdenv.cc
-      pkgs.tectonic
       pkgs.tree-sitter
       pkgs.unzip
     ];
