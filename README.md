@@ -169,6 +169,15 @@ to `~/dev/skills` (the `nixConfig.skills` option). Home Manager links it to
 `~/.agents/skills` for Codex and Pi, and links individual skills into
 `~/.claude/skills` for Claude Code.
 
+Claude Code and Pi settings (`~/.claude/settings.json`,
+`~/.pi/agent/settings.json`) stay regular files owned by the applications.
+Each switch merges the preferences, plugins and permissions declared in
+`modules/home/agents.nix` into them and leaves every other key alone, so
+installer hooks (agent-sessions, herdr, Moshi), model choices and Pi's device ID
+stay local. A declared value changed in the app is reset on the next switch;
+change it in Nix instead. If a switch stops with "changed during activation",
+an agent saved its settings at the same moment; run the switch again.
+
 If the checkout moves, set `nixConfig.checkout` (and the skhd path in
 `modules/darwin/window-management.nix`) and rebuild. Karabiner owns and watches
 its whole configuration directory, so generated backups and complex

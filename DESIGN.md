@@ -271,3 +271,16 @@ tool versions.
    this repository, because `.envrc` files can hold secrets. This replaces the
    §8 note about tracking intended `.envrc` files. `nix develop` provides the
    dev shell.
+9. **Agent settings:** an exception to §4's whole-file rule. Claude
+   `settings.json` and Pi `settings.json` stay regular, app-owned files, and
+   Home Manager's `programs.{claude-code,pi-coding-agent}.mutableSettings`
+   merges the declared keys into them on activation. Whole-file links do not
+   work for these files: the agent-sessions installer refuses symlinked
+   settings, herdr and Moshi write their hooks (with absolute home paths) into
+   them, and Pi stores its per-install `deviceId` and changelog versions there.
+   Nix declares preferences, plugins and permissions only; hooks, model and
+   effort choices, `enabledModels` and per-model compaction overrides stay
+   local. Codex `hooks.json` holds only installer-owned hooks and stays local.
+   Running sessions need no restart: Pi re-reads and writes only changed keys
+   under its lock, and Home Manager aborts activation ("changed during
+   activation") rather than overwrite a concurrent save.
