@@ -7,9 +7,13 @@
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
-    # System-wide so nix-darwin copies MoshiHook.app to /Applications/Nix Apps,
-    # the stable path its hooks name (modules/home/moshi.nix).
-    pkgs.moshi-hook
+    # Only the app bundle, so nix-darwin copies it to /Applications/Nix Apps,
+    # the stable path its hooks name. Its store-path binaries stay off PATH;
+    # modules/home/moshi.nix provides wrappers for the stable copy.
+    (pkgs.runCommand "moshi-hook-app" { } ''
+      mkdir -p $out/Applications
+      ln -s ${pkgs.moshi-hook}/Applications/MoshiHook.app $out/Applications/
+    '')
   ];
 
   fonts.packages = [

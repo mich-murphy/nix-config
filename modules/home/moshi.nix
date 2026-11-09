@@ -3,7 +3,8 @@
 # Hooks therefore name a path that survives version bumps: nix-darwin's copy in
 # /Applications/Nix Apps on the Macs (see modules/darwin/applications.nix), a
 # copy in ~/.local/libexec on Linux. The service runs the store path, so a new
-# version restarts it.
+# version restarts it. `moshi-hook` and `moshi` on PATH run the stable copy, so
+# a manual `moshi-hook install` writes the same path.
 {
   config,
   lib,
@@ -25,8 +26,19 @@ let
     "codex"
     "pi"
   ];
+  wrapper =
+    name:
+    pkgs.writeShellApplication {
+      inherit name;
+      text = ''exec ${lib.escapeShellArg hookPath} "$@"'';
+    };
 in
 {
+  home.packages = map wrapper [
+    "moshi-hook"
+    "moshi"
+  ];
+
   launchd.agents.moshi-hook = lib.mkIf isDarwin {
     enable = true;
     config = {
@@ -68,7 +80,9 @@ in
 
     # Reinstall only when Moshi reports its hooks out of date (new install,
     # moved path or a release that changes them). Runs after the settings
-    # merges, which keep Moshi's keys because they are not declared.
+    # merges, which keep Moshi's keys because they are not declared, and after
+    # the service starts (setupLaunchAgents on the Macs, reloadSystemd on
+    # Linux), so `install` finds the daemon's socket.
     moshiHooks =
       lib.hm.dag.entryAfter
         [
@@ -76,6 +90,8 @@ in
           "moshiHookCopy"
           "claudeCodeSettings"
           "piCodingAgentMutableSettings"
+          "setupLaunchAgents"
+          "reloadSystemd"
         ]
         ''
           moshi=${lib.escapeShellArg hookPath}
@@ -85,6 +101,9 @@ in
               '[.hooks[] | select(.target | IN(${
                 lib.concatMapStringsSep ", " (t: ''"${t}"'') targets
               })) | .status == "current"] | all' >/dev/null; then
+            # A just-started service needs a moment to open its socket.
+            socket=$("$moshi" status --json | ${lib.getExe pkgs.jq} -r .socketPath) || socket=
+            for _ in {1..20}; do [[ -S $socket ]] && break; sleep 0.5; done
             run env MOSHI_HOOK_SKIP_FIRST_RUN=1 "$moshi" install --target ${lib.concatStringsSep "," targets} \
               || warnEcho "moshi-hook install failed; rerun it by hand"
           fi
