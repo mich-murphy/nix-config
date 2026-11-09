@@ -13,6 +13,7 @@ in
     # Per-skill links keep ~/.claude/skills a real directory so Claude
     # Code's managed-skills sync cannot write into the skills repo.
     ".claude/skills/bro".source = liveLink "${skills}/bro";
+    ".claude/skills/coordinator".source = liveLink "${skills}/coordinator";
     ".claude/skills/create-verification".source = liveLink "${skills}/create-verification";
     ".claude/skills/show-me".source = liveLink "${skills}/show-me";
   };
