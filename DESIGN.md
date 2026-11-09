@@ -26,7 +26,7 @@ Nix orchestrates components; it must not replace their native configuration and
 development workflows. Live edits should remain live, ordinary application saves
 must work, and changes must be visible in the correct Git repository.
 
-The immediate fleet is the user's Mac laptop and development box `bc-01`, plus
+The immediate fleet is the user's Mac laptop and development box `dev-01`, plus
 migration to a new M5 Pro MacBook Pro with 64 GB RAM and 2 TB SSD. The old/new Macs
 may overlap during migration. Exact CPU topology and delivered OS remain unverified.
 
@@ -64,13 +64,13 @@ nix-config. Laptop-only GUI/apps/OS preferences do not belong in a remote profil
 Development boxes consume a smaller shared environment. Do not introduce another
 repository solely to share the portable Nix module implementation.
 
-On macOS, retain Determinate Nix, nix-darwin and Home Manager. On bc-01, NixOS is
+On macOS, retain Determinate Nix, nix-darwin and Home Manager. On dev-01, NixOS is
 an option, not a decided migration. Ubuntu was selected for easy access to fresh
 agent binaries, not because it must remain the OS. Evaluate NixOS against native
 installer/self-updater compatibility before choosing the target.
 
-`bc-01` is the operator SSH alias for `dev-01`. The machines repo also manages a
-colleague's `dev-02`, which **must not be affected**. Transition only the user's
+The machines repo manages `dev-01` and also a colleague's `dev-02`, which
+**must not be affected**. Transition only the user's
 ongoing system/user configuration into
 nix-config; retain the colleague's existing bootstrap/configuration path.
 
@@ -253,8 +253,7 @@ tool versions.
 1. **Writable files:** Home Manager `mkOutOfStoreSymlink` from each application's
    path to a checkout at `~/dev/nix-config` on every host. Codex `config.toml`
    (it mixes in per-project trust) stays local. MCP configuration is not shared.
-2. **bc-01:** `dev-01` is x86_64-linux and stays on Ubuntu with standalone Home
-   Manager. NixOS is evaluated later as separate work.
+2. **dev-01:** x86_64-linux; stays on Ubuntu with standalone Home Manager. NixOS is evaluated later as separate work.
 3. **skhd/yabai:** unchanged until the configuration is correct; permission
    persistence is revisited afterwards.
 4. **Fleet:** run from the Mac over SSH. Each host fast-forwards its checkout with
