@@ -1,4 +1,4 @@
-# dev-01 (SSH alias bc-01): Ubuntu with standalone Home Manager. The machines
+# dev-01: Ubuntu with standalone Home Manager. The machines
 # repo's bootstrap owns everything outside the home directory, the agent CLIs
 # and ~/.gitconfig-work.
 { pkgs, ... }:
