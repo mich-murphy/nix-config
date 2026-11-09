@@ -263,7 +263,9 @@ tool versions.
    uncommitted changes never deploy. nix-darwin records the revision in
    `system.configurationRevision`; Home Manager hosts record it in a state file.
 5. **Repositories:** Neovim is `mich-murphy/neovim`, cloned to `~/.config/nvim`.
-   Skills are the private `mich-murphy/skills`, cloned to `~/dev/skills`.
+   Skills are the public `mich-murphy/skills`, cloned to `~/dev/skills`.
+   Packages nixpkgs lacks (Moshi's hook daemon) live in `pkgs/<name>/`.
+   Herdr comes from nixpkgs on every host.
 6. **Hosts:** `macbook` (current Mac), `laptop` (the M5, which replaces `macbook`)
    and `dev@dev-01`. Layout is `hosts/<name>/` plus `modules/{darwin,home}/`.
 7. **Homebrew:** upgrades on switch; cleanup is `uninstall`, never `zap`.

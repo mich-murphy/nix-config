@@ -14,6 +14,7 @@
     ./neovim.nix
     ./yazi.nix
     ./herdr.nix
+    ./moshi.nix
     ./agents.nix
   ];
 

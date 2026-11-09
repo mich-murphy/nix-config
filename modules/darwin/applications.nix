@@ -7,6 +7,9 @@
     pkgs.nmap
     pkgs._1password-cli
     pkgs.gnused
+    # System-wide so nix-darwin copies MoshiHook.app to /Applications/Nix Apps,
+    # the stable path its hooks name (modules/home/moshi.nix).
+    pkgs.moshi-hook
   ];
 
   fonts.packages = [
@@ -23,12 +26,6 @@
       upgrade = true;
       cleanup = "uninstall";
     };
-    taps = [
-      {
-        name = "rjyo/moshi";
-        trusted = true;
-      }
-    ];
     casks = [
       # nixpkgs azure-cli depends on fabric, which is marked broken with
       # invoke >= 3 (https://github.com/fabric/fabric/issues/2376).
@@ -65,13 +62,7 @@
       "nextcloud"
     ];
     brews = [
-      "herdr"
       "pi-coding-agent"
-      {
-        name = "moshi-hook";
-        start_service = true;
-        restart_service = "changed";
-      }
       "mas"
       "mole"
     ];

@@ -21,13 +21,24 @@
     }:
     let
       inherit (nixpkgs) lib;
-      systems = [ "aarch64-darwin" ];
+      systems = [
+        "aarch64-darwin"
+        "x86_64-linux"
+      ];
       forAllSystems = lib.genAttrs systems;
+      # Packages not in nixpkgs, one pkgs/<name>/package.nix each.
+      localPackages =
+        pkgs:
+        lib.packagesFromDirectoryRecursive {
+          inherit (pkgs) callPackage;
+          directory = ./pkgs;
+        };
       packagesFor =
         system:
         import nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          overlays = [ inputs.self.overlays.default ];
         };
 
       # A Mac: hosts/<host>/default.nix for the system and
@@ -44,6 +55,7 @@
               { pkgs, ... }:
               {
                 nixpkgs.config.allowUnfree = true;
+                nixpkgs.overlays = [ inputs.self.overlays.default ];
 
                 # Shown by `darwin-version --configuration-revision`.
                 system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
@@ -81,6 +93,13 @@
         };
     in
     {
+      overlays.default = final: _prev: localPackages final;
+
+      packages = forAllSystems (
+        system:
+        lib.filterAttrs (_: lib.meta.availableOn { inherit system; }) (localPackages (packagesFor system))
+      );
+
       formatter = forAllSystems (system: (packagesFor system).nixfmt-tree);
 
       devShells = forAllSystems (
@@ -129,6 +148,7 @@
                 nixf-diagnose $files
                 touch "$out"
               '';
+          moshi-hook-version = pkgs.moshi-hook.tests.version;
         }
         # Build every Mac's system and home: <host>-system, <host>-home.
         # <host>-links: mkOutOfStoreSymlink makes a store path that is itself a
