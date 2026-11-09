@@ -15,6 +15,10 @@
     sessionVariables.TMPDIR = "/home/dev/businesscraft/.scratch";
   };
 
+  # Nixpkgs' systemctl cannot reach Ubuntu's older user manager, so activation
+  # would report it as not running and skip restarting changed services.
+  systemd.user.systemctlPath = "/usr/bin/systemctl";
+
   # Work identity, written by bootstrap.
   programs.git.includes = [ { path = "~/.gitconfig-work"; } ];
 
