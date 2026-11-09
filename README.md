@@ -19,6 +19,7 @@ hosts/<host>/
 modules/darwin/        nix-darwin modules shared by every Mac
 modules/home/          Home Manager modules shared by every host
 └── mac/               Home Manager modules only Macs import (incl. Git identity)
+pkgs/<name>/package.nix  packages nixpkgs lacks; added to pkgs by an overlay
 config/                raw application files, linked or read by the modules
 ```
 
@@ -164,7 +165,7 @@ only for configurations that are intentionally edited live:
 - Karabiner;
 - skhd, passed directly to its launch agent.
 
-Coding-agent skills live in the private `mich-murphy/skills` repository, cloned
+Coding-agent skills live in the public `mich-murphy/skills` repository, cloned
 to `~/dev/skills` (the `nixConfig.skills` option). Home Manager links it to
 `~/.agents/skills` for Codex and Pi, and links individual skills into
 `~/.claude/skills` for Claude Code.
@@ -183,6 +184,19 @@ If the checkout moves, set `nixConfig.checkout` (and the skhd path in
 its whole configuration directory, so generated backups and complex
 modifications are ignored while `config/karabiner/karabiner.json` remains
 tracked.
+
+Herdr comes from nixpkgs on every host, so `flake.lock` keeps a local client
+and a remote server on the same version.
+
+Moshi's hook daemon is `pkgs/moshi-hook`, pinned to one release for every host.
+To update it, change `version` and copy both checksums from Moshi's
+[Homebrew formula](https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb).
+`moshi-hook install` writes the path it runs from into each agent hook, and
+Codex's approval covers that command, so hooks name a path that stays the same
+across versions: `/Applications/Nix Apps/MoshiHook.app` on the Macs and
+`~/.local/libexec/moshi-hook` on Linux. A switch reinstalls the hooks only when
+`moshi-hook status` reports them out of date, and restarts the service when the
+version changes.
 
 Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the
