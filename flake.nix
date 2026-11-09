@@ -91,6 +91,57 @@
             )
           ];
         };
+
+      # A Linux host with standalone Home Manager: hosts/<host>/home.nix.
+      mkHome =
+        host: system:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = packagesFor system;
+          extraSpecialArgs = { inherit inputs; };
+          modules = [
+            ./modules/home
+            ./hosts/${host}/home.nix
+          ];
+        };
+
+      # mkOutOfStoreSymlink makes a store path that is itself a symlink. Each
+      # one must point into the checkout or the skills clone (a path literal
+      # would leave a read-only store copy). Links into the checkout must name a
+      # file that exists in this repo (a typo or moved file would leave a
+      # dangling link); the skills repo is not a flake input, so its targets
+      # cannot be checked. A wrong root cannot be seen from a build.
+      linksCheck =
+        pkgs: host: home:
+        pkgs.runCommand "${host}-links" { } ''
+          checkout=${lib.escapeShellArg home.nixConfig.checkout}
+          skills=${lib.escapeShellArg home.nixConfig.skills}
+          found=0
+          while IFS= read -r -d "" link; do
+            target=$(readlink "$link")
+            [ -L "$target" ] || continue
+            found=$((found + 1))
+            dest=$(readlink "$target")
+            case "$dest" in
+              "$skills" | "$skills"/*) ;;
+              "$checkout"/*)
+                if [ ! -e "${inputs.self}/''${dest#"$checkout"/}" ]; then
+                  echo "$link -> $dest does not exist in the repository"
+                  exit 1
+                fi
+                ;;
+              *)
+                echo "$link -> $dest is not in $checkout or $skills"
+                exit 1
+                ;;
+            esac
+          done < <(find ${home.home-files} -type l -print0)
+          if [ "$found" -eq 0 ]; then
+            echo "no writable links found"
+            exit 1
+          fi
+          echo "$found writable links point into $checkout or $skills"
+          touch "$out"
+        '';
     in
     {
       overlays.default = final: _prev: localPackages final;
@@ -123,6 +174,8 @@
         "laptop"
       ] mkDarwin;
 
+      homeConfigurations."dev@dev-01" = mkHome "dev-01" "x86_64-linux";
+
       checks.aarch64-darwin =
         let
           pkgs = packagesFor "aarch64-darwin";
@@ -150,14 +203,7 @@
               '';
           moshi-hook-version = pkgs.moshi-hook.tests.version;
         }
-        # Build every Mac's system and home: <host>-system, <host>-home.
-        # <host>-links: mkOutOfStoreSymlink makes a store path that is itself a
-        # symlink. Each one must point into the checkout or the skills clone (a
-        # path literal would leave a read-only store copy). Links into the
-        # checkout must name a file that exists in this repo (a typo or moved
-        # file would leave a dangling link); the skills repo is not a flake
-        # input, so its targets cannot be checked. A wrong root cannot be seen
-        # from a build.
+        # Build every Mac's system and home, and check its writable links.
         // lib.concatMapAttrs (
           host: darwin:
           let
@@ -166,37 +212,21 @@
           {
             "${host}-system" = darwin.config.system.build.toplevel;
             "${host}-home" = home.home.activationPackage;
-            "${host}-links" = pkgs.runCommand "${host}-links" { } ''
-              checkout=${lib.escapeShellArg home.nixConfig.checkout}
-              skills=${lib.escapeShellArg home.nixConfig.skills}
-              found=0
-              while IFS= read -r -d "" link; do
-                target=$(readlink "$link")
-                [ -L "$target" ] || continue
-                found=$((found + 1))
-                dest=$(readlink "$target")
-                case "$dest" in
-                  "$skills" | "$skills"/*) ;;
-                  "$checkout"/*)
-                    if [ ! -e "${inputs.self}/''${dest#"$checkout"/}" ]; then
-                      echo "$link -> $dest does not exist in the repository"
-                      exit 1
-                    fi
-                    ;;
-                  *)
-                    echo "$link -> $dest is not in $checkout or $skills"
-                    exit 1
-                    ;;
-                esac
-              done < <(find ${home.home-files} -type l -print0)
-              if [ "$found" -eq 0 ]; then
-                echo "no writable links found"
-                exit 1
-              fi
-              echo "$found writable links point into $checkout or $skills"
-              touch "$out"
-            '';
+            "${host}-links" = linksCheck pkgs host home;
           }
         ) inputs.self.darwinConfigurations;
+
+      # dev-01's home and links, plus the Linux moshi-hook. These need a Linux
+      # builder: `nix flake check --all-systems`.
+      checks.x86_64-linux =
+        let
+          pkgs = packagesFor "x86_64-linux";
+          home = inputs.self.homeConfigurations."dev@dev-01".config;
+        in
+        {
+          moshi-hook-version = pkgs.moshi-hook.tests.version;
+          dev-01-home = home.home.activationPackage;
+          dev-01-links = linksCheck pkgs "dev-01" home;
+        };
     };
 }

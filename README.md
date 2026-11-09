@@ -14,7 +14,7 @@ weekly launch daemon expires system generations older than 7 days.
 ```text
 flake.nix              inputs; mkDarwin (user, Home Manager wiring); checks
 hosts/<host>/
-├── default.nix        nix-darwin: host name, platform, stateVersion
+├── default.nix        nix-darwin: host name, platform, stateVersion (Macs only)
 └── home.nix           Home Manager: host-only modules, stateVersion, identity
 modules/darwin/        nix-darwin modules shared by every Mac
 modules/home/          Home Manager modules shared by every host
@@ -84,10 +84,14 @@ Validate without changing the running system:
 
 ```sh
 prek run --all-files
-nix flake check --print-build-logs --no-write-lock-file
+nix flake check --print-build-logs --no-write-lock-file --all-systems
 darwin-rebuild build --flake . --no-write-lock-file
 nvd diff /run/current-system ./result
 ```
+
+`--all-systems` adds the `x86_64-linux` checks (dev-01's home and links, and
+the Linux `moshi-hook`). They need a Linux builder; Determinate Nix on the Mac
+provides one.
 
 `nix flake check` is the single gate: its `lint` check runs `nixfmt --check` and
 `nixf-diagnose` over every `.nix` file, and it builds every host. Each
@@ -104,6 +108,14 @@ Activation is intentionally separate:
 
 ```sh
 darwin-rebuild switch --flake .
+```
+
+dev-01 runs Ubuntu with standalone Home Manager. The machines repo's bootstrap
+owns everything outside the home directory; this flake owns the home. On
+dev-01, from `~/dev/nix-config`:
+
+```sh
+home-manager switch --flake .#dev@dev-01
 ```
 
 Local validation is required: GitHub Actions is currently unavailable because

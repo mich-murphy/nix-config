@@ -7,13 +7,11 @@ in
 {
   home.packages = [
     pkgs.curl
-    pkgs.doctl
     pkgs.dust
     pkgs.fd
     pkgs.go
     pkgs.just
     pkgs.jq
-    pkgs.nodejs
     pkgs.opencode
     pkgs.ouch
     pkgs.python3

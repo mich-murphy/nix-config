@@ -14,8 +14,26 @@
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
   exe = lib.getExe pkgs.moshi-hook;
-  # Services get a minimal PATH; Moshi reads this to reach herdr panes.
-  herdrPath = lib.getExe pkgs.herdr;
+  # Services get a minimal PATH. Give the daemon a shell's PATH so programs it
+  # runs by name (herdr, git, gh, tmux) resolve the same way.
+  servicePath = lib.concatStringsSep ":" (
+    [
+      "${config.home.homeDirectory}/.local/bin"
+      "${config.home.profileDirectory}/bin"
+    ]
+    ++ lib.optionals isDarwin [
+      "/run/current-system/sw/bin"
+      "/opt/homebrew/bin"
+    ]
+    ++ [
+      "/nix/var/nix/profiles/default/bin"
+      "/usr/local/bin"
+      "/usr/bin"
+      "/bin"
+      "/usr/sbin"
+      "/sbin"
+    ]
+  );
   hookPath =
     if isDarwin then
       "/Applications/Nix Apps/MoshiHook.app/Contents/MacOS/moshi-hook"
@@ -46,7 +64,7 @@ in
         exe
         "serve"
       ];
-      EnvironmentVariables.MOSHI_HERDR_PATH = herdrPath;
+      EnvironmentVariables.PATH = servicePath;
       KeepAlive = true;
       RunAtLoad = true;
       StandardOutPath = "${config.home.homeDirectory}/Library/Logs/moshi-hook.log";
@@ -62,7 +80,7 @@ in
     };
     Service = {
       ExecStart = "${exe} serve --gateway-listen 127.0.0.1:24543";
-      Environment = "MOSHI_HERDR_PATH=${herdrPath}";
+      Environment = "PATH=${servicePath}";
       Restart = "on-failure";
       RestartSec = 5;
     };
