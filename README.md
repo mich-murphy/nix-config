@@ -91,23 +91,29 @@ instead of every commit.
 Validate without changing the running system:
 
 ```sh
-prek run --all-files
 nix flake check --print-build-logs --no-write-lock-file --all-systems
 darwin-rebuild build --flake . --no-write-lock-file
 nvd diff /run/current-system ./result
 ```
 
-`--all-systems` adds the `x86_64-linux` checks (dev-01's home and links, and
-the Linux `moshi-hook`). They need a Linux builder; Determinate Nix on the Mac
-provides one.
+`nix flake check --all-systems` is the single gate. It covers:
 
-`nix flake check` is the single gate: its `lint` check runs `nixfmt --check` and
-`nixf-diagnose` over every `.nix` file, and it builds every host. Each
-`<host>-links` check confirms every writable link points into the checkout at a
-file that exists in the repository, or into the skills clone (dev-01 has no
-checkout). `nix develop` provides nixfmt,
-nixf-diagnose and nvd. For direnv, create a local `.envrc` containing
-`use flake`; it is globally ignored and never tracked.
+- `lint`: `nixfmt --check` and `nixf-diagnose` over every `.nix` file, and
+  markdownlint over every tracked Markdown file with
+  `config/markdownlint-cli2.yaml`.
+- Each host's system and home build.
+- `<host>-links`: every writable link points into the checkout at a file that
+  exists in the repository, or into the skills clone (dev-01 has no checkout).
+- deploy-rs's schema and activation checks.
+- The `moshi-hook` version test.
+
+The `x86_64-linux` checks (dev-01's home and links, the Linux `moshi-hook`) need
+a Linux builder; Determinate Nix on the Mac provides its native one. If the
+builder fails to start ("HTTP 400" or "unexpected EOF"), the failure is
+transient; run the check again. `prek run --all-files` runs the same tools
+(plus file hygiene hooks) and is the quick pre-commit pass. `nix develop`
+provides nixfmt, nixf-diagnose and nvd. For direnv, create a local `.envrc`
+containing `use flake`; it is globally ignored and never tracked.
 
 Each generation records the commit it was built from (with `-dirty` for an
 uncommitted tree): `darwin-version --configuration-revision` on a Mac, and

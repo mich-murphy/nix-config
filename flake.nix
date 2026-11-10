@@ -178,10 +178,13 @@
         aarch64-darwin =
           let
             pkgs = pkgsFor.aarch64-darwin;
-            # Only .nix files, so editing docs or app config does not rerun lint.
-            nixFiles = lib.fileset.toSource {
+            # Only what lint reads, so editing app config does not rerun it.
+            lintFiles = lib.fileset.toSource {
               root = ./.;
-              fileset = lib.fileset.fileFilter (file: file.hasExt "nix") ./.;
+              fileset = lib.fileset.unions [
+                (lib.fileset.fileFilter (file: file.hasExt "nix" || file.hasExt "md") ./.)
+                ./config/markdownlint-cli2.yaml
+              ];
             };
           in
           {
@@ -189,15 +192,17 @@
               pkgs.runCommand "lint"
                 {
                   nativeBuildInputs = [
+                    pkgs.markdownlint-cli2
                     pkgs.nixf-diagnose
                     pkgs.nixfmt
                   ];
                 }
                 ''
-                  cd ${nixFiles}
+                  cd ${lintFiles}
                   files=$(find . -name '*.nix')
                   nixfmt --check $files
                   nixf-diagnose $files
+                  markdownlint-cli2 --config config/markdownlint-cli2.yaml $(find . -name '*.md')
                   touch "$out"
                 '';
           }
