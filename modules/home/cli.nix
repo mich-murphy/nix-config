@@ -96,11 +96,8 @@ in
         "--layout reverse"
       ];
       fileWidget.options = [
-        "--height 60%"
-        "--border none"
         "--no-scrollbar"
         "--inline-info"
-        "--layout reverse"
         "--preview 'bat --color=always {}'"
         "--preview-window '~2',border-none"
       ];

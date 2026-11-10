@@ -18,8 +18,6 @@
       set -g fish_cursor_replace_one underscore
       set -g fish_cursor_visual block
 
-      set -gx FZF_COMPLETION_DIR_COMMANDS "cd pushd rmdir tree ls"
-
       # TokyoNight Night theme
       set -g fish_color_normal c0caf5
       set -g fish_color_command 7dcfff
