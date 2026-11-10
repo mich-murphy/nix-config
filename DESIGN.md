@@ -140,6 +140,10 @@ request, not committed.
 | Decision | Reason |
 | --- | --- |
 | Moshi hooks name a fixed path: an app bundle in `/Applications/Nix Apps` on macOS, a copied binary on Linux | Codex's approval covers the hook command, so the path must survive version bumps. The Macs also run the service from it, never from the store, because macOS makes a store app bundle that has run undeletable for garbage collection |
+| The Moshi launchd agent carries the package version in `NIX_RESTART_ON_VERSION` | Moshi never reads it. The program path no longer changes with the version, so this is what changes the plist and makes launchd restart the service on an update |
+| The Moshi hook check runs after the settings merges and after the service starts | The merges keep Moshi's undeclared keys, and `moshi-hook install` needs the daemon's socket |
+| dev-01's `TMPDIR` is `~/businesscraft/.scratch` | Node's temporary files and audit caches reach hundreds of MiB, so they sit on the data disk; the bootstrap creates the directory after mounting it |
+| fish binds F12 to clear the screen in both vi modes | Ghostty sends Ctrl+Shift+L as F12, which keeps it distinct from Ctrl+L inside Herdr and shells |
 | dev-01 builds its own profile (deploy-rs `remoteBuild`) | `dev` is not a trusted Nix user on dev-01, so a closure built on the Mac is refused as unsigned; making `dev` trusted would give that account root-equivalent control of the Nix store |
 | underclass runs on every host and reads `~/.config/underclass/config.toml` itself | The same untracked file works on both platforms; each host keeps its own account pool |
 | `go`, `python3` and (on Macs) `nodejs` are Neovim packages, not global | Mason builds and runs its tools with them; project toolchains come from project dev shells |
