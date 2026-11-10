@@ -12,7 +12,8 @@ weekly launch daemon expires system generations older than 7 days.
 ## Structure
 
 ```text
-flake.nix              inputs; mkDarwin (user, Home Manager wiring); checks
+flake.nix              inputs; mkDarwin (user, Home Manager wiring); dev-01's
+                       deploy-rs node; checks
 hosts/<host>/
 ├── default.nix        nix-darwin: host name, platform, stateVersion (Macs only)
 └── home.nix           Home Manager: host-only modules, stateVersion, identity
@@ -20,8 +21,6 @@ modules/darwin/        nix-darwin modules shared by every Mac
 modules/home/          Home Manager modules shared by every host
 └── mac/               Home Manager modules only Macs import (incl. Git identity)
 pkgs/<name>/package.nix  packages nixpkgs lacks; added to pkgs by an overlay
-apps/                  nix run .#deploy and .#status (fleet.sh on the Mac,
-                       fleet-host.sh on each host)
 config/                raw application files, linked or read by the modules
 ```
 
@@ -98,7 +97,8 @@ provides one.
 `nix flake check` is the single gate: its `lint` check runs `nixfmt --check` and
 `nixf-diagnose` over every `.nix` file, and it builds every host. Each
 `<host>-links` check confirms every writable link points into the checkout at a
-file that exists in the repository. `nix develop` provides nixfmt,
+file that exists in the repository, or into the skills clone (dev-01 has no
+checkout). `nix develop` provides nixfmt,
 nixf-diagnose and nvd. For direnv, create a local `.envrc` containing
 `use flake`; it is globally ignored and never tracked.
 
@@ -113,48 +113,53 @@ darwin-rebuild switch --flake .
 ```
 
 dev-01 runs Ubuntu with standalone Home Manager. The machines repo's bootstrap
-owns everything outside the home directory; this flake owns the home. On
-dev-01, from `~/dev/nix-config`:
+owns everything outside the home directory; this flake owns the home.
+
+### Deploy dev-01
+
+From the Mac, inside `nix develop` (which provides `deploy`):
 
 ```sh
-home-manager switch --flake .#dev@dev-01
+deploy --dry-activate .#dev-01   # build, copy and show what would change
+deploy .#dev-01                  # build here, copy, activate, confirm
 ```
 
-### Deploy and status
+deploy-rs evaluates the flake on the Mac, copies the home closure to dev-01 over
+SSH (alias `dev-01`, user `dev`, from `modules/home/mac/ssh.nix`) and activates
+it. dev-01 needs no nix-config checkout: Herdr's config and `AGENTS.md` come
+from the deployed generation there, so edit them on the Mac, then deploy; they
+are read-only on dev-01. The Macs keep live links into their checkout.
 
-From a Mac, after publishing to `main`:
+`deploy .#dev-01` builds the Mac's working tree as it is, like
+`darwin-rebuild switch --flake .` does, and the recorded revision ends in
+`-dirty` when it was not committed. To deploy a specific commit:
 
 ```sh
-nix run .#status           # every host
-nix run .#deploy           # every host
-nix run .#deploy -- dev-01 # named hosts only
+deploy "git+file://$PWD?rev=$(git rev-parse HEAD)#dev-01"
 ```
 
-The host list comes from the flake (`darwinConfigurations` and
-`homeConfigurations`). The Mac you run it on is handled directly. Every other
-host gets one SSH session, under its flake name as the SSH alias.
+The skills and Neovim clones on dev-01 are separate repositories, updated with a
+plain `git pull`, not by a deploy; so is `pi update` for Pi packages. The skills
+links stay live links on every host.
 
-`deploy` fast-forwards each host's Neovim, skills and nix-config checkouts with
-`git pull --ff-only`. It then switches to the checkout's commit through
-`git+file://…?rev=`, so uncommitted edits never deploy. A checkout is left as it
-is and reported pending when Git refuses because local edits conflict, when it
-has unpushed commits, or when it is on another branch. A pending nix-config
-skips that host's switch, and the other hosts carry on. A host already running
-the commit isn't switched again. A Mac switch runs `sudo darwin-rebuild`, which
-asks for your password. The switch log is in
-`~/.local/state/nix-config/deploy.log`. Agent CLIs and Pi extensions are not
-updated: run `pi update --extensions` yourself.
+What each host is running:
 
-`status` reports, for each host:
+```sh
+darwin-version --configuration-revision          # Mac: commit it was built from
+ssh dev-01 cat .local/state/nix-config/revision  # dev-01: commit, or -dirty
+```
 
-- the checkouts' commits compared with origin, and any local changes;
-- the active revision, and whether a deploy is pending;
-- Pi git packages that are behind their branch;
-- managed files that are no longer links into the active generation;
-- declared Claude and Pi settings changed in the app since the last switch;
-- a table of agent, herdr and moshi-hook versions, marking those that differ.
+If activation fails, or dev-01 does not confirm within 30 seconds (magic
+rollback), deploy-rs reverts dev-01 by itself. To undo a deploy that went
+through, deploy the previous commit with the form above. On a Mac,
+`sudo darwin-rebuild switch --rollback` returns to the previous generation.
 
-Both commands exit 1 when any host is pending, failed or unreachable.
+First deploy (not yet tested on the host): the Nix daemon on dev-01 may refuse
+the unsigned copied closure unless `dev` is in `trusted-users` there. If so, add
+it, or use `deploy --remote-build .#dev-01`. The very first Home Manager switch
+on dev-01, before it runs a deploy-rs generation, can still come from a clone
+(`home-manager switch --flake .#dev@dev-01` in it) or from a `github:` flake
+reference; either way it builds the files from the store, not from that clone.
 
 Local validation is required: GitHub Actions is currently unavailable because
 of usage limits, so a badge or remote workflow result is not a readiness gate.
@@ -168,12 +173,12 @@ apply. It never activates the runner.
 ## Live configuration
 
 The `nixConfig.checkout` Home Manager option holds the checkout path, defaulting
-to `~/dev/nix-config`. Home Manager uses
+to `~/dev/nix-config`. On the Macs, Home Manager uses
 [out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
 only for configurations that are intentionally edited live:
 
 - Ghostty;
-- Herdr;
+- Herdr (on dev-01 it comes from the deployed generation instead);
 - Karabiner;
 - skhd, passed directly to its launch agent.
 
@@ -193,7 +198,10 @@ stay local. A declared value changed in the app is reset on the next switch;
 change it in Nix instead. If a switch stops with "changed during activation",
 an agent saved its settings at the same moment; run the switch again.
 
-If the checkout moves, set `nixConfig.checkout` (and the skhd path in
+`nixConfig.checkout` is `null` on dev-01, which has no checkout: the same files
+then come from the flake source in the store and are read-only. Modules take such
+a file through `config.lib.nixConfig.file "<path in repo>"`. If a Mac's checkout
+moves, set `nixConfig.checkout` (and the skhd path in
 `modules/darwin/window-management.nix`) and rebuild. Karabiner owns and watches
 its whole configuration directory, so generated backups and complex
 modifications are ignored while `config/karabiner/karabiner.json` remains

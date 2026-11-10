@@ -8,6 +8,5 @@
   # server on the same version.
   home.packages = [ pkgs.herdr ];
 
-  xdg.configFile."herdr/config.toml".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/herdr/config.toml";
+  xdg.configFile."herdr/config.toml".source = config.lib.nixConfig.file "config/herdr/config.toml";
 }

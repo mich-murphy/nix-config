@@ -19,9 +19,12 @@
   # would report it as not running and skip restarting changed services.
   systemd.user.systemctlPath = "/usr/bin/systemctl";
 
+  # No checkout: this repository's files come from the deployed generation.
+  nixConfig.checkout = null;
+
   # Work identity, written by bootstrap.
   programs.git.includes = [ { path = "~/.gitconfig-work"; } ];
 
-  # Standalone hosts switch with the home-manager command.
+  # Deployed from the Mac with deploy-rs; also the command for a first switch.
   programs.home-manager.enable = true;
 }
