@@ -15,6 +15,7 @@ in
     ".claude/skills/bro".source = liveLink "${skills}/bro";
     ".claude/skills/coordinator".source = liveLink "${skills}/coordinator";
     ".claude/skills/create-verification".source = liveLink "${skills}/create-verification";
+    ".claude/skills/no-comments".source = liveLink "${skills}/no-comments";
     ".claude/skills/show-me".source = liveLink "${skills}/show-me";
   };
 
