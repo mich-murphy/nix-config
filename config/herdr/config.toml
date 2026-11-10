@@ -1,4 +1,3 @@
-# Persist the onboarding choice in the live, Git-tracked config.
 onboarding = false
 
 [theme]
@@ -14,9 +13,6 @@ detach = "prefix+d"
 previous_workspace = "prefix+("
 next_workspace = "prefix+)"
 focus_agent = "prefix+shift+1..9"
-
-# Direct chords are process-aware plugin actions that navigate
-# seamlessly between Neovim and Herdr panes.
 
 [[keys.command]]
 key = "ctrl+h"
@@ -49,7 +45,6 @@ type = "shell"
 command = "\"$HERDR_BIN_PATH\" pane send-keys \"$HERDR_ACTIVE_PANE_ID\" ctrl+l"
 description = "Clear focused pane"
 
-# Herdr Annotate terminal annotations.
 [[keys.command]]
 key = "prefix+a"
 type = "plugin_action"
@@ -68,7 +63,6 @@ type = "plugin_action"
 command = "annotate.manage"
 description = "Manage annotations"
 
-# Herdr Annotate document and agent-reply review.
 [[keys.command]]
 key = "prefix+o"
 type = "plugin_action"

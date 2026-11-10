@@ -47,7 +47,6 @@ in
       '';
     };
 
-    # Keep nix-darwin's package and LaunchAgent, but point it at the live file.
     skhd.enable = true;
   };
 

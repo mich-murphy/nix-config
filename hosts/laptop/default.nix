@@ -1,4 +1,3 @@
-# M5 MacBook Pro.
 {
   imports = [ ../../modules/darwin ];
 

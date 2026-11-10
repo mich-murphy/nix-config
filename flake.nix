@@ -8,7 +8,7 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
-    # Only default.nix, for non-flake use, imports flake-compat.
+    # Only default.nix and shell.nix, for non-flake use, import flake-compat.
     deploy-rs.inputs.flake-compat.follows = "";
     hunk.url = "github:modem-dev/hunk";
     hunk.inputs.nixpkgs.follows = "nixpkgs";
@@ -36,15 +36,12 @@
         "x86_64-linux"
       ];
       forAllSystems = lib.genAttrs systems;
-      # Packages not in nixpkgs, one pkgs/<name>/package.nix each.
       localPackages =
         pkgs:
         lib.packagesFromDirectoryRecursive {
           inherit (pkgs) callPackage;
           directory = ./pkgs;
         };
-      # The one nixpkgs configuration, shared by the standalone imports below
-      # and the nix-darwin hosts.
       nixpkgsConfig = {
         config.allowUnfree = true;
         overlays = [ self.overlays.default ];
@@ -53,8 +50,6 @@
 
       revision = self.rev or self.dirtyRev or "unknown";
 
-      # A Mac: hosts/<host>/default.nix for the system and
-      # hosts/<host>/home.nix for its Home Manager additions.
       mkDarwin =
         host:
         darwin.lib.darwinSystem {
@@ -68,7 +63,6 @@
               {
                 nixpkgs = { inherit (nixpkgsConfig) config overlays; };
 
-                # Shown by `darwin-version --configuration-revision`.
                 system.configurationRevision = revision;
 
                 # Determinate installs Nix; its module stops nix-darwin managing it.
@@ -103,7 +97,6 @@
           ];
         };
 
-      # A Linux host with standalone Home Manager: hosts/<host>/home.nix.
       mkHome =
         host: system:
         home-manager.lib.homeManagerConfiguration {
@@ -130,13 +123,6 @@
         })
       ];
 
-      # mkOutOfStoreSymlink makes a store path that is itself a symlink. Each
-      # one must point into the checkout or the skills clone (a path literal
-      # would leave a read-only store copy). Links into the checkout must name a
-      # file that exists in this repo (a typo or moved file would leave a
-      # dangling link); the skills repo is not a flake input, so its targets
-      # cannot be checked. A wrong root cannot be seen from a build. A host
-      # without a checkout may link only into the skills clone.
       linksCheck =
         pkgs: host: home:
         let
@@ -172,13 +158,10 @@
           echo "$found writable links point into ${roots}"
           touch "$out"
         '';
-      # Per-system checks beyond the shared ones. dev-01's need a Linux builder:
-      # `nix flake check --all-systems`.
       hostChecks = {
         aarch64-darwin =
           let
             pkgs = pkgsFor.aarch64-darwin;
-            # Only what lint reads, so editing app config does not rerun it.
             lintFiles = lib.fileset.toSource {
               root = ./.;
               fileset = lib.fileset.unions [
@@ -206,7 +189,6 @@
                   touch "$out"
                 '';
           }
-          # Build every Mac's system and home, and check its writable links.
           // lib.concatMapAttrs (
             host: darwin:
             let
@@ -264,10 +246,8 @@
 
       homeConfigurations."dev@dev-01" = mkHome "dev-01" "x86_64-linux";
 
-      # `deploy .#dev-01`, run from a Mac. The Mac itself is not a node; it
-      # switches with `sudo darwin-rebuild switch --flake .`.
       deploy.nodes.dev-01 = {
-        hostname = "dev-01"; # the SSH alias in modules/home/mac/ssh.nix
+        hostname = "dev-01";
         sshUser = "dev"; # otherwise the Mac's own user name
         # dev is not a trusted Nix user on dev-01, so a closure built on the Mac
         # is refused as unsigned; building there needs no trust.

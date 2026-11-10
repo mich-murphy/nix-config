@@ -1,4 +1,3 @@
-# Home Manager modules shared by every host.
 {
   config,
   inputs,
@@ -40,8 +39,6 @@
   };
 
   config = {
-    # A file of this repository, as a Home Manager `source`: a live link into the
-    # checkout, or the flake's copy in the store when the host has none.
     lib.nixConfig.file =
       path:
       if config.nixConfig.checkout == null then

@@ -126,7 +126,6 @@
         ShowSeconds = false;
       };
       spaces.spans-displays = false;
-      # Keep Stage Manager and native edge tiling out of yabai's way.
       WindowManager = {
         GloballyEnabled = false;
         EnableStandardClickToShowDesktop = false;

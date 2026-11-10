@@ -1,7 +1,5 @@
 { pkgs, ... }:
 {
-  # The configuration itself is the mich-murphy/neovim repository, cloned to
-  # ~/.config/nvim; Nix supplies only Neovim and its runtime tools.
   programs.neovim = {
     enable = true;
     package = pkgs.neovim-unwrapped;

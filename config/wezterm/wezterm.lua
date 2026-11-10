@@ -1,7 +1,6 @@
 local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
--- Show which key table is active in the status area
 wezterm.on("update-right-status", function(window, pane)
   local name = window:active_key_table()
   if name then
@@ -57,18 +56,15 @@ config.keys = {
 }
 
 config.key_tables = {
-  -- Defines the keys that are active in our resize-pane mode.
   resize_pane = {
     { key = "h", action = wezterm.action.AdjustPaneSize({ "Left", 1 }) },
     { key = "l", action = wezterm.action.AdjustPaneSize({ "Right", 1 }) },
     { key = "k", action = wezterm.action.AdjustPaneSize({ "Up", 1 }) },
     { key = "j", action = wezterm.action.AdjustPaneSize({ "Down", 1 }) },
-    -- Cancel the mode by pressing escape
     { key = "Escape", action = "PopKeyTable" },
   },
 }
 
--- Leader + number to switch tab
 for i = 1, 8 do
   table.insert(config.keys, {
     key = tostring(i),
@@ -77,7 +73,6 @@ for i = 1, 8 do
   })
 end
 
--- Tab bar
 config.hide_tab_bar_if_only_one_tab = false
 config.use_fancy_tab_bar = false
 config.switch_to_last_active_tab_when_closing_tab = true
@@ -114,7 +109,6 @@ wezterm.on("format-tab-title", function(tab)
   return " " .. (tab.tab_index + 1) .. ": " .. (title or "") .. " "
 end)
 
--- General
 config.color_scheme = "tokyonight_night"
 config.font = wezterm.font("Berkeley Mono")
 config.font_size = 13.0

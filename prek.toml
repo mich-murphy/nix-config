@@ -15,8 +15,6 @@ hooks = [
   { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"] },
 ]
 
-# Tools come from the flake's locked nixpkgs, so hooks, CI and `nix flake check`
-# use the same versions.
 [[repos]]
 repo = "local"
 hooks = [
