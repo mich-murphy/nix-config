@@ -227,6 +227,39 @@ with the accounts. Add accounts in the web UI at `http://127.0.0.1:8080/`, and
 watch the pool with `utop`. A new underclass revision compiles from source, and
 the x86_64-linux build for the dev-01 check is slow on the Mac's Linux builder.
 
+Clients are pointed at underclass by hand, per host, because the proxy key is
+a secret. Nix never sets these values. To route Claude Code, add both variables
+to the `env` block of `~/.claude/settings.json` and `chmod 600` the file.
+Each switch merges the declared settings into the file and keeps these keys:
+
+```json
+"ANTHROPIC_BASE_URL": "http://127.0.0.1:8080",
+"CLAUDE_CODE_OAUTH_TOKEN": "sk-underclass-..."
+```
+
+Set both or neither. With only the base URL, Claude sends its claude.ai login
+to underclass and gets 401. Don't export `CLAUDE_CODE_OAUTH_TOKEN` from the
+shell: Pi's Claude provider ignores `settings.json` and strips
+`ANTHROPIC_BASE_URL`, so it would send the proxy key to Anthropic and fail with
+"Not logged in". Pi's Claude therefore always uses the normal login.
+
+To route Codex, add a provider to the local `~/.codex/config.toml` and
+`chmod 600` the file:
+
+```toml
+model_provider = "underclass"
+
+[model_providers.underclass]
+name = "underclass"
+base_url = "http://127.0.0.1:8080/v1"
+experimental_bearer_token = "sk-underclass-..."
+wire_api = "responses"
+```
+
+To stop routing a client, remove these lines. underclass's ADR 0023 notes that
+pooling claude.ai OAuth credentials conflicts with Anthropic's terms, and those
+accounts may be invalidated.
+
 Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the
 reload.
