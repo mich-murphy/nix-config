@@ -6,6 +6,10 @@
     darwin.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    deploy-rs.url = "github:serokell/deploy-rs";
+    deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
+    # Only default.nix, for non-flake use, imports flake-compat.
+    deploy-rs.inputs.flake-compat.follows = "";
     hunk.url = "github:modem-dev/hunk";
     hunk.inputs.nixpkgs.follows = "nixpkgs";
     underclass.url = "github:ghuntley/underclass";
@@ -21,6 +25,7 @@
       nixpkgs,
       darwin,
       home-manager,
+      deploy-rs,
       ...
     }:
     let
@@ -108,39 +113,36 @@
           ];
         };
 
+      # deploy-rs's lib for dev-01, with nixpkgs' cached deploy-rs binary
+      # instead of the flake's own source build.
+      deployPkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [
+          deploy-rs.overlays.default
+          (_: prev: {
+            deploy-rs = {
+              inherit (nixpkgs.legacyPackages.x86_64-linux) deploy-rs;
+              inherit (prev.deploy-rs) lib;
+            };
+          })
+        ];
+      };
+
       # mkOutOfStoreSymlink makes a store path that is itself a symlink. Each
       # one must point into the checkout or the skills clone (a path literal
       # would leave a read-only store copy). Links into the checkout must name a
       # file that exists in this repo (a typo or moved file would leave a
       # dangling link); the skills repo is not a flake input, so its targets
-      # cannot be checked. A wrong root cannot be seen from a build.
-      aarch64Pkgs = packagesFor "aarch64-darwin";
-
-      # Every host in the flake, with the paths its home declares.
-      fleet =
-        pkgs:
-        import ./apps/fleet.nix {
-          inherit pkgs lib;
-          hosts =
-            lib.mapAttrsToList (name: darwin: {
-              inherit name;
-              kind = "darwin";
-              config = name;
-              inherit (darwin.config.home-manager.users.mm.nixConfig) checkout skills;
-            }) inputs.self.darwinConfigurations
-            ++ lib.mapAttrsToList (config: home: {
-              name = lib.last (lib.splitString "@" config);
-              kind = "home";
-              inherit config;
-              inherit (home.config.nixConfig) checkout skills;
-            }) inputs.self.homeConfigurations;
-        };
-
+      # cannot be checked. A wrong root cannot be seen from a build. A host
+      # without a checkout may link only into the skills clone.
       linksCheck =
         pkgs: host: home:
+        let
+          inherit (home.nixConfig) checkout skills;
+          roots = lib.concatStringsSep " or " (lib.optional (checkout != null) checkout ++ [ skills ]);
+        in
         pkgs.runCommand "${host}-links" { } ''
-          checkout=${lib.escapeShellArg home.nixConfig.checkout}
-          skills=${lib.escapeShellArg home.nixConfig.skills}
+          skills=${lib.escapeShellArg skills}
           found=0
           while IFS= read -r -d "" link; do
             target=$(readlink "$link")
@@ -149,14 +151,16 @@
             dest=$(readlink "$target")
             case "$dest" in
               "$skills" | "$skills"/*) ;;
-              "$checkout"/*)
-                if [ ! -e "${inputs.self}/''${dest#"$checkout"/}" ]; then
-                  echo "$link -> $dest does not exist in the repository"
-                  exit 1
-                fi
-                ;;
+              ${lib.optionalString (checkout != null) ''
+                ${lib.escapeShellArg checkout}/*)
+                  if [ ! -e "${inputs.self}/''${dest#${lib.escapeShellArg checkout}/}" ]; then
+                    echo "$link -> $dest does not exist in the repository"
+                    exit 1
+                  fi
+                  ;;
+              ''}
               *)
-                echo "$link -> $dest is not in $checkout or $skills"
+                echo "$link -> $dest is not in ${roots}"
                 exit 1
                 ;;
             esac
@@ -165,7 +169,7 @@
             echo "no writable links found"
             exit 1
           fi
-          echo "$found writable links point into $checkout or $skills"
+          echo "$found writable links point into ${roots}"
           touch "$out"
         '';
     in
@@ -190,6 +194,7 @@
               pkgs.nixf-diagnose
               pkgs.nixfmt
               pkgs.nvd
+              pkgs.deploy-rs
             ];
           };
         }
@@ -202,20 +207,15 @@
 
       homeConfigurations."dev@dev-01" = mkHome "dev-01" "x86_64-linux";
 
-      # `nix run .#deploy` and `nix run .#status`, run from a Mac.
-      apps.aarch64-darwin =
-        let
-          inherit (fleet aarch64Pkgs) deploy status;
-          app = drv: description: {
-            type = "app";
-            program = lib.getExe drv;
-            meta.description = description;
-          };
-        in
-        {
-          deploy = app deploy "Fast-forward every host's checkouts and switch to the published commit";
-          status = app status "Show each host's revisions, local changes, settings drift and versions";
-        };
+      # `deploy .#dev-01`, run from a Mac. The Mac itself is not a node; it
+      # switches with `sudo darwin-rebuild switch --flake .`.
+      deploy.nodes.dev-01 = {
+        hostname = "dev-01"; # the SSH alias in modules/home/mac/ssh.nix
+        sshUser = "dev"; # otherwise the Mac's own user name
+        profiles.home.path =
+          deployPkgs.deploy-rs.lib.activate.home-manager
+            inputs.self.homeConfigurations."dev@dev-01";
+      };
 
       checks.aarch64-darwin =
         let
@@ -243,17 +243,8 @@
                 touch "$out"
               '';
           moshi-hook-version = pkgs.moshi-hook.tests.version;
-          # Builds the fleet scripts, which runs ShellCheck over them.
-          fleet =
-            let
-              f = fleet pkgs;
-            in
-            pkgs.linkFarmFromDrvs "fleet" [
-              f.host
-              f.deploy
-              f.status
-            ];
         }
+        // deploy-rs.lib.aarch64-darwin.deployChecks inputs.self.deploy
         # Build every Mac's system and home, and check its writable links.
         // lib.concatMapAttrs (
           host: darwin:
@@ -278,6 +269,7 @@
           moshi-hook-version = pkgs.moshi-hook.tests.version;
           dev-01-home = home.home.activationPackage;
           dev-01-links = linksCheck pkgs "dev-01" home;
-        };
+        }
+        // deploy-rs.lib.x86_64-linux.deployChecks inputs.self.deploy;
     };
 }

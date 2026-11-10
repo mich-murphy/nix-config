@@ -20,11 +20,13 @@
   ];
 
   options.nixConfig.checkout = lib.mkOption {
-    type = lib.types.str;
+    type = lib.types.nullOr lib.types.str;
     default = "${config.home.homeDirectory}/dev/nix-config";
     description = ''
       Absolute path of this repository's checkout. Writable configuration is
       linked here with mkOutOfStoreSymlink, so applications can save to it.
+      Null on a host with no checkout: this repository's files then come from
+      the deployed generation and are read-only.
     '';
   };
 
@@ -38,6 +40,15 @@
   };
 
   config = {
+    # A file of this repository, as a Home Manager `source`: a live link into the
+    # checkout, or the flake's copy in the store when the host has none.
+    lib.nixConfig.file =
+      path:
+      if config.nixConfig.checkout == null then
+        inputs.self + "/${path}"
+      else
+        config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/${path}";
+
     home = {
       sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
 

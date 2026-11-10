@@ -171,7 +171,7 @@ Normal workflow:
 1. Edit directly or let the application save; changes take effect locally.
 2. Git shows changes in the owning repository.
 3. Review, commit and publish.
-4. Deploy the latest published committed state to eligible fleet components.
+4. Deploy the working tree, or a chosen commit, to eligible hosts.
 
 Latest is the default. Version holds are explicit exceptions for compatibility,
 build or security problems. Recording resolved revisions/locks for provenance and
@@ -184,16 +184,14 @@ channels. Nix coordinates their installation/integration without necessarily own
 their update lifecycle. Prefer Nix for other tools, with explicit fallback for
 freshness or packaging failures. Avoid duplicate install/service owners.
 
-Deployment must not ship the operator's uncommitted working tree. On a destination
-with dirty local configuration, preserve it, skip that component, continue other
-eligible components/machines, and report it pending. Do not auto-reset/stash, commit,
-publish or overwrite local edits. Dependency safety may prevent a related component
-from proceeding; the report must explain that, not pretend all work completed.
+A deploy builds the operator's working tree, like `darwin-rebuild switch --flake .`,
+and records the revision with `-dirty` when it was not committed. Components
+that are separate clones (Neovim, skills) are never overwritten by a deploy.
 
 Expose actual configuration/component revisions, local changes, pending/failure
 reasons, intentional holds and independently updated application versions. Distinguish
 config synchronization from binary-version equality. A build is not an activation.
-The exact fleet command and state-record implementation remain engineering details.
+The exact deploy command and state-record implementation remain engineering details.
 
 ## 8. System-settings correctness and efficiency
 
@@ -251,16 +249,18 @@ tool versions.
 ## 10. Engineering decisions
 
 1. **Writable files:** Home Manager `mkOutOfStoreSymlink` from each application's
-   path to a checkout at `~/dev/nix-config` on every host. Codex `config.toml`
+   path to a checkout at `~/dev/nix-config` on the Macs; dev-01 has no checkout
+   and takes this repository's files from the store. Codex `config.toml`
    (it mixes in per-project trust) stays local. MCP configuration is not shared.
 2. **dev-01:** x86_64-linux; stays on Ubuntu with standalone Home Manager. NixOS is evaluated later as separate work.
 3. **skhd/yabai:** unchanged until the configuration is correct; permission
    persistence is revisited afterwards.
-4. **Fleet:** run from the Mac over SSH. Each host fast-forwards its checkout with
-   `git pull --ff-only`; when Git refuses because local edits conflict, that host
-   is left pending and reported. Hosts build the published commit, so
-   uncommitted changes never deploy. nix-darwin records the revision in
-   `system.configurationRevision`; Home Manager hosts record it in a state file.
+4. **Fleet:** the Mac switches itself with `darwin-rebuild`; dev-01 is a
+   deploy-rs node, deployed from the Mac (`deploy .#dev-01`), which evaluates
+   the flake locally and pushes the closure. A `git+file://…?rev=` reference
+   deploys a commit rather than the working tree. nix-darwin records the
+   revision in `system.configurationRevision`; Home Manager hosts record it in a
+   state file.
 5. **Repositories:** Neovim is `mich-murphy/neovim`, cloned to `~/.config/nvim`.
    Skills are the public `mich-murphy/skills`, cloned to `~/dev/skills`.
    Packages nixpkgs lacks (Moshi's hook daemon) live in `pkgs/<name>/`.
