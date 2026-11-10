@@ -97,7 +97,7 @@ Needed once on a new machine, in this order:
    | --- | --- |
    | `id_ed25519` | github.com (personal account) |
    | `github_bc` | Git inside `~/businesscraft/` (work account) |
-   | `macbook` | the `dev-01` host |
+   | `dev-01` | the `dev-01` host |
    | `ai-dev.pub` | the `ai-dev` host |
 
    The SSH config also reads the 1Password SSH agent, so sign in to 1Password
@@ -136,7 +136,7 @@ On dev-01:
 
 1. Install Nix (assumed: Determinate, the same as on the Mac) and enable flakes.
 2. Have the `dev` user with `/home/dev` and SSH access from the Mac with the
-   `~/.ssh/macbook` key (the Mac's `dev-01` SSH alias names that user and key).
+   `~/.ssh/dev-01` key (the Mac's `dev-01` SSH alias names that user and key).
 3. Clone the same skills and Neovim repositories to `~/dev/skills` and
    `~/.config/nvim` (they need GitHub access from the VM).
 4. Create `~/.gitconfig-work`, the work identity that `hosts/dev-01/home.nix`
