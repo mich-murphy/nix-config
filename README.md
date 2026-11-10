@@ -35,6 +35,13 @@ follows the
 and
 [Home Manager's nix-darwin integration](https://nix-community.github.io/home-manager/nix-flakes/nix-darwin.html).
 
+A package goes in `environment.systemPackages` when the system or root needs it,
+in `home.packages` when it is a general command-line tool used in any directory,
+in `programs.neovim.extraPackages` when only Neovim or Mason shells out to it,
+in Homebrew when it is a Mac app, cask or formula that nixpkgs lacks or that
+updates itself, and in a project's dev shell when it is that project's
+toolchain.
+
 The former media/NixOS configuration and encrypted age files were removed from
 HEAD. They remain recoverable from ordinary Git history; that removal does not
 purge historical objects.
