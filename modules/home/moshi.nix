@@ -1,26 +1,42 @@
 # Moshi's hook daemon. `moshi-hook install` writes the path it runs from into
-# every Claude, Codex and Pi hook, and Codex's approval covers that command.
-# Hooks therefore name a path that survives version bumps: nix-darwin's copy in
-# /Applications/Nix Apps on the Macs (see modules/darwin/applications.nix), a
-# copy in ~/.local/libexec on Linux. The service runs the store path, so a new
-# version restarts it. `moshi-hook` and `moshi` on PATH run the stable copy, so
-# a manual `moshi-hook install` writes the same path.
+# every Claude, Codex and Pi hook, and Codex's approval covers that command, so
+# hooks name a path that survives version bumps. The service runs the store
+# path, so a new version restarts it. `moshi-hook` and `moshi` on PATH run the
+# stable copy, so a manual `moshi-hook install` writes the same path.
 {
   config,
   lib,
+  osConfig ? null,
   pkgs,
   ...
 }:
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
   exe = lib.getExe pkgs.moshi-hook;
+  # On the Macs nix-darwin installs the signed app bundle
+  # (pkgs.moshi-hook.app in modules/darwin/applications.nix) here. Hooks and
+  # Codex's approval name this path, so do not change it; on Linux the
+  # activation below copies the binary instead.
+  hookPath =
+    if isDarwin then
+      "/Applications/Nix Apps/MoshiHook.app/Contents/MacOS/moshi-hook"
+    else
+      "${config.home.homeDirectory}/.local/libexec/moshi-hook";
+  targets = [
+    "claude"
+    "codex"
+    "pi"
+  ];
+  serveArgs = [
+    "serve"
+    "--gateway-listen"
+    "127.0.0.1:24543"
+  ];
   # Services get a minimal PATH. Give the daemon a shell's PATH so programs it
   # runs by name (herdr, git, gh, tmux) resolve the same way.
   servicePath = lib.concatStringsSep ":" (
-    [
-      "${config.home.homeDirectory}/.local/bin"
-      "${config.home.profileDirectory}/bin"
-    ]
+    config.home.sessionPath
+    ++ [ "${config.home.profileDirectory}/bin" ]
     ++ lib.optionals isDarwin [
       "/run/current-system/sw/bin"
       "/opt/homebrew/bin"
@@ -34,24 +50,46 @@ let
       "/sbin"
     ]
   );
-  hookPath =
-    if isDarwin then
-      "/Applications/Nix Apps/MoshiHook.app/Contents/MacOS/moshi-hook"
-    else
-      "${config.home.homeDirectory}/.local/libexec/moshi-hook";
-  targets = [
-    "claude"
-    "codex"
-    "pi"
-  ];
   wrapper =
     name:
     pkgs.writeShellApplication {
       inherit name;
       text = ''exec ${lib.escapeShellArg hookPath} "$@"'';
     };
+  # `install` restarts running agents when it changes their hooks, so it only
+  # runs when `status` reports them out of date. A service that has just been
+  # started needs a moment to open the socket `install` talks to.
+  ensureHooks = pkgs.writeShellApplication {
+    name = "moshi-ensure-hooks";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      moshi=${lib.escapeShellArg hookPath}
+      if [[ ! -x $moshi ]]; then
+        echo "Moshi hooks not checked: $moshi is missing" >&2
+        exit 0
+      fi
+      status=$("$moshi" status --json || true)
+      if jq -e --argjson targets ${lib.escapeShellArg (builtins.toJSON targets)} \
+        'all(.hooks[] | select(.target | IN($targets[])); .status == "current")' \
+        <<<"$status" >/dev/null; then
+        exit 0
+      fi
+      socket=$(jq -r '.socketPath // empty' <<<"$status" || true)
+      for _ in {1..20}; do
+        [[ -S $socket ]] && break
+        sleep 0.5
+      done
+      MOSHI_HOOK_SKIP_FIRST_RUN=1 "$moshi" install --target ${lib.concatStringsSep "," targets} \
+        || echo "moshi-hook install failed; rerun it by hand" >&2
+    '';
+  };
 in
 {
+  assertions = lib.optional (isDarwin && osConfig != null) {
+    assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
+    message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
+  };
+
   home.packages = map wrapper [
     "moshi-hook"
     "moshi"
@@ -60,10 +98,7 @@ in
   launchd.agents.moshi-hook = lib.mkIf isDarwin {
     enable = true;
     config = {
-      ProgramArguments = [
-        exe
-        "serve"
-      ];
+      ProgramArguments = [ exe ] ++ serveArgs;
       EnvironmentVariables.PATH = servicePath;
       KeepAlive = true;
       RunAtLoad = true;
@@ -79,7 +114,7 @@ in
       Wants = [ "network-online.target" ];
     };
     Service = {
-      ExecStart = "${exe} serve --gateway-listen 127.0.0.1:24543";
+      ExecStart = lib.escapeShellArgs ([ exe ] ++ serveArgs);
       Environment = "PATH=${servicePath}";
       Restart = "on-failure";
       RestartSec = 5;
@@ -96,35 +131,16 @@ in
       ''
     );
 
-    # Reinstall only when Moshi reports its hooks out of date (new install,
-    # moved path or a release that changes them). Runs after the settings
-    # merges, which keep Moshi's keys because they are not declared, and after
+    # After the settings merges, which keep Moshi's undeclared keys, and after
     # the service starts (setupLaunchAgents on the Macs, reloadSystemd on
     # Linux), so `install` finds the daemon's socket.
-    moshiHooks =
-      lib.hm.dag.entryAfter
-        [
-          "linkGeneration"
-          "moshiHookCopy"
-          "claudeCodeSettings"
-          "piCodingAgentMutableSettings"
-          "setupLaunchAgents"
-          "reloadSystemd"
-        ]
-        ''
-          moshi=${lib.escapeShellArg hookPath}
-          if [[ ! -x $moshi ]]; then
-            warnEcho "Moshi hooks not checked: $moshi is missing"
-          elif ! "$moshi" status --json | ${lib.getExe pkgs.jq} -e \
-              '[.hooks[] | select(.target | IN(${
-                lib.concatMapStringsSep ", " (t: ''"${t}"'') targets
-              })) | .status == "current"] | all' >/dev/null; then
-            # A just-started service needs a moment to open its socket.
-            socket=$("$moshi" status --json | ${lib.getExe pkgs.jq} -r .socketPath) || socket=
-            for _ in {1..20}; do [[ -S $socket ]] && break; sleep 0.5; done
-            run env MOSHI_HOOK_SKIP_FIRST_RUN=1 "$moshi" install --target ${lib.concatStringsSep "," targets} \
-              || warnEcho "moshi-hook install failed; rerun it by hand"
-          fi
-        '';
+    moshiHooks = lib.hm.dag.entryAfter [
+      "linkGeneration"
+      "moshiHookCopy"
+      "claudeCodeSettings"
+      "piCodingAgentMutableSettings"
+      "setupLaunchAgents"
+      "reloadSystemd"
+    ] "run ${lib.getExe ensureHooks}";
   };
 }

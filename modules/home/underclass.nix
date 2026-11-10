@@ -1,12 +1,13 @@
 # underclass (github:ghuntley/underclass) pools Claude Code, ChatGPT/Codex and
-# Copilot subscriptions behind one local endpoint. Each host runs its own pool:
-# work accounts on dev-01, personal accounts on the Macs. Accounts are added in
-# its web UI and stored in ~/.local/share/underclass/pool.db.
+# Copilot subscriptions behind one local endpoint on 127.0.0.1:8080. Each host
+# runs its own pool: work accounts on dev-01, personal accounts on the Macs.
+# Accounts are added in its web UI and stored in ~/.local/share/underclass/pool.db.
 #
-# Keys live in ~/.config/underclass/env, a local file that is never tracked:
-#   UNDERCLASS_PROXY_KEY=...  sent by clients
-#   UNDERCLASS_UI_TOKEN=...   for the web UI and admin API
-# Without the file, underclass mints both into pool.db on first start.
+# Optional keys live in ~/.config/underclass/config.toml, a local file that is
+# never tracked and that underclass itself reads on every platform:
+#   proxy_key = "..."   sent by clients
+#   ui_token = "..."    for the web UI and admin API
+# Without them, underclass mints both into pool.db on first start.
 {
   config,
   inputs,
@@ -17,29 +18,32 @@
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux system;
   package = inputs.underclass.packages.${system}.underclass;
-  bind = "127.0.0.1:8080";
-  envFile = "${config.home.homeDirectory}/.config/underclass/env";
-  # launchd has no EnvironmentFile, so export the file's variables first.
-  serve = pkgs.writeShellScript "underclass-serve" ''
-    set -a
-    if [[ -r ${lib.escapeShellArg envFile} ]]; then
-      . ${lib.escapeShellArg envFile}
-    fi
-    exec ${lib.getExe package} serve --bind ${bind}
-  '';
+  home = config.home.homeDirectory;
 in
 {
   # underclass and utop, its live pool monitor.
   home.packages = [ package ];
 
+  # The previous arrangement sourced keys from this file. underclass ignores
+  # it and would mint new keys, so refuse to switch until they are moved.
+  home.activation.underclassLegacyEnv = lib.hm.dag.entryBefore [ "writeBoundary" ] ''
+    if [[ -e ${lib.escapeShellArg "${home}/.config/underclass/env"} ]]; then
+      errorEcho "~/.config/underclass/env is no longer read: move its keys into ~/.config/underclass/config.toml (see the README), then delete it"
+      exit 1
+    fi
+  '';
+
   launchd.agents.underclass = lib.mkIf isDarwin {
     enable = true;
     config = {
-      ProgramArguments = [ "${serve}" ];
+      ProgramArguments = [
+        (lib.getExe package)
+        "serve"
+      ];
       KeepAlive = true;
       RunAtLoad = true;
-      StandardOutPath = "${config.home.homeDirectory}/Library/Logs/underclass.log";
-      StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/underclass.log";
+      StandardOutPath = "${home}/Library/Logs/underclass.log";
+      StandardErrorPath = "${home}/Library/Logs/underclass.log";
     };
   };
 
@@ -50,9 +54,7 @@ in
       Wants = [ "network-online.target" ];
     };
     Service = {
-      ExecStart = "${lib.getExe package} serve --bind ${bind}";
-      # The leading "-" lets the service start before the file exists.
-      EnvironmentFile = "-${envFile}";
+      ExecStart = "${lib.getExe package} serve";
       Restart = "on-failure";
       RestartSec = 5;
     };
