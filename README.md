@@ -210,6 +210,23 @@ across versions: `/Applications/Nix Apps/MoshiHook.app` on the Macs and
 `moshi-hook status` reports them out of date, and restarts the service when the
 version changes.
 
+[underclass](https://github.com/ghuntley/underclass) runs on every host as a
+user service (launchd on the Macs, systemd on dev-01) listening on
+`127.0.0.1:8080`. Each host has its own pool: personal accounts on the Macs,
+work accounts on dev-01. Its keys go in `~/.config/underclass/env`, which is
+never tracked:
+
+```sh
+UNDERCLASS_PROXY_KEY=sk-underclass-...
+UNDERCLASS_UI_TOKEN=...
+```
+
+Create it with mode 0600 and restart the service. Without it, underclass
+generates both keys and stores them in `~/.local/share/underclass/pool.db`
+with the accounts. Add accounts in the web UI at `http://127.0.0.1:8080/`, and
+watch the pool with `utop`. A new underclass revision compiles from source, and
+the x86_64-linux build for the dev-01 check is slow on the Mac's Linux builder.
+
 Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the
 reload.
