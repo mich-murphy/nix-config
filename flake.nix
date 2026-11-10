@@ -114,6 +114,28 @@
       # file that exists in this repo (a typo or moved file would leave a
       # dangling link); the skills repo is not a flake input, so its targets
       # cannot be checked. A wrong root cannot be seen from a build.
+      aarch64Pkgs = packagesFor "aarch64-darwin";
+
+      # Every host in the flake, with the paths its home declares.
+      fleet =
+        pkgs:
+        import ./apps/fleet.nix {
+          inherit pkgs lib;
+          hosts =
+            lib.mapAttrsToList (name: darwin: {
+              inherit name;
+              kind = "darwin";
+              config = name;
+              inherit (darwin.config.home-manager.users.mm.nixConfig) checkout skills;
+            }) inputs.self.darwinConfigurations
+            ++ lib.mapAttrsToList (config: home: {
+              name = lib.last (lib.splitString "@" config);
+              kind = "home";
+              inherit config;
+              inherit (home.config.nixConfig) checkout skills;
+            }) inputs.self.homeConfigurations;
+        };
+
       linksCheck =
         pkgs: host: home:
         pkgs.runCommand "${host}-links" { } ''
@@ -180,6 +202,21 @@
 
       homeConfigurations."dev@dev-01" = mkHome "dev-01" "x86_64-linux";
 
+      # `nix run .#deploy` and `nix run .#status`, run from a Mac.
+      apps.aarch64-darwin =
+        let
+          inherit (fleet aarch64Pkgs) deploy status;
+          app = drv: description: {
+            type = "app";
+            program = lib.getExe drv;
+            meta.description = description;
+          };
+        in
+        {
+          deploy = app deploy "Fast-forward every host's checkouts and switch to the published commit";
+          status = app status "Show each host's revisions, local changes, settings drift and versions";
+        };
+
       checks.aarch64-darwin =
         let
           pkgs = packagesFor "aarch64-darwin";
@@ -206,6 +243,16 @@
                 touch "$out"
               '';
           moshi-hook-version = pkgs.moshi-hook.tests.version;
+          # Builds the fleet scripts, which runs ShellCheck over them.
+          fleet =
+            let
+              f = fleet pkgs;
+            in
+            pkgs.linkFarmFromDrvs "fleet" [
+              f.host
+              f.deploy
+              f.status
+            ];
         }
         # Build every Mac's system and home, and check its writable links.
         // lib.concatMapAttrs (

@@ -20,6 +20,8 @@ modules/darwin/        nix-darwin modules shared by every Mac
 modules/home/          Home Manager modules shared by every host
 └── mac/               Home Manager modules only Macs import (incl. Git identity)
 pkgs/<name>/package.nix  packages nixpkgs lacks; added to pkgs by an overlay
+apps/                  nix run .#deploy and .#status (fleet.sh on the Mac,
+                       fleet-host.sh on each host)
 config/                raw application files, linked or read by the modules
 ```
 
@@ -117,6 +119,42 @@ dev-01, from `~/dev/nix-config`:
 ```sh
 home-manager switch --flake .#dev@dev-01
 ```
+
+### Deploy and status
+
+From a Mac, after publishing to `main`:
+
+```sh
+nix run .#status           # every host
+nix run .#deploy           # every host
+nix run .#deploy -- dev-01 # named hosts only
+```
+
+The host list comes from the flake (`darwinConfigurations` and
+`homeConfigurations`). The Mac you run it on is handled directly. Every other
+host gets one SSH session, under its flake name as the SSH alias.
+
+`deploy` fast-forwards each host's Neovim, skills and nix-config checkouts with
+`git pull --ff-only`. It then switches to the checkout's commit through
+`git+file://…?rev=`, so uncommitted edits never deploy. A checkout is left as it
+is and reported pending when Git refuses because local edits conflict, when it
+has unpushed commits, or when it is on another branch. A pending nix-config
+skips that host's switch, and the other hosts carry on. A host already running
+the commit isn't switched again. A Mac switch runs `sudo darwin-rebuild`, which
+asks for your password. The switch log is in
+`~/.local/state/nix-config/deploy.log`. Agent CLIs and Pi extensions are not
+updated: run `pi update --extensions` yourself.
+
+`status` reports, for each host:
+
+- the checkouts' commits compared with origin, and any local changes;
+- the active revision, and whether a deploy is pending;
+- Pi git packages that are behind their branch;
+- managed files that are no longer links into the active generation;
+- declared Claude and Pi settings changed in the app since the last switch;
+- a table of agent, herdr and moshi-hook versions, marking those that differ.
+
+Both commands exit 1 when any host is pending, failed or unreachable.
 
 Local validation is required: GitHub Actions is currently unavailable because
 of usage limits, so a badge or remote workflow result is not a readiness gate.
