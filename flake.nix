@@ -269,6 +269,9 @@
       deploy.nodes.dev-01 = {
         hostname = "dev-01"; # the SSH alias in modules/home/mac/ssh.nix
         sshUser = "dev"; # otherwise the Mac's own user name
+        # dev is not a trusted Nix user on dev-01, so a closure built on the Mac
+        # is refused as unsigned; building there needs no trust.
+        remoteBuild = true;
         profiles.home.path =
           deployPkgs.deploy-rs.lib.activate.home-manager
             self.homeConfigurations."dev@dev-01";

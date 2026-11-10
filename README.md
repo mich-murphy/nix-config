@@ -129,8 +129,8 @@ Needed once on a new machine, in this order:
 ## Set up dev-01
 
 dev-01 has no checkout of this repo. You deploy to it from a set-up Mac (above).
-Everything below the Nix install is untested; items marked "assumed" could not
-be checked from the Mac.
+The deploy path is proven; items marked "assumed" could not be checked from the
+Mac.
 
 On dev-01:
 
@@ -142,12 +142,10 @@ On dev-01:
 4. Create `~/.gitconfig-work`, the work identity that `hosts/dev-01/home.nix`
    includes (the machines repo's bootstrap is meant to write it), and the
    `~/businesscraft/.scratch` directory that `TMPDIR` points at.
-5. Make sure `dev` can receive the closure. The first deploy may need `dev` in
-   `trusted-users` in dev-01's Nix configuration, or `--remote-build` (below).
 
 Then, from the Mac checkout:
 
-1. `deploy .#dev-01`. This first real deploy has not been run yet.
+1. `deploy .#dev-01`.
 2. On dev-01, run the two `herdr plugin install` commands from step 8 above.
 
 ## Day to day
@@ -157,9 +155,10 @@ flowchart TD
   E["Edit on the Mac"] --> C["nix flake check --all-systems"]
   C --> G["git commit"]
   G --> S["sudo darwin-rebuild switch --flake ."]
-  G --> B["deploy dev-01: build on the Mac"]
-  B --> CP["copy closure over SSH"]
-  CP --> A["activate on dev-01"]
+  G --> B["deploy dev-01: Mac evaluates"]
+  B --> CP["send derivations over SSH"]
+  CP --> BD["dev-01 builds its profile"]
+  BD --> A["activate on dev-01"]
   A --> K{"confirmed within 30 s?"}
   K -->|yes| OK["new generation stays"]
   K -->|no| RB["automatic rollback"]
@@ -175,8 +174,9 @@ flowchart TD
 5. Deploy dev-01 with `deploy .#dev-01` (the `deploy` command is in the flake's
    dev shell: `nix develop`). deploy-rs first runs `nix flake check` for the
    Mac's own system (skip it with `--skip-checks` once you have run the full
-   gate). `deploy --dry-activate .#dev-01` shows what would change.
-   If dev-01 cannot receive the closure, try `deploy --remote-build .#dev-01`.
+   gate). `deploy --dry-activate .#dev-01` shows what would change. dev-01
+   builds its own profile because `dev` is not a trusted Nix user there, so the
+   Mac sends derivations, not a built closure.
 6. See what each host runs:
 
    | Host | Command |
@@ -309,9 +309,6 @@ ui_token = "..."
 ```
 
 Without it, underclass generates both keys into `~/.local/share/underclass/pool.db`.
-A switch or deploy stops while a legacy `~/.config/underclass/env` exists: move
-its keys into `config.toml` (`UNDERCLASS_PROXY_KEY` becomes `proxy_key`,
-`UNDERCLASS_UI_TOKEN` becomes `ui_token`) and delete it, or clients get 401.
 
 Clients are pointed at underclass by hand, because the proxy key is a secret:
 
