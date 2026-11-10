@@ -200,8 +200,7 @@ When migrating an existing Nix installation, install the release binary and
 rerun its `install` command before removing the old active profile. This moves
 managed hooks to the stable `~/.local/bin/agent-sessions` path. Preserve existing
 credentials, state and machine identity; do not generate a new machine ID.
-Review changed hooks in Codex `/hooks` and run `agent-sessions doctor` after
-configuring the collector. See the collector's `docs/install.md` for details.
+See the collector's `docs/install.md` for details.
 
 ## Live configuration
 
