@@ -230,17 +230,24 @@ version changes.
 [underclass](https://github.com/ghuntley/underclass) runs on every host as a
 user service (launchd on the Macs, systemd on dev-01) listening on
 `127.0.0.1:8080`. Each host has its own pool: personal accounts on the Macs,
-work accounts on dev-01. Its keys go in `~/.config/underclass/env`, which is
-never tracked:
+work accounts on dev-01. Optional fixed keys go in
+`~/.config/underclass/config.toml`, which underclass reads itself and which is
+never tracked (create it with mode 0600, then restart the service):
 
-```sh
-UNDERCLASS_PROXY_KEY=sk-underclass-...
-UNDERCLASS_UI_TOKEN=...
+```toml
+proxy_key = "sk-underclass-..."
+ui_token = "..."
 ```
 
-Create it with mode 0600 and restart the service. Without it, underclass
-generates both keys and stores them in `~/.local/share/underclass/pool.db`
-with the accounts. Add accounts in the web UI at `http://127.0.0.1:8080/`, and
+Without them, underclass generates both keys and stores them in
+`~/.local/share/underclass/pool.db` with the accounts. Earlier revisions read
+`~/.config/underclass/env`; underclass ignores that file, so a switch stops
+while it exists. On any host that has one, move its keys into `config.toml`
+(`UNDERCLASS_PROXY_KEY` becomes `proxy_key`, `UNDERCLASS_UI_TOKEN` becomes
+`ui_token`) and delete it before deploying. Otherwise underclass would mint new
+keys and every client would get 401.
+
+Add accounts in the web UI at `http://127.0.0.1:8080/`, and
 watch the pool with `utop`. A new underclass revision compiles from source, and
 the x86_64-linux build for the dev-01 check is slow on the Mac's Linux builder.
 

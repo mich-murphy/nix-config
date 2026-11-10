@@ -7,6 +7,7 @@
   lib,
   stdenvNoCC,
   fetchurl,
+  runCommand,
   testers,
 }:
 let
@@ -63,9 +64,19 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.tests.version = testers.testVersion {
-    package = finalAttrs.finalPackage;
-    command = "moshi-hook --version";
+  passthru = {
+    tests.version = testers.testVersion {
+      package = finalAttrs.finalPackage;
+      command = "moshi-hook --version";
+    };
+  }
+  // lib.optionalAttrs stdenvNoCC.hostPlatform.isDarwin {
+    # Only the bundle, for environment.systemPackages: nix-darwin copies it to
+    # /Applications/Nix Apps, and the store-path binaries stay off PATH.
+    app = runCommand "moshi-hook-app" { } ''
+      mkdir -p $out/Applications
+      ln -s ${finalAttrs.finalPackage}/Applications/MoshiHook.app $out/Applications/
+    '';
   };
 
   meta = {
