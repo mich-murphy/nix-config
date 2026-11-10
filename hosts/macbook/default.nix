@@ -1,4 +1,3 @@
-# Current M2 MacBook Air. Replaced by `laptop` once the M5 has taken over.
 { ... }:
 {
   imports = [ ../../modules/darwin ];

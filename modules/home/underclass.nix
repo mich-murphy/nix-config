@@ -1,8 +1,3 @@
-# underclass (github:ghuntley/underclass) pools Claude Code, ChatGPT/Codex and
-# Copilot subscriptions behind one local endpoint on 127.0.0.1:8080. Each host
-# runs its own pool: work accounts on dev-01, personal accounts on the Macs.
-# Accounts are added in its web UI and stored in ~/.local/share/underclass/pool.db.
-#
 # Optional keys live in ~/.config/underclass/config.toml, a local file that is
 # never tracked and that underclass itself reads on every platform:
 #   proxy_key = "..."   sent by clients

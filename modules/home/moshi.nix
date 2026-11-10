@@ -6,9 +6,7 @@
 #
 # The Macs run the service from that stable copy too, never from the store:
 # macOS tags an app bundle that has run with com.apple.macl, and App Management
-# then stops nix-daemon deleting it, which aborts garbage collection. Linux has
-# no bundle, so its service runs the store path. Either way a new version
-# changes the unit or plist, so the service restarts.
+# then stops nix-daemon deleting it, which aborts garbage collection.
 {
   config,
   lib,
@@ -19,10 +17,6 @@
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
   exe = lib.getExe pkgs.moshi-hook;
-  # On the Macs nix-darwin installs the signed app bundle
-  # (pkgs.moshi-hook.app in modules/darwin/applications.nix) here. Hooks and
-  # Codex's approval name this path, so do not change it; on Linux the
-  # activation below copies the binary instead.
   hookPath =
     if isDarwin then
       "/Applications/Nix Apps/MoshiHook.app/Contents/MacOS/moshi-hook"
@@ -107,7 +101,6 @@ in
       ProgramArguments = [ hookPath ] ++ serveArgs;
       EnvironmentVariables = {
         PATH = servicePath;
-        # The program path no longer changes with the version; this does.
         MOSHI_HOOK_VERSION = pkgs.moshi-hook.version;
       };
       KeepAlive = true;
@@ -141,9 +134,6 @@ in
       ''
     );
 
-    # After the settings merges, which keep Moshi's undeclared keys, and after
-    # the service starts (setupLaunchAgents on the Macs, reloadSystemd on
-    # Linux), so `install` finds the daemon's socket.
     moshiHooks = lib.hm.dag.entryAfter [
       "linkGeneration"
       "moshiHookCopy"
