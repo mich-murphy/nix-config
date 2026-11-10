@@ -5,7 +5,7 @@
   ...
 }:
 let
-  checkout = "${config.users.users.${config.system.primaryUser}.home}/dev/nix-config";
+  checkout = config.home-manager.users.${config.system.primaryUser}.nixConfig.checkout;
 in
 {
   services = {
