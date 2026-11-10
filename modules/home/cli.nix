@@ -9,19 +9,16 @@ in
     pkgs.curl
     pkgs.dust
     pkgs.fd
-    pkgs.go
     pkgs.just
     pkgs.jq
     pkgs.opencode
     pkgs.ouch
-    pkgs.python3
     pkgs.procs
     pkgs.prek
     pkgs.ripgrep
     pkgs.rsync
     pkgs.sd
     pkgs.tree
-    pkgs.uv
     pkgs.wget
   ];
 
