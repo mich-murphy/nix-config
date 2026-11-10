@@ -15,6 +15,7 @@
     ./yazi.nix
     ./herdr.nix
     ./moshi.nix
+    ./underclass.nix
     ./agents.nix
   ];
 

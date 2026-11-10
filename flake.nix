@@ -8,6 +8,10 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     hunk.url = "github:modem-dev/hunk";
     hunk.inputs.nixpkgs.follows = "nixpkgs";
+    underclass.url = "github:ghuntley/underclass";
+    underclass.inputs.nixpkgs.follows = "nixpkgs";
+    # devenv only builds underclass's development shell.
+    underclass.inputs.devenv.follows = "";
     # No follows: Determinate recommends its own nixpkgs for FlakeHub Cache hits.
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
   };
