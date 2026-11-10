@@ -228,7 +228,8 @@ flowchart LR
   repo (or into the skills clone; dev-01 has no checkout).
 - `deploy-schema` and `deploy-activate` are deploy-rs's checks of the dev-01
   node.
-- `moshi-hook-version` runs `moshi-hook --version` on the packaged binary.
+- `moshi-hook-version` runs `moshi-hook --version` on Linux and, on the Macs,
+  reads the version from the app bundle's `Info.plist` without running it.
 
 The `x86_64-linux` checks build through Determinate Nix's native Linux builder
 on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
@@ -292,7 +293,9 @@ dev-01).
 Hooks written into each agent name a stable path (`/Applications/Nix
 Apps/MoshiHook.app` on the Macs, `~/.local/libexec/moshi-hook` on Linux), so do
 not change it. A switch reinstalls the hooks only when `moshi-hook status`
-reports them out of date.
+reports them out of date. The Macs run the service from the installed app
+bundle, never from the store, because macOS makes a store bundle that has run
+undeletable for garbage collection.
 
 **[underclass](https://github.com/ghuntley/underclass)** pools agent
 subscriptions behind `127.0.0.1:8080`, one pool per host. Add accounts in the

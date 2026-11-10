@@ -65,10 +65,23 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   '';
 
   passthru = {
-    tests.version = testers.testVersion {
-      package = finalAttrs.finalPackage;
-      command = "moshi-hook --version";
-    };
+    # On macOS, running a binary inside the store's app bundle makes the system
+    # tag it with com.apple.macl, and then nix-daemon cannot delete it. Read the
+    # version the bundle declares instead of running it.
+    tests.version =
+      if stdenvNoCC.hostPlatform.isDarwin then
+        runCommand "moshi-hook-${finalAttrs.version}-test-version" { } ''
+          contents=${finalAttrs.finalPackage}/Applications/MoshiHook.app/Contents
+          test -x $contents/MacOS/moshi-hook
+          grep -A1 '<key>CFBundleShortVersionString</key>' $contents/Info.plist \
+            | grep -qF '<string>${finalAttrs.version}</string>'
+          touch $out
+        ''
+      else
+        testers.testVersion {
+          package = finalAttrs.finalPackage;
+          command = "moshi-hook --version";
+        };
   }
   // lib.optionalAttrs stdenvNoCC.hostPlatform.isDarwin {
     # Only the bundle, for environment.systemPackages: nix-darwin copies it to
