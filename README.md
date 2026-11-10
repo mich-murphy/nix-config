@@ -123,9 +123,6 @@ Needed once on a new machine, in this order:
    herdr plugin list
    ```
 
-9. Optional: in Neovim, run `:trust` once so `.nvim.lua` (nixd settings for this
-   flake) loads.
-
 ## Set up dev-01
 
 dev-01 has no checkout of this repo. You deploy to it from a set-up Mac (above).
