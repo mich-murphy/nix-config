@@ -140,6 +140,7 @@ request, not committed.
 | Decision | Reason |
 | --- | --- |
 | Moshi hooks name a fixed path: an app bundle in `/Applications/Nix Apps` on macOS, a copied binary on Linux | Codex's approval covers the hook command, so the path must survive version bumps. The Macs also run the service from it, never from the store, because macOS makes a store app bundle that has run undeletable for garbage collection |
+| dev-01 builds its own profile (deploy-rs `remoteBuild`) | `dev` is not a trusted Nix user on dev-01, so a closure built on the Mac is refused as unsigned; making `dev` trusted would give that account root-equivalent control of the Nix store |
 | underclass runs on every host and reads `~/.config/underclass/config.toml` itself | The same untracked file works on both platforms; each host keeps its own account pool |
 | `go`, `python3` and (on Macs) `nodejs` are Neovim packages, not global | Mason builds and runs its tools with them; project toolchains come from project dev shells |
 | WezTerm is no longer installed or linked; `config/wezterm/` is kept | The owner no longer uses it; the config is retained |
