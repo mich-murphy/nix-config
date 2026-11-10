@@ -38,7 +38,6 @@
       "codex"
       "ghostty"
       "karabiner-elements"
-      "wezterm"
       "whichspace"
       "1password"
       "stats"

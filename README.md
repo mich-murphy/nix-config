@@ -163,44 +163,7 @@ configuration but do not activate services, run Homebrew upgrades, or prove a
 complete fresh-machine bootstrap.
 
 The GitHub workflow is manual-only to avoid automatic attempts while limits
-apply. It never activates the runner. Flake evaluation and builds do not need
-access to the private session-collector repository or any deploy-key secret.
-
-## Agent session collector
-
-`agent-sessions` is installed separately from Nix using the release installer
-in `~/dev/memory/install.sh`. Authenticate `gh` with an account that can read
-`mich-murphy/memory`, then install an explicit release as your regular user:
-
-```sh
-VERSION=v0.3.0 sh ~/dev/memory/install.sh
-~/.local/bin/agent-sessions install
-```
-
-The installer verifies the immutable release's attestation and checksums before
-installing the binary in `~/.local/bin`, which Home Manager already puts on
-`PATH`. Run it again with a new explicit version to upgrade. Nothing is added
-to `flake.lock`, and neither Nix builds nor CI need private-repository access.
-
-On a new machine without the checkout, download and verify the same installer:
-
-```sh
-(
-  set -eu
-  workdir=$(mktemp -d)
-  trap 'rm -rf "$workdir"' EXIT
-  gh release download v0.3.0 -R mich-murphy/memory -p install.sh -D "$workdir"
-  gh release verify-asset v0.3.0 "$workdir/install.sh" -R mich-murphy/memory
-  VERSION=v0.3.0 sh "$workdir/install.sh"
-)
-~/.local/bin/agent-sessions install
-```
-
-When migrating an existing Nix installation, install the release binary and
-rerun its `install` command before removing the old active profile. This moves
-managed hooks to the stable `~/.local/bin/agent-sessions` path. Preserve existing
-credentials, state and machine identity; do not generate a new machine ID.
-See the collector's `docs/install.md` for details.
+apply. It never activates the runner.
 
 ## Live configuration
 
@@ -209,10 +172,12 @@ to `~/dev/nix-config`. Home Manager uses
 [out-of-store symlinks](https://nix-community.github.io/home-manager/usage/dotfiles.html)
 only for configurations that are intentionally edited live:
 
-- Ghostty and WezTerm;
+- Ghostty;
 - Herdr;
 - Karabiner;
 - skhd, passed directly to its launch agent.
+
+The WezTerm config is kept in `config/wezterm/` but is not linked or installed.
 
 Coding-agent skills live in the public `mich-murphy/skills` repository, cloned
 to `~/dev/skills` (the `nixConfig.skills` option). Home Manager links it to
@@ -223,7 +188,7 @@ Claude Code and Pi settings (`~/.claude/settings.json`,
 `~/.pi/agent/settings.json`) stay regular files owned by the applications.
 Each switch merges the preferences, plugins and permissions declared in
 `modules/home/agents.nix` into them and leaves every other key alone, so
-installer hooks (agent-sessions, herdr, Moshi), model choices and Pi's device ID
+installer hooks (herdr, Moshi), model choices and Pi's device ID
 stay local. A declared value changed in the app is reset on the next switch;
 change it in Nix instead. If a switch stops with "changed during activation",
 an agent saved its settings at the same moment; run the switch again.
