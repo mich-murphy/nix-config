@@ -1,8 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, ... }:
 {
   xdg.configFile = {
     "ghostty".source = config.lib.nixConfig.file "config/ghostty";
@@ -18,6 +14,6 @@
     # filesystem. Ghostty continues to provide its bundled terminfo via TERMINFO.
     TERMINFO_DIRS = "/usr/share/terminfo";
 
-    TERMINAL = lib.mkOverride 900 "/Applications/Ghostty.app/Contents/MacOS/ghostty";
+    TERMINAL = "/Applications/Ghostty.app/Contents/MacOS/ghostty";
   };
 }
