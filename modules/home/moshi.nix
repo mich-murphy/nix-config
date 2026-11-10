@@ -101,7 +101,7 @@ in
       ProgramArguments = [ hookPath ] ++ serveArgs;
       EnvironmentVariables = {
         PATH = servicePath;
-        MOSHI_HOOK_VERSION = pkgs.moshi-hook.version;
+        NIX_RESTART_ON_VERSION = pkgs.moshi-hook.version;
       };
       KeepAlive = true;
       RunAtLoad = true;
