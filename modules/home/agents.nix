@@ -37,7 +37,6 @@ in
       enabledPlugins = {
         "frontend-design@claude-plugins-official" = false;
         "honeycomb@anthropic-plugin-directory" = true;
-        "rust-analyzer-lsp@claude-plugins-official" = true;
         "skill-creator@claude-plugins-official" = false;
       };
       env = {
