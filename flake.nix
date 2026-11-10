@@ -226,7 +226,8 @@
           {
             dev-01-home = home.home.activationPackage;
             dev-01-links = linksCheck pkgsFor.x86_64-linux "dev-01" home;
-          };
+          }
+          // deploy-rs.lib.x86_64-linux.deployChecks self.deploy;
       };
     in
     {
@@ -278,7 +279,6 @@
         {
           moshi-hook-version = pkgsFor.${system}.moshi-hook.tests.version;
         }
-        // deploy-rs.lib.${system}.deployChecks self.deploy
         // hostChecks.${system}
       );
     };
