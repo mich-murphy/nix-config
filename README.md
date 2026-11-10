@@ -208,7 +208,10 @@ Codex's approval covers that command, so hooks name a path that stays the same
 across versions: `/Applications/Nix Apps/MoshiHook.app` on the Macs and
 `~/.local/libexec/moshi-hook` on Linux. A switch reinstalls the hooks only when
 `moshi-hook status` reports them out of date, and restarts the service when the
-version changes.
+version changes. On the Macs nothing runs the binary from the store: the
+service uses the `/Applications/Nix Apps` copy and the check reads the bundle's
+`Info.plist`. Running code inside a store app bundle tags it with
+`com.apple.macl`, and macOS then blocks `nix store gc` from deleting it.
 
 Herdr does not watch `config.toml`. After editing the live Herdr configuration,
 press `Ctrl+A`, then `Shift+R` in each active session that should receive the

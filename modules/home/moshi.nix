@@ -2,9 +2,15 @@
 # every Claude, Codex and Pi hook, and Codex's approval covers that command.
 # Hooks therefore name a path that survives version bumps: nix-darwin's copy in
 # /Applications/Nix Apps on the Macs (see modules/darwin/applications.nix), a
-# copy in ~/.local/libexec on Linux. The service runs the store path, so a new
-# version restarts it. `moshi-hook` and `moshi` on PATH run the stable copy, so
-# a manual `moshi-hook install` writes the same path.
+# copy in ~/.local/libexec on Linux. `moshi-hook` and `moshi` on PATH run the
+# stable copy, so a manual `moshi-hook install` writes the same path.
+#
+# On the Macs the service runs the stable copy too: running a binary from
+# inside the store's app bundle tags the bundle with com.apple.macl, and macOS
+# then stops nix-daemon from deleting it, which fails garbage collection.
+# nix-darwin copies the app before Home Manager activates, and the version in
+# the agent's environment changes its plist, so a new version restarts it. On
+# Linux the service runs the store path, which restarts it the same way.
 {
   config,
   lib,
@@ -61,10 +67,13 @@ in
     enable = true;
     config = {
       ProgramArguments = [
-        exe
+        hookPath
         "serve"
       ];
-      EnvironmentVariables.PATH = servicePath;
+      EnvironmentVariables = {
+        PATH = servicePath;
+        MOSHI_HOOK_VERSION = pkgs.moshi-hook.version;
+      };
       KeepAlive = true;
       RunAtLoad = true;
       StandardOutPath = "${config.home.homeDirectory}/Library/Logs/moshi-hook.log";

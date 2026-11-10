@@ -8,6 +8,7 @@
   stdenvNoCC,
   fetchurl,
   testers,
+  runCommand,
 }:
 let
   version = "0.4.50";
@@ -63,10 +64,24 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.tests.version = testers.testVersion {
-    package = finalAttrs.finalPackage;
-    command = "moshi-hook --version";
-  };
+  # On macOS, running a binary from inside an app bundle makes the system tag
+  # the bundle with com.apple.macl, and App Management then stops nix-daemon
+  # from deleting it, so garbage collection fails on that store path. Check the
+  # bundle's declared version instead of running it.
+  passthru.tests.version =
+    if stdenvNoCC.hostPlatform.isDarwin then
+      runCommand "moshi-hook-${version}-test-version" { } ''
+        app=${finalAttrs.finalPackage}/Applications/MoshiHook.app/Contents
+        test -x $app/MacOS/moshi-hook
+        grep -A1 '<key>CFBundleShortVersionString</key>' $app/Info.plist \
+          | grep -qF '<string>${version}</string>'
+        touch $out
+      ''
+    else
+      testers.testVersion {
+        package = finalAttrs.finalPackage;
+        command = "moshi-hook --version";
+      };
 
   meta = {
     description = "Daemon and CLI that bridges coding agents to the Moshi mobile app";
