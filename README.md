@@ -77,6 +77,14 @@ Needed once on a new machine, in this order:
    Determinate Nix is a Nix distribution that manages its own daemon,
    configuration and garbage collection; this flake's `determinateNix.enable`
    makes nix-darwin leave Nix to it.
+
+   Then give its daemon Full Disk Access, which Nix cannot declare: in System
+   Settings, Privacy & Security, Full Disk Access, add
+   `/usr/local/bin/determinate-nixd`, and restart it with
+   `sudo launchctl kickstart -k system/systems.determinate.nix-daemon`. Without
+   it, macOS stops the daemon deleting any app bundle in the store that has
+   been run, and `nix store gc` aborts with `fchmodat … Operation not
+   permitted`.
 2. Install [Homebrew](https://brew.sh/). nix-darwin installs the casks and
    formulae listed in `modules/darwin/applications.nix`, but not Homebrew
    itself.
