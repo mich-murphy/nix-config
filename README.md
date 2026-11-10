@@ -111,7 +111,7 @@ nixf-diagnose and nvd. For direnv, create a local `.envrc` containing
 
 Each generation records the commit it was built from (with `-dirty` for an
 uncommitted tree): `darwin-version --configuration-revision` on a Mac, and
-`~/.local/state/nix-config/revision` on every host.
+`~/.local/state/nix-config/revision` on dev-01.
 
 Activation is intentionally separate:
 

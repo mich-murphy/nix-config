@@ -22,6 +22,7 @@
 
   outputs =
     inputs@{
+      self,
       nixpkgs,
       darwin,
       home-manager,
@@ -42,13 +43,15 @@
           inherit (pkgs) callPackage;
           directory = ./pkgs;
         };
-      packagesFor =
-        system:
-        import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-          overlays = [ inputs.self.overlays.default ];
-        };
+      # The one nixpkgs configuration, shared by the standalone imports below
+      # and the nix-darwin hosts.
+      nixpkgsConfig = {
+        config.allowUnfree = true;
+        overlays = [ self.overlays.default ];
+      };
+      pkgsFor = forAllSystems (system: import nixpkgs ({ inherit system; } // nixpkgsConfig));
+
+      revision = self.rev or self.dirtyRev or "unknown";
 
       # A Mac: hosts/<host>/default.nix for the system and
       # hosts/<host>/home.nix for its Home Manager additions.
@@ -63,11 +66,10 @@
             (
               { pkgs, ... }:
               {
-                nixpkgs.config.allowUnfree = true;
-                nixpkgs.overlays = [ inputs.self.overlays.default ];
+                nixpkgs = { inherit (nixpkgsConfig) config overlays; };
 
                 # Shown by `darwin-version --configuration-revision`.
-                system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
+                system.configurationRevision = revision;
 
                 # Determinate installs Nix; its module stops nix-darwin managing it.
                 determinateNix.enable = true;
@@ -105,28 +107,28 @@
       mkHome =
         host: system:
         home-manager.lib.homeManagerConfiguration {
-          pkgs = packagesFor system;
+          pkgs = pkgsFor.${system};
           extraSpecialArgs = { inherit inputs; };
           modules = [
             ./modules/home
             ./hosts/${host}/home.nix
+            # Home Manager has no configurationRevision, so dev-01 records the
+            # commit in a file; the Macs have `darwin-version`.
+            { xdg.stateFile."nix-config/revision".text = "${revision}\n"; }
           ];
         };
 
       # deploy-rs's lib for dev-01, with nixpkgs' cached deploy-rs binary
       # instead of the flake's own source build.
-      deployPkgs = import nixpkgs {
-        system = "x86_64-linux";
-        overlays = [
-          deploy-rs.overlays.default
-          (_: prev: {
-            deploy-rs = {
-              inherit (nixpkgs.legacyPackages.x86_64-linux) deploy-rs;
-              inherit (prev.deploy-rs) lib;
-            };
-          })
-        ];
-      };
+      deployPkgs = pkgsFor.x86_64-linux.appendOverlays [
+        deploy-rs.overlays.default
+        (_: prev: {
+          deploy-rs = {
+            inherit (pkgsFor.x86_64-linux) deploy-rs;
+            inherit (prev.deploy-rs) lib;
+          };
+        })
+      ];
 
       # mkOutOfStoreSymlink makes a store path that is itself a symlink. Each
       # one must point into the checkout or the skills clone (a path literal
@@ -143,27 +145,25 @@
         in
         pkgs.runCommand "${host}-links" { } ''
           skills=${lib.escapeShellArg skills}
+          checkout=${lib.escapeShellArg (toString checkout)}
           found=0
           while IFS= read -r -d "" link; do
             target=$(readlink "$link")
             [ -L "$target" ] || continue
             found=$((found + 1))
             dest=$(readlink "$target")
-            case "$dest" in
-              "$skills" | "$skills"/*) ;;
-              ${lib.optionalString (checkout != null) ''
-                ${lib.escapeShellArg checkout}/*)
-                  if [ ! -e "${inputs.self}/''${dest#${lib.escapeShellArg checkout}/}" ]; then
-                    echo "$link -> $dest does not exist in the repository"
-                    exit 1
-                  fi
-                  ;;
-              ''}
-              *)
-                echo "$link -> $dest is not in ${roots}"
+            if [[ $dest == "$skills" || $dest == "$skills"/* ]]; then
+              continue
+            fi
+            if [[ -n $checkout && $dest == "$checkout"/* ]]; then
+              if [ ! -e "${self}/''${dest#"$checkout"/}" ]; then
+                echo "$link -> $dest does not exist in the repository"
                 exit 1
-                ;;
-            esac
+              fi
+              continue
+            fi
+            echo "$link -> $dest is not in ${roots}"
+            exit 1
           done < <(find ${home.home-files} -type l -print0)
           if [ "$found" -eq 0 ]; then
             echo "no writable links found"
@@ -172,21 +172,72 @@
           echo "$found writable links point into ${roots}"
           touch "$out"
         '';
+      # Per-system checks beyond the shared ones. dev-01's need a Linux builder:
+      # `nix flake check --all-systems`.
+      hostChecks = {
+        aarch64-darwin =
+          let
+            pkgs = pkgsFor.aarch64-darwin;
+            # Only .nix files, so editing docs or app config does not rerun lint.
+            nixFiles = lib.fileset.toSource {
+              root = ./.;
+              fileset = lib.fileset.fileFilter (file: file.hasExt "nix") ./.;
+            };
+          in
+          {
+            lint =
+              pkgs.runCommand "lint"
+                {
+                  nativeBuildInputs = [
+                    pkgs.nixf-diagnose
+                    pkgs.nixfmt
+                  ];
+                }
+                ''
+                  cd ${nixFiles}
+                  files=$(find . -name '*.nix')
+                  nixfmt --check $files
+                  nixf-diagnose $files
+                  touch "$out"
+                '';
+          }
+          # Build every Mac's system and home, and check its writable links.
+          // lib.concatMapAttrs (
+            host: darwin:
+            let
+              home = darwin.config.home-manager.users.mm;
+            in
+            {
+              "${host}-system" = darwin.config.system.build.toplevel;
+              "${host}-home" = home.home.activationPackage;
+              "${host}-links" = linksCheck pkgsFor.aarch64-darwin host home;
+            }
+          ) self.darwinConfigurations;
+
+        x86_64-linux =
+          let
+            home = self.homeConfigurations."dev@dev-01".config;
+          in
+          {
+            dev-01-home = home.home.activationPackage;
+            dev-01-links = linksCheck pkgsFor.x86_64-linux "dev-01" home;
+          };
+      };
     in
     {
       overlays.default = final: _prev: localPackages final;
 
       packages = forAllSystems (
         system:
-        lib.filterAttrs (_: lib.meta.availableOn { inherit system; }) (localPackages (packagesFor system))
+        lib.filterAttrs (_: lib.meta.availableOn { inherit system; }) (localPackages pkgsFor.${system})
       );
 
-      formatter = forAllSystems (system: (packagesFor system).nixfmt-tree);
+      formatter = forAllSystems (system: pkgsFor.${system}.nixfmt-tree);
 
       devShells = forAllSystems (
         system:
         let
-          pkgs = packagesFor system;
+          pkgs = pkgsFor.${system};
         in
         {
           default = pkgs.mkShellNoCC {
@@ -214,62 +265,16 @@
         sshUser = "dev"; # otherwise the Mac's own user name
         profiles.home.path =
           deployPkgs.deploy-rs.lib.activate.home-manager
-            inputs.self.homeConfigurations."dev@dev-01";
+            self.homeConfigurations."dev@dev-01";
       };
 
-      checks.aarch64-darwin =
-        let
-          pkgs = packagesFor "aarch64-darwin";
-          # Only .nix files, so editing docs or app config does not rerun lint.
-          nixFiles = lib.fileset.toSource {
-            root = ./.;
-            fileset = lib.fileset.fileFilter (file: file.hasExt "nix") ./.;
-          };
-        in
+      checks = forAllSystems (
+        system:
         {
-          lint =
-            pkgs.runCommand "lint"
-              {
-                nativeBuildInputs = [
-                  pkgs.nixf-diagnose
-                  pkgs.nixfmt
-                ];
-              }
-              ''
-                cd ${nixFiles}
-                files=$(find . -name '*.nix')
-                nixfmt --check $files
-                nixf-diagnose $files
-                touch "$out"
-              '';
-          moshi-hook-version = pkgs.moshi-hook.tests.version;
+          moshi-hook-version = pkgsFor.${system}.moshi-hook.tests.version;
         }
-        // deploy-rs.lib.aarch64-darwin.deployChecks inputs.self.deploy
-        # Build every Mac's system and home, and check its writable links.
-        // lib.concatMapAttrs (
-          host: darwin:
-          let
-            home = darwin.config.home-manager.users.mm;
-          in
-          {
-            "${host}-system" = darwin.config.system.build.toplevel;
-            "${host}-home" = home.home.activationPackage;
-            "${host}-links" = linksCheck pkgs host home;
-          }
-        ) inputs.self.darwinConfigurations;
-
-      # dev-01's home and links, plus the Linux moshi-hook. These need a Linux
-      # builder: `nix flake check --all-systems`.
-      checks.x86_64-linux =
-        let
-          pkgs = packagesFor "x86_64-linux";
-          home = inputs.self.homeConfigurations."dev@dev-01".config;
-        in
-        {
-          moshi-hook-version = pkgs.moshi-hook.tests.version;
-          dev-01-home = home.home.activationPackage;
-          dev-01-links = linksCheck pkgs "dev-01" home;
-        }
-        // deploy-rs.lib.x86_64-linux.deployChecks inputs.self.deploy;
+        // deploy-rs.lib.${system}.deployChecks self.deploy
+        // hostChecks.${system}
+      );
     };
 }
