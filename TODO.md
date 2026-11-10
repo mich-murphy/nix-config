@@ -1,17 +1,9 @@
 # TODO
 
-Reviewed: 2026-10-12
+Reviewed: 2026-11-10
 
 This checklist contains only work that remains after the platform-aware Home
 Manager refactor.
-
-## Configuration
-
-- [ ] **Record the source revision in Darwin generations**
-  - Set `system.configurationRevision` from the flake revision without passing
-    the complete `inputs` set into modules.
-  - Preserve useful dirty-worktree behaviour while ensuring clean deployments
-    identify the commit that produced them.
 
 ## Testing
 

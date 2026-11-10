@@ -20,9 +20,9 @@ in
   };
 
   # Settings files stay regular, app-owned files: activation merges the keys
-  # below into them and leaves everything else alone. Hooks (agent-sessions,
-  # herdr, Moshi), model and effort choices, Pi's deviceId and changelog
-  # versions stay local. Homebrew installs both applications.
+  # below into them and leaves everything else alone. Hooks (herdr, Moshi),
+  # model and effort choices, Pi's deviceId and changelog versions stay local.
+  # Homebrew installs both applications.
   programs.claude-code = {
     enable = true;
     package = null;

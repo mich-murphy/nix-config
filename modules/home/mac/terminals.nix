@@ -7,8 +7,6 @@
   xdg.configFile = {
     "ghostty".source =
       config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/ghostty";
-    "wezterm".source =
-      config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/config/wezterm";
   };
 
   # Ghostty's macOS app prefers this native path over the XDG path. Manage
