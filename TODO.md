@@ -19,8 +19,6 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] Retire `hosts/macbook` when the laptop is in service.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
-- [ ] Run `nix store gc` and see whether old Moshi bundles already tagged with
-      `com.apple.macl` are now deletable, or need the attribute removed once.
 - [ ] Decide whether LinearMouse and locale preferences should be declared;
       neither is today.
 
