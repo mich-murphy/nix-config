@@ -1,8 +1,14 @@
 # Moshi's hook daemon. `moshi-hook install` writes the path it runs from into
 # every Claude, Codex and Pi hook, and Codex's approval covers that command, so
-# hooks name a path that survives version bumps. The service runs the store
-# path, so a new version restarts it. `moshi-hook` and `moshi` on PATH run the
-# stable copy, so a manual `moshi-hook install` writes the same path.
+# hooks name a path that survives version bumps. `moshi-hook` and `moshi` on
+# PATH run the stable copy, so a manual `moshi-hook install` writes the same
+# path.
+#
+# The Macs run the service from that stable copy too, never from the store:
+# macOS tags an app bundle that has run with com.apple.macl, and App Management
+# then stops nix-daemon deleting it, which aborts garbage collection. Linux has
+# no bundle, so its service runs the store path. Either way a new version
+# changes the unit or plist, so the service restarts.
 {
   config,
   lib,
@@ -98,8 +104,12 @@ in
   launchd.agents.moshi-hook = lib.mkIf isDarwin {
     enable = true;
     config = {
-      ProgramArguments = [ exe ] ++ serveArgs;
-      EnvironmentVariables.PATH = servicePath;
+      ProgramArguments = [ hookPath ] ++ serveArgs;
+      EnvironmentVariables = {
+        PATH = servicePath;
+        # The program path no longer changes with the version; this does.
+        MOSHI_HOOK_VERSION = pkgs.moshi-hook.version;
+      };
       KeepAlive = true;
       RunAtLoad = true;
       StandardOutPath = "${config.home.homeDirectory}/Library/Logs/moshi-hook.log";
