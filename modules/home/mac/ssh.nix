@@ -20,7 +20,7 @@
       "dev-01" = {
         HostName = "bsncraft-dev-01.australiaeast.cloudapp.azure.com";
         User = "dev";
-        IdentityFile = "~/.ssh/macbook";
+        IdentityFile = "~/.ssh/dev-01";
         IdentitiesOnly = true;
       };
 
