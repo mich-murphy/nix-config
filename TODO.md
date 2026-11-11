@@ -33,8 +33,9 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       whole skills repository instead, if that can be done without letting
       Claude's skill sync write into it.
 - [ ] Herdr plugins are installed by hand, not by Nix.
-- [ ] The Herdr `annotate` plugin is reported to run its commands with `bun`,
-      which this configuration does not install. Confirm whether it works.
+- [ ] On dev-01, confirm `herdr plugin list` shows Annotate at the ref in the
+      README. Older versions run their commands with `bun`, which is not
+      installed.
 
 ## Decisions
 
