@@ -45,7 +45,8 @@ work.
 | What | Owner | How it reaches a host |
 | --- | --- | --- |
 | Host profiles, installs, builds, deployment | this repo | Nix |
-| Ghostty, Karabiner, skhd (Macs only) | this repo (`config/`) | live link into the checkout |
+| Ghostty, Karabiner (Macs only) | this repo (`config/`) | live link into the checkout |
+| skhd (Macs only) | this repo (`config/`) | `/etc/skhdrc` loads the file from the checkout |
 | Herdr, agent instructions | this repo (`config/`) | live link on a Mac; the deployed generation on dev-01 |
 | Claude and Pi preferences, plugins, permissions | this repo | merged into the app's own settings file |
 | Neovim configuration | `mich-murphy/neovim` | its own clone at `~/.config/nvim`; Nix installs only Neovim and its tools |
@@ -160,6 +161,7 @@ request, not committed.
 | yabai restarts the Dock two seconds after a display connects or disconnects, and skhd binds Shift+Alt+D to `killall Dock` | On macOS 27, Ctrl+3 and above stop switching desktops once a display has connected or disconnected, while their entries stay intact, and only a Dock restart brings them back. A switch only appeared to fix them because nix-darwin restarts the Dock. The delay lets a burst of display changes finish first. Remove both when Apple fixes it |
 | yabai's rules end with `yabai -m rule --apply` | Since yabai 7 a rule only affects windows opened after it is added, and yabai loads the open windows before it runs its config. Without this line a yabai restart tiled windows the rules mean to leave alone |
 | yabai and skhd log to `/tmp/<name>_<user>.out.log` and `.err.log` | Neither nix-darwin module sets a log file, so a failed rule or an `skhdrc` parse error was printed nowhere. The paths are the ones upstream's own launchd services use |
+| skhd's `/etc/skhdrc` is one `.load` of the checkout's `skhdrc`, not a Home Manager link at `~/.config/skhd/skhdrc` | nix-darwin starts user launchd agents before Home Manager links files, and skhd that finds no config only warns and never starts its file watcher, so the first switch would leave the hotkeys dead. skhd watches the files it loads, so an edit in the checkout still applies live. With no checkout the file's text is inlined |
 | Desktops are switched with the macOS Ctrl+number shortcuts, not `yabai -m space --focus` | With SIP enabled, yabai 7.1.25 reports success and does nothing on macOS 27 ([yabai issue 2822](https://github.com/asmvik/yabai/issues/2822)). `skip_window_focus_animation` relies on the same mechanism and is not set |
 | The time zone is not declared | macOS sets it automatically, and `time.timeZone` would override that on every switch |
 | A Mac on AC power never idle-sleeps (`pmset -c sleep 0`); on battery it sleeps after a minute | A sleeping Mac drops off the tailnet and nothing wakes it over Wi-Fi, so sshd and agent jobs were unreachable unless something held a `caffeinate` assertion. The display still sleeps, and closing the lid with no external display still sleeps the Mac |

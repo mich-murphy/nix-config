@@ -41,7 +41,7 @@ machine needs it.
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
 | `darwin/nix.nix` | Determinate Nix owning the Nix installation, and a weekly launchd job that expires system generations older than 7 days |
 | `darwin/user.nix` | the primary user (the one place the user name is written), its account and shell, Home Manager's integration settings |
-| `darwin/window-management.nix` | yabai, and skhd pointed at the live `skhdrc` |
+| `darwin/window-management.nix` | yabai, and skhd loading the live `skhdrc` |
 | `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
@@ -263,7 +263,8 @@ the deployed generation and is read-only.
 
 | File or tool | Mac | dev-01 | Edit it |
 | --- | --- | --- | --- |
-| Ghostty, Karabiner, skhd | live link into the checkout | not installed | on the Mac, in `config/` |
+| Ghostty, Karabiner | live link into the checkout | not installed | on the Mac, in `config/` |
+| skhd | `/etc/skhdrc` loads `config/skhd/skhdrc` from the checkout | not installed | on the Mac, in `config/` |
 | Herdr, `AGENTS.md` | live link into the checkout | read-only, from the deployed generation | on the Mac, then deploy |
 | Skills | live link into `~/dev/skills` | live link into `~/dev/skills` | in that clone; `git pull` on dev-01 |
 | Neovim config | clone at `~/.config/nvim` | clone at `~/.config/nvim` | in that clone; `git pull` on dev-01 |
