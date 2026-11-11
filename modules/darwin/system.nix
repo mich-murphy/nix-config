@@ -56,6 +56,20 @@
           DSDontWriteNetworkStores = true;
           DSDontWriteUSBStores = true;
         };
+        "com.apple.finder" = {
+          ShowRecentTags = false;
+          WarnOnEmptyTrash = false;
+        };
+        # screencapture on macOS 27 names only these keys; `location` below is
+        # the older name for the same folder.
+        "com.apple.screencapture" = {
+          location-screenrecording = "~/Pictures";
+          location-screenshot = "~/Pictures";
+        };
+        NSGlobalDomain = {
+          AppleLanguages = [ "en-AU" ];
+          AppleLocale = "en_AU";
+        };
       };
       # softwareupdated reads the system domain, and this option takes the
       # domain verbatim as root, so it needs the full path.
@@ -71,6 +85,7 @@
         autohide = true;
         autohide-delay = 0.1;
         autohide-time-modifier = 0.1;
+        expose-group-apps = true;
         orientation = "left";
         mru-spaces = false;
         launchanim = false;
@@ -85,6 +100,9 @@
         CreateDesktop = false;
         FXPreferredViewStyle = "Nlsv";
         FXEnableExtensionChangeWarning = false;
+        FXRemoveOldTrashItems = true;
+        NewWindowTarget = "Other";
+        NewWindowTargetPath = "file://${config.users.users.${config.system.primaryUser}.home}/Downloads/";
         QuitMenuItem = true;
         ShowPathbar = true;
         _FXShowPosixPathInTitle = true;
@@ -100,13 +118,20 @@
         type = "png";
         disable-shadow = true;
       };
-      trackpad.FirstClickThreshold = 0;
+      trackpad = {
+        ActuateDetents = false;
+        FirstClickThreshold = 0;
+        ForceSuppressed = true;
+        TrackpadTwoFingerFromRightEdgeSwipeGesture = 0;
+      };
       NSGlobalDomain = {
         AppleEnableMouseSwipeNavigateWithScrolls = false;
         AppleEnableSwipeNavigateWithScrolls = false;
         AppleKeyboardUIMode = 2;
         ApplePressAndHoldEnabled = false;
         AppleInterfaceStyle = "Dark";
+        AppleReduceDesktopTinting = true;
+        AppleScrollerPagingBehavior = true;
         InitialKeyRepeat = 15;
         KeyRepeat = 2;
         NSAutomaticCapitalizationEnabled = false;
@@ -118,6 +143,8 @@
         NSDocumentSaveNewDocumentsToCloud = false;
         NSNavPanelExpandedStateForSaveMode = true;
         NSNavPanelExpandedStateForSaveMode2 = true;
+        "com.apple.trackpad.forceClick" = false;
+        "com.apple.trackpad.scaling" = 1.0;
       };
       menuExtraClock = {
         Show24Hour = true;
@@ -132,6 +159,7 @@
         EnableTilingByEdgeDrag = false;
         EnableTopTilingByEdgeDrag = false;
         EnableTilingOptionAccelerator = false;
+        EnableTiledWindowMargins = false;
       };
     };
   };
