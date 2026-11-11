@@ -88,8 +88,9 @@ Code's skill sync cannot write into the skills repo.
 - Agent CLIs (Claude Code, Codex, Pi) come from Homebrew on the Macs and from
   official installers on dev-01, for freshness. Nix wires them up without
   owning their updates.
-- Homebrew upgrades on every switch. Cleanup uninstalls and never zaps, because
-  Nix rollback does not restore removed application data.
+- Homebrew upgrades on every switch. Cleanup uninstalls whatever is not
+  declared, App Store apps included, and never zaps, because Nix rollback does
+  not restore removed application data.
 - Determinate Nix owns the Nix installation, so nix-darwin does not manage Nix.
   Its daemon runs garbage collection; a weekly job expires old system
   generations so that collection can free them.
@@ -150,6 +151,7 @@ request, not committed.
 | WezTerm is no longer installed or linked; `config/wezterm/` is kept | The owner no longer uses it; the config is retained |
 | `.envrc` is globally ignored and untracked | These files can hold secrets; `nix develop` provides this repo's shell |
 | btop is overridden to build a man page | Stock btop ships none |
+| Microsoft AutoUpdate is its own cask | The Word, Excel and PowerPoint casks deselect it in their installers, so a new Mac would not get Office's updater from them |
 | `killall Finder` and `SystemUIServer` run after defaults are written | nix-darwin restarts only the Dock |
 | Both fzf integrations are enabled in fish | Each contributes live key bindings |
 | Herdr comes from nixpkgs on every host | The lock keeps client and remote server on one version |
