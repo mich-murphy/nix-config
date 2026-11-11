@@ -19,6 +19,11 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] Retire `hosts/macbook` when the laptop is in service.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
+- [ ] Confirm what breaks the Ctrl+number desktop shortcuts. The next time
+      Ctrl+3 fails, note whether the Mac had just woken or a display had just
+      reconnected, then press Shift+Alt+D. If that always restores them, decide
+      whether yabai should restart the Dock on `display_added` and
+      `system_woke`. Remove the binding when a macOS update fixes it.
 - [ ] Decide whether LinearMouse's config should be declared.
       `~/.config/linearmouse/linearmouse.json` names devices by serial number,
       which this public repository should not carry, and the app rewrites the
