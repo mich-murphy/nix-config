@@ -36,12 +36,6 @@
         "x86_64-linux"
       ];
       forAllSystems = lib.genAttrs systems;
-      localPackages =
-        pkgs:
-        lib.packagesFromDirectoryRecursive {
-          inherit (pkgs) callPackage;
-          directory = ./pkgs;
-        };
       nixpkgsConfig = {
         config.allowUnfree = true;
         overlays = [ self.overlays.default ];
@@ -209,16 +203,17 @@
             dev-01-home = home.home.activationPackage;
             dev-01-links = linksCheck pkgsFor.x86_64-linux "dev-01" home;
           }
-          // deploy-rs.lib.x86_64-linux.deployChecks self.deploy;
+          // deployPkgs.deploy-rs.lib.deployChecks self.deploy;
       };
     in
     {
-      overlays.default = final: _prev: localPackages final;
+      overlays.default = final: _prev: {
+        moshi-hook = final.callPackage ./pkgs/moshi-hook/package.nix { };
+      };
 
-      packages = forAllSystems (
-        system:
-        lib.filterAttrs (_: lib.meta.availableOn { inherit system; }) (localPackages pkgsFor.${system})
-      );
+      packages = forAllSystems (system: {
+        inherit (pkgsFor.${system}) moshi-hook;
+      });
 
       formatter = forAllSystems (system: pkgsFor.${system}.nixfmt-tree);
 
