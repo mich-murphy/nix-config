@@ -1,6 +1,7 @@
 { config, lib, ... }:
 let
   user = config.system.primaryUser;
+  home = config.users.users.${user}.home;
 
   hotKey = enabled: parameters: {
     inherit enabled;
@@ -105,9 +106,15 @@ in
       # `defaults write` replaces a whole top-level key, so declaring
       # AppleSymbolicHotKeys through system.defaults would drop every shortcut
       # not listed here. -dict-add merges these ids into the rest.
+      #
+      # AirPlay Receiver is a per-host preference, which system.defaults cannot
+      # write.
       postActivation.text = ''
         launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
           defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add ${symbolicHotKeyArgs}
+
+        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
+          defaults -currentHost write com.apple.controlcenter AirplayReceiverEnabled -bool false
 
         killall Finder || true
         killall SystemUIServer || true
@@ -125,6 +132,8 @@ in
     defaults = {
       CustomUserPreferences = {
         "com.apple.AdLib".allowApplePersonalizedAdvertising = false;
+        # Siri off
+        "com.apple.assistant.support"."Assistant Enabled" = false;
         "com.apple.desktopservices" = {
           DSDontWriteNetworkStores = true;
           DSDontWriteUSBStores = true;
@@ -166,6 +175,28 @@ in
         tilesize = 48;
         show-recents = false;
         wvous-br-corner = 1;
+        # A switch rewrites both lists, so change the Dock here.
+        persistent-apps = [
+          "/Applications/Google Chrome.app"
+          "/Applications/Slack.app"
+          "/Applications/Obsidian.app"
+          "/Applications/Zotero.app"
+          "/System/Applications/Messages.app"
+          "/System/Applications/Mail.app"
+          "/System/Applications/System Settings.app"
+          "/Applications/1Password.app"
+          "/Applications/Firefox.app"
+        ];
+        persistent-others = [
+          {
+            folder = {
+              path = "${home}/Downloads/";
+              arrangement = "date-added";
+              displayas = "stack";
+              showas = "fan";
+            };
+          }
+        ];
       };
       finder = {
         AppleShowAllExtensions = true;
@@ -175,7 +206,7 @@ in
         FXEnableExtensionChangeWarning = false;
         FXRemoveOldTrashItems = true;
         NewWindowTarget = "Other";
-        NewWindowTargetPath = "file://${config.users.users.${config.system.primaryUser}.home}/Downloads/";
+        NewWindowTargetPath = "file://${home}/Downloads/";
         QuitMenuItem = true;
         ShowPathbar = true;
         _FXShowPosixPathInTitle = true;

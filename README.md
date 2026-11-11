@@ -278,6 +278,10 @@ Notes:
   modifications are git-ignored.
 - `config/wezterm/` is kept for possible future use; WezTerm is not installed
   or linked.
+- The Dock's icons are declared in `darwin/system.nix`. One dragged in by hand
+  lasts until the next switch.
+- LinearMouse's settings are not in this repository; set them in the app on
+  each Mac.
 - If Ctrl+3 and above stop switching desktops, press Shift+Alt+D. It restarts
   the Dock, which is what brings them back on macOS 27; windows stay where
   they are.
