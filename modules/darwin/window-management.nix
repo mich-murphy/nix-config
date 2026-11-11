@@ -1,7 +1,5 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 let
@@ -56,7 +54,15 @@ in
       '';
     };
 
-    skhd.enable = true;
+    skhd = {
+      enable = true;
+      # Loaded files join skhd's watcher; /etc/skhdrc exists before user agents start.
+      skhdConfig =
+        if checkout == null then
+          builtins.readFile ../../config/skhd/skhdrc
+        else
+          ''.load "${checkout}/config/skhd/skhdrc"'';
+    };
   };
 
   # Neither module sets a log file, so a failed rule or an skhdrc parse error
@@ -67,11 +73,6 @@ in
       StandardErrorPath = "/tmp/yabai_${user}.err.log";
     };
     skhd.serviceConfig = {
-      ProgramArguments = lib.mkForce [
-        "${pkgs.skhd}/bin/skhd"
-        "-c"
-        "${checkout}/config/skhd/skhdrc"
-      ];
       StandardOutPath = "/tmp/skhd_${user}.out.log";
       StandardErrorPath = "/tmp/skhd_${user}.err.log";
     };
