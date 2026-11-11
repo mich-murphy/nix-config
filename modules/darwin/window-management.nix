@@ -5,7 +5,8 @@
   ...
 }:
 let
-  checkout = config.home-manager.users.${config.system.primaryUser}.nixConfig.checkout;
+  user = config.system.primaryUser;
+  checkout = config.home-manager.users.${user}.nixConfig.checkout;
 in
 {
   services = {
@@ -43,6 +44,9 @@ in
         yabai -m rule --add app='^Preview$' manage=off
         yabai -m rule --add app='^UTM$' manage=off
         yabai -m rule --add app='^YubiKey Manager$' manage=off
+        # A rule only affects windows opened after it is added, and yabai
+        # loads the open windows before it runs this file.
+        yabai -m rule --apply
         yabai -m config --space 5 layout float
 
         # On macOS 27, Ctrl+3 and above stop switching desktops once a display
@@ -56,9 +60,21 @@ in
     skhd.enable = true;
   };
 
-  launchd.user.agents.skhd.serviceConfig.ProgramArguments = lib.mkForce [
-    "${pkgs.skhd}/bin/skhd"
-    "-c"
-    "${checkout}/config/skhd/skhdrc"
-  ];
+  # Neither module sets a log file, so a failed rule or an skhdrc parse error
+  # was printed nowhere. The paths are the ones upstream's own services use.
+  launchd.user.agents = {
+    yabai.serviceConfig = {
+      StandardOutPath = "/tmp/yabai_${user}.out.log";
+      StandardErrorPath = "/tmp/yabai_${user}.err.log";
+    };
+    skhd.serviceConfig = {
+      ProgramArguments = lib.mkForce [
+        "${pkgs.skhd}/bin/skhd"
+        "-c"
+        "${checkout}/config/skhd/skhdrc"
+      ];
+      StandardOutPath = "/tmp/skhd_${user}.out.log";
+      StandardErrorPath = "/tmp/skhd_${user}.err.log";
+    };
+  };
 }

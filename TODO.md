@@ -20,15 +20,16 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
 - [ ] After the next switch, unplug and reconnect the external display, then
-      press Ctrl+3. yabai should have restarted the Dock two seconds after each
-      change, so it should work without Shift+Alt+D. If it does not, the
-      `display_added` and `display_removed` signals in
-      `modules/darwin/window-management.nix` are not firing. Remove the signals
-      and the binding when a macOS update fixes the shortcuts.
+      press Ctrl+3. The signals are proven with a virtual display: the Dock
+      restarted two seconds after it appeared and again after it went, and
+      Ctrl+3 worked afterwards. A virtual display did not break Ctrl+3 by
+      itself, though, so only a real unplug shows whether the restart prevents
+      the break. If Ctrl+3 still fails, check that `yabai -m signal --list`
+      shows both signals. Remove the signals and the binding when a macOS
+      update fixes the shortcuts.
 - [ ] After the first switch on the laptop, check in System Settings that
-      Siri and AirPlay Receiver are off. Both are written as plain preferences,
-      which is proven only on a Mac where they had already been turned off by
-      hand.
+      Siri is off. It is written as a plain preference, which is proven only
+      on a Mac where Siri had already been turned off by hand.
 
 ## Agents
 
@@ -44,10 +45,10 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
 - [ ] Decide whether to show the Finder desktop again.
       `finder.CreateDesktop = false` hides the files in `~/Desktop`, and
-      yabai's README says it "breaks focusing of empty spaces". Tried once
-      here, `yabai -m display --focus 2` reported success but focus stayed off
-      the empty built-in display. Deleting the line brings the desktop icons
-      back.
+      yabai's README says it "breaks focusing of empty spaces". Here,
+      `yabai -m display --focus 2` reports success but does not move focus
+      while the built-in display is empty, and works once a window is on it.
+      Deleting the line brings the desktop icons back.
 - [ ] Decide whether deploying only committed revisions should be enforced, and
       how. Today a deploy builds the working tree and records `-dirty`.
 - [ ] Decide the future of CI: add a Linux job, or delete the workflow.

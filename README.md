@@ -282,6 +282,9 @@ Notes:
   lasts until the next switch.
 - LinearMouse's settings are not in this repository; set them in the app on
   each Mac.
+- yabai and skhd write to `/tmp/yabai_<user>.err.log` and
+  `/tmp/skhd_<user>.err.log`. Look there when a rule or a key binding does
+  nothing.
 - On macOS 27, Ctrl+3 and above stop switching desktops after a display
   connects or disconnects, until the Dock restarts. yabai restarts it two
   seconds after each change, so expect the Dock to flicker then. Shift+Alt+D
