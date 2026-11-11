@@ -24,10 +24,10 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       reconnected, then press Shift+Alt+D. If that always restores them, decide
       whether yabai should restart the Dock on `display_added` and
       `system_woke`. Remove the binding when a macOS update fixes it.
-- [ ] Decide whether LinearMouse's config should be declared.
-      `~/.config/linearmouse/linearmouse.json` names devices by serial number,
-      which this public repository should not carry, and the app rewrites the
-      file.
+- [ ] After the first switch on the laptop, check in System Settings that
+      Siri and AirPlay Receiver are off. Both are written as plain preferences,
+      which is proven only on a Mac where they had already been turned off by
+      hand.
 
 ## Agents
 
@@ -40,12 +40,6 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       which this configuration does not install. Confirm whether it works.
 
 ## Decisions
-
-- [ ] Decide whether to declare three settings that are set by hand today:
-      the Dock's app list (`system.defaults.dock.persistent-apps`), Siri off
-      and AirPlay Receiver off. The last two have no typed option, and AirPlay
-      Receiver is a per-host preference that `CustomUserPreferences` cannot
-      write.
 
 - [ ] Decide whether deploying only committed revisions should be enforced, and
       how. Today a deploy builds the working tree and records `-dirty`.
