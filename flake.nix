@@ -117,7 +117,7 @@
         })
       ];
 
-      linksCheck =
+      writableLinksCheck =
         pkgs: host: home:
         let
           inherit (home.nixConfig) checkout skills;
@@ -128,6 +128,8 @@
           checkout=${lib.escapeShellArg (toString checkout)}
           found=0
           while IFS= read -r -d "" link; do
+            # mkOutOfStoreSymlink makes home-files -> store symlink -> live path.
+            # Ordinary store-backed sources are not writable links and are skipped.
             target=$(readlink "$link")
             [ -L "$target" ] || continue
             found=$((found + 1))
@@ -191,7 +193,7 @@
             {
               "${host}-system" = darwin.config.system.build.toplevel;
               "${host}-home" = home.home.activationPackage;
-              "${host}-links" = linksCheck pkgsFor.aarch64-darwin host home;
+              "${host}-links" = writableLinksCheck pkgsFor.aarch64-darwin host home;
             }
           ) self.darwinConfigurations;
 
@@ -201,7 +203,7 @@
           in
           {
             dev-01-home = home.home.activationPackage;
-            dev-01-links = linksCheck pkgsFor.x86_64-linux "dev-01" home;
+            dev-01-links = writableLinksCheck pkgsFor.x86_64-linux "dev-01" home;
           }
           // deployPkgs.deploy-rs.lib.deployChecks self.deploy;
       };
