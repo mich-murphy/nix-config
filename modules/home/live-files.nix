@@ -25,13 +25,10 @@
     '';
   };
 
-  config = {
-    lib.nixConfig.file =
-      path:
-      if config.nixConfig.checkout == null then
-        inputs.self + "/${path}"
-      else
-        config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/${path}";
-
-  };
+  config.lib.nixConfig.file =
+    path:
+    if config.nixConfig.checkout == null then
+      inputs.self + "/${path}"
+    else
+      config.lib.file.mkOutOfStoreSymlink "${config.nixConfig.checkout}/${path}";
 }
