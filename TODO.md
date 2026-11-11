@@ -42,6 +42,12 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
 ## Decisions
 
+- [ ] Decide whether to show the Finder desktop again.
+      `finder.CreateDesktop = false` hides the files in `~/Desktop`, and
+      yabai's README says it "breaks focusing of empty spaces". Tried once
+      here, `yabai -m display --focus 2` reported success but focus stayed off
+      the empty built-in display. Deleting the line brings the desktop icons
+      back.
 - [ ] Decide whether deploying only committed revisions should be enforced, and
       how. Today a deploy builds the working tree and records `-dirty`.
 - [ ] Decide the future of CI: add a Linux job, or delete the workflow.
