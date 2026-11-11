@@ -19,11 +19,12 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] Retire `hosts/macbook` when the laptop is in service.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
-- [ ] Confirm what breaks the Ctrl+number desktop shortcuts. The next time
-      Ctrl+3 fails, note whether the Mac had just woken or a display had just
-      reconnected, then press Shift+Alt+D. If that always restores them, decide
-      whether yabai should restart the Dock on `display_added` and
-      `system_woke`. Remove the binding when a macOS update fixes it.
+- [ ] After the next switch, unplug and reconnect the external display, then
+      press Ctrl+3. yabai should have restarted the Dock two seconds after each
+      change, so it should work without Shift+Alt+D. If it does not, the
+      `display_added` and `display_removed` signals in
+      `modules/darwin/window-management.nix` are not firing. Remove the signals
+      and the binding when a macOS update fixes the shortcuts.
 - [ ] After the first switch on the laptop, check in System Settings that
       Siri and AirPlay Receiver are off. Both are written as plain preferences,
       which is proven only on a Mac where they had already been turned off by

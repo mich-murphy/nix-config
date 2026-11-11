@@ -44,6 +44,12 @@ in
         yabai -m rule --add app='^UTM$' manage=off
         yabai -m rule --add app='^YubiKey Manager$' manage=off
         yabai -m config --space 5 layout float
+
+        # On macOS 27, Ctrl+3 and above stop switching desktops once a display
+        # has connected or disconnected, until the Dock restarts. The delay
+        # lets a burst of display changes finish first.
+        yabai -m signal --add label=dock-restart-display-added event=display_added action="sleep 2; killall Dock"
+        yabai -m signal --add label=dock-restart-display-removed event=display_removed action="sleep 2; killall Dock"
       '';
     };
 
