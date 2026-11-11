@@ -1,4 +1,69 @@
-{ config, ... }:
+{ config, lib, ... }:
+let
+  user = config.system.primaryUser;
+
+  hotKey = enabled: parameters: {
+    inherit enabled;
+    value = {
+      type = "standard";
+      inherit parameters;
+    };
+  };
+
+  # Keyed by com.apple.symbolichotkeys id; parameters are the character, the
+  # key code and the modifier mask.
+  symbolicHotKeys = {
+    # Input source switching on Ctrl+Space and Ctrl+Option+Space
+    "60" = hotKey false [
+      32
+      49
+      262144
+    ];
+    "61" = hotKey false [
+      32
+      49
+      786432
+    ];
+    # Spotlight on Cmd+Space
+    "64" = hotKey false [
+      32
+      49
+      1048576
+    ];
+    # Switch to Desktop 1 to 5 on Ctrl+1 to Ctrl+5
+    "118" = hotKey true [
+      65535
+      18
+      262144
+    ];
+    "119" = hotKey true [
+      65535
+      19
+      262144
+    ];
+    "120" = hotKey true [
+      65535
+      20
+      262144
+    ];
+    "121" = hotKey true [
+      65535
+      21
+      262144
+    ];
+    "122" = hotKey true [
+      65535
+      23
+      262144
+    ];
+  };
+
+  symbolicHotKeyArgs = lib.concatStringsSep " " (
+    lib.mapAttrsToList (
+      id: entry: "${id} ${lib.escapeShellArg (lib.generators.toPlist { escape = true; } entry)}"
+    ) symbolicHotKeys
+  );
+in
 {
   networking = {
     dns = [
@@ -36,7 +101,13 @@
 
   system = {
     activationScripts = {
+      # `defaults write` replaces a whole top-level key, so declaring
+      # AppleSymbolicHotKeys through system.defaults would drop every shortcut
+      # not listed here. -dict-add merges these ids into the rest.
       postActivation.text = ''
+        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
+          defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add ${symbolicHotKeyArgs}
+
         killall Finder || true
         killall SystemUIServer || true
       '';

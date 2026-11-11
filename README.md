@@ -120,7 +120,9 @@ Needed once on a new machine, in this order:
    sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake .#laptop
    ```
 
-   From then on `sudo darwin-rebuild switch --flake .` is enough.
+   From then on `sudo darwin-rebuild switch --flake .` is enough. Log out and
+   back in once, so that macOS loads the keyboard shortcuts and key repeat the
+   switch wrote.
 7. Open a new shell, then install the commit hooks: `prek install`.
 8. Install Herdr's plugins. Nix does not install them, and
    `config/herdr/config.toml` binds keys to both:
@@ -276,6 +278,9 @@ Notes:
   modifications are git-ignored.
 - `config/wezterm/` is kept for possible future use; WezTerm is not installed
   or linked.
+- If Ctrl+3 and above stop switching desktops, press Shift+Alt+D. It restarts
+  the Dock, which is what brings them back on macOS 27; windows stay where
+  they are.
 
 ## Where packages go
 

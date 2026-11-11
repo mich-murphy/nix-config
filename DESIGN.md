@@ -153,3 +153,6 @@ request, not committed.
 | `killall Finder` and `SystemUIServer` run after defaults are written | nix-darwin restarts only the Dock |
 | Both fzf integrations are enabled in fish | Each contributes live key bindings |
 | Herdr comes from nixpkgs on every host | The lock keeps client and remote server on one version |
+| Keyboard shortcuts are merged into `com.apple.symbolichotkeys` with `defaults write -dict-add` after activation | `system.defaults` writes whole top-level keys, so declaring `AppleSymbolicHotKeys` there would drop every shortcut not listed |
+| skhd binds Shift+Alt+D to `killall Dock` | On macOS 27 the Ctrl+number desktop shortcuts stop working until the Dock restarts, while their entries stay intact. A switch only appeared to fix them because nix-darwin restarts the Dock. Remove the binding when Apple fixes it |
+| The time zone is not declared | macOS sets it automatically, and `time.timeZone` would override that on every switch |
