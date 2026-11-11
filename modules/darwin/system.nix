@@ -66,8 +66,9 @@ let
 in
 {
   networking = {
+    # Tailscale's app installs its own resolver for the tailnet's names, so
+    # 100.100.100.100 is not listed here.
     dns = [
-      "100.100.100.100"
       "1.1.1.1"
       "1.0.0.1"
     ];
@@ -113,9 +114,10 @@ in
       '';
 
       # Pin power management via pmset because power.sleep cannot set separate
-      # values for AC and battery power.
+      # values for AC and battery power. On AC the Mac never idle-sleeps, so it
+      # stays reachable over the tailnet; a closed lid still sleeps it.
       extraActivation.text = ''
-        pmset -c sleep 1 displaysleep 10 disksleep 10
+        pmset -c sleep 0 displaysleep 10 disksleep 10
         pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
       '';
     };
