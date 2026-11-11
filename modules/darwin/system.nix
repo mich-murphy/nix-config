@@ -3,6 +3,10 @@ let
   user = config.system.primaryUser;
   home = config.users.users.${user}.home;
 
+  control = 262144;
+  option = 524288;
+  command = 1048576;
+
   hotKey = enabled: parameters: {
     inherit enabled;
     value = {
@@ -12,50 +16,51 @@ let
   };
 
   # Keyed by com.apple.symbolichotkeys id; parameters are the character, the
-  # key code and the modifier mask.
+  # key code and the modifier mask. Carbon Events.h names key codes 18/19/20/21/23
+  # as ANSI 1/2/3/4/5 and 49 as Space.
   symbolicHotKeys = {
     # Input source switching on Ctrl+Space and Ctrl+Option+Space
     "60" = hotKey false [
       32
       49
-      262144
+      control
     ];
     "61" = hotKey false [
       32
       49
-      786432
+      (control + option)
     ];
     # Spotlight on Cmd+Space
     "64" = hotKey false [
       32
       49
-      1048576
+      command
     ];
     # Switch to Desktop 1 to 5 on Ctrl+1 to Ctrl+5
     "118" = hotKey true [
       65535
       18
-      262144
+      control
     ];
     "119" = hotKey true [
       65535
       19
-      262144
+      control
     ];
     "120" = hotKey true [
       65535
       20
-      262144
+      control
     ];
     "121" = hotKey true [
       65535
       21
-      262144
+      control
     ];
     "122" = hotKey true [
       65535
       23
-      262144
+      control
     ];
   };
 
@@ -174,7 +179,7 @@ in
         mineffect = "scale";
         tilesize = 48;
         show-recents = false;
-        wvous-br-corner = 1;
+        wvous-br-corner = 1; # Disabled (nix-darwin hot-corner enum).
         # A switch rewrites both lists, so change the Dock here.
         persistent-apps = [
           "/Applications/Google Chrome.app"
@@ -226,7 +231,7 @@ in
         ActuateDetents = false;
         FirstClickThreshold = 0;
         ForceSuppressed = true;
-        TrackpadTwoFingerFromRightEdgeSwipeGesture = 0;
+        TrackpadTwoFingerFromRightEdgeSwipeGesture = 0; # Disable the Notification Center gesture.
       };
       NSGlobalDomain = {
         AppleEnableMouseSwipeNavigateWithScrolls = false;
@@ -252,7 +257,7 @@ in
       };
       menuExtraClock = {
         Show24Hour = true;
-        ShowDate = 1;
+        ShowDate = 1; # Always show the full date, not only when space allows.
         ShowDayOfWeek = true;
         ShowSeconds = false;
       };
