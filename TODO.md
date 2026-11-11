@@ -19,14 +19,9 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] Retire `hosts/macbook` when the laptop is in service.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
-- [ ] After the next switch, unplug and reconnect the external display, then
-      press Ctrl+3. The signals are proven with a virtual display: the Dock
-      restarted two seconds after it appeared and again after it went, and
-      Ctrl+3 worked afterwards. A virtual display did not break Ctrl+3 by
-      itself, though, so only a real unplug shows whether the restart prevents
-      the break. If Ctrl+3 still fails, check that `yabai -m signal --list`
-      shows both signals. Remove the signals and the binding when a macOS
-      update fixes the shortcuts.
+- [ ] When a macOS update fixes the Ctrl+number desktop shortcuts, remove the
+      two Dock-restart signals in `modules/darwin/window-management.nix` and
+      the Shift+Alt+D binding in `config/skhd/skhdrc`.
 - [ ] After the first switch on the laptop, check in System Settings that
       Siri is off. It is written as a plain preference, which is proven only
       on a Mac where Siri had already been turned off by hand.
