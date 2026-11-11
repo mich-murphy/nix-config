@@ -1,9 +1,6 @@
 .claude/
 .DS_Store
 node_modules/
-npm-debug.log*
-coverage/
-*.tsbuildinfo
 .env
 .env.*
 !.env.example
@@ -11,5 +8,4 @@ config/karabiner/automatic_backups/
 config/karabiner/assets/complex_modifications/
 result
 result-*
-.markdownlint-cli2.yaml
 .scratch
