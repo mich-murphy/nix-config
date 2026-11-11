@@ -2,7 +2,6 @@
 {
   programs.neovim = {
     enable = true;
-    package = pkgs.neovim-unwrapped;
     vimAlias = true;
     defaultEditor = true;
     withPython3 = false;
