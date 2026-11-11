@@ -152,6 +152,7 @@ request, not committed.
 | `go`, `python3` and (on Macs) `nodejs` are Neovim packages, not global | Mason builds and runs its tools with them; project toolchains come from project dev shells |
 | WezTerm is no longer installed or linked; `config/wezterm/` is kept | The owner no longer uses it; the config is retained |
 | `.envrc` is globally ignored and untracked | These files can hold secrets; `nix develop` provides this repo's shell |
+| Home Manager stops a switch when a file it does not own is where a link goes (`backupFileExtension` is unset) | Moving the file aside would hide an application replacing a link this repo manages, and a second collision fails anyway once the backup exists |
 | btop is overridden to build a man page | Stock btop ships none |
 | Microsoft AutoUpdate is its own cask | The Word, Excel and PowerPoint casks deselect it in their installers, so a new Mac would not get Office's updater from them |
 | `killall Finder` and `SystemUIServer` run after defaults are written | nix-darwin restarts only the Dock |
