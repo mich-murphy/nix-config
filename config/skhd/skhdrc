@@ -1,5 +1,7 @@
-# Unbound keys pass through so typing never dies.
-:: resize
+# Unbound keys pass through so typing never dies. Resize mode swallows bare
+# h, j, k, l, o and e, so entering and leaving it shows a notification.
+:: default : /usr/bin/osascript -e 'display notification "Resize mode off" with title "skhd"'
+:: resize : /usr/bin/osascript -e 'display notification "h j k l resize, o rotates, e balances, Escape leaves" with title "skhd: resize mode"'
 alt - r ; resize
 resize < alt - r ; default
 resize < escape ; default

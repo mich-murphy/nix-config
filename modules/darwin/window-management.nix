@@ -43,7 +43,6 @@ in
         yabai -m rule --add app='^Archive Utility$' manage=off
         yabai -m rule --add app='^Preview$' manage=off
         yabai -m rule --add app='^UTM$' manage=off
-        yabai -m rule --add app='^YubiKey Manager$' manage=off
         # A rule only affects windows opened after it is added, and yabai
         # loads the open windows before it runs this file.
         yabai -m rule --apply
