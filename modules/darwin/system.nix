@@ -102,7 +102,7 @@ in
     extraConfig = ''
       PasswordAuthentication no
       KbdInteractiveAuthentication no
-      AllowUsers ${config.system.primaryUser}@100.64.0.0/10 ${config.system.primaryUser}@fd7a:115c:a1e0::/48
+      AllowUsers ${user}@100.64.0.0/10 ${user}@fd7a:115c:a1e0::/48
     '';
   };
 
