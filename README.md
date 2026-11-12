@@ -297,11 +297,29 @@ Notes:
 
 | Put it in | When |
 | --- | --- |
-| `environment.systemPackages` | the system or root needs it |
+| `environment.systemPackages` | a tool for every user of the Mac, root included, or an app bundle that must sit in `/Applications/Nix Apps` |
 | `home.packages` | a general command-line tool used in any directory |
 | `programs.neovim.extraPackages` | only Neovim or Mason shells out to it (`go`, `python3` and, on the Macs, `nodejs` live here for Mason) |
 | Homebrew | a Mac app, cask or formula nixpkgs lacks, or one that updates itself |
 | a project's dev shell | it is that project's toolchain |
+
+### Changing the application list
+
+Homebrew cleanup runs on every switch and uninstalls, without `zap`, what
+`modules/darwin/applications.nix` no longer declares. That includes App Store
+apps installed by hand, despite what the `masApps` option text says
+([nix-darwin issue 1860](https://github.com/nix-darwin/nix-darwin/issues/1860)).
+Before switching, list what the working tree would remove (on the laptop, name
+`laptop`):
+
+```sh
+nix eval --raw .#darwinConfigurations.macbook.config.homebrew.brewfile |
+  HOMEBREW_NO_AUTO_UPDATE=1 brew bundle cleanup --file=-
+```
+
+Without `--force` it only lists; no output means nothing would be removed.
+Removing one Office cask also removes the licensing helpers the others share,
+so check the remaining Office apps afterwards.
 
 ## Services
 
@@ -348,9 +366,6 @@ Pooling claude.ai OAuth credentials conflicts with Anthropic's terms
 
 ## Notes
 
-- Homebrew runs on every switch with `cleanup = "uninstall"`: removing a cask or
-  formula declaration uninstalls it on the next switch, without `zap`. Keep the
-  declaration set intact unless that is intended.
 - Determinate Nix manages Nix itself and its garbage collection on the Macs
   (`determinateNix.enable`); nix-darwin's own Nix management is off.
 - `nix develop` provides `nixfmt`, `nixf-diagnose`, `nvd` and `deploy`. For

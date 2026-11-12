@@ -22,6 +22,8 @@
     onActivation = {
       autoUpdate = true;
       upgrade = true;
+      # Also uninstalls undeclared App Store apps, whatever the masApps option
+      # text says (https://github.com/nix-darwin/nix-darwin/issues/1860).
       cleanup = "uninstall";
     };
     casks = [
@@ -48,6 +50,8 @@
       "microsoft-excel"
       "microsoft-powerpoint"
       "microsoft-word"
+      # The three Office casks deselect AutoUpdate in their installers.
+      "microsoft-auto-update"
       "microsoft-teams"
       "docker-desktop"
       "raycast"
