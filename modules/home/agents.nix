@@ -1,4 +1,9 @@
-{ config, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   agentFile = config.lib.nixConfig.file "config/agents/AGENTS.md";
   skills = config.nixConfig.skills;
@@ -39,6 +44,8 @@ in
       env = {
         CLAUDE_CODE_PROMPT_CACHE_TTL = "1h";
         CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL = "1h";
+        DISABLE_ERROR_REPORTING = "1";
+        DISABLE_TELEMETRY = "1";
       };
       feedbackDrafts = "off";
       permissions = {
@@ -93,6 +100,10 @@ in
           "Bash(gh auth token*)"
           "Bash(brew uninstall*)"
           "Bash(brew install*)"
+          "Bash(sudo*)"
+          "Read(~/.ssh/**)"
+          "Read(**/.env)"
+          "Read(**/.env.*)"
         ];
       };
       promptSuggestionEnabled = false;
@@ -106,6 +117,7 @@ in
           "One Big Cluster Fuck Coming Right Up"
           "Creating Some Quality AI Slop"
           "Taking A Big Shit On Your Codebase"
+          "Priming The Slop Cannon"
         ];
       };
       theme = "dark-ansi";
@@ -124,9 +136,20 @@ in
     package = null;
     mutableSettings = true;
     settings = {
+      compaction.modelOverrides =
+        lib.genAttrs
+          (map (id: "claude-sdk/${id}") [
+            "claude-5.5-sonnet"
+            "claude-5.5-opus"
+            "claude-5.2-fable"
+            "claude-5.5-haiku"
+          ])
+          (_: {
+            reserveTokens = 616000;
+          });
       collapseChangelog = true;
       enableInstallTelemetry = false;
-      extensions = [ "-builtin:mcp" ];
+      extensions = [ ];
       markdown.mermaid = "final";
       packages = [
         "git:github.com/mich-murphy/pi-extensions@main"
@@ -139,4 +162,21 @@ in
       treeFilterMode = "no-tools";
     };
   };
+
+  # Merged rather than linked: /subagents:settings writes to this file.
+  home.activation.piSubagentsSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] (
+    lib.hm.generators.mkImpureConfigMerger {
+      inherit pkgs;
+      format = "json";
+      empty = "{}";
+      path = "${config.programs.pi-coding-agent.configDir}/subagents.json";
+      staticSettings = (pkgs.formats.json { }).generate "pi-subagents.json" {
+        defaultMaxTurns = 25;
+        maxConcurrent = 3;
+        unconsumedSessionRetentionMinutes = 120;
+        wrapUpTurns = 5;
+      };
+      jqOperation = "$dynamic * $static";
+    }
+  );
 }
