@@ -9,7 +9,7 @@ The reasons behind the choices are in [DESIGN.md](DESIGN.md).
 | Host | What it is | Flake output | Switched with |
 | --- | --- | --- | --- |
 | `macbook` | Current Mac (M2 MacBook Air) | `darwinConfigurations.macbook` | `sudo darwin-rebuild switch --flake .` on the Mac itself |
-| `laptop` | New MacBook Pro (M5), not yet arrived; it replaces `macbook` | `darwinConfigurations.laptop` | the same, on the laptop |
+| `laptop` | New MacBook Pro (M5), user `michael`; it replaces `macbook` | `darwinConfigurations.laptop` | the same, on the laptop |
 | `dev-01` | Ubuntu VM, reached over SSH from the Mac | `homeConfigurations."dev@dev-01"` | `deploy .#dev-01` from the Mac |
 
 The two Macs never deploy to each other. dev-01 is Home Manager only: the
@@ -20,7 +20,7 @@ machines repo's bootstrap owns everything outside its home directory.
 ```text
 flake.nix                inputs, mkDarwin, mkHome, deploy node, checks
 hosts/<host>/
-├── default.nix          nix-darwin: host name, platform, stateVersion (Macs)
+├── default.nix          nix-darwin: host name, platform, user name, stateVersion (Macs)
 └── home.nix             Home Manager: host-only modules, identity, stateVersion
 modules/darwin/          nix-darwin modules shared by the Macs
 modules/home/            Home Manager modules shared by every host
@@ -40,7 +40,7 @@ machine needs it.
 | `darwin/system.nix` | DNS, firewall, Touch ID for sudo, tailnet-only sshd, Dock, Finder, keyboard, power settings |
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
 | `darwin/nix.nix` | Determinate Nix owning the Nix installation, and a weekly launchd job that expires system generations older than 7 days |
-| `darwin/user.nix` | the primary user (the one place the user name is written), its account and shell, Home Manager's integration settings |
+| `darwin/user.nix` | the primary user's account and shell (the name itself is set in `hosts/<host>/default.nix`), Home Manager's integration settings |
 | `darwin/window-management.nix` | yabai, and skhd loading the live `skhdrc` |
 | `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |

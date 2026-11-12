@@ -3,7 +3,6 @@ let
   user = config.system.primaryUser;
 in
 {
-  system.primaryUser = "mm";
   users.users.${user} = {
     home = "/Users/${user}";
     shell = pkgs.fish;
