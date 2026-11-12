@@ -9,9 +9,6 @@
     "3bd68ef979a42070a44f8d82c205cfd8e8cca425d91253ec2c10a88179bb34aa" # DetSys v0.34.0
   ];
 
-  # Determinate Nixd collects garbage automatically but does not prune
-  # generations, so expire system generations older than 7 days and let its
-  # GC free them.
   launchd.daemons.nix-wipe-history.serviceConfig = {
     ProgramArguments = [
       "/nix/var/nix/profiles/default/bin/nix"

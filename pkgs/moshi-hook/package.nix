@@ -1,8 +1,6 @@
 # Moshi's prebuilt hook daemon and CLI (nixpkgs has none; its `moshi` is an
 # unrelated project). URLs and hashes come from the generated formula at
 # https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb.
-# To update: change `version`, then copy each platform's sha256 from that
-# formula and convert it with `nix hash convert --hash-algo sha256 <hex>`.
 {
   lib,
   stdenvNoCC,

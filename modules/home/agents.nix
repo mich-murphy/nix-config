@@ -171,7 +171,6 @@ in
     };
   };
 
-  # Merged rather than linked: /subagents:settings writes to this file.
   home.activation.piSubagentsSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] (
     lib.hm.generators.mkImpureConfigMerger {
       inherit pkgs;

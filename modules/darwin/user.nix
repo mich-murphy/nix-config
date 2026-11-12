@@ -14,7 +14,6 @@ in
     shell = pkgs.fish;
   };
   programs.fish.enable = true;
-  # Lists fish in /etc/shells, which chsh and some login paths check.
   environment.shells = [ pkgs.fish ];
 
   home-manager = {

@@ -72,8 +72,6 @@ let
 in
 {
   networking = {
-    # Tailscale's app installs its own resolver for the tailnet's names, so
-    # 100.100.100.100 is not listed here.
     dns = [
       "1.1.1.1"
       "1.0.0.1"
@@ -126,8 +124,7 @@ in
       '';
 
       # Pin power management via pmset because power.sleep cannot set separate
-      # values for AC and battery power. On AC the Mac never idle-sleeps, so it
-      # stays reachable over the tailnet; a closed lid still sleeps it.
+      # values for AC and battery power.
       extraActivation.text = ''
         pmset -c sleep 0 displaysleep 10 disksleep 10
         pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
@@ -137,7 +134,6 @@ in
     defaults = {
       CustomUserPreferences = {
         "com.apple.AdLib".allowApplePersonalizedAdvertising = false;
-        # Siri off
         "com.apple.assistant.support"."Assistant Enabled" = false;
         "com.apple.desktopservices" = {
           DSDontWriteNetworkStores = true;
@@ -147,8 +143,6 @@ in
           ShowRecentTags = false;
           WarnOnEmptyTrash = false;
         };
-        # screencapture on macOS 27 names only these keys; `location` below is
-        # the older name for the same folder.
         "com.apple.screencapture" = {
           location-screenrecording = "~/Pictures";
           location-screenshot = "~/Pictures";
@@ -180,7 +174,6 @@ in
         tilesize = 48;
         show-recents = false;
         wvous-br-corner = 1; # Disabled (nix-darwin hot-corner enum).
-        # A switch rewrites both lists, so change the Dock here.
         persistent-apps = [
           "/Applications/Google Chrome.app"
           "/Applications/Slack.app"
@@ -231,7 +224,7 @@ in
         ActuateDetents = false;
         FirstClickThreshold = 0;
         ForceSuppressed = true;
-        TrackpadTwoFingerFromRightEdgeSwipeGesture = 0; # Disable the Notification Center gesture.
+        TrackpadTwoFingerFromRightEdgeSwipeGesture = 0;
       };
       NSGlobalDomain = {
         AppleEnableMouseSwipeNavigateWithScrolls = false;

@@ -3,9 +3,7 @@
   home = {
     username = "dev";
     homeDirectory = "/home/dev";
-    # Set once at first activation; never bump it to track releases.
     stateVersion = "26.05";
-    # Codex's sandbox on Linux.
     packages = [ pkgs.bubblewrap ];
     sessionVariables.TMPDIR = "/home/dev/businesscraft/.scratch";
   };

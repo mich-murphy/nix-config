@@ -1,5 +1,3 @@
-# Unbound keys pass through so typing never dies. Resize mode swallows bare
-# h, j, k, l, o and e, so entering and leaving it shows a notification.
 :: default : /usr/bin/osascript -e 'display notification "Resize mode off" with title "skhd"'
 :: resize : /usr/bin/osascript -e 'display notification "h j k l resize, o rotates, e balances, Escape leaves" with title "skhd: resize mode"'
 alt - r ; resize
@@ -20,7 +18,6 @@ alt - f : yabai -m window --toggle zoom-fullscreen
 alt - q : yabai -m window --close
 alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
 
-# macOS 27 drops the Ctrl+number desktop shortcuts until the Dock restarts.
 shift + alt - d : killall Dock
 
 alt - k : yabai -m window --focus north || yabai -m display --focus north

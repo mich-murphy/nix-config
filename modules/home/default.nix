@@ -31,8 +31,6 @@
 
     file.".hushlogin".text = "";
 
-    # Home Manager master and nixpkgs-unstable can advertise different
-    # development release labels despite being their documented pairing.
     enableNixpkgsReleaseCheck = false;
   };
 
