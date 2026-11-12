@@ -50,7 +50,6 @@
       "microsoft-word"
       "microsoft-teams"
       "docker-desktop"
-      "displaylink"
       "raycast"
       "winbox"
       "linearmouse"
