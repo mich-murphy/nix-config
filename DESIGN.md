@@ -148,7 +148,6 @@ request, not committed.
 | dev-01's `TMPDIR` is `~/businesscraft/.scratch` | Node's temporary files and audit caches reach hundreds of MiB, so they sit on the data disk; the bootstrap creates the directory after mounting it |
 | fish binds F12 to clear the screen in both vi modes | Ghostty sends Ctrl+Shift+L as F12, which keeps it distinct from Ctrl+L inside Herdr and shells |
 | dev-01 builds its own profile (deploy-rs `remoteBuild`) | `dev` is not a trusted Nix user on dev-01, so a closure built on the Mac is refused as unsigned; making `dev` trusted would give that account root-equivalent control of the Nix store |
-| underclass runs on every host and reads `~/.config/underclass/config.toml` itself | The same untracked file works on both platforms; each host keeps its own account pool |
 | `go`, `python3` and (on Macs) `nodejs` are Neovim packages, not global | Mason builds and runs its tools with them; project toolchains come from project dev shells |
 | WezTerm is no longer installed or linked; `config/wezterm/` is kept | The owner no longer uses it; the config is retained |
 | `.envrc` is globally ignored and untracked | These files can hold secrets; `nix develop` provides this repo's shell |

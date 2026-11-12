@@ -77,8 +77,6 @@ config.hide_tab_bar_if_only_one_tab = false
 config.use_fancy_tab_bar = false
 config.switch_to_last_active_tab_when_closing_tab = true
 
--- Preserve Codex and Claude's activity indicator after a tab rename,
--- while replacing the session name that follows it.
 wezterm.on("format-tab-title", function(tab)
   local pane = tab.active_pane
   local tab_title = tab.tab_title
@@ -94,8 +92,6 @@ wezterm.on("format-tab-title", function(tab)
       local is_ai_session = process_name:match("^codex") or process_name:match("^claude")
 
       if is_ai_session then
-        -- Match one non-ASCII UTF-8 glyph followed by whitespace. This
-        -- covers both tools' indicators without coupling to their frames.
         local activity_indicator = pane_title:match("^([\194-\244][\128-\191]*)%s+")
         if activity_indicator then
           title = activity_indicator .. " " .. tab_title
@@ -104,8 +100,6 @@ wezterm.on("format-tab-title", function(tab)
     end
   end
 
-  -- A custom title also bypasses WezTerm's default numeric prefix, so
-  -- restore it using the same one-based numbering as the leader keys.
   return " " .. (tab.tab_index + 1) .. ": " .. (title or "") .. " "
 end)
 

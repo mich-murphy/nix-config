@@ -7,7 +7,6 @@
       set -g fish_key_bindings fish_vi_key_bindings
       set -g fish_greeting
 
-      # Fish keeps separate bindings for Vi insert and normal modes.
       bind --mode insert f12 clear-screen
       bind --mode default f12 clear-screen
 

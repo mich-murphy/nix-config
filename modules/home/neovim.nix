@@ -7,8 +7,6 @@
     withPython3 = false;
     withRuby = false;
     sideloadInitLua = true;
-    # Mason builds and runs its language servers and formatters with go,
-    # python3 and (on the Macs) node, so they live here, not on the shell PATH.
     extraPackages = [
       pkgs.gnutar
       pkgs.go

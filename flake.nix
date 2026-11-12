@@ -8,14 +8,9 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
-    # Only default.nix and shell.nix, for non-flake use, import flake-compat.
     deploy-rs.inputs.flake-compat.follows = "";
     hunk.url = "github:modem-dev/hunk";
     hunk.inputs.nixpkgs.follows = "nixpkgs";
-    underclass.url = "github:ghuntley/underclass";
-    underclass.inputs.nixpkgs.follows = "nixpkgs";
-    # devenv only builds underclass's development shell.
-    underclass.inputs.devenv.follows = "";
     # No follows: Determinate recommends its own nixpkgs for FlakeHub Cache hits.
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
   };
@@ -85,8 +80,6 @@
           ];
         };
 
-      # deploy-rs's lib for dev-01, with nixpkgs' cached deploy-rs binary
-      # instead of the flake's own source build.
       deployPkgs = pkgsFor.x86_64-linux.appendOverlays [
         deploy-rs.overlays.default
         (_: prev: {
@@ -225,9 +218,7 @@
 
       deploy.nodes.dev-01 = {
         hostname = "dev-01";
-        sshUser = "dev"; # otherwise the Mac's own user name
-        # dev is not a trusted Nix user on dev-01, so a closure built on the Mac
-        # is refused as unsigned; building there needs no trust.
+        sshUser = "dev";
         remoteBuild = true;
         profiles.home.path =
           deployPkgs.deploy-rs.lib.activate.home-manager

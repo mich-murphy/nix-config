@@ -39,7 +39,6 @@ command = "herdr-splits.nav-right"
 description = "Navigate right (Neovim/Herdr)"
 
 [[keys.command]]
-# Ghostty translates Ctrl+Shift+L to the otherwise-unused F12 sequence.
 key = "f12"
 type = "shell"
 command = "\"$HERDR_BIN_PATH\" pane send-keys \"$HERDR_ACTIVE_PANE_ID\" ctrl+l"
@@ -86,7 +85,5 @@ delay_seconds = 2
 [ui.sound]
 enabled = false
 
-# Pass Kitty graphics through to Ghostty so snacks.image can render
-# mermaid diagrams and images inline in Neovim. Experimental in Herdr.
 [experimental]
 kitty_graphics = true

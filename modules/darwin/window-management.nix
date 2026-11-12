@@ -19,7 +19,6 @@ in
         layout = "bsp";
         split_ratio = 0.5;
         auto_balance = "off";
-        top_padding = 5;
         bottom_padding = 5;
         left_padding = 5;
         right_padding = 5;
@@ -56,7 +55,6 @@ in
 
     skhd = {
       enable = true;
-      # Loaded files join skhd's watcher; /etc/skhdrc exists before user agents start.
       skhdConfig =
         if checkout == null then
           builtins.readFile ../../config/skhd/skhdrc
@@ -65,8 +63,6 @@ in
     };
   };
 
-  # Neither module sets a log file, so a failed rule or an skhdrc parse error
-  # was printed nowhere. The paths are the ones upstream's own services use.
   launchd.user.agents = {
     yabai.serviceConfig = {
       StandardOutPath = "/tmp/yabai_${user}.out.log";

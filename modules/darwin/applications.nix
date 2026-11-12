@@ -57,7 +57,6 @@
       "microsoft-excel"
       "microsoft-powerpoint"
       "microsoft-word"
-      # The three Office casks deselect AutoUpdate in their installers.
       "microsoft-auto-update"
       "microsoft-teams"
       "orbstack"

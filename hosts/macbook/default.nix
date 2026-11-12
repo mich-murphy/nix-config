@@ -10,6 +10,5 @@
 
   system.primaryUser = "mm";
 
-  # Set once at first activation; never bump it to track releases.
   system.stateVersion = 4;
 }

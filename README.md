@@ -48,7 +48,7 @@ machine needs it.
 | `home/neovim.nix` | Neovim and the runtime tools Mason needs |
 | `home/herdr.nix` | Herdr (terminal multiplexer) and its live config |
 | `home/agents.nix` | skills links, `AGENTS.md`, Claude Code and Pi settings |
-| `home/moshi.nix`, `underclass.nix` | the two user services, see [Services](#services) |
+| `home/moshi.nix` | the Moshi user service, see [Services](#services) |
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
 | `home/mac/packages.nix` | Mac-only tools (`doctl`, document rendering for Neovim) |
@@ -108,7 +108,6 @@ Needed once on a new machine, in this order:
    | `id_ed25519` | github.com (personal account) |
    | `github_bc` | Git inside `~/businesscraft/` (work account) |
    | `dev-01` | the `dev-01` host |
-   | `ai-dev.pub` | the `ai-dev` host |
 
    The SSH config also reads the 1Password SSH agent, so sign in to 1Password
    and enable its agent. Steps 3 and 4 need `id_ed25519` first.
@@ -134,8 +133,8 @@ Needed once on a new machine, in this order:
    `config/herdr/config.toml` binds keys to both:
 
    ```sh
-   herdr plugin install -y lmilojevicc/herdr-splits.nvim --ref v0.5.1
-   herdr plugin install -y plannotator/herdr-annotate --ref c5e565e9bdbb52d152ad15169f38ed8bae31b610
+   herdr plugin install -y lmilojevicc/herdr-splits.nvim --ref v0.5.4
+   herdr plugin install -y plannotator/herdr-annotate --ref a9973b43c1fc90044a9f15755e310e12b8465abb
    herdr plugin list
    ```
 
@@ -330,7 +329,7 @@ so check the remaining Office apps afterwards.
 
 ## Services
 
-Both run as user services on every host (launchd on the Macs, systemd on
+Moshi runs as a user service on every host (launchd on the Macs, systemd on
 dev-01).
 
 **Moshi** (`pkgs/moshi-hook`) is pinned to one release. To update it, change
@@ -342,34 +341,6 @@ not change it. A switch reinstalls the hooks only when `moshi-hook status`
 reports them out of date. The Macs run the service from the installed app
 bundle, never from the store, because macOS makes a store bundle that has run
 undeletable for garbage collection.
-
-**[underclass](https://github.com/ghuntley/underclass)** pools agent
-subscriptions behind `127.0.0.1:8080`, one pool per host. Add accounts in the
-web UI at `http://127.0.0.1:8080/` and watch the pool with `utop`. Optional
-fixed keys go in `~/.config/underclass/config.toml` (mode 0600, then restart
-the service):
-
-```toml
-proxy_key = "sk-underclass-..."
-ui_token = "..."
-```
-
-Without it, underclass generates both keys into `~/.local/share/underclass/pool.db`.
-
-Clients are pointed at underclass by hand, because the proxy key is a secret:
-
-- Claude Code: add `ANTHROPIC_BASE_URL` (`http://127.0.0.1:8080`) and
-  `CLAUDE_CODE_OAUTH_TOKEN` (the proxy key) to the `env` block of
-  `~/.claude/settings.json` and `chmod 600` it. Set both or neither. Do not
-  export the token from the shell: Pi's Claude provider would send it to
-  Anthropic.
-- Codex: add a `[model_providers.underclass]` provider (`base_url =
-  "http://127.0.0.1:8080/v1"`, `experimental_bearer_token`, `wire_api =
-  "responses"`) and `model_provider = "underclass"` to `~/.codex/config.toml`,
-  and `chmod 600` it.
-
-Pooling claude.ai OAuth credentials conflicts with Anthropic's terms
-(underclass's ADR 0023); those accounts may be invalidated.
 
 ## Notes
 
