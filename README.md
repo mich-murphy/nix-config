@@ -125,6 +125,10 @@ Needed once on a new machine, in this order:
    From then on `sudo darwin-rebuild switch --flake .` is enough. Log out and
    back in once, so that macOS loads the keyboard shortcuts and key repeat the
    switch wrote.
+
+   If a switch stops with "Existing file ... would be clobbered", something
+   has written a file where Home Manager puts a link. Move that file aside and
+   switch again.
 7. Open a new shell, then install the commit hooks: `prek install`.
 8. Install Herdr's plugins. Nix does not install them, and
    `config/herdr/config.toml` binds keys to both:
