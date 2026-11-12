@@ -19,7 +19,6 @@ in
         layout = "bsp";
         split_ratio = 0.5;
         auto_balance = "off";
-        top_padding = 5;
         bottom_padding = 5;
         left_padding = 5;
         right_padding = 5;
