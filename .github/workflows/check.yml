@@ -1,0 +1,32 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+      - name: Run commit hooks
+        if: runner.os == 'Linux'
+        run: nix shell --inputs-from . nixpkgs#prek --command prek run --all-files
+      - name: Check flake
+        run: nix flake check --print-build-logs --no-write-lock-file

@@ -120,8 +120,8 @@ home, link check and deploy-rs checks, and the Moshi hook version test. The
 Linux checks build on the Mac through Determinate Nix's native Linux builder.
 prek runs the same lint tools before each commit.
 
-CI is manual-only and partial because GitHub Actions is unavailable to the
-owner. It is not a gate.
+CI runs the same checks on every pull request and push to `main`, with one
+runner per system. Branch protection does not require it to pass.
 
 Tests cover what logic or the build derives. They do not re-assert literal
 values the configuration just set. One module assertion exists: the Moshi

@@ -1,6 +1,6 @@
 # TODO
 
-Reviewed: 2026-11-10
+Reviewed: 2026-11-11
 
 Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
@@ -46,4 +46,3 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       Deleting the line brings the desktop icons back.
 - [ ] Decide whether deploying only committed revisions should be enforced, and
       how. Today a deploy builds the working tree and records `-dirty`.
-- [ ] Decide the future of CI: add a Linux job, or delete the workflow.

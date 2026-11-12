@@ -28,7 +28,7 @@ modules/home/            Home Manager modules shared by every host
 pkgs/moshi-hook/         a package nixpkgs lacks, added by an overlay
 config/                  raw application files, linked or read by the modules
 prek.toml                commit hooks
-.github/workflows/       manual-only CI
+.github/workflows/       CI on macOS and Linux
 ```
 
 Concern files define existing nix-darwin or Home Manager options. Add a setting
@@ -203,8 +203,8 @@ flowchart TD
 
 ## Verification
 
-`nix flake check --all-systems` is the single gate. The commit hooks and CI are
-conveniences.
+`nix flake check --all-systems` is the single gate. CI runs the same checks on
+every pull request, and the commit hooks run the lint part at each commit.
 
 ```mermaid
 flowchart LR
@@ -225,7 +225,7 @@ flowchart LR
       L3["moshi-hook-version"]
     end
   end
-  CI["GitHub workflow: manual, macOS only"] -.->|"runs only these"| MAC
+  CI["GitHub Actions: a macOS and a Linux runner"] -.->|"each runs its own system"| FC
 ```
 
 - `lint`: `nixfmt --check` and `nixf-diagnose` over every `.nix` file, and
@@ -244,9 +244,12 @@ run the check again.
 
 `prek run --all-files` runs the same lint tools plus file hygiene hooks as a
 quick pre-commit pass; `prek install` (set-up step 7) makes it run on each
-commit. The GitHub workflow is manual-only and runs on macOS without
-`--all-systems`, because GitHub Actions is unavailable to the owner (usage
-limits); it is not a gate.
+commit.
+
+The GitHub workflow runs on every pull request, on each push to `main` and on
+demand. A macOS runner and a Linux runner each run `nix flake check` for their
+own system, which together is the `--all-systems` set; the Linux runner also
+runs the commit hooks. Branch protection does not require it to pass.
 
 ## Live configuration
 
