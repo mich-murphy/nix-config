@@ -7,6 +7,13 @@
 let
   agentFile = config.lib.nixConfig.file "config/agents/AGENTS.md";
   skills = config.nixConfig.skills;
+  skillNames = [
+    "bro"
+    "coordinator"
+    "create-verification"
+    "no-comments"
+    "show-me"
+  ];
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
 in
 {
@@ -15,14 +22,15 @@ in
     ".claude/CLAUDE.md".source = agentFile;
     ".codex/AGENTS.md".source = agentFile;
     ".pi/agent/AGENTS.md".source = agentFile;
-    # Per-skill links keep ~/.claude/skills a real directory so Claude
-    # Code's managed-skills sync cannot write into the skills repo.
-    ".claude/skills/bro".source = liveLink "${skills}/bro";
-    ".claude/skills/coordinator".source = liveLink "${skills}/coordinator";
-    ".claude/skills/create-verification".source = liveLink "${skills}/create-verification";
-    ".claude/skills/no-comments".source = liveLink "${skills}/no-comments";
-    ".claude/skills/show-me".source = liveLink "${skills}/show-me";
-  };
+  }
+  # Per-skill links keep ~/.claude/skills a real directory so Claude
+  # Code's managed-skills sync cannot write into the skills repo.
+  // lib.listToAttrs (
+    map (name: {
+      name = ".claude/skills/${name}";
+      value.source = liveLink "${skills}/${name}";
+    }) skillNames
+  );
 
   programs.claude-code = {
     enable = true;

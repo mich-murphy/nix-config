@@ -51,7 +51,7 @@ work.
 | Neovim configuration | `mich-murphy/neovim` | its own clone at `~/.config/nvim`; Nix installs only Neovim and its tools |
 | Skills and custom agents | `mich-murphy/skills` | clone at `~/dev/skills`, linked live on every host |
 | Pi extensions | `pi-extensions` repo | installed as packages; updated by hand |
-| dev-01 bootstrap, agent CLIs, work git identity | `machines` repo | outside this repo |
+| dev-01's bootstrap, agent CLIs and work git identity | `machines` repo | outside this repo |
 | Accounts, credentials, sessions, caches, histories, per-project trust, device identity | the application or OS | local and untracked |
 
 Built-in agent definitions stay with the tool that ships them. Codex
@@ -125,8 +125,9 @@ CI runs the same checks on every pull request and push to `main`, with one
 runner per system. Branch protection does not require it to pass.
 
 Tests cover what logic or the build derives. They do not re-assert literal
-values the configuration just set. One module assertion exists: the Moshi
-module checks that nix-darwin installs the app bundle the hooks point at.
+values the configuration just set. The Moshi module holds the only assertions:
+that nix-darwin installs the app bundle the hooks point at, and that every
+activation step its hook check is ordered after exists on that platform.
 
 A pure restructure should change no behaviour. The commit revision is embedded
 in every build, and on dev-01 the repo source is part of the home, so output

@@ -41,6 +41,7 @@ machine needs it.
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
 | `darwin/maintenance.nix` | weekly launchd job that expires system generations older than 7 days |
 | `darwin/window-management.nix` | yabai, and skhd pointed at the live `skhdrc` |
+| `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
 | `home/neovim.nix` | Neovim and the runtime tools Mason needs |

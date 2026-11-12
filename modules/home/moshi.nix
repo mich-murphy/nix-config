@@ -16,6 +16,16 @@
 }:
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
+  moshiHookPredecessors = [
+    "linkGeneration"
+    "claudeCodeSettings"
+    "piCodingAgentMutableSettings"
+  ]
+  ++ lib.optionals isDarwin [ "setupLaunchAgents" ]
+  ++ lib.optionals isLinux [
+    "moshiHookCopy"
+    "reloadSystemd"
+  ];
   exe = lib.getExe pkgs.moshi-hook;
   hookPath =
     if isDarwin then
@@ -85,10 +95,17 @@ let
   };
 in
 {
-  assertions = lib.optional (isDarwin && osConfig != null) {
-    assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
-    message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
-  };
+  assertions =
+    lib.optional (isDarwin && osConfig != null) {
+      assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
+      message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
+    }
+    # Home Manager's DAG silently ignores missing predecessor names, including
+    # upstream activation entries renamed during an upgrade.
+    ++ map (name: {
+      assertion = builtins.hasAttr name config.home.activation;
+      message = "moshi.nix: required activation predecessor '${name}' is missing from home.activation";
+    }) moshiHookPredecessors;
 
   home.packages = map wrapper [
     "moshi-hook"
@@ -134,13 +151,6 @@ in
       ''
     );
 
-    moshiHooks = lib.hm.dag.entryAfter [
-      "linkGeneration"
-      "moshiHookCopy"
-      "claudeCodeSettings"
-      "piCodingAgentMutableSettings"
-      "setupLaunchAgents"
-      "reloadSystemd"
-    ] "run ${lib.getExe ensureHooks}";
+    moshiHooks = lib.hm.dag.entryAfter moshiHookPredecessors "run ${lib.getExe ensureHooks}";
   };
 }
