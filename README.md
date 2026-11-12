@@ -133,8 +133,8 @@ Needed once on a new machine, in this order:
    `config/herdr/config.toml` binds keys to both:
 
    ```sh
-   herdr plugin install -y lmilojevicc/herdr-splits.nvim --ref v0.5.1
-   herdr plugin install -y plannotator/herdr-annotate --ref c5e565e9bdbb52d152ad15169f38ed8bae31b610
+   herdr plugin install -y lmilojevicc/herdr-splits.nvim --ref v0.5.4
+   herdr plugin install -y plannotator/herdr-annotate --ref a9973b43c1fc90044a9f15755e310e12b8465abb
    herdr plugin list
    ```
 
