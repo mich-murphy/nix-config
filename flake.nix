@@ -36,12 +36,6 @@
         "x86_64-linux"
       ];
       forAllSystems = lib.genAttrs systems;
-      localPackages =
-        pkgs:
-        lib.packagesFromDirectoryRecursive {
-          inherit (pkgs) callPackage;
-          directory = ./pkgs;
-        };
       nixpkgsConfig = {
         config.allowUnfree = true;
         overlays = [ self.overlays.default ];
@@ -59,35 +53,15 @@
             inputs.determinate.darwinModules.default
             ./hosts/${host}
             (
-              { pkgs, ... }:
+              { config, ... }:
               {
                 nixpkgs = { inherit (nixpkgsConfig) config overlays; };
 
                 system.configurationRevision = revision;
 
-                # Determinate installs Nix; its module stops nix-darwin managing it.
-                determinateNix.enable = true;
-                # The module takes over the installer's nix.custom.conf. Allow
-                # replacing only the untouched installer defaults (hashes from
-                # nix-darwin's modules/nix); an edited file still aborts.
-                environment.etc."nix/nix.custom.conf".knownSha256Hashes = [
-                  "6787fade1cf934f82db554e78e1fc788705c2c5257fddf9b59bdd963ca6fec63" # DetSys v0.33.0
-                  "3bd68ef979a42070a44f8d82c205cfd8e8cca425d91253ec2c10a88179bb34aa" # DetSys v0.34.0
-                ];
-
-                system.primaryUser = "mm";
-                users.users.mm = {
-                  home = "/Users/mm";
-                  shell = pkgs.fish;
-                };
-                programs.fish.enable = true;
-
                 home-manager = {
-                  useGlobalPkgs = true;
-                  useUserPackages = true;
-                  backupFileExtension = "backup";
                   extraSpecialArgs = { inherit inputs; };
-                  users.mm.imports = [
+                  users.${config.system.primaryUser}.imports = [
                     ./modules/home
                     ./hosts/${host}/home.nix
                   ];
@@ -123,7 +97,7 @@
         })
       ];
 
-      linksCheck =
+      writableLinksCheck =
         pkgs: host: home:
         let
           inherit (home.nixConfig) checkout skills;
@@ -134,6 +108,8 @@
           checkout=${lib.escapeShellArg (toString checkout)}
           found=0
           while IFS= read -r -d "" link; do
+            # mkOutOfStoreSymlink makes home-files -> store symlink -> live path.
+            # Ordinary store-backed sources are not writable links and are skipped.
             target=$(readlink "$link")
             [ -L "$target" ] || continue
             found=$((found + 1))
@@ -192,12 +168,12 @@
           // lib.concatMapAttrs (
             host: darwin:
             let
-              home = darwin.config.home-manager.users.mm;
+              home = darwin.config.home-manager.users.${darwin.config.system.primaryUser};
             in
             {
               "${host}-system" = darwin.config.system.build.toplevel;
               "${host}-home" = home.home.activationPackage;
-              "${host}-links" = linksCheck pkgsFor.aarch64-darwin host home;
+              "${host}-links" = writableLinksCheck pkgsFor.aarch64-darwin host home;
             }
           ) self.darwinConfigurations;
 
@@ -207,18 +183,19 @@
           in
           {
             dev-01-home = home.home.activationPackage;
-            dev-01-links = linksCheck pkgsFor.x86_64-linux "dev-01" home;
+            dev-01-links = writableLinksCheck pkgsFor.x86_64-linux "dev-01" home;
           }
-          // deploy-rs.lib.x86_64-linux.deployChecks self.deploy;
+          // deployPkgs.deploy-rs.lib.deployChecks self.deploy;
       };
     in
     {
-      overlays.default = final: _prev: localPackages final;
+      overlays.default = final: _prev: {
+        moshi-hook = final.callPackage ./pkgs/moshi-hook/package.nix { };
+      };
 
-      packages = forAllSystems (
-        system:
-        lib.filterAttrs (_: lib.meta.availableOn { inherit system; }) (localPackages pkgsFor.${system})
-      );
+      packages = forAllSystems (system: {
+        inherit (pkgsFor.${system}) moshi-hook;
+      });
 
       formatter = forAllSystems (system: pkgsFor.${system}.nixfmt-tree);
 

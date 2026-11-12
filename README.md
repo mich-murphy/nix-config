@@ -39,7 +39,8 @@ machine needs it.
 | --- | --- |
 | `darwin/system.nix` | DNS, firewall, Touch ID for sudo, tailnet-only sshd, Dock, Finder, keyboard, power settings |
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
-| `darwin/maintenance.nix` | weekly launchd job that expires system generations older than 7 days |
+| `darwin/nix.nix` | Determinate Nix owning the Nix installation, and a weekly launchd job that expires system generations older than 7 days |
+| `darwin/user.nix` | the primary user (the one place the user name is written), its account and shell, Home Manager's integration settings |
 | `darwin/window-management.nix` | yabai, and skhd pointed at the live `skhdrc` |
 | `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |
