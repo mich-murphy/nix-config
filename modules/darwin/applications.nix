@@ -43,10 +43,12 @@
       "1password"
       "stats"
       "obsidian"
-      "zotero@beta"
+      "zotero"
       "tailscale-app"
       "utm"
-      "jordanbaird-ice"
+      # Thaw 3 is the only line that supports macOS 27, and it ships only
+      # as a beta; the stable cask is Thaw 2, built for macOS 15 and 26.
+      "thaw@beta"
       "firefox"
       "google-chrome"
       "iina"
@@ -58,7 +60,7 @@
       # The three Office casks deselect AutoUpdate in their installers.
       "microsoft-auto-update"
       "microsoft-teams"
-      "docker-desktop"
+      "orbstack"
       "raycast"
       "winbox"
       "linearmouse"
