@@ -11,15 +11,15 @@
   testers,
 }:
 let
-  version = "0.4.50";
+  version = "0.4.54";
   sources = {
     aarch64-darwin = {
       url = "https://cdn.getmoshi.app/hook/v${version}/moshi-hook-app_Darwin_arm64.tar.gz";
-      hash = "sha256-Ol/Kabv1PcKQQyST+CiNB2vOj7uIk+F0CZSlSpoznt8=";
+      hash = "sha256-vELnwNxsE+tBXXPo7FkYObSkQsbKOAYQudA3svjm12Q=";
     };
     x86_64-linux = {
       url = "https://cdn.getmoshi.app/hook/v${version}/moshi-hook_Linux_x86_64.tar.gz";
-      hash = "sha256-eTxWsvAsPjQ24vglI7tuFTi//03j7Ji2seknDW8WfaM=";
+      hash = "sha256-SxPdAppaMe4r3bl7uVY/KBLuwP8exzDpIp00xQ6PeLk=";
     };
   };
   system = stdenvNoCC.hostPlatform.system;
