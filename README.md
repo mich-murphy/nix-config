@@ -108,7 +108,6 @@ Needed once on a new machine, in this order:
    | `id_ed25519` | github.com (personal account) |
    | `github_bc` | Git inside `~/businesscraft/` (work account) |
    | `dev-01` | the `dev-01` host |
-   | `ai-dev.pub` | the `ai-dev` host |
 
    The SSH config also reads the 1Password SSH agent, so sign in to 1Password
    and enable its agent. Steps 3 and 4 need `id_ed25519` first.
