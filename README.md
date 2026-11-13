@@ -41,7 +41,7 @@ machine needs it.
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
 | `darwin/nix.nix` | Determinate Nix owning the Nix installation and garbage collection, a weekly launchd job that expires system generations older than 7 days, no bundled `darwin-uninstaller` |
 | `darwin/user.nix` | the primary user's account and shell (the name itself is set in `hosts/<host>/default.nix`), Home Manager's integration settings |
-| `darwin/window-management.nix` | yabai, JankyBorders, and skhd loading the live `skhdrc` |
+| `darwin/window-management.nix` | yabai |
 | `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
@@ -51,6 +51,7 @@ machine needs it.
 | `home/moshi.nix` | the Moshi user service, see [Services](#services) |
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
+| `home/mac/window-management.nix` | JankyBorders, and skhd with its live `skhdrc` |
 | `home/mac/packages.nix` | Mac-only tools (`doctl`, document rendering for Neovim) |
 
 `mkDarwin` and `mkHome` in `flake.nix` assemble each host from these directories.
@@ -266,8 +267,7 @@ the deployed generation and is read-only.
 
 | File or tool | Mac | dev-01 | Edit it |
 | --- | --- | --- | --- |
-| Ghostty, Karabiner | live link into the checkout | not installed | on the Mac, in `config/` |
-| skhd | `/etc/skhdrc` loads `config/skhd/skhdrc` from the checkout | not installed | on the Mac, in `config/` |
+| Ghostty, Karabiner, skhd | live link into the checkout | not installed | on the Mac, in `config/` |
 | Herdr, `AGENTS.md` | live link into the checkout | read-only, from the deployed generation | on the Mac, then deploy |
 | Skills | live link into `~/dev/skills` | live link into `~/dev/skills` | in that clone; `git pull` on dev-01 |
 | Neovim config | clone at `~/.config/nvim` | clone at `~/.config/nvim` | in that clone; `git pull` on dev-01 |
@@ -279,8 +279,7 @@ Notes:
   in Nix. If a switch stops with "changed during activation", an agent saved its
   settings at that moment; run it again.
 - `lib.nixConfig.file "<path>"` in a module picks the live link or the store
-  copy. If a Mac's checkout moves, set `nixConfig.checkout`; skhd reads the
-  same value.
+  copy. If a Mac's checkout moves, set `nixConfig.checkout`.
 - Herdr does not watch its config. After editing it, press `Ctrl+A`, then
   `Shift+R` in each running session.
 - Karabiner owns its whole config directory; its generated backups and complex
@@ -291,14 +290,13 @@ Notes:
   lasts until the next switch.
 - LinearMouse's settings are not in this repository; set them in the app on
   each Mac.
-- yabai and skhd write to `/tmp/yabai_<user>.err.log` and
-  `/tmp/skhd_<user>.err.log`. Look there when a rule or a key binding does
-  nothing.
+- yabai writes to `/tmp/yabai_<user>.err.log` and skhd to
+  `~/Library/Logs/skhd/skhd.err.log`. Look there when a rule or a key binding
+  does nothing.
 - JankyBorders draws a 3 pt cyan border around the focused window. Its
-  settings are in `darwin/window-management.nix`; to try a value without a
+  settings are in `home/mac/window-management.nix`; to try a value without a
   switch, run `borders <option>=<value>`, which updates the running instance
-  until it restarts. It logs to `/tmp/borders_<user>.out.log`, where
-  `Invalid argument 'blur_radius=...'` at each start is expected.
+  until it restarts. It logs to `~/Library/Logs/borders/`.
 - On macOS 27, Ctrl+3 and above stop switching desktops after a display
   connects or disconnects, until the Dock restarts. yabai restarts it two
   seconds after each change, so expect the Dock to flicker then. Shift+Alt+D
