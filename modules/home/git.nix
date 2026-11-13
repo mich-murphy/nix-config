@@ -72,6 +72,7 @@
       ignores = [
         ".venv"
         ".envrc"
+        ".direnv"
         ".tox"
         "*.pyc"
       ];
