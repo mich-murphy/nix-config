@@ -335,7 +335,7 @@ so check the remaining Office apps afterwards.
 ## Services
 
 Moshi runs as a user service on every host (launchd on the Macs, systemd on
-dev-01).
+dev-01). The laptop also runs llama-server.
 
 **Moshi** (`pkgs/moshi-hook`) is pinned to one release. To update it, change
 `version` and both checksums from Moshi's
@@ -346,6 +346,27 @@ not change it. A switch reinstalls the hooks only when `moshi-hook status`
 reports them out of date. The Macs run the service from the installed app
 bundle, never from the store, because macOS makes a store bundle that has run
 undeletable for garbage collection.
+
+**llama-server** (`hosts/laptop/llama.nix`) serves local models to Pi through
+llama.cpp's router on `127.0.0.1:9931`, which `LLAMA_BASE_URL` points Pi at.
+llama.cpp comes from Homebrew, and the router runs at login. Presets are in
+`config/llama/models.ini`, with model paths relative to `~/models`. A loaded
+model sleeps after 5 idle minutes and frees its memory; the idle router holds
+about 0.1 GB. Select a model with `/model` in Pi, or load one with `/llama`.
+The log is `~/Library/Logs/llama-server.log`. A switch that upgrades llama.cpp
+does not restart the router; run
+`launchctl kickstart -k gui/$(id -u)/org.nix-community.home.llama-server`.
+
+The model files are not managed by Nix. To fetch them on a new laptop:
+
+```sh
+hf=https://huggingface.co/unsloth
+fetch() { curl -fL --create-dirs -C - -o ~/models/$1 "$hf/$2?download=true"; }
+fetch qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf
+fetch qwen3.6-35b-a3b/mmproj-F16.gguf Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/mmproj-F16.gguf
+fetch qwen3.8-27b/Qwen3.8-27B-UD-Q4_K_XL.gguf Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf
+fetch qwen3.8-27b/mmproj-F16.gguf Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf
+```
 
 ## Notes
 
