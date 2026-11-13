@@ -1,6 +1,17 @@
 {
   # Determinate installs Nix; its module stops nix-darwin managing it.
-  determinateNix.enable = true;
+  determinateNix = {
+    enable = true;
+    # Determinate Nixd is the only collector. The job below only expires
+    # generations, which its disk-pressure collector does not do
+    # (https://github.com/DeterminateSystems/determinate/issues/169).
+    determinateNixd.garbageCollector.strategy = "automatic";
+  };
+
+  # The uninstaller embeds a second, uncached darwin-system build;
+  # `nix run nix-darwin#darwin-uninstaller` does the same job when needed.
+  system.tools.darwin-uninstaller.enable = false;
+
   # The module takes over the installer's nix.custom.conf. Allow
   # replacing only the untouched installer defaults (hashes from
   # nix-darwin's modules/nix); an edited file still aborts.
