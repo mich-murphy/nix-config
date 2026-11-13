@@ -41,7 +41,7 @@ machine needs it.
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
 | `darwin/nix.nix` | Determinate Nix owning the Nix installation, and a weekly launchd job that expires system generations older than 7 days |
 | `darwin/user.nix` | the primary user's account and shell (the name itself is set in `hosts/<host>/default.nix`), Home Manager's integration settings |
-| `darwin/window-management.nix` | yabai, and skhd loading the live `skhdrc` |
+| `darwin/window-management.nix` | yabai, JankyBorders, and skhd loading the live `skhdrc` |
 | `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
@@ -294,6 +294,11 @@ Notes:
 - yabai and skhd write to `/tmp/yabai_<user>.err.log` and
   `/tmp/skhd_<user>.err.log`. Look there when a rule or a key binding does
   nothing.
+- JankyBorders draws a 3 pt purple border around the focused window. Its
+  settings are in `darwin/window-management.nix`; to try a value without a
+  switch, run `borders <option>=<value>`, which updates the running instance
+  until it restarts. It logs to `/tmp/borders_<user>.out.log`, where
+  `Invalid argument 'blur_radius=...'` at each start is expected.
 - On macOS 27, Ctrl+3 and above stop switching desktops after a display
   connects or disconnects, until the Dock restarts. yabai restarts it two
   seconds after each change, so expect the Dock to flicker then. Shift+Alt+D
