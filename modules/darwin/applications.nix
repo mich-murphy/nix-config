@@ -22,10 +22,7 @@
     onActivation = {
       autoUpdate = true;
       upgrade = true;
-      # Also uninstalls undeclared App Store apps, whatever the masApps option
-      # text says (https://github.com/nix-darwin/nix-darwin/issues/1860).
       cleanup = "uninstall";
-      # brew bundle runs under sudo, so it does not see environment.variables.
       extraEnv = {
         HOMEBREW_NO_ENV_HINTS = "1";
         HOMEBREW_SERVICES_NO_DOMAIN_WARNING = "1";
@@ -66,6 +63,7 @@
       "wispr-flow"
       "chatgpt"
       "nextcloud"
+      "grok-bot"
     ];
     brews = [
       "pi-coding-agent"
