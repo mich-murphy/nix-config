@@ -5,10 +5,15 @@
     pkgs.tmux
     pkgs.mosh
     pkgs.nmap
-    pkgs._1password-cli
     pkgs.gnused
     pkgs.moshi-hook.app
+    # The same mas nix-darwin gives `brew bundle` for masApps.
+    pkgs.mas
   ];
+
+  # Also installs `op` at /usr/local/bin/op, the only path where the
+  # 1Password app's CLI integration finds it.
+  programs._1password.enable = true;
 
   fonts.packages = [
     pkgs.nerd-fonts.jetbrains-mono
@@ -29,9 +34,6 @@
       };
     };
     casks = [
-      # nixpkgs azure-cli depends on fabric, which is marked broken with
-      # invoke >= 3 (https://github.com/fabric/fabric/issues/2376).
-      "azure-cli"
       "claude-code@latest"
       "codex"
       "ghostty"
@@ -64,7 +66,6 @@
     ];
     brews = [
       "pi-coding-agent"
-      "mas"
       "mole"
     ];
     masApps = {
