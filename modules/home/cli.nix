@@ -1,9 +1,4 @@
 { pkgs, ... }:
-let
-  btopWithManpage = pkgs.btop.overrideAttrs (previousAttrs: {
-    nativeBuildInputs = (previousAttrs.nativeBuildInputs or [ ]) ++ [ pkgs.lowdown-unsandboxed ];
-  });
-in
 {
   home.packages = [
     pkgs.curl
@@ -11,7 +6,6 @@ in
     pkgs.fd
     pkgs.just
     pkgs.jq
-    pkgs.opencode
     pkgs.ouch
     pkgs.procs
     pkgs.prek
@@ -65,7 +59,6 @@ in
     };
     btop = {
       enable = true;
-      package = btopWithManpage;
       settings = {
         color_theme = "TTY";
         theme_background = false;

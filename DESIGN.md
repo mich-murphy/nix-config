@@ -153,7 +153,6 @@ request, not committed.
 | WezTerm is no longer installed or linked; `config/wezterm/` is kept | The owner no longer uses it; the config is retained |
 | `.envrc` is globally ignored and untracked | These files can hold secrets; `nix develop` provides this repo's shell |
 | Home Manager stops a switch when a file it does not own is where a link goes (`backupFileExtension` is unset) | Moving the file aside would hide an application replacing a link this repo manages, and a second collision fails anyway once the backup exists |
-| btop is overridden to build a man page | Stock btop ships none |
 | The menu bar manager is Thaw from the `thaw@beta` cask, not Ice | Ice has had no code commit since June 2025 and hangs on "Loading menu bar items" on macOS 27. Thaw is its maintained fork, and only Thaw 3, which ships as a beta, supports macOS 27; the stable `thaw` cask is Thaw 2, for macOS 15 and 26. Move to `thaw` once Thaw 3 is stable |
 | Containers run in OrbStack, not Docker Desktop | It starts faster and uses less memory and disk on Apple Silicon, and also runs Linux machines. Commercial use needs a paid licence |
 | Microsoft AutoUpdate is its own cask | The Word, Excel and PowerPoint casks deselect it in their installers, so a new Mac would not get Office's updater from them |
