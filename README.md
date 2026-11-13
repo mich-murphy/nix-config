@@ -294,7 +294,7 @@ Notes:
 - yabai and skhd write to `/tmp/yabai_<user>.err.log` and
   `/tmp/skhd_<user>.err.log`. Look there when a rule or a key binding does
   nothing.
-- JankyBorders draws a 3 pt purple border around the focused window. Its
+- JankyBorders draws a 3 pt cyan border around the focused window. Its
   settings are in `darwin/window-management.nix`; to try a value without a
   switch, run `borders <option>=<value>`, which updates the running instance
   until it restarts. It logs to `/tmp/borders_<user>.out.log`, where

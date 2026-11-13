@@ -59,9 +59,10 @@ in
       enable = true;
       style = "round";
       width = 3.0;
+      order = "above";
       hidpi = true;
-      # TokyoNight Night's purple (#bb9af7), as in Ghostty's theme.
-      active_color = "0xffbb9af7";
+      # TokyoNight Night's cyan (#7dcfff).
+      active_color = "0xff7dcfff";
       inactive_color = "0x00000000";
     };
 
