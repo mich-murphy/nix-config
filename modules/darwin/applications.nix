@@ -42,7 +42,6 @@
       "obsidian"
       "zotero"
       "tailscale-app"
-      "utm"
       # Thaw 3 is the only line that supports macOS 27, and it ships only
       # as a beta; the stable cask is Thaw 2, built for macOS 15 and 26.
       "thaw@beta"
@@ -58,10 +57,8 @@
       "microsoft-teams"
       "orbstack"
       "raycast"
-      "winbox"
       "linearmouse"
       "wispr-flow"
-      "chatgpt"
       "nextcloud"
       "grok-bot"
     ];
