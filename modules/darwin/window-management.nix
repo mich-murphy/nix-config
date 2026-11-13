@@ -53,6 +53,18 @@ in
       '';
     };
 
+    # Settings are passed as arguments, so launchd restarts borders when one
+    # changes. Try a value live with `borders <option>=<value>`.
+    jankyborders = {
+      enable = true;
+      style = "round";
+      width = 3.0;
+      hidpi = true;
+      # TokyoNight Night's purple (#bb9af7), as in Ghostty's theme.
+      active_color = "0xffbb9af7";
+      inactive_color = "0x00000000";
+    };
+
     skhd = {
       enable = true;
       skhdConfig =
@@ -71,6 +83,10 @@ in
     skhd.serviceConfig = {
       StandardOutPath = "/tmp/skhd_${user}.out.log";
       StandardErrorPath = "/tmp/skhd_${user}.err.log";
+    };
+    jankyborders.serviceConfig = {
+      StandardOutPath = "/tmp/borders_${user}.out.log";
+      StandardErrorPath = "/tmp/borders_${user}.err.log";
     };
   };
 }
