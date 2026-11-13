@@ -39,7 +39,7 @@ machine needs it.
 | --- | --- |
 | `darwin/system.nix` | DNS, firewall, Touch ID for sudo, tailnet-only sshd, Dock, Finder, keyboard, power settings |
 | `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
-| `darwin/nix.nix` | Determinate Nix owning the Nix installation, and a weekly launchd job that expires system generations older than 7 days |
+| `darwin/nix.nix` | Determinate Nix owning the Nix installation and garbage collection, a weekly launchd job that expires system generations older than 7 days, no bundled `darwin-uninstaller` |
 | `darwin/user.nix` | the primary user's account and shell (the name itself is set in `hosts/<host>/default.nix`), Home Manager's integration settings |
 | `darwin/window-management.nix` | yabai, JankyBorders, and skhd loading the live `skhdrc` |
 | `home/live-files.nix` | `nixConfig.checkout`, `nixConfig.skills` and `lib.nixConfig.file`, see [Live configuration](#live-configuration) |
@@ -372,6 +372,9 @@ fetch qwen3.8-27b/mmproj-F16.gguf Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf
 
 - Determinate Nix manages Nix itself and its garbage collection on the Macs
   (`determinateNix.enable`); nix-darwin's own Nix management is off.
+- The user flake registry pins `nixpkgs` to this flake's input, so
+  `nix shell nixpkgs#…` uses the same revision as the system instead of
+  Determinate's default `nixpkgs-weekly`.
 - `nix develop` provides `nixfmt`, `nixf-diagnose`, `nvd` and `deploy`. For
   direnv, create a local `.envrc` containing `use flake` (globally ignored).
 - `nvd diff /run/current-system ./result` after `darwin-rebuild build --flake .`

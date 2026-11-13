@@ -30,9 +30,12 @@
     };
 
     file.".hushlogin".text = "";
-
-    enableNixpkgsReleaseCheck = false;
   };
+
+  # Determinate's global registry points `nixpkgs` at FlakeHub's
+  # nixpkgs-weekly. Pin it to this flake's nixpkgs so `nix shell nixpkgs#…`
+  # reuses store paths the system already has.
+  nix.registry.nixpkgs.flake = inputs.nixpkgs;
 
   manual.manpages.enable = false;
 }

@@ -93,8 +93,9 @@ Code's skill sync cannot write into the skills repo.
   declared, App Store apps included, and never zaps, because Nix rollback does
   not restore removed application data.
 - Determinate Nix owns the Nix installation, so nix-darwin does not manage Nix.
-  Its daemon runs garbage collection; a weekly job expires old system
-  generations so that collection can free them.
+  Its daemon is the only garbage collector, as Determinate recommends. A
+  weekly job expires old system generations so that collection can free them,
+  because the daemon collects by disk pressure and never expires generations.
 - Each resource has one activation owner: one Home Manager composition per
   user, and no second tool managing the same link or service.
 - Pi extensions are updated by hand with `pi update --extensions`, never by a
