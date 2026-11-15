@@ -48,6 +48,8 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 Next check: 2026-12-16. On or after that date, check each pin below. Bump
 any that are behind, then move the date on a month.
 
+- [ ] Flake inputs (`flake.lock`, last updated 2026-11-16): run
+      `nix flake update` on its own stack layer and let CI build every host.
 - [ ] Moshi (`pkgs/moshi-hook`, 0.4.57): compare with Moshi's
       [Homebrew formula](https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb).
       The README's Services section says how to update it.
