@@ -12,7 +12,8 @@ hooks = [
   { id = "detect-private-key" },
   { id = "end-of-file-fixer" },
   { id = "mixed-line-ending", args = ["--fix=lf"] },
-  { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"] },
+  # A patch's blank context lines are a single space; stripping it breaks the patch.
+  { id = "trailing-whitespace", args = ["--markdown-linebreak-ext=md"], exclude = '\.patch$' },
 ]
 
 [[repos]]

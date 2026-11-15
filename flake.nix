@@ -182,13 +182,22 @@
       };
     in
     {
-      overlays.default = final: _prev: {
+      overlays.default = final: prev: {
         moshi-hook = final.callPackage ./pkgs/moshi-hook/package.nix { };
+        jankyborders = final.callPackage ./pkgs/jankyborders/package.nix {
+          inherit (prev) jankyborders;
+        };
       };
 
-      packages = forAllSystems (system: {
-        inherit (pkgsFor.${system}) moshi-hook;
-      });
+      packages = forAllSystems (
+        system:
+        {
+          inherit (pkgsFor.${system}) moshi-hook;
+        }
+        // lib.optionalAttrs pkgsFor.${system}.stdenv.hostPlatform.isDarwin {
+          inherit (pkgsFor.${system}) jankyborders;
+        }
+      );
 
       formatter = forAllSystems (system: pkgsFor.${system}.nixfmt-tree);
 
