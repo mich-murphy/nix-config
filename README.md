@@ -148,7 +148,7 @@ Needed once on a new machine, in this order:
 
    ```sh
    herdr plugin install -y lmilojevicc/herdr-splits.nvim --ref v0.5.4
-   herdr plugin install -y plannotator/herdr-annotate --ref a9973b43c1fc90044a9f15755e310e12b8465abb
+   herdr plugin install -y plannotator/herdr-annotate --ref dd147a9faf5ab7d716a31abca070c80af508ffbc
    herdr plugin list
    ```
 
