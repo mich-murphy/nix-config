@@ -26,6 +26,7 @@ modules/darwin/          nix-darwin modules shared by the Macs
 modules/home/            Home Manager modules shared by every host
 └── mac/                 Home Manager modules only the Macs import
 pkgs/moshi-hook/         a package nixpkgs lacks, added by an overlay
+pkgs/jankyborders/       nixpkgs' JankyBorders with a local patch, by an overlay
 config/                  raw application files, linked or read by the modules
 prek.toml                commit hooks
 .github/workflows/       CI on macOS and Linux
@@ -296,7 +297,9 @@ Notes:
 - JankyBorders draws a 3 pt cyan border around the focused window. Its
   settings are in `home/mac/window-management.nix`; to try a value without a
   switch, run `borders <option>=<value>`, which updates the running instance
-  until it restarts. It logs to `~/Library/Logs/borders/`.
+  until it restarts. It logs to `~/Library/Logs/borders/`. It is patched so
+  that the border follows the rounder bottom corners macOS gives a window near
+  the display's rounded corners; see [Patched packages](#patched-packages).
 - On macOS 27, Ctrl+3 and above stop switching desktops after a display
   connects or disconnects, until the Dock restarts. yabai restarts it two
   seconds after each change, so expect the Dock to flicker then. Shift+Alt+D
@@ -329,6 +332,30 @@ nix eval --raw .#darwinConfigurations.macbook.config.homebrew.brewfile |
 Without `--force` it only lists; no output means nothing would be removed.
 Removing one Office cask also removes the licensing helpers the others share,
 so check the remaining Office apps afterwards.
+
+### Patched packages
+
+`pkgs/jankyborders` overrides nixpkgs' JankyBorders with
+`screen-corner-radii.patch`, so its version follows nixpkgs. The patch is one
+`git format-patch` commit on top of upstream's `v1.9.0` tag, and needs no
+other checkout. cache.nixos.org has no build of the patched package, so it
+builds locally, which takes a few seconds.
+
+When a nixpkgs update bumps JankyBorders and the patch no longer applies, the
+build stops in its patch phase. Apply it to the new tag, resolve the conflicts
+and export it again (`v1.10.0` stands for the new version):
+
+```sh
+patch=~/dev/nix-config/pkgs/jankyborders/screen-corner-radii.patch
+git clone https://github.com/FelixKratz/JankyBorders && cd JankyBorders
+git switch -c screen-corner-radii v1.10.0
+git am -3 "$patch"   # on conflict: fix, git add, git am --continue
+make && ./bin/borders --version
+git format-patch -1 --stdout --no-signature > "$patch"
+nix build ~/dev/nix-config#jankyborders
+```
+
+Once upstream has the fix, delete `pkgs/jankyborders` and its overlay entry.
 
 ## Services
 

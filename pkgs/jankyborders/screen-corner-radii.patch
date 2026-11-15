@@ -1,0 +1,401 @@
+From cf99567a84e0e6d4033183387fdaef1cd8cb2e2c Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Fri, 13 Nov 2026 22:29:49 +1100
+Subject: [PATCH] match bottom corner radii to rounded display corners
+
+---
+ src/border.c       | 120 ++++++++++++++++++++++++++++++++++++++++++---
+ src/border.h       |   1 +
+ src/main.c         |   2 +
+ src/misc/drawing.h |  66 +++++++++++++++++++++----
+ src/misc/window.h  |  40 +++++++++++++++
+ src/misc/yabai.h   |   1 +
+ src/windows.c      |  19 ++-----
+ 7 files changed, 219 insertions(+), 30 deletions(-)
+
+diff --git a/src/border.c b/src/border.c
+index 0c0a28e..bb15511 100644
+--- a/src/border.c
++++ b/src/border.c
+@@ -7,6 +7,94 @@
+ 
+ extern struct settings g_settings;
+ 
++// Loaded via dlsym in main.c
++extern CGError (*JBSLSDisplayGetCornerRadii)(uint32_t, double*, double*, double*, double*);
++
++// Returns the corner radius of the display that holds most of the window and
++// writes its bounds to `display_bounds`. Returns 0 when the display has square
++// corners or the radius is unavailable.
++static float border_display_corner_radius(CGRect window_frame, CGRect* display_bounds) {
++  if (!JBSLSDisplayGetCornerRadii) return 0.f;
++
++  uint32_t display_ids[16];
++  uint32_t count = 0;
++  if (CGGetActiveDisplayList(16, display_ids, &count) != kCGErrorSuccess) {
++    return 0.f;
++  }
++
++  uint32_t display_id = 0;
++  CGFloat max_area = 0;
++  for (uint32_t i = 0; i < count; i++) {
++    CGRect bounds = CGDisplayBounds(display_ids[i]);
++    CGRect overlap = CGRectIntersection(bounds, window_frame);
++    CGFloat area = overlap.size.width * overlap.size.height;
++    if (!CGRectIsNull(overlap) && area > max_area) {
++      max_area = area;
++      display_id = display_ids[i];
++      *display_bounds = bounds;
++    }
++  }
++  if (!display_id) return 0.f;
++
++  double radii[4] = { 0, 0, 0, 0 };
++  if (JBSLSDisplayGetCornerRadii(display_id,
++                                 &radii[0],
++                                 &radii[1],
++                                 &radii[2],
++                                 &radii[3]  ) != kCGErrorSuccess) {
++    return 0.f;
++  }
++  return fmax(fmax(radii[0], radii[1]), fmax(radii[2], radii[3]));
++}
++
++// On displays with rounded corners, AppKit widens the bottom corners of a
++// window as they approach the display corners, so that both curves line up
++// (see -[NSThemeFrame _adjustedCornerRadii:]). WindowServer does not report
++// these radii, so apply the same rule here.
++static struct corner_radii border_window_corner_radii(struct border* border, CGRect window_frame) {
++  float radius = border->radius;
++  struct corner_radii radii = corner_radii_uniform(radius);
++
++  CGRect display_bounds;
++  float display_radius = border_display_corner_radius(window_frame,
++                                                      &display_bounds);
++  if (display_radius <= 0.f) return radii;
++
++  // Window bounds use a top-left origin, so the bottom edge is at max y.
++  float bottom = 1.f - fabs(CGRectGetMaxY(window_frame)
++                            - CGRectGetMaxY(display_bounds)) / display_radius;
++  float left = 1.f - fabs(CGRectGetMinX(window_frame)
++                          - CGRectGetMinX(display_bounds)) / display_radius;
++  float right = 1.f - fabs(CGRectGetMaxX(window_frame)
++                           - CGRectGetMaxX(display_bounds)) / display_radius;
++
++  float t_left = fminf(left, bottom);
++  float t_right = fminf(right, bottom);
++  if (t_left > 0.f) {
++    radii.bottom_left = radius + t_left * (display_radius - radius);
++  }
++  if (t_right > 0.f) {
++    radii.bottom_right = radius + t_right * (display_radius - radius);
++  }
++  return radii;
++}
++
++// Refreshes the base radius of the target window and returns the radii its
++// border should follow. WindowServer reports no uniform radius exactly when
++// the corners differ, so only then follow the display corners. Windows that
++// keep uniform corners near the display edge are left untouched.
++static struct corner_radii border_target_corner_radii(struct border* border, CGRect window_frame) {
++  float radius = window_corner_radius(border->cid, border->target_wid);
++  if (radius > 0.f) {
++    if (radius != border->radius) {
++      border->radius = radius;
++      border->inner_radius = radius + 1;
++    }
++    return corner_radii_uniform(radius);
++  }
++  return border_window_corner_radii(border, window_frame);
++}
++
+ struct settings* border_get_settings(struct border* border) {
+   assert(pthread_main_np() != 0);
+   return border->setting_override.enabled
+@@ -36,6 +124,12 @@ static bool border_calculate_bounds(struct border* border, CGRect* frame, struct
+   else SLSGetWindowBounds(border->cid, border->target_wid, &window_frame);
+ 
+   border->target_bounds = window_frame;
++
++  // Proxies have no real window to query and keep the radii they were
++  // created with.
++  if (!border->is_proxy) {
++    border->radii = border_target_corner_radii(border, window_frame);
++  }
+   border->too_small = border_check_too_small(border, window_frame);
+   if (border->too_small) {
+     border_hide(border);
+@@ -92,11 +186,9 @@ static void border_draw(struct border* border, CGRect frame, struct settings* se
+ 
+     CGPathAddRect(inner_clip_path, NULL, path_rect);
+   } else {
+-    CGPathAddRoundedRect(inner_clip_path,
+-                         NULL,
+-                         CGRectInset(path_rect, 1.0, 1.0),
+-                         border->inner_radius,
+-                         border->inner_radius             );
++    drawing_path_add_rounded_rect(inner_clip_path,
++                                  CGRectInset(path_rect, 1.0, 1.0),
++                                  corner_radii_outset(border->radii, 1.f));
+   }
+   drawing_clip_between_rect_and_path(border->context, frame, inner_clip_path);
+ 
+@@ -115,7 +207,10 @@ static void border_draw(struct border* border, CGRect frame, struct settings* se
+                                               -settings->border_width / 2.f);
+     }
+   } else {
+-    float corner_radius = settings->border_style == BORDER_STYLE_ROUND_UNIFORM ? 9.0 : border->radius;
++    struct corner_radii corner_radius
++                         = settings->border_style == BORDER_STYLE_ROUND_UNIFORM
++                           ? corner_radii_uniform(9.0)
++                           : border->radii;
+ 
+     if (settings->border_style == BORDER_STYLE_ROUND_UNIFORM) {
+       drawing_draw_rounded_rect_with_inset(border->context,
+@@ -316,6 +411,19 @@ void border_move(struct border* border) {
+     pthread_mutex_lock(&border->mutex);
+     CGRect window_frame;
+     SLSGetWindowBounds(border->cid, border->target_wid, &window_frame);
++
++    // Moving towards or away from a display corner changes the bottom
++    // corner radii, which needs a redraw rather than just a move.
++    if (!corner_radii_equal(border_target_corner_radii(border, window_frame),
++                            border->radii                                 )) {
++      border->needs_redraw = true;
++      pthread_mutex_unlock(&border->mutex);
++      dispatch_async(dispatch_get_main_queue(), ^{
++        border_update(border, false);
++      });
++      return;
++    }
++
+     CGPoint origin = { .x = window_frame.origin.x
+                             - settings->border_width
+                             - BORDER_PADDING,
+diff --git a/src/border.h b/src/border.h
+index ec357ad..fc20ee6 100644
+--- a/src/border.h
++++ b/src/border.h
+@@ -73,6 +73,7 @@ struct border {
+ 
+   float radius;
+   float inner_radius;
++  struct corner_radii radii;
+ 
+   CGPoint origin;
+   CGRect frame;
+diff --git a/src/main.c b/src/main.c
+index 55918f8..75f796d 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -23,6 +23,7 @@
+ 
+ // Resolved via dlsym because of availability
+ CFArrayRef (* JBSLSWindowIteratorGetCornerRadii)(CFTypeRef) = NULL;
++CGError (* JBSLSDisplayGetCornerRadii)(uint32_t, double*, double*, double*, double*) = NULL;
+ 
+ pid_t g_pid;
+ mach_port_t g_server_port;
+@@ -164,6 +165,7 @@ void load_symbols() {
+     void* lib = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY | RTLD_LOCAL);
+     if (lib) {
+       JBSLSWindowIteratorGetCornerRadii = dlsym(lib, "SLSWindowIteratorGetCornerRadii");
++      JBSLSDisplayGetCornerRadii = dlsym(lib, "SLSDisplayGetCornerRadii");
+     }
+   }
+ }
+diff --git a/src/misc/drawing.h b/src/misc/drawing.h
+index e98394b..5783b6c 100644
+--- a/src/misc/drawing.h
++++ b/src/misc/drawing.h
+@@ -1,5 +1,31 @@
+ #pragma once
+ #include <CoreGraphics/CoreGraphics.h>
++#include <math.h>
++
++struct corner_radii {
++  float top_left;
++  float top_right;
++  float bottom_left;
++  float bottom_right;
++};
++
++static inline struct corner_radii corner_radii_uniform(float radius) {
++  return (struct corner_radii){ radius, radius, radius, radius };
++}
++
++static inline struct corner_radii corner_radii_outset(struct corner_radii radii, float outset) {
++  return (struct corner_radii){ radii.top_left + outset,
++                                radii.top_right + outset,
++                                radii.bottom_left + outset,
++                                radii.bottom_right + outset };
++}
++
++static inline bool corner_radii_equal(struct corner_radii a, struct corner_radii b) {
++  return a.top_left == b.top_left
++         && a.top_right == b.top_right
++         && a.bottom_left == b.bottom_left
++         && a.bottom_right == b.bottom_right;
++}
+ 
+ struct gradient {
+   enum { TL_TO_BR, TR_TO_BL } direction;
+@@ -55,12 +81,34 @@ static inline void drawing_add_rect_with_inset(CGContextRef context, CGRect rect
+   CFRelease(square_path);
+ }
+ 
+-static inline void drawing_add_rounded_rect(CGContextRef context, CGRect rect, float border_radius) {
+-  CGPathRef stroke_path = CGPathCreateWithRoundedRect(rect,
+-                                                      border_radius,
+-                                                      border_radius,
+-                                                      NULL          );
++static inline float drawing_clamp_radius(float radius, CGRect rect) {
++  float max_radius = fminf(rect.size.width, rect.size.height) / 2.f;
++  return fmaxf(0.f, fminf(radius, max_radius));
++}
+ 
++// The border context is not flipped, so the bottom corners are at min y.
++static inline void drawing_path_add_rounded_rect(CGMutablePathRef path, CGRect rect, struct corner_radii radii) {
++  float tl = drawing_clamp_radius(radii.top_left, rect);
++  float tr = drawing_clamp_radius(radii.top_right, rect);
++  float bl = drawing_clamp_radius(radii.bottom_left, rect);
++  float br = drawing_clamp_radius(radii.bottom_right, rect);
++
++  CGFloat min_x = CGRectGetMinX(rect);
++  CGFloat max_x = CGRectGetMaxX(rect);
++  CGFloat min_y = CGRectGetMinY(rect);
++  CGFloat max_y = CGRectGetMaxY(rect);
++
++  CGPathMoveToPoint(path, NULL, min_x + bl, min_y);
++  CGPathAddArcToPoint(path, NULL, max_x, min_y, max_x, min_y + br, br);
++  CGPathAddArcToPoint(path, NULL, max_x, max_y, max_x - tr, max_y, tr);
++  CGPathAddArcToPoint(path, NULL, min_x, max_y, min_x, max_y - tl, tl);
++  CGPathAddArcToPoint(path, NULL, min_x, min_y, min_x + bl, min_y, bl);
++  CGPathCloseSubpath(path);
++}
++
++static inline void drawing_add_rounded_rect(CGContextRef context, CGRect rect, struct corner_radii radii) {
++  CGMutablePathRef stroke_path = CGPathCreateMutable();
++  drawing_path_add_rounded_rect(stroke_path, rect, radii);
+   CGContextAddPath(context, stroke_path);
+   CFRelease(stroke_path);
+ }
+@@ -76,14 +124,14 @@ static inline void drawing_draw_square_gradient_with_inset(CGContextRef context,
+   CGContextDrawLinearGradient(context, gradient, dir[0], dir[1], 0);
+ }
+ 
+-static inline void drawing_draw_rounded_rect_with_inset(CGContextRef context, CGRect rect, float border_radius, bool fill) {
+-  drawing_add_rounded_rect(context, rect, border_radius);
++static inline void drawing_draw_rounded_rect_with_inset(CGContextRef context, CGRect rect, struct corner_radii radii, bool fill) {
++  drawing_add_rounded_rect(context, rect, radii);
+   if (fill) CGContextFillPath(context);
+   else CGContextStrokePath(context);
+ }
+ 
+-static inline void drawing_draw_rounded_gradient_with_inset(CGContextRef context,CGGradientRef gradient, CGPoint dir[2], CGRect rect, float border_radius) {
+-  drawing_add_rounded_rect(context, rect, border_radius);
++static inline void drawing_draw_rounded_gradient_with_inset(CGContextRef context,CGGradientRef gradient, CGPoint dir[2], CGRect rect, struct corner_radii radii) {
++  drawing_add_rounded_rect(context, rect, radii);
+   CGContextReplacePathWithStrokedPath(context);
+   CGContextClip(context);
+   CGContextDrawLinearGradient(context, gradient, dir[0], dir[1], 0);
+diff --git a/src/misc/window.h b/src/misc/window.h
+index 6203f3d..c85c99a 100644
+--- a/src/misc/window.h
++++ b/src/misc/window.h
+@@ -10,6 +10,46 @@
+ #define WINDOW_TAG_IGNORES_CYCLE (1ULL << 18)
+ #define WINDOW_TAG_MODAL         (1ULL << 31)
+ 
++// Loaded via dlsym in main.c
++extern CFArrayRef (*JBSLSWindowIteratorGetCornerRadii)(CFTypeRef);
++
++// Returns the uniform corner radius of the window at the iterator, or 0 when
++// it is unavailable. WindowServer reports 0 for windows whose corners differ,
++// such as windows whose bottom corners follow the display corners.
++static inline float window_iterator_corner_radius(CFTypeRef iterator) {
++  float radius = 0.f;
++  if (!JBSLSWindowIteratorGetCornerRadii) return radius;
++
++  CFArrayRef radii_ref = JBSLSWindowIteratorGetCornerRadii(iterator);
++  if (radii_ref && CFArrayGetCount(radii_ref) > 0) {
++    CFNumberRef value = CFArrayGetValueAtIndex(radii_ref, 0);
++    CFNumberGetValue(value, kCFNumberFloatType, &radius);
++  }
++  if (radii_ref) CFRelease(radii_ref);
++  return radius;
++}
++
++static inline float window_corner_radius(int cid, uint32_t wid) {
++  float radius = 0.f;
++  CFArrayRef window_ref = cfarray_of_cfnumbers(&wid,
++                                               sizeof(uint32_t),
++                                               1,
++                                               kCFNumberSInt32Type);
++  CFTypeRef query = SLSWindowQueryWindows(cid, window_ref, 0x0);
++  if (query) {
++    CFTypeRef iterator = SLSWindowQueryResultCopyWindows(query);
++    if (iterator
++        && SLSWindowIteratorGetCount(iterator) > 0
++        && SLSWindowIteratorAdvance(iterator)     ) {
++      radius = window_iterator_corner_radius(iterator);
++    }
++    if (iterator) CFRelease(iterator);
++    CFRelease(query);
++  }
++  CFRelease(window_ref);
++  return radius;
++}
++
+ static inline bool window_suitable(CFTypeRef iterator) {
+   uint64_t tags = SLSWindowIteratorGetTags(iterator);
+   uint64_t attributes = SLSWindowIteratorGetAttributes(iterator);
+diff --git a/src/misc/yabai.h b/src/misc/yabai.h
+index 0a246da..8a7d483 100644
+--- a/src/misc/yabai.h
++++ b/src/misc/yabai.h
+@@ -139,6 +139,7 @@ static inline void yabai_proxy_begin(struct table* windows, uint32_t wid, uint32
+       border->proxy->sid = border->sid;
+       border->proxy->radius = border->radius;
+       border->proxy->inner_radius = border->inner_radius;
++      border->proxy->radii = border->radii;
+     }
+ 
+     struct yabai_proxy_payload* payload
+diff --git a/src/windows.c b/src/windows.c
+index c2eb000..907b072 100644
+--- a/src/windows.c
++++ b/src/windows.c
+@@ -8,9 +8,6 @@
+ extern pid_t g_pid;
+ extern struct settings g_settings;
+ 
+-// Loaded via dlsym in main.c
+-extern CFArrayRef (*JBSLSWindowIteratorGetCornerRadii)(CFTypeRef);
+-
+ static bool window_in_list(struct table* list, char* app_name) {
+   if (table_find(list, app_name)) return true;
+   return false;
+@@ -61,18 +58,10 @@ bool windows_window_create(struct table* windows, uint32_t wid, uint64_t sid) {
+             window_created = true;
+           }
+ 
+-          int32_t radius = 0;
+-
+-          // Determine window corner radius
+-          if (JBSLSWindowIteratorGetCornerRadii) {
+-            CFArrayRef radii_ref = JBSLSWindowIteratorGetCornerRadii(iterator);
+-            if (radii_ref && CFArrayGetCount(radii_ref) > 0) {
+-              CFNumberRef value = CFArrayGetValueAtIndex(radii_ref, 0);
+-              CFNumberGetValue(value, kCFNumberSInt32Type, &radius);
+-            }
+-            if (radii_ref) CFRelease(radii_ref);
+-          }
+-          radius = radius > 0 ? radius : 9;
++          // Windows with uneven corner radii report no radius. Keep the last
++          // one we knew in that case; border updates refresh it later.
++          float radius = window_iterator_corner_radius(iterator);
++          if (radius <= 0) radius = border->radius > 0 ? border->radius : 9;
+ 
+           border->radius = radius;
+           border->inner_radius = radius + 1;
