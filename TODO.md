@@ -48,6 +48,11 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 Next check: 2026-12-16. On or after that date, check each pin below. Bump
 any that are behind, then move the date on a month.
 
+- [ ] GitHub Actions in `.github/workflows/check.yml`, pinned to commit SHAs:
+      checkout v7.0.1, determinate-nix-action v3.24.2, flakehub-cache-action
+      v3.24.2. For each, take the latest release's commit
+      (`gh api repos/<owner>/<repo>/commits/<tag> -q .sha`) and update the
+      SHA and the version comment together.
 - [ ] Flake inputs (`flake.lock`, last updated 2026-11-16): run
       `nix flake update` on its own stack layer and let CI build every host.
 - [ ] Moshi (`pkgs/moshi-hook`, 0.4.57): compare with Moshi's

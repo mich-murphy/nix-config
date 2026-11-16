@@ -6,6 +6,11 @@
     # generations, which its disk-pressure collector does not do
     # (https://github.com/DeterminateSystems/determinate/issues/169).
     determinateNixd.garbageCollector.strategy = "automatic";
+    # cache.nixos.org first: FlakeHub's caches advertise priority 38 and 39,
+    # ahead of cache.nixos.org's 40, so nixpkgs paths would otherwise be
+    # looked up in our cache before upstream's. Determinate's nix.conf still
+    # appends FlakeHub with extra-substituters.
+    customSettings.substituters = [ "https://cache.nixos.org/?priority=30" ];
   };
 
   # The uninstaller embeds a second, uncached darwin-system build;
