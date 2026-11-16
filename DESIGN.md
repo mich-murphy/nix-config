@@ -127,6 +127,34 @@ are kept for changes to nixpkgs packages, sorted by that cost.
   inside finished binaries, which breaks their code signatures on macOS, and
   the kernel then kills them at launch.
 
+## Binary cache
+
+CI pushes what it builds to FlakeHub Cache, so the hosts substitute the paths
+cache.nixos.org lacks (hunk, Moshi, patched packages, and a whole closure
+after a deep security patch) instead of building them. It was chosen over
+Cachix's free tier for its authentication: no long-lived push token exists,
+and the cache is private, so unfree packages are not redistributed. It costs
+$7 a month.
+
+A path pushed to the cache runs as root on every host that substitutes it, and
+Nix checks only the signature, not how the path was built. So the cache trusts
+exactly what `main` is trusted with:
+
+- Only the `cache` job pushes. It runs only for pushes to `main`, and it alone
+  has `id-token: write`, the short-lived GitHub token FlakeHub accepts. Pull
+  request jobs, including those from agents' branches, get no token.
+- Merging into `main` requires the pull request checks to pass.
+- Every action is pinned to a full commit SHA, and checkout keeps no
+  credentials. [TODO.md](TODO.md) has the monthly bump.
+- Hosts look in cache.nixos.org first (priority 30, ahead of FlakeHub's 38
+  and 39), so nixpkgs paths never come from our cache. `require-sigs` stays
+  on, `accept-flake-config` stays off (a flake's suggested substituters, such
+  as hunk's, are ignored), and only root is a trusted user.
+- If the cache or the repository is compromised, run `determinate-nixd
+  logout` on each host so nothing more is fetched, and treat any host that
+  switched since then as compromised: its substituted paths cannot be told
+  apart from honest ones.
+
 ## Deployment
 
 The Mac switches itself with the stock `darwin-rebuild switch`. dev-01 is a
@@ -150,7 +178,8 @@ Linux checks build on the Mac through Determinate Nix's native Linux builder.
 prek runs the same lint tools before each commit.
 
 CI runs the same checks on every pull request and push to `main`, with one
-runner per system. Branch protection does not require it to pass.
+runner per system. Branch protection requires both pull request checks to pass
+before a merge into `main`; the owner, as admin, can bypass it.
 
 Tests cover what logic or the build derives. They do not re-assert literal
 values the configuration just set. The Moshi module holds the only assertions:
