@@ -100,6 +100,33 @@ Code's skill sync cannot write into the skills repo.
 - Pi extensions are updated by hand with `pi update --extensions`, never by a
   deploy.
 
+## Patches
+
+A patch costs build time in proportion to how many packages depend on what it
+changes, because every dependent misses cache.nixos.org and rebuilds. Overlays
+are kept for changes to nixpkgs packages, sorted by that cost.
+
+- Packages nixpkgs lacks live in `pkgs/` and are exported as flake
+  `packages`. Modules take them from `inputs.self.packages`, the way they
+  take `hunk` from its flake. They are not overlays: nothing in nixpkgs
+  depends on them.
+- `overlays/modifications/` holds local fixes to packages nothing else
+  depends on (leaf packages), with `overrideAttrs`. Only that package
+  rebuilds. Each asserts the upstream version it was written for, so a
+  nixpkgs bump stops evaluation and the release is checked for an upstream
+  fix before the patch carries on.
+- `overlays/security.nix` holds security fixes ahead of nixpkgs, and is empty
+  between incidents. In order of preference: update nixpkgs to a revision
+  with the fix (nothing rebuilds); override only the exposed programs
+  (`curl.override { openssl = …; }`, a few rebuild); replace the library for
+  everything (most of the closure rebuilds, so CI builds and caches it before
+  any host switches, and build tools such as `gitMinimal` stay on the
+  unpatched package). Each entry names its advisory and has a removal item in
+  [TODO.md](TODO.md).
+- Grafting with `replaceDependencies` is not used. It rewrites store paths
+  inside finished binaries, which breaks their code signatures on macOS, and
+  the kernel then kills them at launch.
+
 ## Deployment
 
 The Mac switches itself with the stock `darwin-rebuild switch`. dev-01 is a
@@ -155,7 +182,7 @@ request, not committed.
 | The menu bar manager is Thaw from the `thaw@beta` cask, not Ice | Ice has had no code commit since June 2025 and hangs on "Loading menu bar items" on macOS 27. Thaw is its maintained fork, and only Thaw 3, which ships as a beta, supports macOS 27; the stable `thaw` cask is Thaw 2, for macOS 15 and 26. Move to `thaw` once Thaw 3 is stable |
 | Containers run in OrbStack, not Docker Desktop | It starts faster and uses less memory and disk on Apple Silicon, and also runs Linux machines. Commercial use needs a paid licence |
 | App Store apps stay in `homebrew.masApps`, not nix-darwin's `programs.mas`, and `mas` comes from nixpkgs, not Homebrew | When the App Store is signed out, `programs.mas` runs `exit 0` inside nix-darwin's single activation script, which skips Homebrew, Home Manager and the switch to the new generation while the switch still reports success. nix-darwin already gives `brew bundle` nixpkgs' `mas`, so the formula was a second copy |
-| JankyBorders is nixpkgs' package plus a patch in an overlay, not a package of our own | The version, source hash and build stay nixpkgs' to update; the overlay adds only the fix for bottom corners near rounded display corners. A version bump the patch no longer fits fails the build instead of silently dropping the fix. The patched build misses cache.nixos.org, but it is one small C program |
+| JankyBorders is nixpkgs' package plus a patch in `overlays/modifications`, not a package of our own | The version, source hash and build stay nixpkgs' to update; the overlay adds only the fix for bottom corners near rounded display corners, which is not submitted upstream. The patched build misses cache.nixos.org, but it is one small C program |
 | Microsoft AutoUpdate is its own cask | The Word, Excel and PowerPoint casks deselect it in their installers, so a new Mac would not get Office's updater from them |
 | `killall Finder` and `SystemUIServer` run after defaults are written | nix-darwin restarts only the Dock |
 | Both fzf integrations are enabled in fish | Each contributes live key bindings |
