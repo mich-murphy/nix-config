@@ -435,8 +435,6 @@ hf=https://huggingface.co/unsloth
 fetch() { curl -fL --create-dirs -C - -o ~/models/$1 "$hf/$2?download=true"; }
 fetch qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf
 fetch qwen3.6-35b-a3b/mmproj-F16.gguf Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/mmproj-F16.gguf
-fetch qwen3.8-27b/Qwen3.8-27B-UD-Q4_K_XL.gguf Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf
-fetch qwen3.8-27b/mmproj-F16.gguf Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf
 ```
 
 ## Notes
