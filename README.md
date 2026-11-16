@@ -420,12 +420,13 @@ undeletable for garbage collection.
 
 **llama-server** (`hosts/laptop/llama.nix`) serves local models to Pi through
 llama.cpp's router on `127.0.0.1:9931`, which `LLAMA_BASE_URL` points Pi at.
-llama.cpp comes from Homebrew, and the router runs at login. Presets are in
+llama.cpp comes from nixpkgs, and the router runs at login. Presets are in
 `config/llama/models.ini`, with model paths relative to `~/models`. A loaded
 model sleeps after 5 idle minutes and frees its memory; the idle router holds
 about 0.1 GB. Select a model with `/model` in Pi, or load one with `/llama`.
 The log is `~/Library/Logs/llama-server.log`. A switch that upgrades llama.cpp
-does not restart the router; run
+restarts the router, which unloads any loaded model; other switches leave it
+running. To restart it by hand, run
 `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.llama-server`.
 
 The model files are not managed by Nix. To fetch them on a new laptop:
