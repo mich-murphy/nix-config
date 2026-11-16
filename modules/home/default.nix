@@ -5,7 +5,6 @@
 }:
 {
   imports = [
-    inputs.hunk.homeManagerModules.hunk
     ./live-files.nix
     ./shell.nix
     ./cli.nix
