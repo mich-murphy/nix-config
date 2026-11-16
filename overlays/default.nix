@@ -1,12 +1,14 @@
-# Changes to nixpkgs packages. flake.nix applies `default` to every package set
-# it builds: nix-darwin, Home Manager and `packages`. Packages nixpkgs lacks are
-# not overlays; they live in pkgs/ and modules take them from `self.packages`.
-# DESIGN.md (Patches) says which kind of change goes where.
+# Every overlay this flake applies. flake.nix applies `default` to each package
+# set it builds (nix-darwin, Home Manager and `packages`), so modules use
+# `pkgs.<name>` for all of them. DESIGN.md (Patches) says which change goes
+# where.
 { lib }:
 rec {
-  modifications = import ./modifications;
+  additions = import ./additions.nix;
+  modifications = import ./modifications.nix;
   security = import ./security.nix;
   default = lib.composeManyExtensions [
+    additions
     modifications
     security
   ];
