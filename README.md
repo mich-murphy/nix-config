@@ -25,8 +25,10 @@ hosts/<host>/
 modules/darwin/          nix-darwin modules shared by the Macs
 modules/home/            Home Manager modules shared by every host
 └── mac/                 Home Manager modules only the Macs import
-pkgs/moshi-hook/         a package nixpkgs lacks, added by an overlay
-pkgs/jankyborders/       nixpkgs' JankyBorders with a local patch, by an overlay
+pkgs/moshi-hook/         a package nixpkgs lacks, exported as a flake package
+overlays/                changes to nixpkgs packages, applied to every package set
+├── modifications/       local fixes, one directory each (JankyBorders)
+└── security.nix         security fixes ahead of nixpkgs; empty between incidents
 config/                  raw application files, linked or read by the modules
 prek.toml                commit hooks
 .github/workflows/       CI on macOS and Linux
@@ -348,18 +350,21 @@ so check the remaining Office apps afterwards.
 
 ### Patched packages
 
-`pkgs/jankyborders` overrides nixpkgs' JankyBorders with
+`overlays/modifications/jankyborders` overrides nixpkgs' JankyBorders with
 `screen-corner-radii.patch`, so its version follows nixpkgs. The patch is one
 `git format-patch` commit on top of upstream's `v1.9.0` tag, and needs no
 other checkout. cache.nixos.org has no build of the patched package, so it
 builds locally, which takes a few seconds.
 
-When a nixpkgs update bumps JankyBorders and the patch no longer applies, the
-build stops in its patch phase. Apply it to the new tag, resolve the conflicts
-and export it again (`v1.10.0` stands for the new version):
+When a nixpkgs update bumps JankyBorders, evaluation stops at the version
+assertion in `package.nix`. Check whether the new release fixes the bottom
+corners; if it does, delete the directory and its entry in
+`overlays/modifications/default.nix`. If not, apply the patch to the new tag,
+resolve the conflicts, export it again and update the asserted version
+(`v1.10.0` stands for the new version):
 
 ```sh
-patch=~/dev/nix-config/pkgs/jankyborders/screen-corner-radii.patch
+patch=~/dev/nix-config/overlays/modifications/jankyborders/screen-corner-radii.patch
 git clone https://github.com/FelixKratz/JankyBorders && cd JankyBorders
 git switch -c screen-corner-radii v1.10.0
 git am -3 "$patch"   # on conflict: fix, git add, git am --continue
@@ -368,7 +373,8 @@ git format-patch -1 --stdout --no-signature > "$patch"
 nix build ~/dev/nix-config#jankyborders
 ```
 
-Once upstream has the fix, delete `pkgs/jankyborders` and its overlay entry.
+Once upstream has the fix, delete `overlays/modifications/jankyborders` and its
+entry in `overlays/modifications/default.nix`.
 
 ## Services
 

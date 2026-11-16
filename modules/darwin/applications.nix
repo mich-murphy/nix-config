@@ -1,4 +1,5 @@
-{ pkgs, ... }: {
+{ inputs, pkgs, ... }:
+{
   environment.variables.HOMEBREW_NO_ENV_HINTS = "1";
 
   environment.systemPackages = [
@@ -6,7 +7,7 @@
     pkgs.mosh
     pkgs.nmap
     pkgs.gnused
-    pkgs.moshi-hook.app
+    inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.moshi-hook.app
     # The same mas nix-darwin gives `brew bundle` for masApps.
     pkgs.mas
   ];
