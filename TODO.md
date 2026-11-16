@@ -1,6 +1,6 @@
 # TODO
 
-Reviewed: 2026-11-11
+Reviewed: 2026-11-16
 
 Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
@@ -42,6 +42,28 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] On dev-01, confirm `herdr plugin list` shows Annotate at the ref in the
       README. Older versions run their commands with `bun`, which is not
       installed.
+
+## Updates
+
+Next check: 2026-12-16. On or after that date, check each pin below. Bump
+any that are behind, then move the date on a month.
+
+- [ ] Moshi (`pkgs/moshi-hook`, 0.4.57): compare with Moshi's
+      [Homebrew formula](https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb).
+      The README's Services section says how to update it.
+- [ ] Herdr plugins (README, Set up a Mac step 8): herdr-splits.nvim
+      `v0.5.4` against its
+      [tags](https://github.com/lmilojevicc/herdr-splits.nvim/tags), and
+      herdr-annotate `dd147a9` (plugin 0.10.0) against its
+      [main branch](https://github.com/plannotator/herdr-annotate/commits/main).
+      Reinstall on each host after a bump.
+- [ ] JankyBorders patch (`pkgs/jankyborders`): the fix is not submitted
+      upstream and stays in the overlay. If
+      [JankyBorders](https://github.com/FelixKratz/JankyBorders/releases)
+      has a release after `v1.9.0`, check whether it fixes the bottom corners
+      near rounded display corners. If it does, delete `pkgs/jankyborders`
+      and its overlay entry. If not, the patch has to apply to the new version
+      once nixpkgs packages it.
 
 ## Decisions
 
