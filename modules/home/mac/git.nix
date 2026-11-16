@@ -8,7 +8,8 @@
             name = "michaelmbc";
             email = "michaelmbc@users.noreply.github.com";
           };
-          core.sshCommand = "ssh -i ~/.ssh/github_bc";
+          # The .pub file selects the 1Password key (see ssh.nix).
+          core.sshCommand = "ssh -i ~/.ssh/github_bc.pub";
         };
       }
     ];

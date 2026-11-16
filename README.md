@@ -92,27 +92,33 @@ Needed once on a new machine, in this order:
 2. Install [Homebrew](https://brew.sh/). nix-darwin installs the casks and
    formulae listed in `modules/darwin/applications.nix`, but not Homebrew
    itself.
-3. Clone this repository:
-   `git clone git@github.com:mich-murphy/nix-config.git ~/dev/nix-config`. The
-   Macs link live files into `~/dev/nix-config`; keep it there.
-4. Clone the two repositories Home Manager links to, both over SSH:
+3. Clone this repository over HTTPS; SSH works only after the first switch:
+   `git clone https://github.com/mich-murphy/nix-config.git ~/dev/nix-config`.
+   The Macs link live files into `~/dev/nix-config`; keep it there.
+4. Clone the two repositories Home Manager links to, also over HTTPS:
 
    ```sh
-   git clone git@github.com:mich-murphy/skills.git ~/dev/skills
-   git clone git@github.com:mich-murphy/neovim.git ~/.config/nvim
+   git clone https://github.com/mich-murphy/skills.git ~/dev/skills
+   git clone https://github.com/mich-murphy/neovim.git ~/.config/nvim
    ```
 
-5. Put these SSH key files in `~/.ssh/` (names only; they are read, never
-   generated, by this flake):
+5. Set up the 1Password SSH agent. The private keys exist only in 1Password.
+   This flake writes each key's public half to `~/.ssh/`, and the SSH config
+   uses that file to pick the one key a host needs from the agent. Sign in to
+   the 1Password app, then turn on Settings, Developer, "Use the SSH agent".
+   The agent needs these items:
 
-   | File | Used for |
-   | --- | --- |
-   | `id_ed25519` | github.com (personal account) |
-   | `github_bc` | Git inside `~/businesscraft/` (work account) |
-   | `dev-01` | the `dev-01` host |
+   | 1Password item | Public key file | Used for |
+   | --- | --- | --- |
+   | `GitHub - mich-murphy` | `github.pub` | github.com (personal account) |
+   | `GitHub - BusinessCraft` | `github_bc.pub` | Git inside `~/businesscraft/` (work account) |
+   | `dev-01` | `dev-01.pub` | the `dev-01` host |
+   | `docker-host` | `docker-host.pub` | `docker-host` on the tailnet |
+   | `truenas` | `truenas.pub` | `truenas`, reached through `docker-host` |
 
-   The SSH config also reads the 1Password SSH agent, so sign in to 1Password
-   and enable its agent. Steps 3 and 4 need `id_ed25519` first.
+   A host is offered only the key its entry in `modules/home/mac/ssh.nix`
+   names, and a host with no entry is offered none. To add a key, put its
+   public half in `publicKeys` there and name it in the host's entry.
 6. Check, then do the first switch. `darwin-rebuild` does not exist yet, so run
    it through `nix run`, and name the host: the machine's hostname does not match
    a flake name until this first activation has set it.
@@ -125,7 +131,13 @@ Needed once on a new machine, in this order:
 
    From then on `sudo darwin-rebuild switch --flake .` is enough. Log out and
    back in once, so that macOS loads the keyboard shortcuts and key repeat the
-   switch wrote.
+   switch wrote. Then move the clones from step 3 and 4 to SSH:
+
+   ```sh
+   git -C ~/dev/nix-config remote set-url origin git@github.com:mich-murphy/nix-config.git
+   git -C ~/dev/skills remote set-url origin git@github.com:mich-murphy/skills.git
+   git -C ~/.config/nvim remote set-url origin git@github.com:mich-murphy/neovim.git
+   ```
 
    If a switch stops with "Existing file ... would be clobbered", something
    has written a file where Home Manager puts a link. Move that file aside and
@@ -150,7 +162,8 @@ On dev-01:
 
 1. Install Nix (assumed: Determinate, the same as on the Mac) and enable flakes.
 2. Have the `dev` user with `/home/dev` and SSH access from the Mac with the
-   `~/.ssh/dev-01` key (the Mac's `dev-01` SSH alias names that user and key).
+   `dev-01` 1Password key (the Mac's `dev-01` SSH alias names that user and
+   key).
 3. Clone the same skills and Neovim repositories to `~/dev/skills` and
    `~/.config/nvim` (they need GitHub access from the VM).
 4. Create `~/.gitconfig-work`, the work identity that `hosts/dev-01/home.nix`
