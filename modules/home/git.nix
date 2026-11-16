@@ -1,33 +1,33 @@
+{ pkgs, ... }:
+let
+  # hunk is nixpkgs' build, which cache.nixos.org has; Home Manager has no
+  # module for it, so the config file and pager are set here.
+  hunkSettings = {
+    theme = "tokyo-night";
+    mode = "auto";
+    watch = false;
+    exclude_untracked = false;
+    line_numbers = false;
+    hunk_headers = false;
+    wrap_lines = false;
+    menu_bar = false;
+    agent_notes = true;
+    prompt_save_view_preferences = false;
+  };
+in
 {
-  inputs,
-  pkgs,
-  ...
-}:
-{
+  xdg.configFile."hunk/config.toml".source =
+    (pkgs.formats.toml { }).generate "hunk-config.toml"
+      hunkSettings;
+
   programs = {
-    hunk = {
-      enable = true;
-      enableGitIntegration = true;
-      package = inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk;
-      settings = {
-        theme = "tokyo-night";
-        mode = "auto";
-        watch = false;
-        exclude_untracked = false;
-        line_numbers = false;
-        hunk_headers = false;
-        wrap_lines = false;
-        menu_bar = false;
-        agent_notes = true;
-        prompt_save_view_preferences = false;
-      };
-    };
     git = {
       enable = true;
       signing = {
         format = null;
       };
       settings = {
+        core.pager = "hunk pager";
         init.defaultBranch = "main";
         fetch.prune = true;
         pull.rebase = true;
@@ -123,6 +123,7 @@
   };
 
   home.packages = [
+    pkgs.hunk
     pkgs.exiftool
     pkgs.gh
     pkgs.lazygit

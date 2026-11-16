@@ -171,7 +171,7 @@ On dev-01:
 4. Create `~/.gitconfig-work`, the work identity that `hosts/dev-01/home.nix`
    includes (the machines repo's bootstrap is meant to write it), and the
    `~/businesscraft/.scratch` directory that `TMPDIR` points at.
-5. To download from FlakeHub Cache instead of building hunk and Moshi, run
+5. To download from FlakeHub Cache instead of building Moshi, run
    `sudo determinate-nixd login` (assumed: Determinate), and put
    `substituters = https://cache.nixos.org/?priority=30` in
    `/etc/nix/nix.custom.conf` so cache.nixos.org is asked first. Both are

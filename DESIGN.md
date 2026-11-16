@@ -107,9 +107,8 @@ changes, because every dependent misses cache.nixos.org and rebuilds. Overlays
 are kept for changes to nixpkgs packages, sorted by that cost.
 
 - Packages nixpkgs lacks live in `pkgs/` and are exported as flake
-  `packages`. Modules take them from `inputs.self.packages`, the way they
-  take `hunk` from its flake. They are not overlays: nothing in nixpkgs
-  depends on them.
+  `packages`. Modules take them from `inputs.self.packages`. They are not
+  overlays: nothing in nixpkgs depends on them.
 - `overlays/modifications/` holds local fixes to packages nothing else
   depends on (leaf packages), with `overrideAttrs`. Only that package
   rebuilds. Each asserts the upstream version it was written for, so a
@@ -130,8 +129,8 @@ are kept for changes to nixpkgs packages, sorted by that cost.
 ## Binary cache
 
 CI pushes what it builds to FlakeHub Cache, so the hosts substitute the paths
-cache.nixos.org lacks (hunk, Moshi, patched packages, and a whole closure
-after a deep security patch) instead of building them. It was chosen over
+cache.nixos.org lacks (Moshi, patched packages, and a whole closure after a
+deep security patch) instead of building them. It was chosen over
 Cachix's free tier for its authentication: no long-lived push token exists,
 and the cache is private, so unfree packages are not redistributed. It costs
 $7 a month.
@@ -148,8 +147,8 @@ exactly what `main` is trusted with:
   credentials. [TODO.md](TODO.md) has the monthly bump.
 - Hosts look in cache.nixos.org first (priority 30, ahead of FlakeHub's 38
   and 39), so nixpkgs paths never come from our cache. `require-sigs` stays
-  on, `accept-flake-config` stays off (a flake's suggested substituters, such
-  as hunk's, are ignored), and only root is a trusted user.
+  on, `accept-flake-config` stays off (a flake's suggested substituters are
+  ignored), and only root is a trusted user.
 - If the cache or the repository is compromised, run `determinate-nixd
   logout` on each host so nothing more is fetched, and treat any host that
   switched since then as compromised: its substituted paths cannot be told

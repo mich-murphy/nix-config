@@ -9,8 +9,6 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.inputs.flake-compat.follows = "";
-    hunk.url = "github:modem-dev/hunk";
-    hunk.inputs.nixpkgs.follows = "nixpkgs";
     # No follows: Determinate recommends its own nixpkgs for FlakeHub Cache hits.
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
   };
