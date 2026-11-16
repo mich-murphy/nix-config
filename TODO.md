@@ -22,6 +22,12 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 - [ ] When a macOS update fixes the Ctrl+number desktop shortcuts, remove the
       two Dock-restart signals in `modules/darwin/window-management.nix` and
       the Shift+Alt+D binding in `config/skhd/skhdrc`.
+- [ ] Add the unifi-controller key and the docker-host `ansible` key to
+      1Password, then give each host an entry in
+      `modules/home/mac/ssh.nix`. The `ansible` key is also registered on
+      GitHub as `github`.
+- [ ] With Tailscale up, test `ssh docker-host true` and `ssh truenas true`;
+      neither entry has been tried.
 - [ ] After the first switch on the laptop, check in System Settings that
       Siri is off. It is written as a plain preference, which is proven only
       on a Mac where Siri had already been turned off by hand.
