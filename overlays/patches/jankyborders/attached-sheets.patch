@@ -1,0 +1,226 @@
+From 6675bbfff01cf76f2fb2a6f3b8baf1f98411ab9d Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Mon, 16 Nov 2026 17:46:42 +1100
+Subject: [PATCH] order borders below attached sheets and panels
+
+WindowServer keeps a sheet or open panel ordered with its parent window,
+so a border ordered above the parent also lands above the sheet. Order the
+border below the parent's backmost attached window instead, and order it
+above the parent again once that window is destroyed.
+---
+ src/border.c      | 27 +++++++++++++++++--------
+ src/border.h      |  2 ++
+ src/events.c      | 14 +++++++++++++
+ src/misc/extern.h |  1 +
+ src/misc/window.h | 51 +++++++++++++++++++++++++++++++++++++++++++++++
+ src/windows.c     | 16 +++++++++++++++
+ src/windows.h     |  1 +
+ 7 files changed, 104 insertions(+), 8 deletions(-)
+
+diff --git a/src/border.c b/src/border.c
+index f2b57e9..0d4f8ab 100644
+--- a/src/border.c
++++ b/src/border.c
+@@ -96,6 +96,23 @@ static struct corner_radii border_target_corner_radii(struct border* border, CGR
+   return border_window_corner_radii(border, window_frame);
+ }
+ 
++// Orders the border relative to its target. A border drawn above the target
++// goes below the target's attached windows instead, so sheets and open panels
++// stay on top of it.
++static void border_order_window(struct border* border, CFTypeRef transaction, int order) {
++  uint32_t relative_wid = border->target_wid;
++  border->child_wid = 0;
++  if (order == BORDER_ORDER_ABOVE && !border->is_proxy) {
++    uint32_t child = window_lowest_child(border->cid, border->target_wid);
++    if (child) {
++      border->child_wid = child;
++      relative_wid = child;
++      order = BORDER_ORDER_BELOW;
++    }
++  }
++  SLSTransactionOrderWindow(transaction, border->wid, order, relative_wid);
++}
++
+ struct settings* border_get_settings(struct border* border) {
+   assert(pthread_main_np() != 0);
+   return border->setting_override.enabled
+@@ -332,10 +349,7 @@ void border_update_internal(struct border* border, struct settings* settings) {
+   }
+   SLSTransactionSetWindowLevel(transaction, border->wid, level);
+   SLSTransactionSetWindowSubLevel(transaction, border->wid, sub_level);
+-  SLSTransactionOrderWindow(transaction,
+-                            border->wid,
+-                            settings->border_order,
+-                            border->target_wid      );
++  border_order_window(border, transaction, settings->border_order);
+   SLSTransactionCommit(transaction, 0);
+   CFRelease(transaction);
+ 
+@@ -501,10 +515,7 @@ void border_unhide(struct border* border) {
+     struct settings* settings = border_get_settings(border);
+     CFTypeRef transaction = SLSTransactionCreate(border->cid);
+     if (transaction) {
+-      SLSTransactionOrderWindow(transaction,
+-                                border->wid,
+-                                settings->border_order,
+-                                border->target_wid      );
++      border_order_window(border, transaction, settings->border_order);
+       SLSTransactionCommit(transaction, 0);
+       CFRelease(transaction);
+     }
+diff --git a/src/border.h b/src/border.h
+index fc20ee6..653c441 100644
+--- a/src/border.h
++++ b/src/border.h
+@@ -70,6 +70,8 @@ struct border {
+   uint64_t sid;
+   uint32_t wid;
+   uint32_t target_wid;
++  // The attached window the border is ordered below, if any.
++  uint32_t child_wid;
+ 
+   float radius;
+   float inner_radius;
+diff --git a/src/events.c b/src/events.c
+index 2ed4b02..ea24ca6 100644
+--- a/src/events.c
++++ b/src/events.c
+@@ -50,10 +50,24 @@ static void window_spawn_handler(uint32_t event, struct window_spawn_data* data,
+     if (windows_window_create(windows, wid, sid)) {
+       debug("Window Created: %d %d\n", wid, sid);
+       windows_determine_and_focus_active_window(windows);
++    } else {
++      // A sheet or panel attached to a bordered window: reorder the parent's
++      // border below it once it is shown.
++      uint32_t parent_wid = window_parent(cid, wid);
++      if (parent_wid && table_find(windows, &parent_wid)) {
++        debug("Child Window Created: %d (parent %d)\n", wid, parent_wid);
++        DELAY_ASYNC_EXEC_ON_MAIN_THREAD(50000, {
++          windows_window_update(windows, parent_wid);
++        });
++      }
+     }
+   } else if (event == EVENT_WINDOW_DESTROY) {
+     if (windows_window_destroy(windows, wid, sid)) {
+       debug("Window Destroyed: %d %d\n", wid, sid);
++    } else {
++      DELAY_ASYNC_EXEC_ON_MAIN_THREAD(50000, {
++        windows_child_destroyed(windows, wid);
++      });
+     }
+     windows_determine_and_focus_active_window(windows);
+   }
+diff --git a/src/misc/extern.h b/src/misc/extern.h
+index b41137b..bffef89 100644
+--- a/src/misc/extern.h
++++ b/src/misc/extern.h
+@@ -69,6 +69,7 @@ extern CFTypeRef SLSWindowQueryResultCopyWindows(CFTypeRef window_query);
+ extern int SLSWindowIteratorGetCount(CFTypeRef iterator);
+ extern bool SLSWindowIteratorAdvance(CFTypeRef iterator);
+ extern uint32_t SLSWindowIteratorGetParentID(CFTypeRef iterator);
++extern CFArrayRef SLSCopyAssociatedWindows(int cid, uint32_t wid);
+ extern uint32_t SLSWindowIteratorGetWindowID(CFTypeRef iterator);
+ extern uint64_t SLSWindowIteratorGetTags(CFTypeRef iterator);
+ extern uint64_t SLSWindowIteratorGetAttributes(CFTypeRef iterator);
+diff --git a/src/misc/window.h b/src/misc/window.h
+index c85c99a..67e5f3a 100644
+--- a/src/misc/window.h
++++ b/src/misc/window.h
+@@ -255,6 +255,57 @@ static inline int window_level(int cid, uint32_t wid) {
+   return level;
+ }
+ 
++// Returns the window `wid` is attached to, such as the document window of a
++// sheet, or 0 for a root window.
++static inline uint32_t window_parent(int cid, uint32_t wid) {
++  uint32_t parent = 0;
++  CFArrayRef window_ref = cfarray_of_cfnumbers(&wid,
++                                               sizeof(uint32_t),
++                                               1,
++                                               kCFNumberSInt32Type);
++  CFTypeRef query = SLSWindowQueryWindows(cid, window_ref, 0x0);
++  if (query) {
++    CFTypeRef iterator = SLSWindowQueryResultCopyWindows(query);
++    if (iterator && SLSWindowIteratorAdvance(iterator)) {
++      parent = SLSWindowIteratorGetParentID(iterator);
++    }
++    if (iterator) CFRelease(iterator);
++    CFRelease(query);
++  }
++  CFRelease(window_ref);
++  return parent;
++}
++
++// Returns the backmost window attached to `wid`, such as a sheet or an open
++// panel, or 0 when it has none. WindowServer keeps attached windows ordered
++// with their parent, so a border ordered above the parent lands above them
++// too. SLSCopyAssociatedWindows lists the windows front to back.
++static inline uint32_t window_lowest_child(int cid, uint32_t wid) {
++  uint32_t child = 0;
++  CFArrayRef associated = SLSCopyAssociatedWindows(cid, wid);
++  if (!associated) return 0;
++
++  if (CFArrayGetCount(associated) > 1) {
++    CFTypeRef query = SLSWindowQueryWindows(cid, associated, 0x0);
++    if (query) {
++      CFTypeRef iterator = SLSWindowQueryResultCopyWindows(query);
++      if (iterator) {
++        while (SLSWindowIteratorAdvance(iterator)) {
++          if (SLSWindowIteratorGetParentID(iterator) != wid) continue;
++          uint32_t candidate = SLSWindowIteratorGetWindowID(iterator);
++          bool shown = false;
++          SLSWindowIsOrderedIn(cid, candidate, &shown);
++          if (shown) child = candidate;
++        }
++        CFRelease(iterator);
++      }
++      CFRelease(query);
++    }
++  }
++  CFRelease(associated);
++  return child;
++}
++
+ static inline void window_send_to_space(int cid, uint32_t wid, uint32_t sid) {
+   CFArrayRef window_list = cfarray_of_cfnumbers(&wid,
+                                                 sizeof(uint32_t),
+diff --git a/src/windows.c b/src/windows.c
+index 7822b50..764c908 100644
+--- a/src/windows.c
++++ b/src/windows.c
+@@ -191,6 +191,22 @@ static bool windows_window_focus(struct table* windows, uint32_t wid) {
+   return found_window;
+ }
+ 
++// A sheet or panel that a border was ordered below has gone: order the
++// border above its target again.
++void windows_child_destroyed(struct table* windows, uint32_t wid) {
++  for (int i = 0; i < windows->capacity; ++i) {
++    struct bucket* bucket = windows->buckets[i];
++    while (bucket) {
++      struct border* border = bucket->value;
++      if (border && border->child_wid == wid) {
++        border->child_wid = 0;
++        border_update(border, true);
++      }
++      bucket = bucket->next;
++    }
++  }
++}
++
+ void windows_window_move(struct table* windows, uint32_t wid) {
+   struct border* border = table_find(windows, &wid);
+   if (border) border_move(border);
+diff --git a/src/windows.h b/src/windows.h
+index c77709a..31be5d0 100644
+--- a/src/windows.h
++++ b/src/windows.h
+@@ -9,6 +9,7 @@ void windows_update_all(struct table* windows);
+ void windows_update_notifications(struct table* windows);
+ 
+ void windows_hide_all(struct table* windows);
++void windows_child_destroyed(struct table* windows, uint32_t wid);
+ void windows_window_update(struct table* windows, uint32_t wid);
+ void windows_window_hide(struct table* windows, uint32_t wid);
+ void windows_window_unhide(struct table* windows, uint32_t wid);

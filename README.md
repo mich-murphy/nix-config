@@ -327,7 +327,9 @@ Notes:
   switch, run `borders <option>=<value>`, which updates the running instance
   until it restarts. It logs to `~/Library/Logs/borders/`. It is patched so
   that the border follows the rounder bottom corners macOS gives a window near
-  the display's rounded corners; see [Patched packages](#patched-packages).
+  the display's rounded corners, hides while Mission Control is open, and
+  stays below a window's sheets and open panels; see
+  [Patched packages](#patched-packages).
 - On macOS 27, Ctrl+3 and above stop switching desktops after a display
   connects or disconnects, until the Dock restarts. yabai restarts it two
   seconds after each change, so expect the Dock to flicker then. Shift+Alt+D
@@ -364,30 +366,41 @@ so check the remaining Office apps afterwards.
 ### Patched packages
 
 The `jankyborders` entry in `overlays/modifications.nix` overrides nixpkgs'
-JankyBorders with `overlays/patches/jankyborders/screen-corner-radii.patch`,
-so its version follows nixpkgs. The patch is one
-`git format-patch` commit on top of upstream's `v1.9.0` tag, and needs no
-other checkout. cache.nixos.org has no build of the patched package, so it
-builds locally, which takes a few seconds.
+JankyBorders with three patches in `overlays/patches/jankyborders/`, so its
+version follows nixpkgs. Each patch is one `git format-patch` commit, and they
+apply in this order on top of upstream's `v1.9.0` tag:
+
+| Patch | Fixes |
+| --- | --- |
+| `screen-corner-radii.patch` | the border keeps the normal radius where macOS rounds a window's bottom corners near the display's rounded corners |
+| `mission-control.patch` | on macOS 27 the borders stay on screen, unscaled, over Mission Control ([issue 209](https://github.com/FelixKratz/JankyBorders/issues/209)); based on [andrewcincotta/JankyBorders@0017b53](https://github.com/andrewcincotta/JankyBorders/commit/0017b53) |
+| `attached-sheets.patch` | the border is drawn over a window's sheets and open panels |
+
+cache.nixos.org has no build of the patched package, so it builds locally,
+which takes a few seconds.
 
 When a nixpkgs update bumps JankyBorders, evaluation stops at the version
-assertion in `overlays/modifications.nix`. Check whether the new release fixes
-the bottom corners; if it does, delete the `jankyborders` entry and
-`overlays/patches/jankyborders`. If not, apply the patch to the new tag,
-resolve the conflicts, export it again and update the asserted version
-(`v1.10.0` stands for the new version):
+assertion in `overlays/modifications.nix`. Check which of the fixes the new
+release has, and delete those patches from the overlay and from
+`overlays/patches/jankyborders`. Apply the rest to the new tag, resolve the
+conflicts, export them again and update the asserted version (`v1.10.0`
+stands for the new version):
 
 ```sh
-patch=~/dev/nix-config/overlays/patches/jankyborders/screen-corner-radii.patch
+patches=~/dev/nix-config/overlays/patches/jankyborders
 git clone https://github.com/FelixKratz/JankyBorders && cd JankyBorders
-git switch -c screen-corner-radii v1.10.0
-git am -3 "$patch"   # on conflict: fix, git add, git am --continue
+git switch -c local-fixes v1.10.0
+for p in screen-corner-radii mission-control attached-sheets; do
+  git am -3 "$patches/$p.patch"   # on conflict: fix, git add, git am --continue
+done
 make && ./bin/borders --version
-git format-patch -1 --stdout --no-signature > "$patch"
+git format-patch -1 HEAD~2 --stdout --no-signature > "$patches/screen-corner-radii.patch"
+git format-patch -1 HEAD~1 --stdout --no-signature > "$patches/mission-control.patch"
+git format-patch -1 HEAD --stdout --no-signature > "$patches/attached-sheets.patch"
 nix build ~/dev/nix-config#jankyborders
 ```
 
-Once upstream has the fix, delete the `jankyborders` entry in
+Once upstream has all three fixes, delete the `jankyborders` entry in
 `overlays/modifications.nix` and `overlays/patches/jankyborders`.
 
 ## Services
