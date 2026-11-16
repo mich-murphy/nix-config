@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   osConfig ? null,
   pkgs,
@@ -8,8 +7,6 @@
 }:
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
-  # Not in nixpkgs, so it comes from this flake's packages (pkgs/moshi-hook).
-  moshi-hook = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.moshi-hook;
   moshiHookPredecessors = [
     "linkGeneration"
     "claudeCodeSettings"
@@ -20,7 +17,7 @@ let
     "moshiHookCopy"
     "reloadSystemd"
   ];
-  exe = lib.getExe moshi-hook;
+  exe = lib.getExe pkgs.moshi-hook;
   hookPath =
     if isDarwin then
       "/Applications/Nix Apps/MoshiHook.app/Contents/MacOS/moshi-hook"
@@ -88,8 +85,8 @@ in
 {
   assertions =
     lib.optional (isDarwin && osConfig != null) {
-      assertion = builtins.elem moshi-hook.app osConfig.environment.systemPackages;
-      message = "moshi.nix: hooks name the app bundle that nix-darwin installs from the moshi-hook package's app output, which is missing from environment.systemPackages";
+      assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
+      message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
     }
     # Home Manager's DAG silently ignores missing predecessor names, including
     # upstream activation entries renamed during an upgrade.
@@ -109,7 +106,7 @@ in
       ProgramArguments = [ hookPath ] ++ serveArgs;
       EnvironmentVariables = {
         PATH = servicePath;
-        NIX_RESTART_ON_VERSION = moshi-hook.version;
+        NIX_RESTART_ON_VERSION = pkgs.moshi-hook.version;
       };
       KeepAlive = true;
       RunAtLoad = true;

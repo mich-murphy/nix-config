@@ -182,12 +182,10 @@
     {
       overlays = import ./overlays { inherit lib; };
 
-      # Modules take packages nixpkgs lacks from here, as
-      # inputs.self.packages.<system>, not from an overlay.
       packages = forAllSystems (
         system:
         {
-          moshi-hook = pkgsFor.${system}.callPackage ./pkgs/moshi-hook/package.nix { };
+          inherit (pkgsFor.${system}) moshi-hook;
         }
         // lib.optionalAttrs pkgsFor.${system}.stdenv.hostPlatform.isDarwin {
           inherit (pkgsFor.${system}) jankyborders;
@@ -232,7 +230,7 @@
       checks = forAllSystems (
         system:
         {
-          moshi-hook-version = self.packages.${system}.moshi-hook.tests.version;
+          moshi-hook-version = pkgsFor.${system}.moshi-hook.tests.version;
         }
         // hostChecks.${system}
       );
