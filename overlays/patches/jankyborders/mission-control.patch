@@ -1,0 +1,262 @@
+From 15dc6e53723b4953b00ea99bb546a1bd890797cf Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Mon, 16 Nov 2026 17:41:01 +1100
+Subject: [PATCH] hide borders while Mission Control is shown on macOS 27
+
+Based on andrewcincotta/JankyBorders@0017b53.
+---
+ src/border.c               |   4 +-
+ src/events.c               |   7 ++-
+ src/main.c                 |   1 +
+ src/misc/mission_control.h | 109 +++++++++++++++++++++++++++++++++++++
+ src/misc/yabai.h           |   6 +-
+ src/windows.c              |  10 ++++
+ src/windows.h              |   1 +
+ 7 files changed, 135 insertions(+), 3 deletions(-)
+ create mode 100644 src/misc/mission_control.h
+
+diff --git a/src/border.c b/src/border.c
+index bb15511..f2b57e9 100644
+--- a/src/border.c
++++ b/src/border.c
+@@ -6,6 +6,7 @@
+ #include <time.h>
+ 
+ extern struct settings g_settings;
++extern bool g_mission_control_active;
+ 
+ // Loaded via dlsym in main.c
+ extern CGError (*JBSLSDisplayGetCornerRadii)(uint32_t, double*, double*, double*, double*);
+@@ -269,7 +270,7 @@ void border_create_window(struct border* border, CGRect frame, bool unmanaged, b
+ }
+ 
+ void border_update_internal(struct border* border, struct settings* settings) {
+-  if (border->external_proxy_wid) return;
++  if (border->external_proxy_wid || g_mission_control_active) return;
+ 
+   int cid = border->cid;
+   CGRect frame;
+@@ -489,6 +490,7 @@ void border_hide(struct border* border) {
+ void border_unhide(struct border* border) {
+   pthread_mutex_lock(&border->mutex);
+   if (border->too_small
++      || g_mission_control_active
+       || border->external_proxy_wid
+       || (!border->sticky && !is_space_visible(border->cid, border->sid))) {
+     pthread_mutex_unlock(&border->mutex);
+diff --git a/src/events.c b/src/events.c
+index a9bfe1b..2ed4b02 100644
+--- a/src/events.c
++++ b/src/events.c
+@@ -3,6 +3,7 @@
+ #include "windows.h"
+ #include "border.h"
+ #include "misc/window.h"
++#include "misc/mission_control.h"
+ 
+ extern struct table g_windows;
+ extern pid_t g_pid;
+@@ -42,6 +43,9 @@ static void window_spawn_handler(uint32_t event, struct window_spawn_data* data,
+ 
+   if (!wid || !sid || is_own_window(cid, wid)) return;
+ 
++  if (event == EVENT_WINDOW_CREATE) mission_control_window_created(cid, wid);
++  else if (event == EVENT_WINDOW_DESTROY) mission_control_window_destroyed(cid, wid);
++
+   if (event == EVENT_WINDOW_CREATE) {
+     if (windows_window_create(windows, wid, sid)) {
+       debug("Window Created: %d %d\n", wid, sid);
+@@ -93,7 +97,8 @@ static void window_modify_handler(uint32_t event, uint32_t* window_id, size_t _,
+   }
+ }
+ 
+-static void front_app_handler() {
++static void front_app_handler(uint32_t event, void* data, size_t _, int cid) {
++  mission_control_prune(cid);
+   debug("Window Focus\n");
+   DELAY_ASYNC_EXEC_ON_MAIN_THREAD(50000, {
+     windows_determine_and_focus_active_window(&g_windows);
+diff --git a/src/main.c b/src/main.c
+index 75f796d..bcb6435 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -29,6 +29,7 @@ pid_t g_pid;
+ mach_port_t g_server_port;
+ struct table g_windows;
+ struct mach_server g_mach_server;
++bool g_mission_control_active = false;
+ struct settings g_settings = { .enabled = true,
+                                .active_window = { .stype = COLOR_STYLE_SOLID,
+                                                   .color = 0xffe1e3e4 },
+diff --git a/src/misc/mission_control.h b/src/misc/mission_control.h
+new file mode 100644
+index 0000000..65f5dbd
+--- /dev/null
++++ b/src/misc/mission_control.h
+@@ -0,0 +1,109 @@
++#pragma once
++#include "helpers.h"
++#include "window.h"
++#include "../windows.h"
++#include <libproc.h>
++
++// Since macOS 27 Mission Control is drawn by the WindowManager process and the
++// WindowServer no longer hides our border windows while it is shown. While
++// Mission Control is open, WindowManager places a backdrop window at this
++// level covering each display, so we hide all borders for as long as any of
++// those backdrops exist.
++#define MISSION_CONTROL_OWNER          "WindowManager"
++#define MISSION_CONTROL_BACKDROP_LEVEL 19
++#define MISSION_CONTROL_MAX_BACKDROPS  16
++
++extern struct table g_windows;
++extern bool g_mission_control_active;
++
++static uint32_t g_mission_control_backdrops[MISSION_CONTROL_MAX_BACKDROPS];
++static int g_mission_control_backdrop_count = 0;
++
++static inline bool mission_control_window_exists(int cid, uint32_t wid) {
++  int wid_cid = 0;
++  return SLSGetWindowOwner(cid, wid, &wid_cid) == kCGErrorSuccess && wid_cid;
++}
++
++static inline bool mission_control_covers_display(CGRect bounds) {
++  uint32_t count = 0;
++  CGGetActiveDisplayList(0, NULL, &count);
++  if (!count) return false;
++
++  CGDirectDisplayID displays[count];
++  CGGetActiveDisplayList(count, displays, &count);
++  for (int i = 0; i < count; i++) {
++    if (CGRectEqualToRect(bounds, CGDisplayBounds(displays[i]))) return true;
++  }
++  return false;
++}
++
++static inline bool mission_control_is_backdrop(int cid, uint32_t wid) {
++  if (window_level(cid, wid) != MISSION_CONTROL_BACKDROP_LEVEL) return false;
++
++  int wid_cid = 0;
++  pid_t pid = 0;
++  char name[PROC_PIDPATHINFO_MAXSIZE];
++  SLSGetWindowOwner(cid, wid, &wid_cid);
++  SLSConnectionGetPID(wid_cid, &pid);
++  if (proc_name(pid, name, sizeof(name)) <= 0
++      || strcmp(name, MISSION_CONTROL_OWNER) != 0) {
++    return false;
++  }
++
++  CGRect bounds;
++  SLSGetWindowBounds(cid, wid, &bounds);
++  return mission_control_covers_display(bounds);
++}
++
++static inline int mission_control_find_backdrop(uint32_t wid) {
++  for (int i = 0; i < g_mission_control_backdrop_count; i++) {
++    if (g_mission_control_backdrops[i] == wid) return i;
++  }
++  return -1;
++}
++
++static inline void mission_control_exit() {
++  debug("Mission Control Exit\n");
++  g_mission_control_active = false;
++  DELAY_ASYNC_EXEC_ON_MAIN_THREAD(50000, {
++    windows_draw_borders_on_current_spaces(&g_windows);
++    windows_determine_and_focus_active_window(&g_windows);
++  });
++}
++
++static inline void mission_control_window_created(int cid, uint32_t wid) {
++  if (mission_control_find_backdrop(wid) >= 0
++      || g_mission_control_backdrop_count >= MISSION_CONTROL_MAX_BACKDROPS
++      || !mission_control_is_backdrop(cid, wid)) {
++    return;
++  }
++
++  g_mission_control_backdrops[g_mission_control_backdrop_count++] = wid;
++  if (!g_mission_control_active) {
++    debug("Mission Control Enter (backdrop %d)\n", wid);
++    g_mission_control_active = true;
++    windows_hide_all(&g_windows);
++  }
++}
++
++// Drops backdrops that no longer exist. A destroy event is also sent when a
++// backdrop merely moves between spaces, so we check the window itself.
++static inline void mission_control_prune(int cid) {
++  if (!g_mission_control_backdrop_count) return;
++
++  int count = 0;
++  for (int i = 0; i < g_mission_control_backdrop_count; i++) {
++    uint32_t wid = g_mission_control_backdrops[i];
++    if (mission_control_window_exists(cid, wid)) {
++      g_mission_control_backdrops[count++] = wid;
++    }
++  }
++  g_mission_control_backdrop_count = count;
++
++  if (!count && g_mission_control_active) mission_control_exit();
++}
++
++static inline void mission_control_window_destroyed(int cid, uint32_t wid) {
++  if (mission_control_find_backdrop(wid) < 0) return;
++  mission_control_prune(cid);
++}
+diff --git a/src/misc/yabai.h b/src/misc/yabai.h
+index 8a7d483..33e3610 100644
+--- a/src/misc/yabai.h
++++ b/src/misc/yabai.h
+@@ -9,6 +9,8 @@
+ #include <CoreVideo/CoreVideo.h>
+ #include <pthread.h>
+ 
++extern bool g_mission_control_active;
++
+ // Additional border interfaces needed for the yabai integration
+ void border_init(struct border* border, int cid);
+ void border_create_window(struct border* border, CGRect frame, bool unmanaged, bool hidpi);
+@@ -90,7 +92,9 @@ static void* yabai_proxy_begin_proc(void* context) {
+     border_update_internal(proxy, &info->settings);
+   }
+ 
+-  CFTypeRef transaction = SLSTransactionCreate(proxy->cid);
++  CFTypeRef transaction = g_mission_control_active
++                          ? NULL
++                          : SLSTransactionCreate(proxy->cid);
+   if (transaction) {
+     SLSTransactionOrderWindow(transaction,
+                               proxy->wid,
+diff --git a/src/windows.c b/src/windows.c
+index 907b072..7822b50 100644
+--- a/src/windows.c
++++ b/src/windows.c
+@@ -148,6 +148,16 @@ void windows_update_inactive(struct table* windows) {
+   }
+ }
+ 
++void windows_hide_all(struct table* windows) {
++  for (int i = 0; i < windows->capacity; ++i) {
++    struct bucket* bucket = windows->buckets[i];
++    while (bucket) {
++      if (bucket->value) border_hide(bucket->value);
++      bucket = bucket->next;
++    }
++  }
++}
++
+ void windows_window_update(struct table* windows, uint32_t wid) {
+   struct border* border = table_find(windows, &wid);
+   if (border) border_update(border, true);
+diff --git a/src/windows.h b/src/windows.h
+index d851fc1..c77709a 100644
+--- a/src/windows.h
++++ b/src/windows.h
+@@ -8,6 +8,7 @@ void windows_update_active(struct table* windows);
+ void windows_update_all(struct table* windows);
+ void windows_update_notifications(struct table* windows);
+ 
++void windows_hide_all(struct table* windows);
+ void windows_window_update(struct table* windows, uint32_t wid);
+ void windows_window_hide(struct table* windows, uint32_t wid);
+ void windows_window_unhide(struct table* windows, uint32_t wid);

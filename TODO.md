@@ -64,13 +64,15 @@ any that are behind, then move the date on a month.
       herdr-annotate `dd147a9` (plugin 0.10.0) against its
       [main branch](https://github.com/plannotator/herdr-annotate/commits/main).
       Reinstall on each host after a bump.
-- [ ] JankyBorders patch (`overlays/modifications.nix`): the fix is not
-      submitted upstream and stays in the overlay. If
+- [ ] JankyBorders patches (`overlays/modifications.nix`): the fixes are not
+      submitted upstream and stay in the overlay. If
       [JankyBorders](https://github.com/FelixKratz/JankyBorders/releases)
       has a release after `v1.9.0`, check whether it fixes the bottom corners
-      near rounded display corners. If it does, delete the `jankyborders`
-      entry and `overlays/patches/jankyborders`. Either way, evaluation
-      stops at the version assertion once nixpkgs packages the new release.
+      near rounded display corners, borders over Mission Control on macOS 27
+      ([issue 209](https://github.com/FelixKratz/JankyBorders/issues/209)) or
+      borders over sheets, and drop each patch it makes redundant. Either way,
+      evaluation stops at the version assertion once nixpkgs packages the new
+      release.
 
 ## Decisions
 
