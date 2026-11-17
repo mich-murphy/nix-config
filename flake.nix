@@ -11,6 +11,9 @@
     deploy-rs.inputs.flake-compat.follows = "";
     # No follows: Determinate recommends its own nixpkgs for FlakeHub Cache hits.
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+    # The agent CLIs, updated daily. No follows: its packages are built and
+    # cached at cache.numtide.com against its own nixpkgs.
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs =

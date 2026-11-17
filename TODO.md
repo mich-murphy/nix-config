@@ -11,6 +11,17 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
 ## dev-01
 
+- [ ] Before the next deploy: add Numtide's cache to dev-01's system Nix
+      configuration in the machines repo (`extra-substituters =
+      https://cache.numtide.com`, `extra-trusted-public-keys =
+      niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=`).
+      Without it the deploy compiles codex on dev-01.
+
+- [ ] After the deploy that moves the agent CLIs to Nix: delete the
+      installers' `claude`, `codex`, `node` and `npm` in `~/.local/bin` (now
+      last on `PATH`, but they still update themselves), stop the machines
+      repo installing them, and check `which claude codex pi`.
+
 - [ ] Remove the nix-config checkout on dev-01. Nothing in this repository
       reads it.
 
@@ -21,6 +32,12 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       verified running from the installed bundle.
 - [ ] Uninstall the deprecated `agent-sessions` binary and its launchd agent by
       hand; Nix never managed them.
+- [ ] After the first switch that moves the agent CLIs to Nix: check that
+      `which claude codex pi mo` resolve to `/etc/profiles/per-user/`, that
+      Pi's Claude SDK provider and Moshi's hooks still work, that
+      `pi update --extensions` installs with Nix's npm, and that Codex shows
+      no update banner. Homebrew cleanup removes the casks and the `node`
+      formula they pulled in.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
 - [ ] When a macOS update fixes the Ctrl+number desktop shortcuts, remove the

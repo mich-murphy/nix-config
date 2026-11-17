@@ -35,9 +35,8 @@ commands, setup and layout, see [README.md](README.md).
 
 Shared modules compose by platform and host: `modules/home` for every host,
 `modules/darwin` and `modules/home/mac` for the Macs. Laptop-only apps and OS
-preferences stay out of the remote profile. dev-01 stays on Ubuntu because it
-gives easy access to fresh agent binaries; NixOS is possible later, separate
-work.
+preferences stay out of the remote profile. dev-01 stays on Ubuntu for now;
+moving it to NixOS is planned, separate work.
 
 ## Ownership
 
@@ -50,13 +49,15 @@ work.
 | Neovim configuration | `mich-murphy/neovim` | its own clone at `~/.config/nvim`; Nix installs only Neovim and its tools |
 | Skills and custom agents | `mich-murphy/skills` | clone at `~/dev/skills`, linked live on every host |
 | Pi extensions | `pi-extensions` repo | installed as packages; updated by hand |
-| dev-01's bootstrap, agent CLIs and work git identity | `machines` repo | outside this repo |
+| dev-01's bootstrap and work git identity | `machines` repo | outside this repo |
 | Accounts, credentials, sessions, caches, histories, per-project trust, device identity | the application or OS | local and untracked |
 
 Built-in agent definitions stay with the tool that ships them. Codex
 `config.toml` mixes in per-project trust and `hooks.json` holds installer-owned
-hooks, so both stay local. MCP configuration is not shared. Model and effort
-choices are made on the fly and stay local.
+hooks, so both stay app-owned files; a switch or deploy merges one declared
+key into `config.toml`, the one that turns off its update check. MCP
+configuration is not shared. Model and effort choices are made on the fly and
+stay local.
 
 ## Writable files
 
@@ -84,9 +85,22 @@ Code's skill sync cannot write into the skills repo.
 
 ## Software and updates
 
-- Agent CLIs (Claude Code, Codex, Pi) come from Homebrew on the Macs and from
-  official installers on dev-01, for freshness. Nix wires them up without
-  owning their updates.
+- Agent CLIs (Claude Code, Codex, Pi) come from numtide's llm-agents.nix on
+  every host, through Home Manager's modules. It packages upstream's latest
+  release within a day, where the nixpkgs-unstable channel lags by days, and
+  its cache has them prebuilt. A switch or deploy is their only update, every
+  host runs the same version and a rollback covers them. None of them
+  replaces or announces itself: its wrappers set Claude Code's
+  `DISABLE_AUTOUPDATER` and Pi's `PI_SKIP_VERSION_CHECK`, and Codex's startup
+  check is turned off in its config. The input has no `follows`, so its
+  packages match what the cache built; `nix flake update llm-agents` takes
+  new releases.
+- A program comes from Nix when it is open source and might be patched, runs
+  as a service, must be the same version on every host, or is a command-line
+  tool. It comes from Homebrew when it is a closed-source GUI app, or needs a
+  system extension, a privileged helper, a fixed `/Applications` path or macOS
+  permissions that reset when its signature changes. Patching needs the
+  source, and rolling back a GUI app does not roll back its data.
 - Homebrew upgrades on every switch. Cleanup uninstalls whatever is not
   declared, App Store apps included, and never zaps, because Nix rollback does
   not restore removed application data.
@@ -142,8 +156,9 @@ is kept as headroom for deeper patches and a scheduled lock
 update.
 
 Only the Macs read it, so only a macOS job pushes. dev-01 is not logged in:
-no cache credential sits on a machine agents run on, and the few paths it
-needs that cache.nixos.org lacks are small (Moshi is a download).
+no cache credential sits on a machine agents run on, and the paths it needs
+that cache.nixos.org lacks are a download (Moshi) or in Numtide's cache (the
+agent CLIs).
 
 The cache is filled by GitHub's free macOS runner, which has 3 cores. That is
 enough for leaf patches. A patch deep enough to rebuild much of the Darwin
@@ -167,6 +182,11 @@ exactly what `main` is trusted with:
   and 39), so nixpkgs paths never come from our cache. `require-sigs` stays
   on, `accept-flake-config` stays off (a flake's suggested substituters are
   ignored), and only root is a trusted user.
+- Numtide's cache is the one substituter outside this repository's control,
+  trusted by its key for the agent CLIs and asked last. A compromised key
+  could serve any path the earlier caches lack, not only those CLIs. The Mac
+  lists it in `modules/darwin/nix.nix`, CI in its workflow, and dev-01 in its
+  system Nix configuration (the machines repo).
 - If the cache or the repository is compromised, run `determinate-nixd
   logout` on each Mac so nothing more is fetched, and treat any Mac that
   switched since then as compromised: its substituted paths cannot be told
@@ -263,3 +283,6 @@ request, not committed.
 | Connection sharing (`ControlMaster`) is on for dev-01 only | It saves a 1Password approval per connection for ssh, scp and deploy-rs. On github.com a shared connection would carry one account's login into the other account's repositories |
 | Pull requests are checked on Linux only; macOS runs only in the `cache` job on `main` | Linux evaluates the Mac configurations too, and the Mac builds run in the local gate on a far faster machine. A macOS pull request job waited up to 16 minutes in the queue and repeated the build the `cache` job does after the merge |
 | Mole is nixpkgs' `mole-cleaner`, bumped in `overlays/modifications.nix`, not a package in `pkgs/` | nixpkgs packages tw93's Mole under that name because its `mole` is an unrelated SSH tunnel tool. Its derivation is careful (sandbox fixes, completions, `mo update` and `mo remove` refused); it was 15 releases behind (1.58.0 against 1.72.0) only because the package is Darwin-only and nixpkgs' update bot builds on x86_64-linux, so every automatic bump fails. The override keeps the derivation and changes only the source. It installs only `mo` |
+| Codex's update check is turned off with `check_for_update_on_startup = false`, merged into `config.toml` | Codex has no build-time switch for it. Run from the store it offers no upgrade command, but it still checks GitHub and shows a new-version banner that only a switch can act on. The file also holds per-project trust and hook state that Codex writes, so it is merged, not linked |
+| The agent CLIs come from numtide's llm-agents.nix, with its cache trusted, not from nixpkgs | nixpkgs-unstable had Claude Code 2.1.323 when upstream had 2.1.326. llm-agents.nix ships each release within a day and prebuilds it for both systems; without its cache, codex compiles from source for over half an hour. Writing and bumping prebuilt-binary packages here would avoid the third-party key, but would take a commit most days. The cost is that key (Binary cache) |
+| `~/.local/bin` is appended to `PATH` in fish, not set with `home.sessionPath`, and comes last in Moshi's service `PATH` | `sessionPath` prepends, so installers' copies there (dev-01's `claude`, `codex`, `node`) shadowed Nix's |

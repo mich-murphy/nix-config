@@ -10,7 +10,19 @@
     # ahead of cache.nixos.org's 40, so nixpkgs paths would otherwise be
     # looked up in our cache before upstream's. Determinate's nix.conf still
     # appends FlakeHub with extra-substituters.
-    customSettings.substituters = [ "https://cache.nixos.org/?priority=30" ];
+    #
+    # Numtide's cache has the agent CLIs from llm-agents.nix prebuilt. It is
+    # asked last (40), after cache.nixos.org and FlakeHub, so it serves only
+    # what neither has.
+    customSettings = {
+      substituters = [
+        "https://cache.nixos.org/?priority=30"
+        "https://cache.numtide.com?priority=40"
+      ];
+      extra-trusted-public-keys = [
+        "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+      ];
+    };
   };
 
   # The uninstaller embeds a second, uncached darwin-system build;

@@ -1,8 +1,4 @@
-{
-  config,
-  inputs,
-  ...
-}:
+{ inputs, ... }:
 {
   imports = [
     ./live-files.nix
@@ -17,8 +13,6 @@
   ];
 
   home = {
-    sessionPath = [ "${config.home.homeDirectory}/.local/bin" ];
-
     shellAliases = {
       ls = "eza -la";
       cat = "bat";

@@ -1,10 +1,17 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
 }:
 let
+  # The agent CLIs come from numtide's llm-agents.nix on every host: it tracks
+  # upstream's latest release daily and its cache has them prebuilt, where the
+  # nixpkgs-unstable channel lags by days. A switch or deploy is their only
+  # update: Claude Code's and Pi's wrappers turn their updaters off, and
+  # Codex's check is off in its settings below.
+  agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   agentFile = config.lib.nixConfig.file "config/agents/AGENTS.md";
   skills = config.nixConfig.skills;
   skillNames = [
@@ -34,7 +41,7 @@ in
 
   programs.claude-code = {
     enable = true;
-    package = null;
+    package = agentPkgs.claude-code;
     mutableSettings = true;
     settings = {
       autoCompactEnabled = true;
@@ -139,9 +146,21 @@ in
     };
   };
 
+  programs.codex = {
+    enable = true;
+    package = agentPkgs.codex;
+    # config.toml also holds per-project trust and hook state that Codex
+    # writes, so only this key is merged in. It stops the startup check that
+    # announces a new release.
+    mutableSettings = true;
+    settings.check_for_update_on_startup = false;
+  };
+
   programs.pi-coding-agent = {
     enable = true;
-    package = null;
+    package = agentPkgs.pi;
+    # Pi installs its npm and git packages with npm.
+    extraPackages = [ pkgs.nodejs ];
     mutableSettings = true;
     settings = {
       compaction.modelOverrides =

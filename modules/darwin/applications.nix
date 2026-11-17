@@ -35,8 +35,6 @@
       };
     };
     casks = [
-      "claude-code@latest"
-      "codex"
       "ghostty"
       "karabiner-elements"
       "whichspace"
@@ -64,9 +62,6 @@
       "wispr-flow"
       "nextcloud"
       "grok-bot"
-    ];
-    brews = [
-      "pi-coding-agent"
     ];
     masApps = {
       "Xcode" = 497799835;

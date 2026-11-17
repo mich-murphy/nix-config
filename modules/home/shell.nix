@@ -3,6 +3,12 @@
   programs.fish = {
     enable = true;
 
+    # Last, so installers' copies there never shadow Nix's (dev-01 had
+    # claude, codex and node in it). Home Manager's sessionPath prepends.
+    shellInit = ''
+      fish_add_path --append --path $HOME/.local/bin
+    '';
+
     interactiveShellInit = ''
       set -g fish_key_bindings fish_vi_key_bindings
       set -g fish_greeting

@@ -11,6 +11,7 @@ let
     "linkGeneration"
     "claudeCodeSettings"
     "piCodingAgentMutableSettings"
+    "codexMutableSettings"
   ]
   ++ lib.optionals isDarwin [ "setupLaunchAgents" ]
   ++ lib.optionals isLinux [
@@ -36,8 +37,7 @@ let
   # Services get a minimal PATH. Give the daemon a shell's PATH so programs it
   # runs by name (herdr, git, gh, tmux) resolve the same way.
   servicePath = lib.concatStringsSep ":" (
-    config.home.sessionPath
-    ++ [ "${config.home.profileDirectory}/bin" ]
+    [ "${config.home.profileDirectory}/bin" ]
     ++ lib.optionals isDarwin [
       "/run/current-system/sw/bin"
       "/opt/homebrew/bin"
@@ -49,6 +49,7 @@ let
       "/bin"
       "/usr/sbin"
       "/sbin"
+      "${config.home.homeDirectory}/.local/bin"
     ]
   );
   wrapper =
