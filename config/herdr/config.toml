@@ -13,6 +13,7 @@ detach = "prefix+d"
 previous_workspace = "prefix+("
 next_workspace = "prefix+)"
 focus_agent = "prefix+shift+1..9"
+remove_worktree = "prefix+shift+x"
 
 [[keys.command]]
 key = "ctrl+h"
