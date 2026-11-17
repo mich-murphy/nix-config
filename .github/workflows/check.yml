@@ -30,6 +30,12 @@ jobs:
           persist-credentials: false
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@16f94ba7aae399b9f9077c254b6719ec6de7e3e3 # v3.24.2
+        with:
+          # The agent CLIs from llm-agents.nix, prebuilt; asked after
+          # cache.nixos.org (40), as on the Mac.
+          extra-conf: |
+            extra-substituters = https://cache.numtide.com?priority=45
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
       - name: Run commit hooks
         run: nix shell --inputs-from . nixpkgs#prek --command prek run --all-files
       # Without --no-build, --all-systems would try to build the Mac checks.
@@ -57,6 +63,12 @@ jobs:
           persist-credentials: false
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@16f94ba7aae399b9f9077c254b6719ec6de7e3e3 # v3.24.2
+        with:
+          # The agent CLIs from llm-agents.nix, prebuilt; asked after
+          # cache.nixos.org (40), as on the Mac.
+          extra-conf: |
+            extra-substituters = https://cache.numtide.com?priority=45
+            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
       - name: Push builds to FlakeHub Cache
         uses: DeterminateSystems/flakehub-cache-action@f00fba8dc0949d63cbbb7d33da7912417d588d75 # v3.24.2
       - name: Check flake

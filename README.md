@@ -51,7 +51,7 @@ machine needs it.
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
 | `home/neovim.nix` | Neovim and the runtime tools Mason needs |
 | `home/herdr.nix` | Herdr (terminal multiplexer) and its live config |
-| `home/agents.nix` | skills links, `AGENTS.md`, Claude Code and Pi settings |
+| `home/agents.nix` | skills links, `AGENTS.md`, Claude Code, Codex and Pi from llm-agents.nix with their settings |
 | `home/moshi.nix` | the Moshi user service, see [Services](#services) |
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
@@ -174,8 +174,10 @@ On dev-01:
    `~/businesscraft/.scratch` directory that `TMPDIR` points at.
 
 dev-01 is not logged in to FlakeHub Cache, so no cache credential sits on a
-machine agents run on. It needs nothing from the cache: everything else comes
-from cache.nixos.org, and Moshi is a download.
+machine agents run on, and it needs nothing from that cache. It does need
+Numtide's cache for the agent CLIs, in its system Nix configuration, which
+the machines repo owns; `dev` is not a trusted Nix user, so the profile
+cannot add it. Without it, a deploy compiles codex on dev-01.
 
 Then, from the Mac checkout:
 
@@ -204,7 +206,11 @@ flowchart TD
 3. Commit. Both switch commands build the working tree as it is, so an
    uncommitted tree still builds, but the recorded revision then ends in
    `-dirty`.
-4. Switch the Mac with `sudo darwin-rebuild switch --flake .`.
+4. Switch the Mac with `sudo darwin-rebuild switch --flake .`. The Nix
+   daemon reads its substituters and keys only at start, so after a switch
+   that changes them (`modules/darwin/nix.nix`), restart it with
+   `sudo launchctl kickstart -k system/systems.determinate.nix-daemon`;
+   until then it builds what the new cache would serve.
 5. Deploy dev-01 with `deploy .#dev-01` (the `deploy` command is in the flake's
    dev shell: `nix develop`). deploy-rs first runs `nix flake check` for the
    Mac's own system (skip it with `--skip-checks` once you have run the full
@@ -299,6 +305,7 @@ the deployed generation and is read-only.
 | Skills | live link into `~/dev/skills` | live link into `~/dev/skills` | in that clone; `git pull` on dev-01 |
 | Neovim config | clone at `~/.config/nvim` | clone at `~/.config/nvim` | in that clone; `git pull` on dev-01 |
 | Claude Code and Pi settings | regular files; a switch merges the keys declared in `modules/home/agents.nix` | same, on deploy | declared keys in Nix; the rest in the app |
+| Codex `config.toml` | regular file; a switch merges the key declared in `modules/home/agents.nix` | same, on deploy | in the app |
 
 Notes:
 
@@ -340,7 +347,7 @@ Notes:
 | `environment.systemPackages` | a tool for every user of the Mac, root included, or an app bundle that must sit in `/Applications/Nix Apps` |
 | `home.packages` | a general command-line tool used in any directory |
 | `programs.neovim.extraPackages` | only Neovim or Mason shells out to it (`go`, `python3` and, on the Macs, `nodejs` live here for Mason) |
-| Homebrew | a Mac app, cask or formula nixpkgs lacks, or one that updates itself |
+| Homebrew | a closed-source Mac app, or one that needs a system extension, a privileged helper, a fixed `/Applications` path or macOS permissions that reset when its signature changes; or something nixpkgs lacks |
 | a project's dev shell | it is that project's toolchain |
 
 ### Changing the application list
