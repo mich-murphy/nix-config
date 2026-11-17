@@ -281,8 +281,8 @@ The GitHub workflow runs on every pull request, on each push to `main` and on
 demand. Pull requests run one Linux job, `check`: the commit hooks,
 `nix flake check --all-systems --no-build` to evaluate every host, the Macs
 included, and `nix flake check` to build the Linux checks. The Mac checks are
-built only by the local gate. Branch protection is to require `check`
-([TODO.md](TODO.md)).
+built only by the local gate. Branch protection requires `check` to pass
+before a pull request merges.
 
 On a push to `main` the `cache` job runs on macOS instead. It builds the Mac
 checks and pushes every path cache.nixos.org lacks to FlakeHub Cache, so the
