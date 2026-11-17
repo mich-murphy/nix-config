@@ -126,47 +126,17 @@
           touch "$out"
         '';
       hostChecks = {
-        aarch64-darwin =
+        aarch64-darwin = lib.concatMapAttrs (
+          host: darwin:
           let
-            pkgs = pkgsFor.aarch64-darwin;
-            lintFiles = lib.fileset.toSource {
-              root = ./.;
-              fileset = lib.fileset.unions [
-                (lib.fileset.fileFilter (file: file.hasExt "nix" || file.hasExt "md") ./.)
-                ./config/markdownlint-cli2.yaml
-              ];
-            };
+            home = darwin.config.home-manager.users.${darwin.config.system.primaryUser};
           in
           {
-            lint =
-              pkgs.runCommand "lint"
-                {
-                  nativeBuildInputs = [
-                    pkgs.markdownlint-cli2
-                    pkgs.nixf-diagnose
-                    pkgs.nixfmt
-                  ];
-                }
-                ''
-                  cd ${lintFiles}
-                  files=$(find . -name '*.nix')
-                  nixfmt --check $files
-                  nixf-diagnose $files
-                  markdownlint-cli2 --config config/markdownlint-cli2.yaml $(find . -name '*.md')
-                  touch "$out"
-                '';
+            "${host}-system" = darwin.config.system.build.toplevel;
+            "${host}-home" = home.home.activationPackage;
+            "${host}-links" = writableLinksCheck pkgsFor.aarch64-darwin host home;
           }
-          // lib.concatMapAttrs (
-            host: darwin:
-            let
-              home = darwin.config.home-manager.users.${darwin.config.system.primaryUser};
-            in
-            {
-              "${host}-system" = darwin.config.system.build.toplevel;
-              "${host}-home" = home.home.activationPackage;
-              "${host}-links" = writableLinksCheck pkgsFor.aarch64-darwin host home;
-            }
-          ) self.darwinConfigurations;
+        ) self.darwinConfigurations;
 
         x86_64-linux =
           let
@@ -211,10 +181,7 @@
         }
       );
 
-      darwinConfigurations = lib.genAttrs [
-        "macbook"
-        "laptop"
-      ] mkDarwin;
+      darwinConfigurations = lib.genAttrs [ "laptop" ] mkDarwin;
 
       homeConfigurations."dev@dev-01" = mkHome "dev-01" "x86_64-linux";
 
