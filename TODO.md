@@ -4,6 +4,11 @@ Reviewed: 2026-11-16
 
 Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
+## Repository
+
+- [ ] Require the `check` status in `main`'s branch protection once it has
+      run on a pull request. Today no check is required.
+
 ## dev-01
 
 - [ ] Remove the nix-config checkout on dev-01. Nothing in this repository
@@ -16,7 +21,6 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       verified running from the installed bundle.
 - [ ] Uninstall the deprecated `agent-sessions` binary and its launchd agent by
       hand; Nix never managed them.
-- [ ] Retire `hosts/macbook` when the laptop is in service.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
 - [ ] When a macOS update fixes the Ctrl+number desktop shortcuts, remove the

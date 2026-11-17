@@ -30,8 +30,7 @@ commands, setup and layout, see [README.md](README.md).
 
 | Host | What | Notes |
 | --- | --- | --- |
-| `macbook` | nix-darwin Mac, current | Removed once `laptop` is in service. |
-| `laptop` | nix-darwin Mac, MacBook Pro M5 | Replaces `macbook`. |
+| `laptop` | nix-darwin Mac, MacBook Pro M5 | The only Mac. |
 | `dev@dev-01` | Ubuntu x86_64 VM, standalone Home Manager | Deployed from a Mac. |
 
 Shared modules compose by platform and host: `modules/home` for every host,
@@ -129,12 +128,26 @@ Patch files sit in `overlays/patches/<package>/`.
 
 ## Binary cache
 
-CI pushes what it builds to FlakeHub Cache, so the hosts substitute the paths
+CI pushes what it builds to FlakeHub Cache, so the Macs substitute the paths
 cache.nixos.org lacks (Moshi, patched packages, and a whole closure after a
 deep security patch) instead of building them. It was chosen over
 Cachix's free tier for its authentication: no long-lived push token exists,
 and the cache is private, so unfree packages are not redistributed. It costs
 $7 a month.
+
+Today it holds little that is slow to build (Moshi, JankyBorders); it is
+kept as headroom for deeper patches and a scheduled lock update.
+
+Only the Macs read it, so only a macOS job pushes. dev-01 is not logged in:
+no cache credential sits on a machine agents run on, and the few paths it
+needs that cache.nixos.org lacks are small (Moshi is a download).
+
+The cache is filled by GitHub's free macOS runner, which has 3 cores. That is
+enough for leaf patches. A patch deep enough to rebuild much of the Darwin
+closure would take hours there; when one pushes the `cache` job past about
+20 minutes, its `runs-on` moves to a paid runner (Namespace's M4 Pro Macs cost
+about what GitHub's paid runners do, with twice the cores). The laptop builds
+anything not yet cached itself, and it is faster than any rented Mac.
 
 A path pushed to the cache runs as root on every host that substitutes it, and
 Nix checks only the signature, not how the path was built. So the cache trusts
@@ -143,7 +156,8 @@ exactly what `main` is trusted with:
 - Only the `cache` job pushes. It runs only for pushes to `main`, and it alone
   has `id-token: write`, the short-lived GitHub token FlakeHub accepts. Pull
   request jobs, including those from agents' branches, get no token.
-- Merging into `main` requires the pull request checks to pass.
+- Merging into `main` is to require the pull request check; it does not yet
+  ([TODO.md](TODO.md)).
 - Every action is pinned to a full commit SHA, and checkout keeps no
   credentials. [TODO.md](TODO.md) has the monthly bump.
 - Hosts look in cache.nixos.org first (priority 30, ahead of FlakeHub's 38
@@ -151,7 +165,7 @@ exactly what `main` is trusted with:
   on, `accept-flake-config` stays off (a flake's suggested substituters are
   ignored), and only root is a trusted user.
 - If the cache or the repository is compromised, run `determinate-nixd
-  logout` on each host so nothing more is fetched, and treat any host that
+  logout` on each Mac so nothing more is fetched, and treat any Mac that
   switched since then as compromised: its substituted paths cannot be told
   apart from honest ones.
 
@@ -171,15 +185,21 @@ deploy.
 
 ## Verification
 
-`nix flake check --all-systems` is the single gate. It covers lint (nixfmt,
-nixf-diagnose, markdownlint), each Mac's system, home and link check, dev-01's
-home, link check and deploy-rs checks, and the Moshi hook version test. The
-Linux checks build on the Mac through Determinate Nix's native Linux builder.
-prek runs the same lint tools before each commit.
+The gate is two commands. `prek run --all-files` lints (file hygiene,
+nixfmt, nixf-diagnose, markdownlint), and runs before each commit.
+`nix flake check --all-systems` builds: the Mac's system, home and link
+check, dev-01's home, link check and deploy-rs checks, and the Moshi hook
+version test. Lint is not also a flake check, so CI runs it once. The Linux
+checks build on the Mac through Determinate Nix's native Linux builder.
 
-CI runs the same checks on every pull request and push to `main`, with one
-runner per system. Branch protection requires both pull request checks to pass
-before a merge into `main`; the owner, as admin, can bypass it.
+CI checks pull requests on a Linux runner only. It runs the commit hooks,
+evaluates every system with `nix flake check --all-systems --no-build`, so an
+evaluation error in a Mac configuration fails there too, and builds the Linux
+checks. Without `--no-build`, `--all-systems` would try to
+build the Mac checks on Linux and fail. The Mac checks are built by the local
+gate and, after a merge, by the macOS `cache` job. The evaluation forbids
+import-from-derivation, which would need a Mac build during evaluation.
+Branch protection is to require `check` ([TODO.md](TODO.md)).
 
 Tests cover what logic or the build derives. They do not re-assert literal
 values the configuration just set. The Moshi module holds the only assertions:
@@ -229,7 +249,7 @@ request, not committed.
 | `networking.dns` lists only public resolvers, not `100.100.100.100` | The Tailscale app installs its own resolver for the tailnet's names. The static entry sent every other lookup through Tailscale and left a dead address first in the list whenever Tailscale was down |
 | The Dock's icons are declared (`dock.persistent-apps`, `persistent-others`) | A new Mac gets the same Dock. A switch rewrites both lists, so an icon dragged in by hand lasts only until the next switch |
 | Siri is turned off through `com.apple.assistant.support`, and AirPlay Receiver by a `defaults -currentHost write` after activation | Neither has a typed option. AirPlay Receiver is a per-host preference, which `system.defaults` cannot write ([nix-darwin issue 1721](https://github.com/nix-darwin/nix-darwin/issues/1721)) |
-| The laptop's illuminated Apple logo is turned off with `LEBacklightMode = 0` in root's `com.apple.CoreBrightness` domain, set only on the laptop host | Apple's [documented method](https://support.apple.com/en-us/149248) has no System Settings control. Only MacBook Pros with a PROLED XDR display have the logo, so `macbook` does not set it |
+| The laptop's illuminated Apple logo is turned off with `LEBacklightMode = 0` in root's `com.apple.CoreBrightness` domain, set only on the laptop host | Apple's [documented method](https://support.apple.com/en-us/149248) has no System Settings control. Only MacBook Pros with a PROLED XDR display have the logo, so it stays in `hosts/laptop` |
 | Local models run in llama.cpp's router from nixpkgs, not Homebrew or MLX | The router starts each model from the path of its own binary. Homebrew upgrades in place and deletes the old version, so a router left running across its 0.9.0 to 1.0.0 upgrade failed every model load. A store path survives until garbage collection, and a new one changes the agent's plist, so Home Manager restarts the router on an upgrade and only then. Both builds are 1.0.0 with Metal and decode Qwen3.6-35B-A3B at the same speed with the same MTP acceptance. Homebrew was used first because it had 0.9.0 when nixpkgs had 0.8.0. llama.cpp gave the lowest time to first token and a working prompt cache in agent benchmarks, and Pi's built-in `llama.cpp` provider and `/llama` command drive its router |
 | llama-server runs always, not only while Pi is open | The idle router holds about 0.1 GB and a loaded model sleeps after 5 idle minutes, dropping from 29 GB to 0.4 GB. Starting and stopping it with Pi needed a Pi extension, a PID registry and a wrapper script to save that little |
 | The router loads one model at a time (`--models-max 1`) with a 128K context, MTP speculative decoding and 32 context checkpoints | Two large models together exhaust the 64 GB of memory. MTP raised decode speed with no change to output (88 tok/s on Qwen3.6-35B-A3B). Qwen3.6 is a hybrid model, which reprocesses a partly matching prompt from the start without checkpoints |
@@ -238,3 +258,4 @@ request, not committed.
 | `Host *` sets `IdentitiesOnly yes` and `IdentityFile none`, so a host is offered only the key its entry names and an unlisted host none | Otherwise ssh offered all of 1Password's keys plus the default files to every host: more than sshd's default `MaxAuthTries` of 6, and it shows every server each key held |
 | github.com has two `Match` blocks, and git inside `~/businesscraft/` picks the work one with `ssh -P github-bc` | ssh offers agent keys in the agent's order, not `IdentityFile` order, and GitHub signs in as the first key it accepts. `ssh -i github_bc.pub` only added the work key beside the personal one, which 1Password lists first, so work repositories signed in as mich-murphy. `Match tagged` needs OpenSSH 9.4 or newer |
 | Connection sharing (`ControlMaster`) is on for dev-01 only | It saves a 1Password approval per connection for ssh, scp and deploy-rs. On github.com a shared connection would carry one account's login into the other account's repositories |
+| Pull requests are checked on Linux only; macOS runs only in the `cache` job on `main` | Linux evaluates the Mac configurations too, and the Mac builds run in the local gate on a far faster machine. A macOS pull request job waited up to 16 minutes in the queue and repeated the build the `cache` job does after the merge |

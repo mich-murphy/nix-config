@@ -8,11 +8,10 @@ The reasons behind the choices are in [DESIGN.md](DESIGN.md).
 
 | Host | What it is | Flake output | Switched with |
 | --- | --- | --- | --- |
-| `macbook` | Current Mac (M2 MacBook Air) | `darwinConfigurations.macbook` | `sudo darwin-rebuild switch --flake .` on the Mac itself |
-| `laptop` | New MacBook Pro (M5), user `michael`; it replaces `macbook` | `darwinConfigurations.laptop` | the same, on the laptop |
+| `laptop` | MacBook Pro (M5), user `michael` | `darwinConfigurations.laptop` | `sudo darwin-rebuild switch --flake .` on the laptop |
 | `dev-01` | Ubuntu VM, reached over SSH from the Mac | `homeConfigurations."dev@dev-01"` | `deploy .#dev-01` from the Mac |
 
-The two Macs never deploy to each other. dev-01 is Home Manager only: the
+dev-01 is Home Manager only: the
 machines repo's bootstrap owns everything outside its home directory.
 
 ## Structure
@@ -33,7 +32,7 @@ overlays/                applied to every package set, so modules use pkgs.<name
 └── patches/<package>/   patch files the overlays apply
 config/                  raw application files, linked or read by the modules
 prek.toml                commit hooks
-.github/workflows/       CI on macOS and Linux
+.github/workflows/       CI: pull requests on Linux, the cache filled from macOS
 ```
 
 Concern files define existing nix-darwin or Home Manager options. Add a setting
@@ -72,7 +71,7 @@ flowchart LR
   HH["hosts/HOST/home.nix"] --> MKD
   MAC["modules/home/mac"] -->|"imported by Mac home.nix"| HH
   DH["hosts/dev-01/home.nix"] --> MKH
-  MKD --> DC["darwinConfigurations: macbook, laptop"]
+  MKD --> DC["darwinConfigurations: laptop"]
   MKH --> HC["homeConfigurations: dev-01"]
   HC --> DR["deploy.nodes.dev-01 (deploy-rs)"]
 ```
@@ -173,11 +172,10 @@ On dev-01:
 4. Create `~/.gitconfig-work`, the work identity that `hosts/dev-01/home.nix`
    includes (the machines repo's bootstrap is meant to write it), and the
    `~/businesscraft/.scratch` directory that `TMPDIR` points at.
-5. To download from FlakeHub Cache instead of building Moshi, run
-   `sudo determinate-nixd login` (assumed: Determinate), and put
-   `substituters = https://cache.nixos.org/?priority=30` in
-   `/etc/nix/nix.custom.conf` so cache.nixos.org is asked first. Both are
-   outside the home directory, so the machines repo's bootstrap owns them.
+
+dev-01 is not logged in to FlakeHub Cache, so no cache credential sits on a
+machine agents run on. It needs nothing from the cache: everything else comes
+from cache.nixos.org, and Moshi is a download.
 
 Then, from the Mac checkout:
 
@@ -232,8 +230,9 @@ flowchart TD
 
 ## Verification
 
-`nix flake check --all-systems` is the single gate. CI runs the same checks on
-every pull request, and the commit hooks run the lint part at each commit.
+Two commands are the gate: `prek run --all-files` lints, and
+`nix flake check --all-systems` builds. The commit hooks run prek at each
+commit.
 
 ```mermaid
 flowchart LR
@@ -244,8 +243,7 @@ flowchart LR
   end
   subgraph FC["nix flake check --all-systems"]
     subgraph MAC["aarch64-darwin: runs natively"]
-      M1["lint"]
-      M2["macbook and laptop: system, home, links"]
+      M2["laptop: system, home, links"]
       M3["moshi-hook-version"]
     end
     subgraph LIN["x86_64-linux: Linux builder"]
@@ -254,11 +252,9 @@ flowchart LR
       L3["moshi-hook-version"]
     end
   end
-  CI["GitHub Actions: a macOS and a Linux runner"] -.->|"each runs its own system"| FC
+  CI["GitHub Actions: Linux for pull requests"] -.->|"evaluates every system, builds Linux"| FC
 ```
 
-- `lint`: `nixfmt --check` and `nixf-diagnose` over every `.nix` file, and
-  markdownlint over every tracked Markdown file.
 - `<host>-system` and `<host>-home` build each Mac; `<host>-links` and
   `dev-01-links` confirm every live link points at a file that exists in this
   repo (or into the skills clone; dev-01 has no checkout).
@@ -271,20 +267,22 @@ The `x86_64-linux` checks build through Determinate Nix's native Linux builder
 on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
 run the check again.
 
-`prek run --all-files` runs the same lint tools plus file hygiene hooks as a
-quick pre-commit pass; `prek install` (set-up step 7) makes it run on each
+`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, markdownlint
+and file hygiene hooks; `prek install` (set-up step 7) makes it run on each
 commit.
 
 The GitHub workflow runs on every pull request, on each push to `main` and on
-demand. A macOS runner and a Linux runner each run `nix flake check` for their
-own system, which together is the `--all-systems` set; the Linux runner also
-runs the commit hooks. Branch protection requires `check (macos-26)` and
-`check (ubuntu-24.04)` to pass before a pull request merges.
+demand. Pull requests run one Linux job, `check`: the commit hooks,
+`nix flake check --all-systems --no-build` to evaluate every host, the Macs
+included, and `nix flake check` to build the Linux checks. The Mac checks are
+built only by the local gate. Branch protection is to require `check`
+([TODO.md](TODO.md)).
 
-On a push to `main` the same checks run in the `cache` job instead, which
-pushes every path it builds that cache.nixos.org lacks to FlakeHub Cache.
-The hosts then download those paths rather than build them. DESIGN.md
-(Binary cache) says how pushes are restricted.
+On a push to `main` the `cache` job runs on macOS instead. It builds the Mac
+checks and pushes every path cache.nixos.org lacks to FlakeHub Cache, so the
+Macs download those paths rather than build them. A switch does not wait for
+it; anything not yet cached builds locally. DESIGN.md (Binary cache) says how
+pushes are restricted.
 
 ## Live configuration
 
@@ -351,11 +349,10 @@ Homebrew cleanup runs on every switch and uninstalls, without `zap`, what
 `modules/darwin/applications.nix` no longer declares. That includes App Store
 apps installed by hand, despite what the `masApps` option text says
 ([nix-darwin issue 1860](https://github.com/nix-darwin/nix-darwin/issues/1860)).
-Before switching, list what the working tree would remove (on the laptop, name
-`laptop`):
+Before switching, list what the working tree would remove:
 
 ```sh
-nix eval --raw .#darwinConfigurations.macbook.config.homebrew.brewfile |
+nix eval --raw .#darwinConfigurations.laptop.config.homebrew.brewfile |
   HOMEBREW_NO_AUTO_UPDATE=1 brew bundle cleanup --file=-
 ```
 
