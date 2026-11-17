@@ -67,7 +67,6 @@
     ];
     brews = [
       "pi-coding-agent"
-      "mole"
     ];
     masApps = {
       "Xcode" = 497799835;

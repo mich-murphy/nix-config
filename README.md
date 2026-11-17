@@ -27,7 +27,7 @@ modules/home/            Home Manager modules shared by every host
 pkgs/moshi-hook/         a package nixpkgs lacks, added by overlays/additions.nix
 overlays/                applied to every package set, so modules use pkgs.<name>
 ├── additions.nix        packages from pkgs/
-├── modifications.nix    local fixes to nixpkgs packages (JankyBorders)
+├── modifications.nix    local fixes to nixpkgs packages (JankyBorders patches, Mole bump)
 ├── security.nix         security fixes ahead of nixpkgs; empty between incidents
 └── patches/<package>/   patch files the overlays apply
 config/                  raw application files, linked or read by the modules
@@ -56,7 +56,7 @@ machine needs it.
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
 | `home/mac/window-management.nix` | JankyBorders, and skhd with its live `skhdrc` |
-| `home/mac/packages.nix` | Mac-only tools (`doctl`, document rendering for Neovim) |
+| `home/mac/packages.nix` | Mac-only tools (`doctl`, Mole as `mo`, document rendering for Neovim) |
 
 `mkDarwin` and `mkHome` in `flake.nix` assemble each host from these directories.
 A host's `home.nix` adds host-only modules on top of the shared home; each Mac's

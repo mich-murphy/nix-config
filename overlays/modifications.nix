@@ -1,8 +1,9 @@
-# Local fixes to nixpkgs packages that are not security fixes. Each patches a
-# package nothing else depends on, so only that package rebuilds. Each asserts
-# the upstream version it was written for: a nixpkgs bump stops evaluation, and
-# the new release is checked for an upstream fix before the patch carries on.
-# Patch files live in patches/<package>/.
+# Local fixes to nixpkgs packages that are not security fixes: patches, and a
+# newer release where nixpkgs is more than three releases behind upstream.
+# Each changes a package nothing else depends on, so only that package
+# rebuilds. Each asserts the nixpkgs version it was written for: a nixpkgs bump
+# stops evaluation, and the entry is checked, refreshed or deleted before it
+# carries on. Patch files live in patches/<package>/.
 final: prev: {
   # Three fixes, each `git format-patch` of one commit, applied in order on
   # upstream's v1.9.0 tag; none is submitted upstream. README.md (Patched
@@ -30,4 +31,26 @@ final: prev: {
         ./patches/jankyborders/attached-sheets.patch
       ];
     });
+
+  # tw93's Mole. nixpkgs had 1.58.0 against upstream's 1.72.0: its update bot
+  # builds on x86_64-linux and this package is Darwin-only, so every automatic
+  # bump fails. Delete this entry once nixpkgs reaches 1.72.0.
+  mole-cleaner =
+    assert final.lib.assertMsg (prev.mole-cleaner.version == "1.58.0") ''
+      overlays/modifications.nix: nixpkgs now has mole-cleaner ${prev.mole-cleaner.version}.
+      Delete the entry if that is 1.72.0 or later; otherwise update the version
+      asserted here.
+    '';
+    prev.mole-cleaner.overrideAttrs (
+      finalAttrs: _: {
+        version = "1.72.0";
+        src = final.fetchFromGitHub {
+          owner = "tw93";
+          repo = "Mole";
+          tag = "V${finalAttrs.version}";
+          hash = "sha256-pNRp7GnjfqEWyiEmHqHagzJagzZDpU/6oeLHc6wWiB8=";
+        };
+        vendorHash = "sha256-OQ7QTSuulopAS+2Jet2roZVGPMXgJUav73du+MJlt6o=";
+      }
+    );
 }
