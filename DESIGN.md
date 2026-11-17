@@ -174,8 +174,8 @@ exactly what `main` is trusted with:
 - Only the `cache` job pushes. It runs only for pushes to `main`, and it alone
   has `id-token: write`, the short-lived GitHub token FlakeHub accepts. Pull
   request jobs, including those from agents' branches, get no token.
-- Merging into `main` is to require the pull request check; it does not yet
-  ([TODO.md](TODO.md)).
+- Merging into `main` requires the pull request job, `check`, to pass; the
+  owner, as admin, can bypass it.
 - Every action is pinned to a full commit SHA, and checkout keeps no
   credentials. [TODO.md](TODO.md) has the monthly bump.
 - Hosts look in cache.nixos.org first (priority 30, ahead of FlakeHub's 38
@@ -222,7 +222,7 @@ checks. Without `--no-build`, `--all-systems` would try to
 build the Mac checks on Linux and fail. The Mac checks are built by the local
 gate and, after a merge, by the macOS `cache` job. The evaluation forbids
 import-from-derivation, which would need a Mac build during evaluation.
-Branch protection is to require `check` ([TODO.md](TODO.md)).
+Branch protection requires `check` to pass before a merge into `main`.
 
 Tests cover what logic or the build derives. They do not re-assert literal
 values the configuration just set. The Moshi module holds the only assertions:
