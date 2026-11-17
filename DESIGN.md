@@ -110,7 +110,9 @@ Patch files sit in `overlays/patches/<package>/`.
 - `overlays/additions.nix` adds the packages nixpkgs lacks, from `pkgs/`.
   Nothing in nixpkgs depends on them, so adding them rebuilds nothing else.
 - `overlays/modifications.nix` holds local fixes to packages nothing else
-  depends on (leaf packages), with `overrideAttrs`. Only that package
+  depends on (leaf packages), with `overrideAttrs`: patches, and a newer
+  release where nixpkgs is more than three releases behind upstream (a
+  smaller lag is left to a lock update). Only that package
   rebuilds. Each asserts the upstream version it was written for, so a
   nixpkgs bump stops evaluation and the release is checked for an upstream
   fix before the patch carries on.
@@ -135,8 +137,9 @@ Cachix's free tier for its authentication: no long-lived push token exists,
 and the cache is private, so unfree packages are not redistributed. It costs
 $7 a month.
 
-Today it holds little that is slow to build (Moshi, JankyBorders); it is
-kept as headroom for deeper patches and a scheduled lock update.
+Today it holds little that is slow to build (Moshi, JankyBorders, Mole); it
+is kept as headroom for deeper patches and a scheduled lock
+update.
 
 Only the Macs read it, so only a macOS job pushes. dev-01 is not logged in:
 no cache credential sits on a machine agents run on, and the few paths it
@@ -259,3 +262,4 @@ request, not committed.
 | github.com has two `Match` blocks, and git inside `~/businesscraft/` picks the work one with `ssh -P github-bc` | ssh offers agent keys in the agent's order, not `IdentityFile` order, and GitHub signs in as the first key it accepts. `ssh -i github_bc.pub` only added the work key beside the personal one, which 1Password lists first, so work repositories signed in as mich-murphy. `Match tagged` needs OpenSSH 9.4 or newer |
 | Connection sharing (`ControlMaster`) is on for dev-01 only | It saves a 1Password approval per connection for ssh, scp and deploy-rs. On github.com a shared connection would carry one account's login into the other account's repositories |
 | Pull requests are checked on Linux only; macOS runs only in the `cache` job on `main` | Linux evaluates the Mac configurations too, and the Mac builds run in the local gate on a far faster machine. A macOS pull request job waited up to 16 minutes in the queue and repeated the build the `cache` job does after the merge |
+| Mole is nixpkgs' `mole-cleaner`, bumped in `overlays/modifications.nix`, not a package in `pkgs/` | nixpkgs packages tw93's Mole under that name because its `mole` is an unrelated SSH tunnel tool. Its derivation is careful (sandbox fixes, completions, `mo update` and `mo remove` refused); it was 15 releases behind (1.58.0 against 1.72.0) only because the package is Darwin-only and nixpkgs' update bot builds on x86_64-linux, so every automatic bump fails. The override keeps the derivation and changes only the source. It installs only `mo` |
