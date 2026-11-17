@@ -22,7 +22,8 @@ in
   ) publicKeys;
 
   # ssh takes the first value it finds for each option, so specific hosts come
-  # first. Home Manager always writes "*" last. IdentityFile is the exception:
+  # first. Home Manager sorts entries by name ("Match ..." before lower-case
+  # hosts) and always writes "*" last. IdentityFile is the exception:
   # it accumulates, which is why "*" can add `none` without dropping a host's key.
   programs.ssh = {
     enable = true;
@@ -54,11 +55,23 @@ in
         IdentityFile = "~/.ssh/truenas.pub";
       };
 
-      # Personal account. Git inside ~/businesscraft/ puts the work key in
-      # front of this one with -i (git.nix), and GitHub signs in as whichever
-      # key it accepts first. No ControlMaster here: a shared connection would
-      # carry the first account's login into the other account's repositories.
-      "github.com" = {
+      # GitHub signs in as whichever key it accepts first, and ssh offers
+      # agent keys in 1Password's order, not IdentityFile order. So each
+      # connection must be offered exactly one GitHub key; `-i` can't do that,
+      # as it only adds a key. Git inside ~/businesscraft/ runs `ssh -P
+      # github-bc` (git.nix), which tags the connection for the work block;
+      # test the work login with `ssh -P github-bc -T git@github.com`.
+      # ssh.github.com is GitHub's port-443 endpoint. `Match tagged` needs
+      # OpenSSH 9.4 or newer; an older ssh rejects this whole file.
+      # `Match host` sees only HostName changes made above it, and these
+      # blocks sort first, so a Host alias for github.com would get no key.
+      # No ControlMaster here: a shared connection would carry the first
+      # account's login into the other account's repositories.
+      "Match host github.com,ssh.github.com tagged github-bc" = {
+        User = "git";
+        IdentityFile = "~/.ssh/github_bc.pub";
+      };
+      "Match host github.com,ssh.github.com !tagged github-bc" = {
         User = "git";
         IdentityFile = "~/.ssh/github.pub";
       };
