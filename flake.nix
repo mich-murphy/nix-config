@@ -161,7 +161,7 @@
       packages = forAllSystems (
         system:
         {
-          inherit (pkgsFor.${system}) moshi-hook;
+          inherit (pkgsFor.${system}) moshi-hook plannotator-tui;
         }
         // lib.optionalAttrs pkgsFor.${system}.stdenv.hostPlatform.isDarwin {
           inherit (pkgsFor.${system}) jankyborders;
@@ -204,6 +204,7 @@
         system:
         {
           moshi-hook-version = pkgsFor.${system}.moshi-hook.tests.version;
+          plannotator-tui-version = pkgsFor.${system}.plannotator-tui.tests.version;
         }
         // hostChecks.${system}
       );
