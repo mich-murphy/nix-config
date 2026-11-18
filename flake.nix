@@ -14,6 +14,9 @@
     # The agent CLIs, updated daily. No follows: its packages are built and
     # cached at cache.numtide.com against its own nixpkgs.
     llm-agents.url = "github:numtide/llm-agents.nix";
+    # Tokyo Night's generated theme files (Pi, TextMate), read as data.
+    tokyonight.url = "github:folke/tokyonight.nvim";
+    tokyonight.flake = false;
   };
 
   outputs =

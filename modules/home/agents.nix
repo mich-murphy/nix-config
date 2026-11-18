@@ -22,6 +22,18 @@ let
     "show-me"
   ];
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
+  # Tokyo Night Night, as folke/tokyonight.nvim generates it for Pi, with two
+  # changes. Pi finds a custom theme by `<name>.json`, so the name matches the
+  # file. `mdCodeBlock` is the text colour of unhighlighted code blocks, and
+  # upstream sets it to the theme's darkest background (`bg_dark`), which Pi
+  # draws as is; "" uses the terminal's foreground instead.
+  piThemeName = "tokyonight-night";
+  piTheme =
+    lib.recursiveUpdate (lib.importJSON "${inputs.tokyonight}/extras/pi/tokyonight_night.json")
+      {
+        name = piThemeName;
+        colors.mdCodeBlock = "";
+      };
 in
 {
   home.file = {
@@ -29,6 +41,9 @@ in
     ".claude/CLAUDE.md".source = agentFile;
     ".codex/AGENTS.md".source = agentFile;
     ".pi/agent/AGENTS.md".source = agentFile;
+    "${config.programs.pi-coding-agent.configDir}/themes/${piThemeName}.json".source =
+      (pkgs.formats.json { }).generate "${piThemeName}.json"
+        piTheme;
   }
   # Per-skill links keep ~/.claude/skills a real directory so Claude
   # Code's managed-skills sync cannot write into the skills repo.
@@ -185,7 +200,7 @@ in
       quietStartup = true;
       retry.maxRetries = 6;
       showCacheMissNotices = true;
-      theme = "dark";
+      theme = piThemeName;
       treeFilterMode = "no-tools";
     };
   };
