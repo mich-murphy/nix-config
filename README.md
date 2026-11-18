@@ -56,7 +56,7 @@ machine needs it.
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
 | `home/mac/window-management.nix` | JankyBorders, and skhd with its live `skhdrc` |
-| `home/mac/packages.nix` | Mac-only tools (`doctl`, Mole as `mo`, document rendering for Neovim) |
+| `home/mac/packages.nix` | Mac-only tools (`doctl`, Mole as `mo`, `spotify_player`, document rendering for Neovim) |
 
 `mkDarwin` and `mkHome` in `flake.nix` assemble each host from these directories.
 A host's `home.nix` adds host-only modules on top of the shared home; each Mac's
