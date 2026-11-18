@@ -13,7 +13,7 @@ resize < e : yabai -m space --balance
 alt - return : /usr/bin/osascript -e 'tell application "Ghostty" to new window'
 shift + alt - return : '/Applications/Google Chrome.App/Contents/MacOS/Google Chrome'
 
-alt - t : yabai -m window --toggle float; yabai -m window --grid 4:4:1:1:2:2
+alt - t : yabai -m window --toggle float; yabai -m query --windows --window | jq -e '."is-floating"' >/dev/null && yabai -m window --grid 4:4:1:1:2:2
 alt - f : yabai -m window --toggle zoom-fullscreen
 alt - q : yabai -m window --close
 alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
@@ -33,8 +33,12 @@ shift + alt - l : yabai -m window --swap east || yabai -m window --display east
 shift + alt - n : yabai -m window --display next --focus
 shift + alt - p : yabai -m window --display prev --focus
 
-shift + ctrl - 1 : yabai -m window --space 1 --focus
-shift + ctrl - 2 : yabai -m window --space 2 --focus
-shift + ctrl - 3 : yabai -m window --space 3 --focus
-shift + ctrl - 4 : yabai -m window --space 4 --focus
-shift + ctrl - 5 : yabai -m window --space 5 --focus
+# Alt+1 to Alt+7 switch desktops: Karabiner turns them into the macOS
+# Ctrl+number shortcuts. These move the window there and follow it.
+shift + alt - 1 : yabai -m window --space 1 --focus
+shift + alt - 2 : yabai -m window --space 2 --focus
+shift + alt - 3 : yabai -m window --space 3 --focus
+shift + alt - 4 : yabai -m window --space 4 --focus
+shift + alt - 5 : yabai -m window --space 5 --focus
+shift + alt - 6 : yabai -m window --space 6 --focus
+shift + alt - 7 : yabai -m window --space 7 --focus

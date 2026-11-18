@@ -35,6 +35,9 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       formula they pulled in.
 - [ ] Test whether skhd and yabai keep their macOS permissions across an
       upgrade. This has never been done.
+- [ ] Undock and redock once with desktops set to 5 + 2 in Mission Control:
+      check that Teams and Slack land on 3 undocked and on 6 and 7 docked,
+      and what macOS does with desktops 6 and 7 while the laptop is alone.
 - [ ] When a macOS update fixes the Ctrl+number desktop shortcuts, remove the
       two Dock-restart signals in `modules/darwin/window-management.nix` and
       the Shift+Alt+D binding in `config/skhd/skhdrc`.

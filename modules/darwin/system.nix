@@ -17,7 +17,7 @@ let
 
   # Keyed by com.apple.symbolichotkeys id; parameters are the character, the
   # key code and the modifier mask. Carbon Events.h names key codes 18/19/20/21/23
-  # as ANSI 1/2/3/4/5 and 49 as Space.
+  # as ANSI 1/2/3/4/5, 22/26 as ANSI 6/7 and 49 as Space.
   symbolicHotKeys = {
     # Input source switching on Ctrl+Space and Ctrl+Option+Space
     "60" = hotKey false [
@@ -36,7 +36,7 @@ let
       49
       command
     ];
-    # Switch to Desktop 1 to 5 on Ctrl+1 to Ctrl+5
+    # Switch to Desktop 1 to 7 on Ctrl+1 to Ctrl+7
     "118" = hotKey true [
       65535
       18
@@ -60,6 +60,16 @@ let
     "122" = hotKey true [
       65535
       23
+      control
+    ];
+    "123" = hotKey true [
+      65535
+      22
+      control
+    ];
+    "124" = hotKey true [
+      65535
+      26
       control
     ];
   };

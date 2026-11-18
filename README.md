@@ -335,6 +335,13 @@ Notes:
   the display's rounded corners, hides while Mission Control is open, and
   stays below a window's sheets and open panels; see
   [Patched packages](#patched-packages).
+- Desktops: docked, the external display has 1 to 5 and the laptop 6 (Teams)
+  and 7 (Slack); undocked, the laptop has 1 to 5 and Teams and Slack move to
+  3. Set the counts in Mission Control; yabai cannot add desktops with SIP on.
+  Alt+number switches desktop, Shift+Alt+number moves the focused window
+  there and follows it, and Shift+Alt+H/J/K/L or N/P move it to another
+  display. If a window will not move, yabai missed it when it opened;
+  `launchctl kickstart -k gui/$(id -u)/org.nixos.yabai` restarts yabai.
 - On macOS 27, Ctrl+3 and above stop switching desktops after a display
   connects or disconnects, until the Dock restarts. yabai restarts it two
   seconds after each change, so expect the Dock to flicker then. Shift+Alt+D
