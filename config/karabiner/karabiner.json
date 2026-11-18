@@ -139,6 +139,67 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Alt+1 to Alt+7 to Ctrl+1 to Ctrl+7, the macOS Switch to Desktop shortcuts",
+                        "manipulators": [
+                            {
+                                "from": {
+                                    "key_code": "1",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "1", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "2",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "2", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "3",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "3", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "4",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "4", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "5",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "5", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "6",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "6", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            },
+                            {
+                                "from": {
+                                    "key_code": "7",
+                                    "modifiers": { "mandatory": ["option"] }
+                                },
+                                "to": [{ "key_code": "7", "modifiers": ["left_control"] }],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },
