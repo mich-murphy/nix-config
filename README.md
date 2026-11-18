@@ -24,7 +24,7 @@ hosts/<host>/
 modules/darwin/          nix-darwin modules shared by the Macs
 modules/home/            Home Manager modules shared by every host
 └── mac/                 Home Manager modules only the Macs import
-pkgs/moshi-hook/         a package nixpkgs lacks, added by overlays/additions.nix
+pkgs/<name>/             packages nixpkgs lacks (moshi-hook, plannotator-tui), added by overlays/additions.nix
 overlays/                applied to every package set, so modules use pkgs.<name>
 ├── additions.nix        packages from pkgs/
 ├── modifications.nix    local fixes to nixpkgs packages (JankyBorders patches, Mole bump)
@@ -250,12 +250,12 @@ flowchart LR
   subgraph FC["nix flake check --all-systems"]
     subgraph MAC["aarch64-darwin: runs natively"]
       M2["laptop: system, home, links"]
-      M3["moshi-hook-version"]
+      M3["moshi-hook-version, plannotator-tui-version"]
     end
     subgraph LIN["x86_64-linux: Linux builder"]
       L1["dev-01-home, dev-01-links"]
       L2["deploy-schema, deploy-activate"]
-      L3["moshi-hook-version"]
+      L3["moshi-hook-version, plannotator-tui-version"]
     end
   end
   CI["GitHub Actions: Linux for pull requests"] -.->|"evaluates every system, builds Linux"| FC
@@ -268,6 +268,8 @@ flowchart LR
   node.
 - `moshi-hook-version` runs `moshi-hook --version` on Linux and, on the Macs,
   reads the version from the app bundle's `Info.plist` without running it.
+- `plannotator-tui-version` builds plannotator-tui from source, with its
+  tests, and runs `plannotator-tui --version`.
 
 The `x86_64-linux` checks build through Determinate Nix's native Linux builder
 on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";

@@ -74,6 +74,9 @@ any that are behind, then move the date on a month.
 - [ ] Moshi (`pkgs/moshi-hook`, 0.4.57): compare with Moshi's
       [Homebrew formula](https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb).
       The README's Services section says how to update it.
+- [ ] plannotator-tui (`pkgs/plannotator-tui`, 0.10.0): compare with its
+      [releases](https://github.com/plannotator/plannotator-tui/releases).
+      Bump `version`, `hash` and `cargoHash` together.
 - [ ] Herdr plugins (README, Set up a Mac step 8): herdr-splits.nvim
       `v0.5.4` against its
       [tags](https://github.com/lmilojevicc/herdr-splits.nvim/tags), and
