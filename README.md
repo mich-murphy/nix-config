@@ -425,8 +425,9 @@ they apply in this order on top of upstream's `v0.10.0` tag:
 | --- | --- |
 | `colour-roles.patch` | `[colors]` roles for inline code, code blocks, links and quotes, which upstream hardcodes |
 | `code-highlighting.patch` | syntax highlighting of fenced code with the TextMate theme `[ui] code_theme` names; unset, nothing is highlighted |
+| `mermaid-diagrams.patch` | fenced `mermaid` blocks drawn as text by [boxmaid](https://crates.io/crates/boxmaid), pinned to `=0.1.1`; `[ui] mermaid = false` turns it off, and a diagram boxmaid cannot draw shows its source |
 
-They are `cargoPatches`, not `patches`: the second changes `Cargo.lock`, and
+They are `cargoPatches`, not `patches`: the last two change `Cargo.lock`, and
 the vendored dependencies are fetched after the patches apply. A change to a
 patch's `Cargo.lock` hunk therefore changes `cargoHash` too.
 
@@ -439,12 +440,13 @@ and copy the one Nix reports):
 patches=~/dev/nix-config/overlays/patches/plannotator-tui
 git clone https://github.com/plannotator/plannotator-tui && cd plannotator-tui
 git switch -c local-fixes v0.11.0
-for p in colour-roles code-highlighting; do
+for p in colour-roles code-highlighting mermaid-diagrams; do
   git am -3 "$patches/$p.patch"   # on conflict: fix, git add, git am --continue
 done
 cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace
-git format-patch -1 HEAD~1 --stdout --no-signature > "$patches/colour-roles.patch"
-git format-patch -1 HEAD --stdout --no-signature > "$patches/code-highlighting.patch"
+git format-patch -1 HEAD~2 --stdout --no-signature > "$patches/colour-roles.patch"
+git format-patch -1 HEAD~1 --stdout --no-signature > "$patches/code-highlighting.patch"
+git format-patch -1 HEAD --stdout --no-signature > "$patches/mermaid-diagrams.patch"
 nix build ~/dev/nix-config#plannotator-tui
 ```
 

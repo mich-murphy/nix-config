@@ -1,0 +1,551 @@
+From f6f334e70444fcb94521cbe2a0077c8b153f970c Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Wed, 18 Nov 2026 22:42:29 +1100
+Subject: [PATCH] feat(render): fenced mermaid blocks drawn as text with [ui]
+ mermaid
+
+---
+ Cargo.lock                              | 10 +++
+ README.md                               | 14 ++++
+ crates/plannotator-tui/Cargo.toml       |  3 +
+ crates/plannotator-tui/src/app/input.rs | 10 ++-
+ crates/plannotator-tui/src/app/tests.rs | 32 +++++++++
+ crates/plannotator-tui/src/cli.rs       |  9 ++-
+ crates/plannotator-tui/src/config.rs    |  9 +++
+ crates/plannotator-tui/src/diagram.rs   | 93 +++++++++++++++++++++++++
+ crates/plannotator-tui/src/doc.rs       |  9 ++-
+ crates/plannotator-tui/src/layout.rs    | 36 ++++++++--
+ crates/plannotator-tui/src/main.rs      |  1 +
+ docs/decisions.md                       | 21 ++++++
+ samples/diagrams.md                     | 48 +++++++++++++
+ 13 files changed, 286 insertions(+), 9 deletions(-)
+ create mode 100644 crates/plannotator-tui/src/diagram.rs
+ create mode 100644 samples/diagrams.md
+
+diff --git a/Cargo.lock b/Cargo.lock
+index 7587528..d399db8 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -217,6 +217,15 @@ version = "0.2.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "dc0b364ead1874514c8c2855ab558056ebfeb775653e7ae45ff72f28f8f3166c"
+ 
++[[package]]
++name = "boxmaid"
++version = "0.1.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "646fa9671ff6b6139974dd24d79b17129e7217be5929ef4500d516f369a9f676"
++dependencies = [
++ "regex",
++]
++
+ [[package]]
+ name = "bstr"
+ version = "1.13.1"
+@@ -1666,6 +1675,7 @@ name = "plannotator-tui"
+ version = "0.10.0"
+ dependencies = [
+  "anyhow",
++ "boxmaid",
+  "diffs-rs",
+  "getrandom 0.3.4",
+  "plannotator-tui-hosts",
+diff --git a/README.md b/README.md
+index e8a57b8..3fbba96 100644
+--- a/README.md
++++ b/README.md
+@@ -306,6 +306,20 @@ # ~/.config/plannotator-tui/config.toml
+ Without `code_theme` nothing is highlighted, and a fence's opening line shows its backticks
+ without the language name.
+ 
++Fenced `mermaid` blocks are drawn as box-drawing diagrams in the `code-block` colour,
++whether or not `code_theme` is set:
++
++```toml
++[ui]
++mermaid = true   # default; false shows the Mermaid source as plain code
++```
++
++A diagram is drawn once, at the width the document has when it is opened or reloaded; a
++later resize clips it rather than redrawing it. A block that cannot be drawn (a parse error,
++an unsupported diagram type) shows its source instead. A drag anywhere in a diagram selects
++the whole block, and a note on it quotes the Mermaid source, not the drawing. Mermaid
++inside a list or quote is shown as code.
++
+ On a wide terminal, `[ui]` can keep the text to a readable measure:
+ 
+ ```toml
+diff --git a/crates/plannotator-tui/Cargo.toml b/crates/plannotator-tui/Cargo.toml
+index fbf4578..017779a 100644
+--- a/crates/plannotator-tui/Cargo.toml
++++ b/crates/plannotator-tui/Cargo.toml
+@@ -33,6 +33,9 @@ tui-markdown = { version = "0.3.9", default-features = false, features = ["highl
+ # OSC 11 by hand is forty lines and a dozen terminal quirks; this reads the reply off its own
+ # tty handle, so it cannot race the event loop's reader. Three small crates, one author.
+ terminal-colorsaurus = "1.0.3"
++# Fenced `mermaid` drawn as box-drawing text (src/diagram.rs). Young, so pinned exactly; its
++# `ratatui` feature targets ratatui 0.29 and stays off.
++boxmaid = "=0.1.1"
+ 
+ [target.'cfg(unix)'.dependencies]
+ # Already in the tree through crossterm; polls the terminal for a hang-up (src/hangup.rs).
+diff --git a/crates/plannotator-tui/src/app/input.rs b/crates/plannotator-tui/src/app/input.rs
+index dd7280f..b21a489 100644
+--- a/crates/plannotator-tui/src/app/input.rs
++++ b/crates/plannotator-tui/src/app/input.rs
+@@ -696,7 +696,15 @@ pub(super) fn finish_selection(&mut self) {
+         };
+         let source = &self.open.doc.source;
+         let end_char = source.get(hi..).and_then(|s| s.chars().next()).map_or(1, char::len_utf8);
+-        let range = lo..hi + end_char;
++        let mut end = hi + end_char;
++        // Diagram cells all map to the block's first byte; a drag in one takes the whole block.
++        if let Some(block) = self.open.doc.block_containing(hi)
++            && self.open.layout.is_diagram(block)
++            && let Some(block) = self.open.doc.blocks.get(block)
++        {
++            end = end.max(block.range.end);
++        }
++        let range = lo..end;
+         if self.clipboard
+             && self.ui.copy_on_select
+             && let Some(text) = source.get(range.clone())
+diff --git a/crates/plannotator-tui/src/app/tests.rs b/crates/plannotator-tui/src/app/tests.rs
+index 8098b36..3e7fa02 100644
+--- a/crates/plannotator-tui/src/app/tests.rs
++++ b/crates/plannotator-tui/src/app/tests.rs
+@@ -1602,3 +1602,35 @@ fn ctrl_p_in_a_reply_review_still_picks_another_reply() {
+     app.handle_event(&Event::Key(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL))).expect("ctrl+p");
+     assert_eq!(app.mode, Mode::Pick);
+ }
++
++fn diagram_app() -> App {
++    let text = "```mermaid\nflowchart LR\n  Draft --> Review\n```\n";
++    let source = DocumentSource::new(text.to_owned(), "doc.md", true, Provenance::Stdin);
++    let mut app = App::open(source, 60, Box::new(Discard)).expect("app opens");
++    app.data_dir = scratch_data_dir();
++    draw_sized(&mut app, 60, 20);
++    app
++}
++
++#[test]
++fn a_drag_inside_a_diagram_selects_the_whole_block() {
++    let mut app = diagram_app();
++    assert!(app.open.layout.is_diagram(0));
++    let block = &app.open.layout.blocks[0];
++    let (doc, y) = (app.geometry.doc, app.geometry.doc.y + u16::try_from(block.first_row + 1).expect("row"));
++    click(&mut app, MouseEventKind::Down(MouseButton::Left), doc.x + 2, y);
++    click(&mut app, MouseEventKind::Drag(MouseButton::Left), doc.x + 6, y);
++    click(&mut app, MouseEventKind::Up(MouseButton::Left), doc.x + 6, y);
++    assert_eq!(selected_text(&app), Some("```mermaid\nflowchart LR\n  Draft --> Review\n```"));
++}
++
++#[test]
++fn feedback_on_a_diagram_quotes_its_mermaid_source() {
++    let mut app = diagram_app();
++    app.add_block_annotation(0, Kind::Comment, "split review".to_owned()).expect("note");
++    let feedback = app.feedback();
++    assert!(feedback.contains("Draft --> Review"), "{feedback}");
++    let placed = app.open.store.placed();
++    let original = &placed.first().expect("placed").annotation.anchor.original_text;
++    assert!(original.contains("flowchart LR") && !original.contains('─'), "{original}");
++}
+diff --git a/crates/plannotator-tui/src/cli.rs b/crates/plannotator-tui/src/cli.rs
+index a224ef9..1d4b6bc 100644
+--- a/crates/plannotator-tui/src/cli.rs
++++ b/crates/plannotator-tui/src/cli.rs
+@@ -603,6 +603,7 @@ pub(crate) fn with_terminal<T>(
+     // Like the rest of the file, a code theme that fails to load does not stop the review: code
+     // stays plain, and `plannotator-tui config` names the file and what is wrong with it.
+     let _ = crate::code_theme::install(&config);
++    crate::diagram::install(config.ui.mermaid);
+     let mut terminal = ratatui::init();
+     #[cfg(unix)]
+     crate::hangup::watch();
+@@ -699,7 +700,9 @@ fn event_loop(terminal: &mut ratatui::DefaultTerminal, mut app: App) -> Result<O
+ 
+ /// Headless timing of the expensive paths: parse, per-block render + align, and reflow.
+ fn bench(path: &PathBuf) -> Result<()> {
+-    crate::code_theme::install(&Config::load()?)?;
++    let config = Config::load()?;
++    crate::code_theme::install(&config)?;
++    crate::diagram::install(config.ui.mermaid);
+     let source = open_file(path)?;
+     let bytes = source.content.len();
+     let t = Instant::now();
+@@ -748,7 +751,9 @@ fn snapshot(
+ ) -> Result<()> {
+     use ratatui::backend::TestBackend;
+     use ratatui::style::Modifier;
+-    crate::code_theme::install(&Config::load().unwrap_or_default())?;
++    let config = Config::load().unwrap_or_default();
++    crate::code_theme::install(&config)?;
++    crate::diagram::install(config.ui.mermaid);
+     let mut terminal = ratatui::Terminal::new(TestBackend::new(cols, rows))?;
+     let mut app = open_app(path, doc_width(cols), false)?;
+     terminal.draw(|frame| app.draw(frame))?;
+diff --git a/crates/plannotator-tui/src/config.rs b/crates/plannotator-tui/src/config.rs
+index 418d656..f6384fe 100644
+--- a/crates/plannotator-tui/src/config.rs
++++ b/crates/plannotator-tui/src/config.rs
+@@ -49,6 +49,8 @@ pub(crate) struct UiConfig {
+     /// home folder; a relative path is read from this file's folder (see `code_theme`).
+     #[serde(skip_serializing_if = "Option::is_none")]
+     pub(crate) code_theme: Option<String>,
++    /// Draw fenced `mermaid` blocks as diagrams; off shows their source as code.
++    pub(crate) mermaid: bool,
+ }
+ 
+ impl Default for UiConfig {
+@@ -61,6 +63,7 @@ fn default() -> Self {
+             copy_on_select: true,
+             comment_width: 48,
+             code_theme: None,
++            mermaid: true,
+         }
+     }
+ }
+@@ -395,6 +398,12 @@ fn a_code_theme_is_unset_by_default_and_printed_when_set() {
+         assert!(shown.contains("code_theme = \"~/night.tmTheme\""), "{shown}");
+     }
+ 
++    #[test]
++    fn mermaid_diagrams_are_drawn_unless_turned_off() {
++        assert!(Config::default().ui.mermaid);
++        assert!(!Config::parse("[ui]\nmermaid = false\n").expect("parses").ui.mermaid);
++    }
++
+     #[test]
+     fn copy_on_select_defaults_on_and_turns_off() {
+         assert!(Config::default().ui.copy_on_select);
+diff --git a/crates/plannotator-tui/src/diagram.rs b/crates/plannotator-tui/src/diagram.rs
+new file mode 100644
+index 0000000..d8c7e08
+--- /dev/null
++++ b/crates/plannotator-tui/src/diagram.rs
+@@ -0,0 +1,93 @@
++//! Fenced `mermaid` blocks drawn as box-drawing text by `boxmaid` (decision 20).
++//!
++//! A diagram is drawn once, at the width the layout is built for, and clipped like code on a
++//! later resize. Its glyphs have no source characters, so every cell maps to the block's
++//! first byte: a note on the block highlights the drawing, and a drag in it widens to the
++//! whole block (`App::finish_selection`). Anything `boxmaid` cannot draw shows its source.
++
++use std::sync::OnceLock;
++
++use ratatui::style::Style;
++use ratatui::text::{Line, Text};
++
++use crate::decorate::Decorated;
++use crate::theme::palette;
++
++static ENABLED: OnceLock<bool> = OnceLock::new();
++
++/// `[ui] mermaid`: on until [`install`] says otherwise.
++pub(crate) fn enabled() -> bool {
++    ENABLED.get().copied().unwrap_or(true)
++}
++
++/// Fix `[ui] mermaid` for this process. The first call wins.
++pub(crate) fn install(on: bool) {
++    let _ = ENABLED.set(on);
++}
++
++/// The fenced block `source`, starting at absolute byte `start`, drawn `width` columns wide;
++/// `None` when it does not parse or draws nothing, so the caller shows it as code.
++pub(crate) fn draw(source: &str, start: usize, width: usize) -> Option<Decorated> {
++    let mut body: Vec<&str> = source.lines().skip(1).collect();
++    if body.last().is_some_and(|line| line.trim_start().starts_with(['`', '~'])) {
++        body.pop();
++    }
++    let picture = boxmaid::render(&body.join("\n"), &boxmaid::Options { width, ascii: false }).ok()?;
++    let lines = picture.lines();
++    if lines.iter().all(String::is_empty) {
++        return None;
++    }
++    let style = Style::new().fg(palette().code_block);
++    let offsets = lines.iter().map(|line| vec![Some(start); line.chars().count()]).collect();
++    let text = Text::from(lines.into_iter().map(|line| Line::from(line).style(style)).collect::<Vec<_>>());
++    Some(Decorated { text, offsets, hangs: Vec::new() })
++}
++
++#[cfg(test)]
++#[allow(clippy::expect_used, reason = "tests assert by panicking")]
++mod tests {
++    use crate::doc::Document;
++    use crate::layout::DocLayout;
++
++    const FLOW: &str = "```mermaid\nflowchart LR\n  Draft --> Review --> Approve\n```\n";
++
++    fn rows(layout: &DocLayout) -> Vec<String> {
++        layout.blocks.iter().flat_map(|b| &b.rows).map(|r| r.line.to_string()).collect()
++    }
++
++    #[test]
++    fn a_mermaid_fence_is_drawn_in_box_drawing_mapped_to_its_block() {
++        let layout = DocLayout::build_with(&Document::parse(FLOW.to_owned()), 80, true);
++        assert!(layout.is_diagram(0));
++        let drawn = rows(&layout);
++        assert!(
++            drawn.iter().any(|r| r.contains('─')) && drawn.iter().all(|r| !r.contains("-->")),
++            "{drawn:?}"
++        );
++        let cells = layout.blocks.iter().flat_map(|b| &b.rows).flat_map(|r| &r.cells);
++        assert!(cells.copied().all(|c| c == Some(0)));
++    }
++
++    #[test]
++    fn mermaid_that_does_not_parse_shows_its_source() {
++        let doc = Document::parse("```mermaid\nthis is not mermaid\n```\n".to_owned());
++        let layout = DocLayout::build_with(&doc, 80, true);
++        assert!(!layout.is_diagram(0));
++        assert!(rows(&layout).iter().any(|r| r == "this is not mermaid"));
++    }
++
++    #[test]
++    fn with_mermaid_off_the_fence_shows_its_source() {
++        let layout = DocLayout::build_with(&Document::parse(FLOW.to_owned()), 80, false);
++        assert!(!layout.is_diagram(0));
++        assert!(rows(&layout).iter().any(|r| r == "flowchart LR"));
++    }
++
++    #[test]
++    fn diagram_rows_clip_at_the_width() {
++        let mut layout = DocLayout::build_with(&Document::parse(FLOW.to_owned()), 80, true);
++        assert!(rows(&layout).iter().any(|r| r.chars().count() > 12));
++        layout.reflow(12);
++        assert!(layout.blocks.iter().flat_map(|b| &b.rows).all(|r| r.cells.len() <= 12));
++    }
++}
+diff --git a/crates/plannotator-tui/src/doc.rs b/crates/plannotator-tui/src/doc.rs
+index c7103d9..8c0d420 100644
+--- a/crates/plannotator-tui/src/doc.rs
++++ b/crates/plannotator-tui/src/doc.rs
+@@ -7,14 +7,16 @@
+ 
+ use std::ops::Range;
+ 
+-use pulldown_cmark::{Event, Options, Parser, Tag};
++use pulldown_cmark::{CodeBlockKind, Event, Options, Parser, Tag};
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub(crate) enum BlockKind {
+     Heading,
+     Paragraph,
+     List,
+     CodeBlock,
++    /// A fenced block whose info string starts with `mermaid`, drawn as a diagram.
++    Diagram,
+     BlockQuote,
+     Table,
+     Rule,
+@@ -27,7 +29,7 @@ pub(crate) enum BlockKind {
+ impl BlockKind {
+     /// Code and tables keep their columns; everything else word-wraps.
+     pub(crate) fn preserves_columns(self) -> bool {
+-        matches!(self, BlockKind::CodeBlock | BlockKind::Table)
++        matches!(self, BlockKind::CodeBlock | BlockKind::Diagram | BlockKind::Table)
+     }
+ }
+ 
+@@ -80,6 +82,9 @@ fn kind_of(tag: &Tag<'_>) -> BlockKind {
+         Tag::Heading { .. } => BlockKind::Heading,
+         Tag::Paragraph => BlockKind::Paragraph,
+         Tag::List(_) => BlockKind::List,
++        Tag::CodeBlock(CodeBlockKind::Fenced(info)) if info.split_whitespace().next() == Some("mermaid") => {
++            BlockKind::Diagram
++        }
+         Tag::CodeBlock(_) => BlockKind::CodeBlock,
+         Tag::BlockQuote(_) => BlockKind::BlockQuote,
+         Tag::Table(_) => BlockKind::Table,
+diff --git a/crates/plannotator-tui/src/layout.rs b/crates/plannotator-tui/src/layout.rs
+index 9d87c07..032271d 100644
+--- a/crates/plannotator-tui/src/layout.rs
++++ b/crates/plannotator-tui/src/layout.rs
+@@ -13,6 +13,7 @@
+ use tui_markdown::{Options, StyleSheet};
+ 
+ use crate::code_theme::{self, without_languages};
++use crate::diagram;
+ 
+ use crate::cjk_emphasis::{protect, strip_marks};
+ use crate::decorate::{self, Decorated, RULE, Syntax};
+@@ -70,6 +71,8 @@ pub(crate) struct RenderedBlock {
+     /// Per line, per char: absolute source byte offset (cached with `text`).
+     offsets: Vec<LineOffsets>,
+     kind: BlockKind,
++    /// The block's source bytes.
++    range: Range<usize>,
+     /// Per line, how its wrapped rows start; empty when nothing hangs.
+     hangs: Vec<Hang>,
+     /// Rows for the current width.
+@@ -108,17 +111,17 @@ fn render_block_with(doc: &Document, index: usize, options: &Options<Styles>) ->
+     // `tui-markdown` omits a line it fails to highlight. Rendered, a code block has at least
+     // as many lines as its source, so fewer means a line went missing: render it plain.
+     if options.selected_code_theme().is_some()
+-        && doc.blocks.get(index).is_some_and(|b| b.kind == BlockKind::CodeBlock)
++        && doc.blocks.get(index).is_some_and(|b| matches!(b.kind, BlockKind::CodeBlock | BlockKind::Diagram))
+         && text.lines.len() < source.lines().count()
+     {
+         text = render(&without_languages(source), options);
+     }
+     let plain: Vec<String> = text.lines.iter().map(ToString::to_string).collect();
+     let block = doc.blocks.get(index);
+     let base = block.map_or(0, |b| b.range.start);
+     if !block.is_some_and(|b| matches!(b.kind, BlockKind::List | BlockKind::BlockQuote)) {
+         let offsets = align(&plain, source, base);
+-        if let Some(code) = block.filter(|b| b.kind == BlockKind::CodeBlock) {
++        if let Some(code) = block.filter(|b| matches!(b.kind, BlockKind::CodeBlock | BlockKind::Diagram)) {
+             paint_code_lines(&mut text, &offsets, std::slice::from_ref(&code.range));
+         }
+         return Decorated { text, offsets, hangs: Vec::new() };
+@@ -145,13 +148,27 @@ pub(crate) fn own(text: Text<'_>) -> Text<'static> {
+ impl DocLayout {
+     /// Render every block once (the expensive part) and lay out for `width`.
+     pub(crate) fn build(doc: &Document, width: usize) -> Self {
++        Self::build_with(doc, width, diagram::enabled())
++    }
++
++    /// [`Self::build`], with fenced `mermaid` drawn as diagrams or shown as code.
++    pub(crate) fn build_with(doc: &Document, width: usize, mermaid: bool) -> Self {
+         let blocks = doc
+             .blocks
+             .iter()
+             .enumerate()
+             .map(|(i, block)| {
+-                let Decorated { text, offsets, hangs } = render_block(doc, i);
+-                RenderedBlock { text, offsets, kind: block.kind, hangs, rows: Vec::new(), first_row: 0 }
++                let drawn = (mermaid && block.kind == BlockKind::Diagram)
++                    .then(|| diagram::draw(doc.block_text(i), block.range.start, width))
++                    .flatten();
++                let (decorated, kind) = match drawn {
++                    Some(drawn) => (drawn, BlockKind::Diagram),
++                    None if block.kind == BlockKind::Diagram => (render_block(doc, i), BlockKind::CodeBlock),
++                    None => (render_block(doc, i), block.kind),
++                };
++                let Decorated { text, offsets, hangs } = decorated;
++                let range = block.range.clone();
++                RenderedBlock { text, offsets, kind, range, hangs, rows: Vec::new(), first_row: 0 }
+             })
+             .collect();
+         let mut layout = Self { width: 0, blocks, total_rows: 0 };
+@@ -184,6 +201,11 @@ pub(crate) fn reflow(&mut self, width: usize) {
+         self.total_rows = row.saturating_sub(BLOCK_GAP);
+     }
+ 
++    /// Whether block `index` is drawn as a diagram rather than shown as text.
++    pub(crate) fn is_diagram(&self, index: usize) -> bool {
++        self.blocks.get(index).is_some_and(|b| b.kind == BlockKind::Diagram)
++    }
++
+     /// Which block owns a document row (gap rows belong to nobody).
+     pub(crate) fn block_at_row(&self, row: usize) -> Option<usize> {
+         let idx = self.blocks.partition_point(|b| b.first_row <= row);
+@@ -217,6 +239,12 @@ pub(crate) fn first_row_in_range(&self, block: usize, range: &Range<usize>) -> O
+     pub(crate) fn rendered_in_range(&self, source: &str, range: &Range<usize>) -> String {
+         let mut out = String::new();
+         for block in &self.blocks {
++            // A diagram's glyphs are not its text: quote the Mermaid source under the range.
++            if block.kind == BlockKind::Diagram {
++                let (start, end) = (range.start.max(block.range.start), range.end.min(block.range.end));
++                out.push_str(source.get(start..end).unwrap_or_default());
++                continue;
++            }
+             let break_char = if block.kind.preserves_columns() { '\n' } else { ' ' };
+             let mut last_offset: Option<usize> = None;
+             let chars = block.text.lines.iter().zip(&block.offsets).flat_map(|(line, offsets)| {
+diff --git a/crates/plannotator-tui/src/main.rs b/crates/plannotator-tui/src/main.rs
+index 357cdb4..8b749f6 100644
+--- a/crates/plannotator-tui/src/main.rs
++++ b/crates/plannotator-tui/src/main.rs
+@@ -9,6 +9,7 @@
+ mod config;
+ mod decorate;
+ mod delivery;
++mod diagram;
+ mod doc;
+ mod editor;
+ mod export;
+diff --git a/docs/decisions.md b/docs/decisions.md
+index cfd1350..b8af265 100644
+--- a/docs/decisions.md
++++ b/docs/decisions.md
+@@ -513,3 +513,24 @@ ## 19. Syntax highlighting needs a theme of your own (2026-11-18)
+ test; it is two comparisons, kept because a lost line could not be seen or annotated. Highlighted lines carry only foreground colours on
+ their spans and the source's own characters, so alignment maps them as before.
+ 
++## 20. Mermaid drawn as text with boxmaid (2026-11-18)
++
++Local patch, not upstream. A top-level fence whose info string starts with `mermaid` is a
++`Diagram` block, drawn by `boxmaid` (pinned `=0.1.1`) as box-drawing text in the
++`code-block` colour; `[ui] mermaid = false` turns it back into plain code. Why boxmaid: its
++output is closest to Pi's own Mermaid renderer, it adds six crates (no C, no JavaScript),
++and its failure mode is harmless here: a block it cannot draw shows its source. Its
++optional `ratatui` feature targets ratatui 0.29 and stays off; the `Picture`'s lines are
++turned into `Text` here. The risk is its youth: one author, a 0.1 version. The exact pin
++makes every upgrade a deliberate one, to be checked with `samples/diagrams.md`.
++
++Glyphs have no source characters, so alignment cannot place them. Every diagram cell maps
++to the block's first byte instead, which lets a note on the block highlight the drawing and
++lets jump-to find it, and a drag that touches a diagram widens to the whole block. A note's
++quote and its rendered `originalText` are both the Mermaid source, never the drawing.
++
++A diagram is drawn once, at the width the layout is built with (open or reload), and clipped
++like code on a resize. Redrawing on reflow would put rendering back on the resize path;
++it can come later if clipping bothers anyone. Mermaid nested in a list or quote is not
++drawn: it is part of that block and shows as code.
++
+diff --git a/samples/diagrams.md b/samples/diagrams.md
+new file mode 100644
+index 0000000..60b027b
+--- /dev/null
++++ b/samples/diagrams.md
+@@ -0,0 +1,48 @@
++# Diagrams
++
++A plan with a few Mermaid diagrams, for `--bench` and `--snapshot` of the diagram path.
++
++```mermaid
++flowchart LR
++  Draft --> Review --> Approve
++  Review --> Revise --> Review
++```
++
++The request path:
++
++```mermaid
++sequenceDiagram
++  participant U as User
++  participant A as Agent
++  U->>A: plan.md
++  A-->>U: annotations
++```
++
++```mermaid
++stateDiagram-v2
++  [*] --> Open
++  Open --> Sent: send
++  Sent --> [*]
++```
++
++```mermaid
++classDiagram
++  class Document {
++    source
++    blocks
++  }
++  class Layout
++  Document --> Layout
++```
++
++```mermaid
++pie title Time
++  "Reading" : 60
++  "Writing" : 40
++```
++
++Not a diagram boxmaid draws, so it shows as source:
++
++```mermaid
++this is not mermaid
++```
