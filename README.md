@@ -50,7 +50,7 @@ machine needs it.
 | `home/shell.nix`, `cli.nix`, `yazi.nix` | fish, command-line tools, yazi |
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
 | `home/neovim.nix` | Neovim and the runtime tools Mason needs |
-| `home/herdr.nix` | Herdr (terminal multiplexer) and its live config |
+| `home/herdr.nix` | Herdr (terminal multiplexer) and its live config, the Annotate plugin linked from Nix and its review pane's Tokyo Night config |
 | `home/agents.nix` | skills links, `AGENTS.md`, Claude Code, Codex and Pi from llm-agents.nix with their settings, Pi's Tokyo Night theme |
 | `home/moshi.nix` | the Moshi user service, see [Services](#services) |
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
@@ -146,13 +146,14 @@ Needed once on a new machine, in this order:
    has written a file where Home Manager puts a link. Move that file aside and
    switch again.
 7. Open a new shell, then install the commit hooks: `prek install`.
-8. Install Herdr's plugins. Nix does not install them, and
-   `config/herdr/config.toml` binds keys to both:
+8. Install the Herdr plugin Nix does not install. `config/herdr/config.toml`
+   binds keys to it and to Annotate, which a switch builds and registers
+   with `herdr plugin link` (`modules/home/herdr.nix`). Do not
+   `herdr plugin install` Annotate: Herdr refuses to install over the link.
 
    ```sh
    herdr plugin install -y lmilojevicc/herdr-splits.nvim --ref v0.5.4
-   herdr plugin install -y plannotator/herdr-annotate --ref dd147a9faf5ab7d716a31abca070c80af508ffbc
-   herdr plugin list
+   herdr plugin list   # annotate shows local:/nix/store/…
    ```
 
 ## Set up dev-01
@@ -182,7 +183,7 @@ cannot add it. Without it, a deploy compiles codex on dev-01.
 Then, from the Mac checkout:
 
 1. `deploy .#dev-01`.
-2. On dev-01, run the two `herdr plugin install` commands from step 8 above.
+2. On dev-01, run the `herdr plugin install` command from step 8 above.
 
 ## Day to day
 

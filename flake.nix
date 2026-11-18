@@ -161,7 +161,7 @@
       packages = forAllSystems (
         system:
         {
-          inherit (pkgsFor.${system}) moshi-hook plannotator-tui;
+          inherit (pkgsFor.${system}) moshi-hook plannotator-tui herdr-plugin-annotate;
         }
         // lib.optionalAttrs pkgsFor.${system}.stdenv.hostPlatform.isDarwin {
           inherit (pkgsFor.${system}) jankyborders;
