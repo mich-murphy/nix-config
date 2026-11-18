@@ -29,12 +29,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
   #   quotes, which upstream hardcodes.
   # - code-highlighting: fenced code highlighted with the TextMate theme
   #   [ui] code_theme names; unset, nothing is highlighted, as upstream.
+  # - mermaid-diagrams: fenced mermaid blocks drawn as text by boxmaid,
+  #   [ui] mermaid; a diagram it cannot draw shows its source.
   cargoPatches = [
     ../../overlays/patches/plannotator-tui/colour-roles.patch
     ../../overlays/patches/plannotator-tui/code-highlighting.patch
+    ../../overlays/patches/plannotator-tui/mermaid-diagrams.patch
   ];
 
-  cargoHash = "sha256-sBzZKnDTCiYNxDHgyVkPgVsm5lNo8WoV1BMtwcRDzuU=";
+  cargoHash = "sha256-HnLPY+d461tdm3pwYhgYx9AUUE+sKsVarLry6bYi/Ss=";
 
   # The repository is a workspace; build and test only the app.
   cargoBuildFlags = [
