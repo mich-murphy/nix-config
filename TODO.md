@@ -54,10 +54,13 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       `modules/home/agents.nix`, so a new skill needs a Nix edit. Expose the
       whole skills repository instead, if that can be done without letting
       Claude's skill sync write into it.
-- [ ] Herdr plugins are installed by hand, not by Nix.
-- [ ] On dev-01, confirm `herdr plugin list` shows Annotate at the ref in the
-      README. Older versions run their commands with `bun`, which is not
-      installed.
+- [ ] herdr-splits.nvim is installed by hand, not by Nix. Annotate is
+      linked from Nix (`modules/home/herdr.nix`); the same approach would
+      work for it.
+- [ ] After the first deploy with the Nix-built Annotate, confirm on dev-01
+      that `herdr plugin list` shows annotate at `local:/nix/store/…`, and
+      that an Annotate action from a Mac attached with `herdr --remote`
+      runs it.
 
 ## Updates
 
@@ -78,12 +81,14 @@ any that are behind, then move the date on a month.
       [releases](https://github.com/plannotator/plannotator-tui/releases).
       Refresh its patches on the new tag and bump `version`, `hash` and
       `cargoHash` together (README.md, Patched packages).
-- [ ] Herdr plugins (README, Set up a Mac step 8): herdr-splits.nvim
-      `v0.5.4` against its
-      [tags](https://github.com/lmilojevicc/herdr-splits.nvim/tags), and
-      herdr-annotate `dd147a9` (plugin 0.10.0) against its
-      [main branch](https://github.com/plannotator/herdr-annotate/commits/main).
+- [ ] herdr-splits.nvim (README, Set up a Mac step 8): `v0.5.4` against its
+      [tags](https://github.com/lmilojevicc/herdr-splits.nvim/tags).
       Reinstall on each host after a bump.
+- [ ] Annotate (`pkgs/herdr-plugin-annotate`): `dd147a9` (plugin 0.10.0)
+      against herdr-annotate's
+      [main branch](https://github.com/plannotator/herdr-annotate/commits/main).
+      Bump `rev`, `hash`, the runtime's `version` and `cargoHash`; the build
+      stops if the new plugin pins a plannotator-tui other than ours.
 - [ ] JankyBorders patches (`overlays/modifications.nix`): the fixes are not
       submitted upstream and stay in the overlay. If
       [JankyBorders](https://github.com/FelixKratz/JankyBorders/releases)
