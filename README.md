@@ -51,7 +51,7 @@ machine needs it.
 | `home/git.nix` | Git settings, `hunk` diff viewer, `gh`, `lazygit` |
 | `home/neovim.nix` | Neovim and the runtime tools Mason needs |
 | `home/herdr.nix` | Herdr (terminal multiplexer) and its live config |
-| `home/agents.nix` | skills links, `AGENTS.md`, Claude Code, Codex and Pi from llm-agents.nix with their settings |
+| `home/agents.nix` | skills links, `AGENTS.md`, Claude Code, Codex and Pi from llm-agents.nix with their settings, Pi's Tokyo Night theme |
 | `home/moshi.nix` | the Moshi user service, see [Services](#services) |
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
