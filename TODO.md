@@ -76,7 +76,8 @@ any that are behind, then move the date on a month.
       The README's Services section says how to update it.
 - [ ] plannotator-tui (`pkgs/plannotator-tui`, 0.10.0): compare with its
       [releases](https://github.com/plannotator/plannotator-tui/releases).
-      Bump `version`, `hash` and `cargoHash` together.
+      Refresh its patches on the new tag and bump `version`, `hash` and
+      `cargoHash` together (README.md, Patched packages).
 - [ ] Herdr plugins (README, Set up a Mac step 8): herdr-splits.nvim
       `v0.5.4` against its
       [tags](https://github.com/lmilojevicc/herdr-splits.nvim/tags), and

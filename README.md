@@ -416,6 +416,41 @@ nix build ~/dev/nix-config#jankyborders
 Once upstream has all three fixes, delete the `jankyborders` entry in
 `overlays/modifications.nix` and `overlays/patches/jankyborders`.
 
+`pkgs/plannotator-tui/package.nix` builds plannotator-tui, the review pane of
+Herdr's Annotate plugin, with patches in `overlays/patches/plannotator-tui/`.
+None is submitted upstream. Each patch is one `git format-patch` commit, and
+they apply in this order on top of upstream's `v0.10.0` tag:
+
+| Patch | Adds |
+| --- | --- |
+| `colour-roles.patch` | `[colors]` roles for inline code, code blocks, links and quotes, which upstream hardcodes |
+| `code-highlighting.patch` | syntax highlighting of fenced code with the TextMate theme `[ui] code_theme` names; unset, nothing is highlighted |
+
+They are `cargoPatches`, not `patches`: the second changes `Cargo.lock`, and
+the vendored dependencies are fetched after the patches apply. A change to a
+patch's `Cargo.lock` hunk therefore changes `cargoHash` too.
+
+To move to a new release (`v0.11.0` stands for it), apply the patches to the
+new tag, resolve the conflicts, export them again, then update `version`,
+`hash` and `cargoHash` together (build once with `lib.fakeHash` for each hash
+and copy the one Nix reports):
+
+```sh
+patches=~/dev/nix-config/overlays/patches/plannotator-tui
+git clone https://github.com/plannotator/plannotator-tui && cd plannotator-tui
+git switch -c local-fixes v0.11.0
+for p in colour-roles code-highlighting; do
+  git am -3 "$patches/$p.patch"   # on conflict: fix, git add, git am --continue
+done
+cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace
+git format-patch -1 HEAD~1 --stdout --no-signature > "$patches/colour-roles.patch"
+git format-patch -1 HEAD --stdout --no-signature > "$patches/code-highlighting.patch"
+nix build ~/dev/nix-config#plannotator-tui
+```
+
+Run the `cargo` commands inside
+`nix shell nixpkgs#cargo nixpkgs#rustc nixpkgs#clippy nixpkgs#rustfmt`.
+
 ## Services
 
 Moshi runs as a user service on every host (launchd on the Macs, systemd on

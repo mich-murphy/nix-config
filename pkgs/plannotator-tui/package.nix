@@ -1,11 +1,13 @@
 # plannotator-tui, the terminal Markdown annotator behind Herdr's Annotate
-# plugin, built from source (nixpkgs has none). This is upstream's v0.10.0 as
-# released; a later change adds local patches.
+# plugin, built from source (nixpkgs has none), with local patches that are
+# not submitted upstream. README.md (Patched packages) says how to refresh them.
 {
   lib,
   stdenv,
   rustPlatform,
   fetchFromGitHub,
+  pkg-config,
+  oniguruma,
   git,
   testers,
 }:
@@ -20,7 +22,19 @@ rustPlatform.buildRustPackage (finalAttrs: {
     hash = "sha256-I5Gc/YdpybsWvgYNELKLSRGszFJBiyg4C/MKAAQ8CPo=";
   };
 
-  cargoHash = "sha256-umYlecdHYSr1Jzbi/0oI4ULRi5lf9O8kybtb5DeeWxo=";
+  # Each patch is `git format-patch` of one commit, applied in order on the
+  # v0.10.0 tag. They are cargoPatches, not patches, because the second
+  # changes Cargo.lock and the vendored dependencies must follow it.
+  # - colour-roles: [colors] roles for inline code, code blocks, links and
+  #   quotes, which upstream hardcodes.
+  # - code-highlighting: fenced code highlighted with the TextMate theme
+  #   [ui] code_theme names; unset, nothing is highlighted, as upstream.
+  cargoPatches = [
+    ../../overlays/patches/plannotator-tui/colour-roles.patch
+    ../../overlays/patches/plannotator-tui/code-highlighting.patch
+  ];
+
+  cargoHash = "sha256-sBzZKnDTCiYNxDHgyVkPgVsm5lNo8WoV1BMtwcRDzuU=";
 
   # The repository is a workspace; build and test only the app.
   cargoBuildFlags = [
@@ -39,6 +53,12 @@ rustPlatform.buildRustPackage (finalAttrs: {
   # `bundled` feature and links a system SQLite; unset it to build the SQLite
   # upstream bundles, as its release does. Both C libraries are compiled from
   # the vendored crates, so no native inputs are needed.
+  # Highlighting uses syntect's oniguruma regex engine. nixpkgs' cargo setup
+  # exports RUSTONIG_SYSTEM_LIBONIG=1, so onig_sys links nixpkgs' oniguruma,
+  # as bat does, rather than compiling its own copy.
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ oniguruma ];
+
   preBuild = ''
     export LIBGIT2_NO_VENDOR=0
     unset LIBSQLITE3_SYS_USE_PKG_CONFIG

@@ -1,0 +1,268 @@
+From 1dea4870e879a0237d74eccee0bf559c29c88f92 Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Wed, 18 Nov 2026 22:11:30 +1100
+Subject: [PATCH] feat(theme): colour roles for inline code, code blocks, links
+ and quotes
+
+---
+ README.md                                     |  4 ++
+ crates/plannotator-tui/src/config.rs          | 10 +++++
+ crates/plannotator-tui/src/decorate/syntax.rs |  6 +++
+ crates/plannotator-tui/src/layout.rs          | 45 ++++++++++++++++---
+ crates/plannotator-tui/src/theme.rs           | 33 ++++++++++++++
+ docs/decisions.md                             | 16 +++++++
+ 6 files changed, 109 insertions(+), 5 deletions(-)
+
+diff --git a/README.md b/README.md
+index 05a3e9b..28fbc56 100644
+--- a/README.md
++++ b/README.md
+@@ -282,6 +282,10 @@ # ~/.config/plannotator-tui/config.toml
+ toolbar = "238"          # the floating toolbar and the idle header buttons
+ cursor = "240"           # the keyboard cursor cell
+ selection = "#45475a"    # a character selection, a picker row, a menu row
++code = "light-yellow"    # inline code
++code-block = "light-yellow"  # fenced and indented code
++link = "blue"            # links, always underlined
++quote = "green"          # block quotes, always italic
+ ```
+ 
+ `cursor` and `selection` become plain backgrounds when set: the text on them keeps the
+diff --git a/crates/plannotator-tui/src/config.rs b/crates/plannotator-tui/src/config.rs
+index 3b2f8c7..4f770f0 100644
+--- a/crates/plannotator-tui/src/config.rs
++++ b/crates/plannotator-tui/src/config.rs
+@@ -405,6 +405,16 @@ fn colors_are_read_by_role_and_roundtrip() {
+         assert_eq!(Config::parse(&text).expect("reparses"), config);
+     }
+ 
++    #[test]
++    fn markdown_color_roles_are_read_and_printed_back() {
++        let config =
++            Config::parse("[colors]\ncode-block = \"#16161e\"\nquote = \"magenta\"\n").expect("parses");
++        assert_eq!(config.colors.code_block.map(|c| c.0), Some(ratatui::style::Color::Rgb(22, 22, 30)));
++        assert_eq!(config.colors.code, None);
++        let shown = config.to_toml().expect("serializes");
++        assert!(shown.contains("code-block = \"#16161e\"\nquote = \"magenta\""), "{shown}");
++    }
++
+     #[test]
+     fn a_color_may_be_a_bare_index() {
+         let config = Config::parse("[colors]\nheading = 238\n").expect("parses");
+diff --git a/crates/plannotator-tui/src/decorate/syntax.rs b/crates/plannotator-tui/src/decorate/syntax.rs
+index 2b09b38..ca6d372 100644
+--- a/crates/plannotator-tui/src/decorate/syntax.rs
++++ b/crates/plannotator-tui/src/decorate/syntax.rs
+@@ -54,6 +54,8 @@ pub(crate) struct Syntax {
+     pub(super) containers: Vec<Container>,
+     /// Text, code, HTML and math: bytes that are content wherever they sit.
+     leaves: Vec<Range<usize>>,
++    /// Code blocks inside the quotes and items, fences included.
++    pub(crate) code: Vec<Range<usize>>,
+ }
+ 
+ impl Syntax {
+@@ -92,6 +94,10 @@ pub(crate) fn parse(source: &str, base: usize) -> Self {
+                     open.pop();
+                     continue;
+                 }
++                Event::Start(Tag::CodeBlock(_)) => {
++                    syntax.code.push(range);
++                    continue;
++                }
+                 Event::TaskListMarker(checked) => {
+                     let item = open.last().and_then(|&i| syntax.containers.get_mut(i));
+                     if let Some(Container { kind: Kind::Item { task, .. }, .. }) = item {
+diff --git a/crates/plannotator-tui/src/layout.rs b/crates/plannotator-tui/src/layout.rs
+index 28cdc4c..31396af 100644
+--- a/crates/plannotator-tui/src/layout.rs
++++ b/crates/plannotator-tui/src/layout.rs
+@@ -8,7 +8,7 @@
+ use std::borrow::Cow;
+ use std::ops::Range;
+ 
+-use ratatui::style::{Color, Modifier, Style};
++use ratatui::style::{Modifier, Style};
+ use ratatui::text::{Line, Text};
+ use tui_markdown::{Options, StyleSheet};
+ 
+@@ -39,13 +39,25 @@ fn heading_marker(&self, _level: u8) -> &'static str {
+         ""
+     }
+     fn code(&self) -> Style {
+-        Style::new().fg(Color::LightYellow)
++        Style::new().fg(palette().code)
+     }
+     fn link(&self) -> Style {
+-        Style::new().fg(Color::Blue).add_modifier(Modifier::UNDERLINED)
++        Style::new().fg(palette().link).add_modifier(Modifier::UNDERLINED)
+     }
+     fn blockquote(&self) -> Style {
+-        Style::new().fg(Color::Green).add_modifier(Modifier::ITALIC)
++        Style::new().fg(palette().quote).add_modifier(Modifier::ITALIC)
++    }
++}
++
++/// Code-block lines take the `code-block` role, decided by the parse rather than by how the
++/// renderer styled them: inline code keeps `code` on its own span, so only a line whose text
++/// falls inside one of the `code` source ranges is repainted.
++fn paint_code_lines(text: &mut Text<'static>, offsets: &[LineOffsets], code: &[Range<usize>]) {
++    let style = Style::new().fg(palette().code_block);
++    for (line, offsets) in text.lines.iter_mut().zip(offsets) {
++        if offsets.iter().flatten().any(|offset| code.iter().any(|range| range.contains(offset))) {
++            line.style = style;
++        }
+     }
+ }
+ 
+@@ -75,16 +87,20 @@ fn render_block(doc: &Document, index: usize) -> Decorated {
+     let source = doc.block_text(index);
+     let protected = protect(source);
+     let text = own(tui_markdown::from_str_with_options(&protected, &Options::new(Styles)));
+-    let text = if matches!(protected, Cow::Owned(_)) { strip_marks(text) } else { text };
++    let mut text = if matches!(protected, Cow::Owned(_)) { strip_marks(text) } else { text };
+     let plain: Vec<String> = text.lines.iter().map(ToString::to_string).collect();
+     let block = doc.blocks.get(index);
+     let base = block.map_or(0, |b| b.range.start);
+     if !block.is_some_and(|b| matches!(b.kind, BlockKind::List | BlockKind::BlockQuote)) {
+         let offsets = align(&plain, source, base);
++        if let Some(code) = block.filter(|b| b.kind == BlockKind::CodeBlock) {
++            paint_code_lines(&mut text, &offsets, std::slice::from_ref(&code.range));
++        }
+         return Decorated { text, offsets, hangs: Vec::new() };
+     }
+     let syntax = Syntax::parse(source, base);
+     let offsets = align(&plain, &syntax.aligned_source(source, base), base);
++    paint_code_lines(&mut text, &offsets, &syntax.code);
+     decorate::decorate(&syntax, source, base, text, offsets)
+ }
+ 
+@@ -214,6 +230,25 @@ fn rendered_text_strips_markup_and_joins_blocks_without_separator() {
+         assert_eq!(layout.rendered_in_range(&doc.source, &bold_range), "login page");
+     }
+ 
++    #[test]
++    fn code_blocks_take_the_code_block_role_and_inline_code_keeps_the_code_role() {
++        let doc = Document::parse(
++            "Run `make`.\n\n```\nmake all\n```\n\n- step\n\n  ```\n  make nested\n  ```\n".to_owned(),
++        );
++        let layout = DocLayout::build(&doc, 80);
++        let line = |needle: &str| {
++            let mut lines = layout.blocks.iter().flat_map(|b| &b.text.lines);
++            lines.find(|l| l.to_string().contains(needle)).expect("rendered")
++        };
++        let code_block = Style::new().fg(palette().code_block);
++        assert_eq!(line("make all").style, code_block);
++        assert_eq!(line("make nested").style, code_block);
++        let prose = line("Run");
++        assert_eq!(prose.style.fg, None);
++        let span = prose.spans.iter().find(|s| s.content == "make").expect("inline code span");
++        assert_eq!(span.style.fg, Some(palette().code));
++    }
++
+     #[test]
+     fn every_cell_of_a_long_table_maps_to_its_source() {
+         let doc = Document::parse(
+diff --git a/crates/plannotator-tui/src/theme.rs b/crates/plannotator-tui/src/theme.rs
+index 2963120..38edaea 100644
+--- a/crates/plannotator-tui/src/theme.rs
++++ b/crates/plannotator-tui/src/theme.rs
+@@ -118,6 +118,14 @@ pub(crate) struct Palette {
+     pub(crate) cursor: Style,
+     /// A character selection, a picker row, a review-menu row.
+     pub(crate) selection: Style,
++    /// Inline code.
++    pub(crate) code: Color,
++    /// Fenced and indented code blocks.
++    pub(crate) code_block: Color,
++    /// Links; always underlined as well.
++    pub(crate) link: Color,
++    /// Block quotes; always italic as well.
++    pub(crate) quote: Color,
+ }
+ 
+ /// The palette this app has always had. Dark terminals must see no change at all.
+@@ -135,6 +143,10 @@ pub(crate) struct Palette {
+     approve_bg: Color::Indexed(22),
+     cursor: Style::new().bg(Color::Indexed(240)),
+     selection: Style::new().add_modifier(Modifier::REVERSED),
++    code: Color::LightYellow,
++    code_block: Color::LightYellow,
++    link: Color::Blue,
++    quote: Color::Green,
+ };
+ 
+ /// The same roles, light. The greys mirror the dark ones about the middle of the ramp, so
+@@ -156,6 +168,10 @@ pub(crate) struct Palette {
+     // A dark cell with its own light foreground, so the glyph under the cursor stays legible.
+     cursor: Style::new().bg(Color::Indexed(238)).fg(Color::White),
+     selection: Style::new().bg(Color::Indexed(153)),
++    code: DARK.code,
++    code_block: DARK.code_block,
++    link: DARK.link,
++    quote: DARK.quote,
+ };
+ 
+ /// A colour as `[colors]` writes it: a name (`yellow`, `light-cyan`), a 256-colour index
+@@ -269,6 +285,16 @@ pub(crate) struct Colors {
+     pub(crate) cursor: Option<ColorValue>,
+     #[serde(skip_serializing_if = "Option::is_none")]
+     pub(crate) selection: Option<ColorValue>,
++    /// Inline code.
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub(crate) code: Option<ColorValue>,
++    /// Fenced and indented code blocks.
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub(crate) code_block: Option<ColorValue>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub(crate) link: Option<ColorValue>,
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub(crate) quote: Option<ColorValue>,
+ }
+ 
+ impl Palette {
+@@ -289,6 +315,10 @@ pub(crate) fn with(mut self, colors: &Colors) -> Self {
+         set(&mut self.approve_bg, colors.looks_good_bg);
+         set(&mut self.block_bg, colors.block);
+         set(&mut self.toolbar_bg, colors.toolbar);
++        set(&mut self.code, colors.code);
++        set(&mut self.code_block, colors.code_block);
++        set(&mut self.link, colors.link);
++        set(&mut self.quote, colors.quote);
+         if let Some(ColorValue(color)) = colors.cursor {
+             self.cursor = Style::new().bg(color);
+         }
+@@ -446,6 +476,9 @@ fn the_dark_palette_is_unchanged() {
+             (Color::Cyan, Color::Cyan, Color::LightCyan)
+         );
+         assert_eq!((DARK.comment, DARK.looks_good, DARK.delete), (Color::Yellow, Color::Green, Color::Red));
++        let markdown = (DARK.code, DARK.code_block, DARK.link, DARK.quote);
++        assert_eq!(markdown, (Color::LightYellow, Color::LightYellow, Color::Blue, Color::Green));
++        assert_eq!((LIGHT.code, LIGHT.code_block, LIGHT.link, LIGHT.quote), markdown);
+     }
+ 
+     /// Nothing installs a palette in a test binary, so every existing snapshot and style
+diff --git a/docs/decisions.md b/docs/decisions.md
+index 43bc638..7b71f9d 100644
+--- a/docs/decisions.md
++++ b/docs/decisions.md
+@@ -473,3 +473,19 @@ ## 17. Gate mode: an explicit Approve and one decision per review (2026-10-28)
+ 
+ `approve` is a new rebindable action. Its default key yields when a config already gives
+ `A` to an action that is live at the same time, so a config that loaded before still loads.
++
++## 18. Colour roles for code, links and quotes (2026-11-18)
++
++Local patch, not upstream. Inline code, code blocks, links and block quotes had fixed ANSI
++colours in `layout.rs`, so a `[colors]` theme could not reach them. They are now palette
++roles, `code`, `code-block`, `link` and `quote`, with the old colours as the default in both
++palettes; links stay underlined and quotes italic whatever colour is set.
++
++`tui-markdown` 0.3.9 has one `StyleSheet::code()` for both kinds of code. It puts it on the
++span for inline code and on the line for a block, and on no line at all once syntax
++highlighting is compiled in. So which lines belong to a code block is decided
++from the parse, not from the renderer's styling: every line of a top-level code block, and,
++in a list or quote, every line whose text maps into a code block the container parse
++(`decorate::Syntax`) already walks. Such a line's style becomes the `code-block` colour;
++inline code keeps `code` on its own span. Highlighted code keeps its theme's colours,
++which sit on the spans and win over the line's.

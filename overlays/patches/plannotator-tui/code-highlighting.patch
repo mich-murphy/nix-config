@@ -1,0 +1,556 @@
+From 0cc197f7feed1653ad9ff427f72137629328e574 Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Wed, 18 Nov 2026 22:33:26 +1100
+Subject: [PATCH] feat(render): syntax highlighting of fenced code with [ui]
+ code_theme
+
+---
+ Cargo.lock                               |  75 +++++++++++++-
+ README.md                                |  15 +++
+ crates/plannotator-tui/Cargo.toml        |   4 +-
+ crates/plannotator-tui/src/cli.rs        |   6 ++
+ crates/plannotator-tui/src/code_theme.rs | 122 +++++++++++++++++++++++
+ crates/plannotator-tui/src/config.rs     |  14 +++
+ crates/plannotator-tui/src/layout.rs     |  80 ++++++++++++++-
+ crates/plannotator-tui/src/main.rs       |   1 +
+ docs/decisions.md                        |  24 +++++
+ 9 files changed, 334 insertions(+), 7 deletions(-)
+ create mode 100644 crates/plannotator-tui/src/code_theme.rs
+
+diff --git a/Cargo.lock b/Cargo.lock
+index 815219e..7587528 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -37,6 +37,19 @@ version = "0.2.21"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
+ 
++[[package]]
++name = "ansi-to-tui"
++version = "8.0.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e42366bb9d958f042bf58f0a85e1b2d091997c1257ca49bddd7e4827aadc65fd"
++dependencies = [
++ "nom 8.0.0",
++ "ratatui-core",
++ "simdutf8",
++ "smallvec",
++ "thiserror 2.0.20",
++]
++
+ [[package]]
+ name = "anstream"
+ version = "1.0.0"
+@@ -1299,6 +1312,15 @@ dependencies = [
+  "minimal-lexical",
+ ]
+ 
++[[package]]
++name = "nom"
++version = "8.0.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "df9761775871bdef83bee530e60050f7e54b1105350d6884eb0fb4f46c2f9405"
++dependencies = [
++ "memchr",
++]
++
+ [[package]]
+ name = "num"
+ version = "0.4.3"
+@@ -1415,6 +1437,28 @@ version = "1.70.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
+ 
++[[package]]
++name = "onig"
++version = "6.5.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "0cc3cbf698f9438986c11a880c90a6d04b9de27575afd28bbf45b154b6c709e2"
++dependencies = [
++ "bitflags 2.13.1",
++ "libc",
++ "once_cell",
++ "onig_sys",
++]
++
++[[package]]
++name = "onig_sys"
++version = "69.9.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1e68317604e77e53b85896388e1a803c1d21b74c899ec9e5e1112db90735edd7"
++dependencies = [
++ "cc",
++ "pkg-config",
++]
++
+ [[package]]
+ name = "ordered-float"
+ version = "4.6.0"
+@@ -2196,6 +2240,12 @@ version = "0.3.10"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
+ 
++[[package]]
++name = "simdutf8"
++version = "0.1.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
++
+ [[package]]
+ name = "similar"
+ version = "3.2.0"
+@@ -2289,6 +2339,27 @@ dependencies = [
+  "unicode-ident",
+ ]
+ 
++[[package]]
++name = "syntect"
++version = "5.3.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "656b45c05d95a5704399aeef6bd0ddec7b2b3531b7c9e900abbf7c4d2190c925"
++dependencies = [
++ "bincode",
++ "flate2",
++ "fnv",
++ "once_cell",
++ "onig",
++ "plist",
++ "regex-syntax",
++ "serde",
++ "serde_derive",
++ "serde_json",
++ "thiserror 2.0.20",
++ "walkdir",
++ "yaml-rust",
++]
++
+ [[package]]
+ name = "tempfile"
+ version = "3.27.0"
+@@ -2348,7 +2419,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "d4ea810f0692f9f51b382fff5893887bb4580f5fa246fde546e0b13e7fcee662"
+ dependencies = [
+  "fnv",
+- "nom",
++ "nom 7.1.3",
+  "phf 0.11.3",
+  "phf_codegen",
+ ]
+@@ -2564,11 +2635,13 @@ version = "0.3.9"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "a0c95afc7b66008823dea2614a800d944e18990690db47517efc66cd01ff9cee"
+ dependencies = [
++ "ansi-to-tui",
+  "itertools 0.15.0",
+  "pretty_assertions",
+  "pulldown-cmark",
+  "ratatui-core",
+  "rstest",
++ "syntect",
+  "tracing",
+ ]
+ 
+diff --git a/README.md b/README.md
+index 28fbc56..e8a57b8 100644
+--- a/README.md
++++ b/README.md
+@@ -291,6 +291,21 @@ # ~/.config/plannotator-tui/config.toml
+ `cursor` and `selection` become plain backgrounds when set: the text on them keeps the
+ terminal's colour.
+ 
++Fenced code is syntax-highlighted when `[ui] code_theme` names a TextMate theme:
++
++```toml
++[ui]
++code_theme = "~/.config/plannotator-tui/tokyonight_night.tmTheme"
++```
++
++`~/` is your home folder, and any other relative path is read from the folder the config
++file is in. The theme is read once at startup. A file that cannot be read or is not a
++TextMate theme is an error that names it, reported by `plannotator-tui config`; the review
++itself still opens, with plain code. Only a fence whose language is recognised is
++highlighted, in the theme's colours; other fences and indented code use `code-block`.
++Without `code_theme` nothing is highlighted, and a fence's opening line shows its backticks
++without the language name.
++
+ On a wide terminal, `[ui]` can keep the text to a readable measure:
+ 
+ ```toml
+diff --git a/crates/plannotator-tui/Cargo.toml b/crates/plannotator-tui/Cargo.toml
+index 6af2e82..fbf4578 100644
+--- a/crates/plannotator-tui/Cargo.toml
++++ b/crates/plannotator-tui/Cargo.toml
+@@ -28,8 +28,8 @@ unicode-width.workspace = true
+ time = { version = "0.3", features = ["formatting", "parsing", "local-offset"] }
+ pulldown-cmark = { version = "0.13.4", default-features = false }
+ ratatui = "0.30"
+-# highlight-code pulls syntect + a C oniguruma build; plain code blocks keep the build pure Rust.
+-tui-markdown = { version = "0.3.9", default-features = false }
++# highlight-code pulls syntect + a C oniguruma build; it backs `[ui] code_theme` (src/code_theme.rs).
++tui-markdown = { version = "0.3.9", default-features = false, features = ["highlight-code"] }
+ # OSC 11 by hand is forty lines and a dozen terminal quirks; this reads the reply off its own
+ # tty handle, so it cannot race the event loop's reader. Three small crates, one author.
+ terminal-colorsaurus = "1.0.3"
+diff --git a/crates/plannotator-tui/src/cli.rs b/crates/plannotator-tui/src/cli.rs
+index af6e8fc..a224ef9 100644
+--- a/crates/plannotator-tui/src/cli.rs
++++ b/crates/plannotator-tui/src/cli.rs
+@@ -263,6 +263,7 @@ fn show_config() -> Result<()> {
+     let home = std::env::home_dir().unwrap_or_else(|| PathBuf::from("/"));
+     let path = crate::config::config_path(|k| std::env::var(k).ok(), &home);
+     let mut config = Config::load_from(&path)?;
++    crate::code_theme::load(&config)?;
+     // `PLANNOTATOR_TUI_THEME` overrides the file, so the file's value is not the effective one.
+     config.ui.theme = crate::theme::effective_setting(|key| std::env::var(key).ok(), config.ui.theme)?;
+     // So does `PLANNOTATOR_TUI_DELIVER_CMD`.
+@@ -599,6 +600,9 @@ pub(crate) fn with_terminal<T>(
+         crate::theme::resolve(|key| std::env::var(key).ok(), config.ui.theme, crate::theme::detect)?,
+         &config.colors,
+     );
++    // Like the rest of the file, a code theme that fails to load does not stop the review: code
++    // stays plain, and `plannotator-tui config` names the file and what is wrong with it.
++    let _ = crate::code_theme::install(&config);
+     let mut terminal = ratatui::init();
+     #[cfg(unix)]
+     crate::hangup::watch();
+@@ -695,6 +699,7 @@ fn event_loop(terminal: &mut ratatui::DefaultTerminal, mut app: App) -> Result<O
+ 
+ /// Headless timing of the expensive paths: parse, per-block render + align, and reflow.
+ fn bench(path: &PathBuf) -> Result<()> {
++    crate::code_theme::install(&Config::load()?)?;
+     let source = open_file(path)?;
+     let bytes = source.content.len();
+     let t = Instant::now();
+@@ -743,6 +748,7 @@ fn snapshot(
+ ) -> Result<()> {
+     use ratatui::backend::TestBackend;
+     use ratatui::style::Modifier;
++    crate::code_theme::install(&Config::load().unwrap_or_default())?;
+     let mut terminal = ratatui::Terminal::new(TestBackend::new(cols, rows))?;
+     let mut app = open_app(path, doc_width(cols), false)?;
+     terminal.draw(|frame| app.draw(frame))?;
+diff --git a/crates/plannotator-tui/src/code_theme.rs b/crates/plannotator-tui/src/code_theme.rs
+new file mode 100644
+index 0000000..c011125
+--- /dev/null
++++ b/crates/plannotator-tui/src/code_theme.rs
+@@ -0,0 +1,122 @@
++//! Syntax highlighting for fenced code: the theme `[ui] code_theme` names, loaded once.
++//!
++//! `tui-markdown` highlights every fence whose language it recognizes, and falls back to a
++//! bundled theme of its own when it is given none. So with no `code_theme` set, each fence's
++//! info string is cut before rendering ([`without_languages`]): no language is found and code
++//! renders plain, as it did before highlighting was compiled in. The rendering options live
++//! here, built once, so no block clones the theme.
++
++use std::borrow::Cow;
++use std::path::{Path, PathBuf};
++use std::sync::OnceLock;
++
++use anyhow::Result;
++use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag};
++use tui_markdown::{CodeTheme, Options};
++
++use crate::config::{Config, config_path};
++use crate::doc::parse_options;
++use crate::layout::Styles;
++
++static OPTIONS: OnceLock<Options<Styles>> = OnceLock::new();
++
++/// The options every block renders with: no code theme until [`install`] loads one, which
++/// is what tests and a config without `code_theme` get.
++pub(crate) fn options() -> &'static Options<Styles> {
++    OPTIONS.get_or_init(|| Options::new(Styles))
++}
++
++/// Load the configured theme, if any, and fix it for this process. The first call wins.
++pub(crate) fn install(config: &Config) -> Result<()> {
++    let options = match load(config)? {
++        Some(theme) => Options::new(Styles).code_theme(theme),
++        None => Options::new(Styles),
++    };
++    let _ = OPTIONS.set(options);
++    Ok(())
++}
++
++/// The theme `[ui] code_theme` names, read from disk; `None` when it is not set.
++pub(crate) fn load(config: &Config) -> Result<Option<CodeTheme>> {
++    let home = std::env::home_dir().unwrap_or_else(|| PathBuf::from("/"));
++    let file = config_path(|key| std::env::var(key).ok(), &home);
++    load_from(config.ui.code_theme.as_deref(), &file, &home)
++}
++
++fn load_from(setting: Option<&str>, config_file: &Path, home: &Path) -> Result<Option<CodeTheme>> {
++    let Some(setting) = setting else { return Ok(None) };
++    let path = resolve(setting, config_file, home);
++    CodeTheme::from_file(&path).map(Some).map_err(|err| anyhow::anyhow!("[ui] code_theme: {err}"))
++}
++
++/// `~/` is the home folder; any other relative path is read from the config file's folder.
++fn resolve(setting: &str, config_file: &Path, home: &Path) -> PathBuf {
++    if let Some(rest) = setting.strip_prefix("~/").or_else(|| setting.strip_prefix("~\\")) {
++        return home.join(rest);
++    }
++    config_file.parent().unwrap_or_else(|| Path::new("")).join(setting)
++}
++
++/// `source` with every fence's info string cut, so `tui-markdown` finds no language to
++/// highlight. Offsets are unaffected: alignment runs against the original source.
++pub(crate) fn without_languages(source: &str) -> Cow<'_, str> {
++    if !source.contains("```") && !source.contains("~~~") {
++        return Cow::Borrowed(source);
++    }
++    let mut cuts = Vec::new();
++    for (event, range) in Parser::new_ext(source, parse_options()).into_offset_iter() {
++        let Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info))) = event else { continue };
++        let line = source.get(range.start..).and_then(|s| s.lines().next()).unwrap_or_default();
++        let Some(fence) = line.find(['`', '~']).filter(|_| !info.is_empty()) else { continue };
++        let rest = line.get(fence..).unwrap_or_default();
++        let mark = rest.chars().next().unwrap_or('`');
++        let info_at = fence + rest.len() - rest.trim_start_matches(mark).len();
++        cuts.push(range.start + info_at..range.start + line.len());
++    }
++    if cuts.is_empty() {
++        return Cow::Borrowed(source);
++    }
++    let mut out = String::with_capacity(source.len());
++    let mut at = 0;
++    for cut in cuts {
++        out.push_str(source.get(at..cut.start).unwrap_or_default());
++        at = cut.end;
++    }
++    out.push_str(source.get(at..).unwrap_or_default());
++    Cow::Owned(out)
++}
++
++#[cfg(test)]
++#[allow(clippy::expect_used, reason = "tests assert by panicking")]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn a_relative_theme_is_read_from_the_config_folder_and_tilde_from_home() {
++        let (file, home) = (Path::new("/etc/pt/config.toml"), Path::new("/home/u"));
++        assert_eq!(resolve("night.tmTheme", file, home), PathBuf::from("/etc/pt/night.tmTheme"));
++        assert_eq!(resolve("~/t/night.tmTheme", file, home), PathBuf::from("/home/u/t/night.tmTheme"));
++        assert_eq!(resolve("/abs/night.tmTheme", file, home), PathBuf::from("/abs/night.tmTheme"));
++    }
++
++    #[test]
++    fn a_missing_or_invalid_theme_is_an_error_naming_the_file() {
++        let dir = std::env::temp_dir().join(format!("plannotator code-theme-{}", std::process::id()));
++        std::fs::create_dir_all(&dir).expect("temp dir");
++        std::fs::write(dir.join("broken.tmTheme"), "not a plist").expect("written");
++        let config = dir.join("config.toml");
++        for name in ["missing.tmTheme", "broken.tmTheme"] {
++            let err = load_from(Some(name), &config, &dir).expect_err("rejected");
++            assert!(err.to_string().contains(name), "{err}");
++        }
++        std::fs::remove_dir_all(&dir).expect("cleaned up");
++    }
++
++    #[test]
++    fn languages_are_cut_from_fences_and_nothing_else() {
++        let source = "- item\n\n  ```rust title\n  let x = `y`;\n  ```\n\n~~~ py\nz\n~~~";
++        let expected = "- item\n\n  ```\n  let x = `y`;\n  ```\n\n~~~\nz\n~~~";
++        assert_eq!(without_languages(source), expected);
++        assert!(matches!(without_languages("```\nplain\n```"), Cow::Borrowed(_)));
++    }
++}
+diff --git a/crates/plannotator-tui/src/config.rs b/crates/plannotator-tui/src/config.rs
+index 4f770f0..418d656 100644
+--- a/crates/plannotator-tui/src/config.rs
++++ b/crates/plannotator-tui/src/config.rs
+@@ -45,6 +45,10 @@ pub(crate) struct UiConfig {
+     pub(crate) copy_on_select: bool,
+     /// Widest the comment box gets, borders included; a narrower pane narrows it further.
+     pub(crate) comment_width: u16,
++    /// A `.tmTheme` (`TextMate`) file for fenced code; unset, code is not highlighted. `~/` is the
++    /// home folder; a relative path is read from this file's folder (see `code_theme`).
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub(crate) code_theme: Option<String>,
+ }
+ 
+ impl Default for UiConfig {
+@@ -56,6 +60,7 @@ fn default() -> Self {
+             doc_width: 0,
+             copy_on_select: true,
+             comment_width: 48,
++            code_theme: None,
+         }
+     }
+ }
+@@ -381,6 +386,15 @@ fn the_picker_offers_25_messages_unless_set() {
+         assert_eq!(Config::parse("[last]\npick = 60\n").expect("parses").last.pick, 60);
+     }
+ 
++    #[test]
++    fn a_code_theme_is_unset_by_default_and_printed_when_set() {
++        assert_eq!(Config::default().ui.code_theme, None);
++        let config = Config::parse("[ui]\ncode_theme = \"~/night.tmTheme\"\n").expect("parses");
++        assert_eq!(config.ui.code_theme.as_deref(), Some("~/night.tmTheme"));
++        let shown = config.to_toml().expect("serializes");
++        assert!(shown.contains("code_theme = \"~/night.tmTheme\""), "{shown}");
++    }
++
+     #[test]
+     fn copy_on_select_defaults_on_and_turns_off() {
+         assert!(Config::default().ui.copy_on_select);
+diff --git a/crates/plannotator-tui/src/layout.rs b/crates/plannotator-tui/src/layout.rs
+index 31396af..9d87c07 100644
+--- a/crates/plannotator-tui/src/layout.rs
++++ b/crates/plannotator-tui/src/layout.rs
+@@ -12,6 +12,8 @@
+ use ratatui::text::{Line, Text};
+ use tui_markdown::{Options, StyleSheet};
+ 
++use crate::code_theme::{self, without_languages};
++
+ use crate::cjk_emphasis::{protect, strip_marks};
+ use crate::decorate::{self, Decorated, RULE, Syntax};
+ use crate::doc::{BlockKind, Document};
+@@ -25,7 +27,7 @@
+ /// House style: no `#` markers, headings carry weight through bold/underline rather than
+ /// background color, so the palette stays available for selection and annotations.
+ #[derive(Debug, Clone)]
+-struct Styles;
++pub(crate) struct Styles;
+ 
+ impl StyleSheet for Styles {
+     fn heading(&self, level: u8) -> Style {
+@@ -83,11 +85,34 @@ pub(crate) struct DocLayout {
+     pub(crate) total_rows: usize,
+ }
+ 
++/// One block's source to styled text. Without a code theme, fences lose their language first,
++/// so nothing is highlighted (see `code_theme`).
++fn render(source: &str, options: &Options<Styles>) -> Text<'static> {
++    let source = if options.selected_code_theme().is_some() {
++        Cow::Borrowed(source)
++    } else {
++        without_languages(source)
++    };
++    let protected = protect(&source);
++    let text = own(tui_markdown::from_str_with_options(&protected, options));
++    if matches!(protected, Cow::Owned(_)) { strip_marks(text) } else { text }
++}
++
+ fn render_block(doc: &Document, index: usize) -> Decorated {
++    render_block_with(doc, index, code_theme::options())
++}
++
++fn render_block_with(doc: &Document, index: usize, options: &Options<Styles>) -> Decorated {
+     let source = doc.block_text(index);
+-    let protected = protect(source);
+-    let text = own(tui_markdown::from_str_with_options(&protected, &Options::new(Styles)));
+-    let mut text = if matches!(protected, Cow::Owned(_)) { strip_marks(text) } else { text };
++    let mut text = render(source, options);
++    // `tui-markdown` omits a line it fails to highlight. Rendered, a code block has at least
++    // as many lines as its source, so fewer means a line went missing: render it plain.
++    if options.selected_code_theme().is_some()
++        && doc.blocks.get(index).is_some_and(|b| b.kind == BlockKind::CodeBlock)
++        && text.lines.len() < source.lines().count()
++    {
++        text = render(&without_languages(source), options);
++    }
+     let plain: Vec<String> = text.lines.iter().map(ToString::to_string).collect();
+     let block = doc.blocks.get(index);
+     let base = block.map_or(0, |b| b.range.start);
+@@ -249,6 +274,53 @@ fn code_blocks_take_the_code_block_role_and_inline_code_keeps_the_code_role() {
+         assert_eq!(span.style.fg, Some(palette().code));
+     }
+ 
++    fn themed() -> Options<Styles> {
++        Options::new(Styles).code_theme(tui_markdown::BuiltinCodeTheme::Base16OceanDark)
++    }
++
++    fn is_highlighted(text: &Text<'_>) -> bool {
++        let mut spans = text.lines.iter().flat_map(|l| &l.spans);
++        spans.any(|s| matches!(s.style.fg, Some(ratatui::style::Color::Rgb(..))))
++    }
++
++    #[test]
++    fn every_character_of_highlighted_code_maps_back_to_its_source() {
++        let doc = Document::parse("```rust\nfn main() {\n    let s = \"héllo\"; // hi\n}\n```\n".to_owned());
++        let Decorated { text, offsets, .. } = render_block_with(&doc, 0, &themed());
++        assert!(is_highlighted(&text), "{text:?}");
++        let mut checked = 0;
++        for (line, offsets) in text.lines.iter().zip(&offsets) {
++            let chars = line.spans.iter().flat_map(|s| s.content.chars());
++            for (ch, offset) in chars.zip(offsets).filter(|(ch, _)| !ch.is_whitespace()) {
++                let source = offset.and_then(|o| doc.source.get(o..));
++                assert!(source.is_some_and(|s| s.starts_with(ch)), "{ch:?} unmapped in {line}");
++                checked += 1;
++            }
++        }
++        assert!(checked > 30, "only {checked} characters checked");
++    }
++
++    #[test]
++    fn without_a_code_theme_nothing_is_highlighted_and_the_fence_shows_no_language() {
++        let doc = Document::parse("```rust\nfn main() {}\n```\n".to_owned());
++        let Decorated { text, .. } = render_block_with(&doc, 0, &Options::new(Styles));
++        let lines: Vec<String> = text.lines.iter().map(ToString::to_string).collect();
++        assert_eq!(lines, ["```", "fn main() {}", "```"]);
++        assert!(!is_highlighted(&text));
++        assert!(text.lines.iter().all(|l| l.style == Style::new().fg(palette().code_block)));
++    }
++
++    #[test]
++    fn code_with_an_unknown_or_no_language_takes_the_code_block_role_under_a_theme() {
++        for source in ["```nosuchlang\nplain words\n```\n", "```\nplain words\n```\n", "    plain words\n"] {
++            let doc = Document::parse(source.to_owned());
++            let Decorated { text, .. } = render_block_with(&doc, 0, &themed());
++            let line = text.lines.iter().find(|l| l.to_string() == "plain words").expect("rendered");
++            assert_eq!(line.style, Style::new().fg(palette().code_block), "{source:?}");
++            assert!(line.spans.iter().all(|s| s.style.fg.is_none()), "{source:?}");
++        }
++    }
++
+     #[test]
+     fn every_cell_of_a_long_table_maps_to_its_source() {
+         let doc = Document::parse(
+diff --git a/crates/plannotator-tui/src/main.rs b/crates/plannotator-tui/src/main.rs
+index 6e361d5..357cdb4 100644
+--- a/crates/plannotator-tui/src/main.rs
++++ b/crates/plannotator-tui/src/main.rs
+@@ -5,6 +5,7 @@
+ mod base64;
+ mod cjk_emphasis;
+ mod cli;
++mod code_theme;
+ mod config;
+ mod decorate;
+ mod delivery;
+diff --git a/docs/decisions.md b/docs/decisions.md
+index 7b71f9d..cfd1350 100644
+--- a/docs/decisions.md
++++ b/docs/decisions.md
+@@ -489,3 +489,27 @@ ## 18. Colour roles for code, links and quotes (2026-11-18)
+ (`decorate::Syntax`) already walks. Such a line's style becomes the `code-block` colour;
+ inline code keeps `code` on its own span. Highlighted code keeps its theme's colours,
+ which sit on the spans and win over the line's.
++
++## 19. Syntax highlighting needs a theme of your own (2026-11-18)
++
++Local patch, not upstream. `tui-markdown`'s `highlight-code` feature is on (syntect, with
++a C oniguruma build), and `[ui] code_theme` names the `.tmTheme` it highlights with. It is
++loaded once, before the screen is drawn, into one set of render options that every block
++borrows, so no block clones a theme. A relative path is read from the config file's folder,
++`~/` from home. A file that does not load is reported by `plannotator-tui config` and leaves
++the review with plain code, as an unreadable config file always has.
++
++With the feature compiled in, `tui-markdown` highlights any recognised language and falls
++back to its own Base16 Ocean theme when given none; it has no switch to turn highlighting
++off. So without `code_theme`, every fence's info string is cut from the block's source
++before rendering (alignment still runs against the real source), no syntax is found, and
++code renders plain in `code-block`. The visible cost: the opening fence shows no language.
++Rendering code ourselves instead was rejected: we never interpret Markdown.
++
++`tui-markdown` silently omits a line it fails to highlight. A rendered code block has at
++least as many lines as its source, so a top-level code block that comes back shorter is
++rendered again without its language. No input was found that makes it drop a line
++(escape sequences, NUL and bare carriage returns all came back whole), so the guard has no
++test; it is two comparisons, kept because a lost line could not be seen or annotated. Highlighted lines carry only foreground colours on
++their spans and the source's own characters, so alignment maps them as before.
++
