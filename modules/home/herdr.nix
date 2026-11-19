@@ -13,11 +13,33 @@ let
   # same Pi theme as modules/home/agents.nix, so the two cannot drift. Each
   # role takes the Pi colour for the same job. Code blocks use the terminal's
   # foreground ("reset"), as Pi's does here, and fenced code is highlighted
-  # with Tokyo Night's own TextMate theme. Roles not listed keep
-  # plannotator-tui's dark palette. Only the patched build knows code,
-  # code-block, link, quote and code_theme; upstream's rejects them.
+  # with Tokyo Night's own TextMate theme. Borders (tables, unfocused note
+  # bubbles, the tree divider) take Pi's `dim`: upstream's dark gray shows as
+  # terminal_black, too close to the background to make out. Roles Pi has no
+  # colour for take Tokyo Night's palette instead of plannotator-tui's xterm
+  # greys and tints: the comment and looks-good highlights are the note
+  # colours blended into the background, as Tokyo Night makes its diff
+  # backgrounds; the toolbar is `fg_gutter` and the cursor, a step firmer,
+  # `dark3`. Only the patched build knows code, code-block, link, quote,
+  # border and code_theme; upstream's rejects them.
   tokyonight = "${inputs.tokyonight}/extras";
   piColors = (lib.importJSON "${tokyonight}/pi/tokyonight_night.json").colors;
+  # The whole palette, which only some of the extras (such as opencode's) list.
+  palette = (lib.importJSON "${tokyonight}/opencode/tokyonight_night.json").defs;
+  # Tokyo Night's util.blend: `alpha` of `fg` over `bg`, per channel, rounded.
+  blend =
+    fg: alpha: bg:
+    let
+      channel = hex: i: lib.fromHexString (builtins.substring (1 + 2 * i) 2 hex);
+      mix = i: builtins.floor (alpha * channel fg i + (1 - alpha) * channel bg i + 0.5);
+      hex2 = n: lib.toLower (lib.fixedWidthString 2 "0" (lib.toHexString n));
+    in
+    "#"
+    + lib.concatMapStrings (i: hex2 (mix i)) [
+      0
+      1
+      2
+    ];
   annotateConfig = (pkgs.formats.toml { }).generate "plannotator-tui-config.toml" {
     ui = {
       theme = "dark";
@@ -29,12 +51,17 @@ let
       comment = piColors.warning;
       looks-good = piColors.success;
       delete = piColors.error;
+      comment-bg = blend piColors.warning 0.3 palette.bg;
+      looks-good-bg = blend piColors.success 0.3 palette.bg;
       block = piColors.toolPendingBg;
+      toolbar = palette.fg_gutter;
+      cursor = palette.dark3;
       selection = piColors.selectedBg;
       code = piColors.mdCode;
       code-block = "reset";
       link = piColors.mdLink;
       quote = piColors.mdQuote;
+      border = piColors.dim;
     };
   };
   # Herdr's integrations write into each agent's own config: Pi's reports

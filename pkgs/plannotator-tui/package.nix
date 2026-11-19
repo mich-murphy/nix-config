@@ -31,10 +31,13 @@ rustPlatform.buildRustPackage (finalAttrs: {
   #   [ui] code_theme names; unset, nothing is highlighted, as upstream.
   # - mermaid-diagrams: fenced mermaid blocks drawn as text by boxmaid,
   #   [ui] mermaid; a diagram it cannot draw shows its source.
+  # - border-role: a [colors] border role for table borders, unfocused note
+  #   bubbles and the file-tree divider, which upstream draws in dark gray.
   cargoPatches = [
     ../../overlays/patches/plannotator-tui/colour-roles.patch
     ../../overlays/patches/plannotator-tui/code-highlighting.patch
     ../../overlays/patches/plannotator-tui/mermaid-diagrams.patch
+    ../../overlays/patches/plannotator-tui/border-role.patch
   ];
 
   cargoHash = "sha256-HnLPY+d461tdm3pwYhgYx9AUUE+sKsVarLry6bYi/Ss=";

@@ -1,0 +1,151 @@
+From 8162103f6a8d2ca4c26f127f0d4dc9207909705c Mon Sep 17 00:00:00 2001
+From: mich-murphy <github@elmurphy.com>
+Date: Thu, 19 Nov 2026 14:28:17 +1100
+Subject: [PATCH] feat(theme): a border role for tables, unfocused note bubbles
+ and the tree divider
+
+Table borders came from tui-markdown's default dark gray, and the unfocused note bubbles and file-tree divider hardcoded the same colour, so no [colors] key could reach them. [colors] border now sets all three; the default stays dark gray, so nothing changes unless it is set.
+---
+ README.md                                 | 1 +
+ crates/plannotator-tui/src/app/draw.rs    | 4 ++--
+ crates/plannotator-tui/src/config.rs      | 8 ++++++++
+ crates/plannotator-tui/src/layout.rs      | 3 +++
+ crates/plannotator-tui/src/review/rail.rs | 2 +-
+ crates/plannotator-tui/src/theme.rs       | 9 +++++++++
+ 6 files changed, 24 insertions(+), 3 deletions(-)
+
+diff --git a/README.md b/README.md
+index 3fbba96..e3b2154 100644
+--- a/README.md
++++ b/README.md
+@@ -286,6 +286,7 @@ # ~/.config/plannotator-tui/config.toml
+ code-block = "light-yellow"  # fenced and indented code
+ link = "blue"            # links, always underlined
+ quote = "green"          # block quotes, always italic
++border = "dark-gray"     # table borders, unfocused note bubbles and the tree divider
+ ```
+ 
+ `cursor` and `selection` become plain backgrounds when set: the text on them keeps the
+diff --git a/crates/plannotator-tui/src/app/draw.rs b/crates/plannotator-tui/src/app/draw.rs
+index 697dd8b..1aeca4e 100644
+--- a/crates/plannotator-tui/src/app/draw.rs
++++ b/crates/plannotator-tui/src/app/draw.rs
+@@ -124,7 +124,7 @@ fn draw_tree(&self, frame: &mut Frame, area: Rect) {
+         let Some(tree) = &self.tree else { return };
+         let focused = self.focus == Focus::Tree;
+         let border =
+-            if focused { Style::new().fg(palette().accent) } else { Style::new().fg(Color::DarkGray) };
++            if focused { Style::new().fg(palette().accent) } else { Style::new().fg(palette().border) };
+         let block = Block::default().borders(Borders::RIGHT).border_style(border);
+         let inner = block.inner(area);
+         frame.render_widget(block, area);
+@@ -365,7 +365,7 @@ fn draw_rail(&mut self, frame: &mut Frame, rail: Rect) {
+             }
+             let highlighted = if rail_focused { index == self.rail_cursor } else { block == self.selected };
+             let border =
+-                if highlighted { Style::new().fg(accent(kind)) } else { Style::new().fg(Color::DarkGray) };
++                if highlighted { Style::new().fg(accent(kind)) } else { Style::new().fg(palette().border) };
+             let border = if rail_focused && index == self.rail_cursor { border.bold() } else { border };
+             let sent = if self.is_file_review() && !self.open.store.is_pending(placed.annotation) {
+                 " · sent"
+diff --git a/crates/plannotator-tui/src/config.rs b/crates/plannotator-tui/src/config.rs
+index f6384fe..96db6a1 100644
+--- a/crates/plannotator-tui/src/config.rs
++++ b/crates/plannotator-tui/src/config.rs
+@@ -428,6 +428,14 @@ fn colors_are_read_by_role_and_roundtrip() {
+         assert_eq!(Config::parse(&text).expect("reparses"), config);
+     }
+ 
++    #[test]
++    fn the_border_role_is_read_and_printed_back() {
++        let config = Config::parse("[colors]\nborder = \"#737aa2\"\n").expect("parses");
++        assert_eq!(config.colors.border.map(|c| c.0), Some(ratatui::style::Color::Rgb(115, 122, 162)));
++        let shown = config.to_toml().expect("serializes");
++        assert!(shown.contains("border = \"#737aa2\""), "{shown}");
++    }
++
+     #[test]
+     fn markdown_color_roles_are_read_and_printed_back() {
+         let config =
+diff --git a/crates/plannotator-tui/src/layout.rs b/crates/plannotator-tui/src/layout.rs
+index 032271d..3b1c5f7 100644
+--- a/crates/plannotator-tui/src/layout.rs
++++ b/crates/plannotator-tui/src/layout.rs
+@@ -50,6 +50,9 @@ fn link(&self) -> Style {
+     fn blockquote(&self) -> Style {
+         Style::new().fg(palette().quote).add_modifier(Modifier::ITALIC)
+     }
++    fn table_border(&self) -> Style {
++        Style::new().fg(palette().border)
++    }
+ }
+ 
+ /// Code-block lines take the `code-block` role, decided by the parse rather than by how the
+diff --git a/crates/plannotator-tui/src/review/rail.rs b/crates/plannotator-tui/src/review/rail.rs
+index 5e6258b..000332a 100644
+--- a/crates/plannotator-tui/src/review/rail.rs
++++ b/crates/plannotator-tui/src/review/rail.rs
+@@ -153,7 +153,7 @@ pub(super) fn draw_rail(&mut self, frame: &mut Frame, rail: Rect) {
+                     let border = match (is_selected, self.focus == Focus::Notes) {
+                         (true, true) => Style::new().fg(colour).bold(),
+                         (true, false) => Style::new().fg(colour),
+-                        (false, _) => Style::new().fg(Color::DarkGray),
++                        (false, _) => Style::new().fg(palette().border),
+                     };
+                     let bubble = Block::default()
+                         .borders(Borders::ALL)
+diff --git a/crates/plannotator-tui/src/theme.rs b/crates/plannotator-tui/src/theme.rs
+index 38edaea..e742770 100644
+--- a/crates/plannotator-tui/src/theme.rs
++++ b/crates/plannotator-tui/src/theme.rs
+@@ -126,6 +126,8 @@ pub(crate) struct Palette {
+     pub(crate) link: Color,
+     /// Block quotes; always italic as well.
+     pub(crate) quote: Color,
++    /// Table borders, unfocused note bubbles and the unfocused file-tree divider.
++    pub(crate) border: Color,
+ }
+ 
+ /// The palette this app has always had. Dark terminals must see no change at all.
+@@ -147,6 +149,7 @@ pub(crate) struct Palette {
+     code_block: Color::LightYellow,
+     link: Color::Blue,
+     quote: Color::Green,
++    border: Color::DarkGray,
+ };
+ 
+ /// The same roles, light. The greys mirror the dark ones about the middle of the ramp, so
+@@ -172,6 +175,7 @@ pub(crate) struct Palette {
+     code_block: DARK.code_block,
+     link: DARK.link,
+     quote: DARK.quote,
++    border: DARK.border,
+ };
+ 
+ /// A colour as `[colors]` writes it: a name (`yellow`, `light-cyan`), a 256-colour index
+@@ -295,6 +299,9 @@ pub(crate) struct Colors {
+     pub(crate) link: Option<ColorValue>,
+     #[serde(skip_serializing_if = "Option::is_none")]
+     pub(crate) quote: Option<ColorValue>,
++    /// Table borders, unfocused note bubbles and the unfocused file-tree divider.
++    #[serde(skip_serializing_if = "Option::is_none")]
++    pub(crate) border: Option<ColorValue>,
+ }
+ 
+ impl Palette {
+@@ -319,6 +326,7 @@ pub(crate) fn with(mut self, colors: &Colors) -> Self {
+         set(&mut self.code_block, colors.code_block);
+         set(&mut self.link, colors.link);
+         set(&mut self.quote, colors.quote);
++        set(&mut self.border, colors.border);
+         if let Some(ColorValue(color)) = colors.cursor {
+             self.cursor = Style::new().bg(color);
+         }
+@@ -479,6 +487,7 @@ fn the_dark_palette_is_unchanged() {
+         let markdown = (DARK.code, DARK.code_block, DARK.link, DARK.quote);
+         assert_eq!(markdown, (Color::LightYellow, Color::LightYellow, Color::Blue, Color::Green));
+         assert_eq!((LIGHT.code, LIGHT.code_block, LIGHT.link, LIGHT.quote), markdown);
++        assert_eq!((DARK.border, LIGHT.border), (Color::DarkGray, Color::DarkGray));
+     }
+ 
+     /// Nothing installs a palette in a test binary, so every existing snapshot and style
