@@ -135,9 +135,26 @@ in
 
       # Pin power management via pmset because power.sleep cannot set separate
       # values for AC and battery power.
+      #
+      # pmset and configuration profiles cannot set Charge Limit or Optimized
+      # Battery Charging, so they go through PowerUISmartChargeClient, the
+      # client System Settings uses. JXA returns its BOOLs as "0" or "1", so
+      # they are compared with 1 rather than negated.
       extraActivation.text = ''
         pmset -c sleep 0 displaysleep 10 disksleep 10
         pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
+
+        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
+          /usr/bin/osascript -l JavaScript -e '
+            ObjC.import("Foundation");
+            $.NSBundle.bundleWithPath("/System/Library/PrivateFrameworks/PowerUI.framework").load;
+            const c = $.NSClassFromString("PowerUISmartChargeClient").alloc.initWithClientName("nix-darwin");
+            const ok = (r) => { if (r != 1) throw new Error("PowerUI call failed"); };
+            if (c.isMCLCurrentlyEnabled(null) != 1) ok(c.enableMCL(null));
+            if (c.getMCLLimitWithError(null) != 80) ok(c.setMCLLimitError(80, null));
+            if (c.isSmartChargingCurrentlyEnabled(null) == 1) ok(c.disableSmartCharging(null));
+          ' >/dev/null \
+          || echo "warning: could not set the battery Charge Limit" >&2
       '';
     };
 
