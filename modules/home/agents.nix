@@ -22,18 +22,32 @@ let
     "show-me"
   ];
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
-  # Tokyo Night Night, as folke/tokyonight.nvim generates it for Pi, with two
+  # Tokyo Night Night, as folke/tokyonight.nvim generates it for Pi, with some
   # changes. Pi finds a custom theme by `<name>.json`, so the name matches the
-  # file. `mdCodeBlock` is the text colour of unhighlighted code blocks, and
-  # upstream sets it to the theme's darkest background (`bg_dark`), which Pi
-  # draws as is; "" uses the terminal's foreground instead.
+  # file. The rest are colours Pi draws as text or lines but upstream sets to
+  # Neovim background colours, which hide them against the terminal or tool
+  # background:
+  # - `mdCodeBlock`, the text of unhighlighted code blocks, is `bg_dark`; ""
+  #   uses the terminal's foreground instead.
+  # - `toolDiff*`, the lines of edit diffs, are Neovim's diff backgrounds; they
+  #   take the success, error and muted colours, as in Pi's built-in dark theme.
+  # - `borderMuted`, Mermaid box borders and the editor border without
+  #   thinking, is `border`, near-black; it takes the thinking-off border.
+  # - `thinkingLow`, the editor border at low thinking, is `blue7`, darker than
+  #   thinking off; it takes `border_highlight`, between minimal and medium.
   piThemeName = "tokyonight-night";
-  piTheme =
-    lib.recursiveUpdate (lib.importJSON "${inputs.tokyonight}/extras/pi/tokyonight_night.json")
-      {
-        name = piThemeName;
-        colors.mdCodeBlock = "";
-      };
+  upstreamPiTheme = lib.importJSON "${inputs.tokyonight}/extras/pi/tokyonight_night.json";
+  piTheme = lib.recursiveUpdate upstreamPiTheme {
+    name = piThemeName;
+    colors = with upstreamPiTheme.colors; {
+      mdCodeBlock = "";
+      toolDiffAdded = success;
+      toolDiffRemoved = error;
+      toolDiffContext = muted;
+      borderMuted = thinkingOff;
+      thinkingLow = border;
+    };
+  };
 in
 {
   home.file = {
