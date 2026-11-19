@@ -50,6 +50,7 @@
       "google-chrome"
       "iina"
       "plexamp"
+      "spotify"
       "slack"
       "microsoft-excel"
       "microsoft-powerpoint"
