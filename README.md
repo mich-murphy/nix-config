@@ -56,7 +56,8 @@ machine needs it.
 | `home/mac/ssh.nix`, `git.nix` | SSH hosts and keys, Git identities and macOS ignores |
 | `home/mac/terminals.nix`, `karabiner.nix` | Ghostty and Karabiner, as live links |
 | `home/mac/window-management.nix` | JankyBorders, and skhd with its live `skhdrc` |
-| `home/mac/packages.nix` | Mac-only tools (`doctl`, Mole as `mo`, `spotify_player`, document rendering for Neovim) |
+| `home/mac/packages.nix` | Mac-only tools (`doctl`, Mole as `mo`, document rendering for Neovim) |
+| `home/mac/spotify.nix` | Spotify: the Soloist player agent and `spotify_player` as its terminal remote, see [Services](#services) |
 
 `mkDarwin` and `mkHome` in `flake.nix` assemble each host from these directories.
 A host's `home.nix` adds host-only modules on top of the shared home; each Mac's
@@ -457,7 +458,7 @@ Run the `cargo` commands inside
 ## Services
 
 Moshi runs as a user service on every host (launchd on the Macs, systemd on
-dev-01). The laptop also runs llama-server.
+dev-01). The laptop also runs llama-server and Spotify Soloist.
 
 **Moshi** (`pkgs/moshi-hook`) is pinned to one release. To update it, change
 `version` and both checksums from Moshi's
@@ -479,6 +480,17 @@ The log is `~/Library/Logs/llama-server.log`. A switch that upgrades llama.cpp
 restarts the router, which unloads any loaded model; other switches leave it
 running. To restart it by hand, run
 `launchctl kickstart -k gui/$(id -u)/org.nix-community.home.llama-server`.
+
+**Spotify Soloist** (`home/mac/spotify.nix`) is Spotify's headless Connect
+player, from the `spotify-soloist` cask. It runs at login as the Connect device
+`laptop`, with its API key read from 1Password (`op://Private/spotify_player/soloist`
+in the xportal account) each time it starts. Pair it once: pick `laptop` in the
+Spotify app's device list on the same network. `spotify_player` is the remote:
+press `D` and pick `laptop`. Soloist builds expire 90 days after they are made,
+and the cask is greedy so every switch fetches the current build. The log is
+`~/Library/Logs/soloist.log`. If 1Password was locked at login or the build had
+expired, the agent logs why and stops; restart it with
+`launchctl kickstart -k gui/$(id -u)/org.nix-community.home.soloist`.
 
 The model files are not managed by Nix. To fetch them on a new laptop:
 

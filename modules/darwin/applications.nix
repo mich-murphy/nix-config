@@ -62,6 +62,12 @@
       "wispr-flow"
       "nextcloud"
       "grok-bot"
+      # Spotify Soloist. Its builds expire 90 days after they are made and the
+      # cask is unversioned, so only a greedy upgrade replaces them.
+      {
+        name = "spotify-soloist";
+        greedy = true;
+      }
     ];
     masApps = {
       "Xcode" = 497799835;

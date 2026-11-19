@@ -6,5 +6,6 @@
     ./window-management.nix
     ./git.nix
     ./packages.nix
+    ./spotify.nix
   ];
 }
