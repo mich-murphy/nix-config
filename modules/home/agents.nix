@@ -198,7 +198,7 @@ in
     settings = {
       compaction.modelOverrides =
         lib.genAttrs
-          (map (id: "claude-sdk/${id}") [
+          (map (id: "claude/${id}") [
             "claude-5.5-sonnet"
             "claude-5.5-opus"
             "claude-5.2-fable"
