@@ -141,7 +141,7 @@
                         ]
                     },
                     {
-                        "description": "Alt+1 to Alt+7 to Ctrl+1 to Ctrl+7, the macOS Switch to Desktop shortcuts",
+                        "description": "Alt+1 to Alt+5 to Ctrl+1 to Ctrl+5, the macOS Switch to Desktop shortcuts",
                         "manipulators": [
                             {
                                 "from": {
@@ -181,22 +181,6 @@
                                     "modifiers": { "mandatory": ["option"] }
                                 },
                                 "to": [{ "key_code": "5", "modifiers": ["left_control"] }],
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "6",
-                                    "modifiers": { "mandatory": ["option"] }
-                                },
-                                "to": [{ "key_code": "6", "modifiers": ["left_control"] }],
-                                "type": "basic"
-                            },
-                            {
-                                "from": {
-                                    "key_code": "7",
-                                    "modifiers": { "mandatory": ["option"] }
-                                },
-                                "to": [{ "key_code": "7", "modifiers": ["left_control"] }],
                                 "type": "basic"
                             }
                         ]

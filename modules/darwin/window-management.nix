@@ -9,10 +9,10 @@ let
 
   chatApps = "^(Microsoft Teams|MSTeams|Slack)$";
 
-  # Docked, Teams goes to the other display's first desktop and Slack to its
-  # second. Undocked, both go to desktop 3. Desktops are looked up per
-  # display, so the global numbers do not matter. With no argument it places
-  # every Teams and Slack window; with a window id, only that one.
+  # Docked, Teams and Slack go to the other display's desktop. Undocked, they
+  # go to desktop 3. The desktop is looked up per display, so the global
+  # numbers do not matter. With no argument it places every Teams and Slack
+  # window; with a window id, only that one.
   placeChat = pkgs.writeShellApplication {
     name = "yabai-place-chat";
     runtimeInputs = [
@@ -22,12 +22,9 @@ let
     text = ''
       displays=$(yabai -m query --displays)
       if [[ $(jq length <<<"$displays") -gt 1 ]]; then
-        spaces=$(jq -c '[.[] | select(.index == 2)][0].spaces' <<<"$displays")
-        teams=$(jq '.[0]' <<<"$spaces")
-        slack=$(jq '.[1] // .[0]' <<<"$spaces")
+        target=$(jq '[.[] | select(.index == 2)][0].spaces[0]' <<<"$displays")
       else
-        teams=$(jq '.[0].spaces | .[2] // .[-1]' <<<"$displays")
-        slack=$teams
+        target=$(jq '.[0].spaces | .[2] // .[-1]' <<<"$displays")
       fi
 
       if [[ $# -gt 0 ]]; then
@@ -41,7 +38,6 @@ let
         | select(.subrole == "AXStandardWindow" and (."is-minimized" | not))
         | [.id, .app, .space, ."has-ax-reference"] | @tsv' <<<"$windows" |
         while IFS=$'\t' read -r id app space ax; do
-          if [[ $app == Slack ]]; then target=$slack; else target=$teams; fi
           [[ $space == "$target" ]] && continue
           if [[ $ax != true ]]; then
             echo "yabai-place-chat: yabai cannot move $app window $id; restart yabai" >&2

@@ -33,12 +33,10 @@ shift + alt - l : yabai -m window --swap east || yabai -m window --display east
 shift + alt - n : yabai -m window --display next --focus
 shift + alt - p : yabai -m window --display prev --focus
 
-# Alt+1 to Alt+7 switch desktops: Karabiner turns them into the macOS
+# Alt+1 to Alt+5 switch desktops: Karabiner turns them into the macOS
 # Ctrl+number shortcuts. These move the window there and follow it.
 shift + alt - 1 : yabai -m window --space 1 --focus
 shift + alt - 2 : yabai -m window --space 2 --focus
 shift + alt - 3 : yabai -m window --space 3 --focus
 shift + alt - 4 : yabai -m window --space 4 --focus
 shift + alt - 5 : yabai -m window --space 5 --focus
-shift + alt - 6 : yabai -m window --space 6 --focus
-shift + alt - 7 : yabai -m window --space 7 --focus

@@ -101,11 +101,5 @@ any that are behind, then move the date on a month.
 
 ## Decisions
 
-- [ ] Decide whether to show the Finder desktop again.
-      `finder.CreateDesktop = false` hides the files in `~/Desktop`, and
-      yabai's README says it "breaks focusing of empty spaces". Here,
-      `yabai -m display --focus 2` reports success but does not move focus
-      while the built-in display is empty, and works once a window is on it.
-      Deleting the line brings the desktop icons back.
 - [ ] Decide whether deploying only committed revisions should be enforced, and
       how. Today a deploy builds the working tree and records `-dirty`.
