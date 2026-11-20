@@ -35,6 +35,9 @@ let
   #   thinking, is `border`, near-black; it takes the thinking-off border.
   # - `thinkingLow`, the editor border at low thinking, is `blue7`, darker than
   #   thinking off; it takes `border_highlight`, between minimal and medium.
+  # - `userMessageBg` is `bg_dark`, barely darker than the terminal, so sent
+  #   messages hardly stand out; it takes `selectedBg`, as Pi's built-in dark
+  #   theme gives user messages and selection the same blue.
   piThemeName = "tokyonight-night";
   upstreamPiTheme = lib.importJSON "${inputs.tokyonight}/extras/pi/tokyonight_night.json";
   piTheme = lib.recursiveUpdate upstreamPiTheme {
@@ -46,6 +49,7 @@ let
       toolDiffContext = muted;
       borderMuted = thinkingOff;
       thinkingLow = border;
+      userMessageBg = selectedBg;
     };
   };
 in
