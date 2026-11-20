@@ -32,9 +32,14 @@ in
     config.lib.nixConfig.file "config/ghostty/config";
 
   # Rex is installed by hand and updates itself, so its CLI stays inside the
-  # app bundle; this puts it on PATH where Rex itself expects it.
-  home.file.".local/bin/rex".source =
-    config.lib.file.mkOutOfStoreSymlink "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex";
+  # app bundle; this puts it on PATH where Rex itself expects it. A store
+  # script rather than a link out of the store, which the links check allows
+  # only into the checkout.
+  home.file.".local/bin/rex".source = lib.getExe (
+    pkgs.writeShellScriptBin "rex" ''
+      exec "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" "$@"
+    ''
+  );
 
   # Rex's Settings window saves to its defaults domain; a switch writes these
   # keys back over any change made there. Window frames, onboarding and
