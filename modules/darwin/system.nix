@@ -110,14 +110,21 @@ in
       # AppleSymbolicHotKeys through system.defaults would drop every shortcut
       # not listed here. -dict-add merges these ids into the rest.
       #
-      # AirPlay Receiver is a per-host preference, which system.defaults cannot
-      # write.
+      # AirPlay Receiver and Handoff are per-host preferences, which
+      # system.defaults cannot write. Handoff is off because its Bluetooth LE
+      # tracking of other Macs on the same Apple ID woke this one from sleep
+      # every few seconds on battery.
       postActivation.text = ''
         launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
           defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add ${symbolicHotKeyArgs}
 
         launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
           defaults -currentHost write com.apple.controlcenter AirplayReceiverEnabled -bool false
+
+        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
+          defaults -currentHost write com.apple.coreservices.useractivityd ActivityAdvertisingAllowed -bool false
+        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
+          defaults -currentHost write com.apple.coreservices.useractivityd ActivityReceivingAllowed -bool false
 
         killall Finder || true
         killall SystemUIServer || true
@@ -160,6 +167,8 @@ in
           ShowRecentTags = false;
           WarnOnEmptyTrash = false;
         };
+        # Universal Control needs Handoff, which is off (see postActivation).
+        "com.apple.universalcontrol".Disable = true;
         "com.apple.screencapture" = {
           location-screenrecording = "~/Pictures";
           location-screenshot = "~/Pictures";
