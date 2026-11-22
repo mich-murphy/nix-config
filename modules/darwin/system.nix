@@ -169,6 +169,8 @@ in
         };
         # Universal Control needs Handoff, which is off (see postActivation).
         "com.apple.universalcontrol".Disable = true;
+        # AirDrop receiving is off; sharingd reads this when it starts.
+        "com.apple.sharingd".DiscoverableMode = "Off";
         "com.apple.screencapture" = {
           location-screenrecording = "~/Pictures";
           location-screenshot = "~/Pictures";
