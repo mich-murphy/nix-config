@@ -5,6 +5,7 @@
     ./karabiner.nix
     ./window-management.nix
     ./git.nix
+    ./orbstack.nix
     ./packages.nix
   ];
 }
