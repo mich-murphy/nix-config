@@ -94,6 +94,10 @@ in
     reattach = true;
   };
 
+  security.sudo.extraConfig = ''
+    Defaults timestamp_timeout=2
+  '';
+
   # launchd binds sshd on every interface, so AllowUsers limits it to the tailnet
   services.openssh = {
     enable = true;
