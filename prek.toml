@@ -34,6 +34,13 @@ hooks = [
     types = ["nix"],
   },
   {
+    id = "zizmor",
+    name = "GitHub workflow security (zizmor)",
+    language = "system",
+    entry = "nix shell --inputs-from . nixpkgs#zizmor --command zizmor --offline",
+    files = '^\.github/workflows/.*\.ya?ml$',
+  },
+  {
     id = "nix-format",
     name = "nix format",
     language = "system",
