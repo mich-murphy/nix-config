@@ -42,6 +42,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     ../../overlays/patches/plannotator-tui/border-role.patch
   ];
 
+  patches = [ ../../overlays/patches/plannotator-tui/test-races.patch ];
+
   cargoHash = "sha256-HnLPY+d461tdm3pwYhgYx9AUUE+sKsVarLry6bYi/Ss=";
 
   cargoBuildFlags = [
