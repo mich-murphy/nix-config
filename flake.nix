@@ -123,6 +123,32 @@
           echo "$found writable links point into ${roots}"
           touch "$out"
         '';
+      githubAccountCheck =
+        pkgs: host: home:
+        let
+          key = name: "${home.home.homeDirectory}/.ssh/${name}.pub";
+        in
+        pkgs.runCommand "${host}-github-accounts" { nativeBuildInputs = [ pkgs.openssh ]; } ''
+          export HOME=$TMPDIR
+          expect() {
+            want=$1
+            shift
+            got=$(ssh -F ${home.home-files}/.ssh/config -T -G "$@" \
+              | grep -E '^(controlmaster|identitiesonly|identityfile) ' | sort | paste -sd ' ' -)
+            if [ "$got" != "$want" ]; then
+              echo "ssh -G $*: got '$got', want '$want'"
+              exit 1
+            fi
+          }
+          personal="controlmaster false identitiesonly yes identityfile ${key "github"} identityfile none"
+          work="controlmaster false identitiesonly yes identityfile ${key "github_bc"} identityfile none"
+          expect "$personal" github.com
+          expect "$personal" ssh.github.com
+          expect "$work" -P github-bc github.com
+          expect "$work" -P github-bc ssh.github.com
+          expect "controlmaster false identitiesonly yes identityfile none" example.org
+          touch "$out"
+        '';
       hostChecks = {
         aarch64-darwin = lib.concatMapAttrs (
           host: darwin:
@@ -133,6 +159,7 @@
             "${host}-system" = darwin.config.system.build.toplevel;
             "${host}-home" = home.home.activationPackage;
             "${host}-links" = writableLinksCheck pkgsFor.aarch64-darwin host home;
+            "${host}-github-accounts" = githubAccountCheck pkgsFor.aarch64-darwin host home;
           }
         ) self.darwinConfigurations;
 
