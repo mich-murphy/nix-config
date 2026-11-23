@@ -1,7 +1,5 @@
 { pkgs, ... }:
 let
-  # hunk is nixpkgs' build, which cache.nixos.org has; Home Manager has no
-  # module for it, so the config file and pager are set here.
   hunkSettings = {
     theme = "tokyo-night";
     mode = "auto";
