@@ -493,6 +493,34 @@ fetch qwen3.6-35b-a3b/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf Qwen3.6-35B-A3B-MTP-GGUF/r
 fetch qwen3.6-35b-a3b/mmproj-F16.gguf Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/mmproj-F16.gguf
 ```
 
+## Remote Docker builds on dev-01
+
+`hosts/dev-01/namespace.nix` adds `ns-buildx`, which runs
+`nsc docker buildx` with a token that can only use Namespace's Docker
+builders. dev-01 has no `nsc login`, so nothing there can write to
+Namespace's caches. Create the token on the Mac, as a workspace admin, and
+copy it over:
+
+```sh
+umask 077
+tmp=$(mktemp -d)
+nsc token create --name dev-01-docker-builder --expires_in 8760h \
+  --grant '{"resource_type":"builder","resource_id":"*","actions":["ensure","access"]}' \
+  --grant '{"resource_type":"tenant","resource_id":"*","actions":["get"]}' \
+  --token_file "$tmp/builder.json"
+ssh dev-01 'umask 077; mkdir -p ~/.config/namespace'
+scp "$tmp/builder.json" dev-01:.config/namespace/builder.json
+rm -rf "$tmp"
+```
+
+On dev-01, `ns-buildx` registers the `nsc-remote` builder without making it
+the default; build with `docker buildx build --builder nsc-remote`. Any other
+arguments go to `nsc docker buildx`, such as `ns-buildx cleanup --name
+nsc-remote`.
+
+Turborepo on dev-01 reads CI's cache through `turbo-cache-refresh`, which the
+businesscraft setup owns, using a read-only `cache/turborepo` token.
+
 ## Notes
 
 - Determinate Nix manages Nix itself and its garbage collection on the Macs
