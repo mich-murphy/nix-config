@@ -9,10 +9,6 @@ let
 
   chatApps = "^(Microsoft Teams|MSTeams|Slack)$";
 
-  # Docked, Teams and Slack go to the other display's desktop. Undocked, they
-  # go to desktop 3. The desktop is looked up per display, so the global
-  # numbers do not matter. With no argument it places every Teams and Slack
-  # window; with a window id, only that one.
   placeChat = pkgs.writeShellApplication {
     name = "yabai-place-chat";
     runtimeInputs = [
@@ -82,20 +78,13 @@ in
       yabai -m rule --add app='^Archive Utility$' manage=off
       yabai -m rule --add app='^Preview$' manage=off
       yabai -m rule --add app='^UTM$' manage=off
-      # A rule only affects windows opened after it is added, and yabai
-      # loads the open windows before it runs this file.
       yabai -m rule --apply
 
-      # Teams and Slack: see placeChat. The display signals wait for macOS
-      # to finish moving desktops and for the Dock restart below.
       yabai -m signal --add label=chat-window-created event=window_created app='${chatApps}' action='${lib.getExe placeChat} "$YABAI_WINDOW_ID"'
       yabai -m signal --add label=chat-display-added event=display_added action='sleep 5; ${lib.getExe placeChat}'
       yabai -m signal --add label=chat-display-removed event=display_removed action='sleep 5; ${lib.getExe placeChat}'
       ${lib.getExe placeChat} &
 
-      # On macOS 27, Ctrl+3 and above stop switching desktops once a display
-      # has connected or disconnected, until the Dock restarts. The delay
-      # lets a burst of display changes finish first.
       yabai -m signal --add label=dock-restart-display-added event=display_added action="sleep 2; killall Dock"
       yabai -m signal --add label=dock-restart-display-removed event=display_removed action="sleep 2; killall Dock"
     '';

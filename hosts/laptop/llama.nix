@@ -14,9 +14,6 @@ in
 
   home.sessionVariables.LLAMA_BASE_URL = "http://127.0.0.1:9931";
 
-  # The router starts each model from the store path of its own binary. An
-  # upgrade changes that path and so this plist, and Home Manager reloads an
-  # agent whose plist changed, so the router restarts only on an upgrade.
   launchd.agents.llama-server = {
     enable = true;
     config = {

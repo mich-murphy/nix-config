@@ -9,12 +9,8 @@
     deploy-rs.url = "github:serokell/deploy-rs";
     deploy-rs.inputs.nixpkgs.follows = "nixpkgs";
     deploy-rs.inputs.flake-compat.follows = "";
-    # No follows: Determinate recommends its own nixpkgs for FlakeHub Cache hits.
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
-    # The agent CLIs, updated daily. No follows: its packages are built and
-    # cached at cache.numtide.com against its own nixpkgs.
     llm-agents.url = "github:numtide/llm-agents.nix";
-    # Tokyo Night's generated theme files (Pi, TextMate), read as data.
     tokyonight.url = "github:folke/tokyonight.nvim";
     tokyonight.flake = false;
   };
@@ -78,8 +74,6 @@
           modules = [
             ./modules/home
             ./hosts/${host}/home.nix
-            # Home Manager has no configurationRevision, so dev-01 records the
-            # commit in a file; the Macs have `darwin-version`.
             { xdg.stateFile."nix-config/revision".text = "${revision}\n"; }
           ];
         };
@@ -105,12 +99,10 @@
           checkout=${lib.escapeShellArg (toString checkout)}
           found=0
           while IFS= read -r -d "" link; do
-            # mkOutOfStoreSymlink makes home-files -> store symlink -> live path.
-            # Ordinary store-backed sources are not writable links and are skipped.
-            target=$(readlink "$link")
-            [ -L "$target" ] || continue
+            store_link=$(readlink "$link")
+            [ -L "$store_link" ] || continue
             found=$((found + 1))
-            dest=$(readlink "$target")
+            dest=$(readlink "$store_link")
             if [[ $dest == "$skills" || $dest == "$skills"/* ]]; then
               continue
             fi

@@ -15,54 +15,79 @@ let
     };
   };
 
-  # Keyed by com.apple.symbolichotkeys id; parameters are the character, the
-  # key code and the modifier mask. Carbon Events.h names key codes 18/19/20/21/23
-  # as ANSI 1/2/3/4/5 and 49 as Space.
-  symbolicHotKeys = {
-    # Input source switching on Ctrl+Space and Ctrl+Option+Space
-    "60" = hotKey false [
-      32
-      49
+  enabledHotKey = hotKey true;
+  disabledHotKey = hotKey false;
+
+  spaceCharacter = 32;
+  noCharacter = 65535;
+  keyCode = {
+    space = 49;
+    ansi1 = 18;
+    ansi2 = 19;
+    ansi3 = 20;
+    ansi4 = 21;
+    ansi5 = 23;
+  };
+
+  symbolicHotKeyId = {
+    selectPreviousInputSource = "60";
+    selectNextInputSource = "61";
+    showSpotlightSearch = "64";
+    switchToDesktop1 = "118";
+    switchToDesktop2 = "119";
+    switchToDesktop3 = "120";
+    switchToDesktop4 = "121";
+    switchToDesktop5 = "122";
+  };
+
+  symbolicHotKeys = with symbolicHotKeyId; {
+    ${selectPreviousInputSource} = disabledHotKey [
+      spaceCharacter
+      keyCode.space
       control
     ];
-    "61" = hotKey false [
-      32
-      49
+    ${selectNextInputSource} = disabledHotKey [
+      spaceCharacter
+      keyCode.space
       (control + option)
     ];
-    # Spotlight on Cmd+Space
-    "64" = hotKey false [
-      32
-      49
+    ${showSpotlightSearch} = disabledHotKey [
+      spaceCharacter
+      keyCode.space
       command
     ];
-    # Switch to Desktop 1 to 5 on Ctrl+1 to Ctrl+5
-    "118" = hotKey true [
-      65535
-      18
+    ${switchToDesktop1} = enabledHotKey [
+      noCharacter
+      keyCode.ansi1
       control
     ];
-    "119" = hotKey true [
-      65535
-      19
+    ${switchToDesktop2} = enabledHotKey [
+      noCharacter
+      keyCode.ansi2
       control
     ];
-    "120" = hotKey true [
-      65535
-      20
+    ${switchToDesktop3} = enabledHotKey [
+      noCharacter
+      keyCode.ansi3
       control
     ];
-    "121" = hotKey true [
-      65535
-      21
+    ${switchToDesktop4} = enabledHotKey [
+      noCharacter
+      keyCode.ansi4
       control
     ];
-    "122" = hotKey true [
-      65535
-      23
+    ${switchToDesktop5} = enabledHotKey [
+      noCharacter
+      keyCode.ansi5
       control
     ];
   };
+
+  tailnetIPv4 = "100.64.0.0/10";
+  tailnetIPv6 = "fd7a:115c:a1e0::/48";
+
+  hotCornerDisabled = 1;
+  clockDateAlways = 1;
 
   symbolicHotKeyArgs = lib.concatStringsSep " " (
     lib.mapAttrsToList (
@@ -98,26 +123,17 @@ in
     Defaults timestamp_timeout=2
   '';
 
-  # launchd binds sshd on every interface, so AllowUsers limits it to the tailnet
   services.openssh = {
     enable = true;
     extraConfig = ''
       PasswordAuthentication no
       KbdInteractiveAuthentication no
-      AllowUsers ${user}@100.64.0.0/10 ${user}@fd7a:115c:a1e0::/48
+      AllowUsers ${user}@${tailnetIPv4} ${user}@${tailnetIPv6}
     '';
   };
 
   system = {
     activationScripts = {
-      # `defaults write` replaces a whole top-level key, so declaring
-      # AppleSymbolicHotKeys through system.defaults would drop every shortcut
-      # not listed here. -dict-add merges these ids into the rest.
-      #
-      # AirPlay Receiver and Handoff are per-host preferences, which
-      # system.defaults cannot write. Handoff is off because its Bluetooth LE
-      # tracking of other Macs on the same Apple ID woke this one from sleep
-      # every few seconds on battery.
       postActivation.text = ''
         launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
           defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add ${symbolicHotKeyArgs}
@@ -134,13 +150,6 @@ in
         killall SystemUIServer || true
       '';
 
-      # Pin power management via pmset because power.sleep cannot set separate
-      # values for AC and battery power.
-      #
-      # pmset and configuration profiles cannot set Charge Limit or Optimized
-      # Battery Charging, so they go through PowerUISmartChargeClient, the
-      # client System Settings uses. JXA returns its BOOLs as "0" or "1", so
-      # they are compared with 1 rather than negated.
       extraActivation.text = ''
         pmset -c sleep 0 displaysleep 10 disksleep 10
         pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
@@ -171,9 +180,7 @@ in
           ShowRecentTags = false;
           WarnOnEmptyTrash = false;
         };
-        # Universal Control needs Handoff, which is off (see postActivation).
         "com.apple.universalcontrol".Disable = true;
-        # AirDrop receiving is off; sharingd reads this when it starts.
         "com.apple.sharingd".DiscoverableMode = "Off";
         "com.apple.screencapture" = {
           location-screenrecording = "~/Pictures";
@@ -184,8 +191,6 @@ in
           AppleLocale = "en_AU";
         };
       };
-      # softwareupdated reads the system domain, and this option takes the
-      # domain verbatim as root, so it needs the full path.
       CustomSystemPreferences."/Library/Preferences/com.apple.SoftwareUpdate" = {
         AutomaticCheckEnabled = true;
         ScheduleFrequency = 1;
@@ -206,7 +211,7 @@ in
         mineffect = "scale";
         tilesize = 48;
         show-recents = false;
-        wvous-br-corner = 1; # Disabled (nix-darwin hot-corner enum).
+        wvous-br-corner = hotCornerDisabled;
         persistent-apps = [
           "/Applications/Google Chrome.app"
           "/Applications/Slack.app"
@@ -283,7 +288,7 @@ in
       };
       menuExtraClock = {
         Show24Hour = true;
-        ShowDate = 1; # Always show the full date, not only when space allows.
+        ShowDate = clockDateAlways;
         ShowDayOfWeek = true;
         ShowSeconds = false;
       };
