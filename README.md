@@ -276,9 +276,9 @@ The `x86_64-linux` checks build through Determinate Nix's native Linux builder
 on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
 run the check again.
 
-`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, markdownlint
-and file hygiene hooks; `prek install` (set-up step 7) makes it run on each
-commit.
+`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, an ast-grep
+rule that rejects Nix comments, markdownlint and file hygiene hooks;
+`prek install` (set-up step 7) makes it run on each commit.
 
 The GitHub workflow runs on every pull request, on each push to `main` and on
 demand. Pull requests run one Linux job, `check`: the commit hooks,
