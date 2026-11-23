@@ -192,6 +192,7 @@ in
         AutomaticDownload = 1;
         CriticalUpdateInstall = 1;
         ConfigDataInstall = 1;
+        AutomaticallyInstallAppUpdates = true;
       };
       SoftwareUpdate.AutomaticallyInstallMacOSUpdates = true;
       dock = {
