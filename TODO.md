@@ -22,6 +22,11 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
 
 ## Mac
 
+- [ ] Bring back commit signing through 1Password's `op-ssh-sign`. The removed
+      layer is at `refs/backup/pre-signing-removal/feat/git-ssh-signing`.
+      First add `~/.ssh/github.pub` (mich-murphy) and `~/.ssh/github_bc.pub`
+      (michaelmbc) as "Signing Key" at <https://github.com/settings/ssh/new>,
+      and check `gh api /users/<name>/ssh_signing_keys` lists each.
 - [ ] Check Mason in Neovim (`:Mason`, `:checkhealth mason`), since go,
       python3 and nodejs now come only from Neovim's packages. Moshi is
       verified running from the installed bundle.
@@ -49,6 +54,12 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       on a Mac where Siri had already been turned off by hand.
 
 ## Agents
+
+- [ ] Moshi's local gateway (`127.0.0.1:24543`) takes no token. It refuses
+      browser origins, but a container reaches it through
+      `host.orb.internal`, and it offers terminal input. mata
+      (`127.0.0.1:59733`) answers containers the same way. Decide both with
+      the agent hardening work.
 
 - [ ] Claude's skill links are a hand-written list of five in
       `modules/home/agents.nix`, so a new skill needs a Nix edit. Expose the
