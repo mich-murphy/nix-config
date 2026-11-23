@@ -77,7 +77,7 @@ Open work only.
 
 ## Updates
 
-Next check: 2026-12-16. On or after that date, check each pin below. Bump
+Next check: 2027-01-16. On or after that date, check each pin below. Bump
 any that are behind, then move the date on a month.
 
 - [ ] GitHub Actions in `.github/workflows/check.yml`, pinned to commit SHAs:
@@ -85,15 +85,19 @@ any that are behind, then move the date on a month.
       v3.24.2. For each, take the latest release's commit
       (`gh api repos/<owner>/<repo>/commits/<tag> -q .sha`) and update the
       SHA and the version comment together.
-- [ ] Flake inputs (`flake.lock`, last updated 2026-11-16): run
+- [ ] Flake inputs (`flake.lock`, last updated 2026-11-23): run
       `nix flake update` on its own stack layer and let CI build every host.
-- [ ] Moshi (`pkgs/moshi-hook`, 0.4.57): compare with Moshi's
+- [ ] Moshi (`pkgs/moshi-hook`, 0.4.62): compare with Moshi's
       [Homebrew formula](https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb).
       The README's Services section says how to update it.
 - [ ] plannotator-tui (`pkgs/plannotator-tui`, 0.10.0): compare with its
       [releases](https://github.com/plannotator/plannotator-tui/releases).
       Refresh its patches on the new tag and bump `version`, `hash` and
       `cargoHash` together (README.md, Patched packages).
+      `test-races.patch` is upstream's unreleased
+      [a059de2](https://github.com/plannotator/plannotator-tui/commit/a059de2e74b5ca3d9cbb31a650902a3e6fa00ee6),
+      trimmed to files that exist at v0.10.0: drop it once a release after
+      v0.10.0 includes a059de2.
 - [ ] herdr-splits.nvim (README, Set up a Mac step 8): `v0.5.4` against its
       [tags](https://github.com/lmilojevicc/herdr-splits.nvim/tags).
       Reinstall on each host after a bump.
