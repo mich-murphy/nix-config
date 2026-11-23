@@ -1,3 +1,6 @@
+let
+  finderCustomFolderIcon = "Icon[\r]";
+in
 {
   programs.git = {
     includes = [
@@ -8,7 +11,6 @@
             name = "michaelmbc";
             email = "michaelmbc@users.noreply.github.com";
           };
-          # The tag selects the work key's Match block in ssh.nix.
           core.sshCommand = "ssh -P github-bc";
         };
       }
@@ -17,8 +19,7 @@
       ".DS_Store"
       ".AppleDouble"
       "LSOverride"
-      # Finder custom-folder icon files are named "Icon\r".
-      "Icon[\r]"
+      finderCustomFolderIcon
       "._*"
       ".DocumentRevisions-V100"
       ".fseventsd"

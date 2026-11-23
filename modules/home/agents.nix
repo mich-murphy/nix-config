@@ -6,11 +6,6 @@
   ...
 }:
 let
-  # The agent CLIs come from numtide's llm-agents.nix on every host: it tracks
-  # upstream's latest release daily and its cache has them prebuilt, where the
-  # nixpkgs-unstable channel lags by days. A switch or deploy is their only
-  # update: Claude Code's and Pi's wrappers turn their updaters off, and
-  # Codex's check is off in its settings below.
   agentPkgs = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
   agentFile = config.lib.nixConfig.file "config/agents/AGENTS.md";
   skills = config.nixConfig.skills;
@@ -22,22 +17,6 @@ let
     "show-me"
   ];
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
-  # Tokyo Night Night, as folke/tokyonight.nvim generates it for Pi, with some
-  # changes. Pi finds a custom theme by `<name>.json`, so the name matches the
-  # file. The rest are colours Pi draws as text or lines but upstream sets to
-  # Neovim background colours, which hide them against the terminal or tool
-  # background:
-  # - `mdCodeBlock`, the text of unhighlighted code blocks, is `bg_dark`; ""
-  #   uses the terminal's foreground instead.
-  # - `toolDiff*`, the lines of edit diffs, are Neovim's diff backgrounds; they
-  #   take the success, error and muted colours, as in Pi's built-in dark theme.
-  # - `borderMuted`, Mermaid box borders and the editor border without
-  #   thinking, is `border`, near-black; it takes the thinking-off border.
-  # - `thinkingLow`, the editor border at low thinking, is `blue7`, darker than
-  #   thinking off; it takes `border_highlight`, between minimal and medium.
-  # - `userMessageBg` is `bg_dark`, barely darker than the terminal, so sent
-  #   messages hardly stand out; it takes `selectedBg`, as Pi's built-in dark
-  #   theme gives user messages and selection the same blue.
   piThemeName = "tokyonight-night";
   upstreamPiTheme = lib.importJSON "${inputs.tokyonight}/extras/pi/tokyonight_night.json";
   piTheme = lib.recursiveUpdate upstreamPiTheme {
@@ -63,8 +42,6 @@ in
       (pkgs.formats.json { }).generate "${piThemeName}.json"
         piTheme;
   }
-  # Per-skill links keep ~/.claude/skills a real directory so Claude
-  # Code's managed-skills sync cannot write into the skills repo.
   // lib.listToAttrs (
     map (name: {
       name = ".claude/skills/${name}";
@@ -182,9 +159,6 @@ in
   programs.codex = {
     enable = true;
     package = agentPkgs.codex;
-    # config.toml also holds per-project trust and hook state that Codex
-    # writes, so only this key is merged in. It stops the startup check that
-    # announces a new release.
     mutableSettings = true;
     settings.check_for_update_on_startup = false;
   };
@@ -192,7 +166,6 @@ in
   programs.pi-coding-agent = {
     enable = true;
     package = agentPkgs.pi;
-    # Pi installs its npm and git packages with npm.
     extraPackages = [ pkgs.nodejs ];
     mutableSettings = true;
     settings = {

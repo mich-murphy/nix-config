@@ -4,7 +4,6 @@ A personal flake. [nix-darwin](https://github.com/nix-darwin/nix-darwin) (the
 Nix module system for macOS) owns each Mac's settings and applications, and
 [Home Manager](https://nix-community.github.io/home-manager/) owns the user
 environment: embedded in the Mac configuration, and standalone on the Linux VM.
-The reasons behind the choices are in [DESIGN.md](DESIGN.md).
 
 | Host | What it is | Flake output | Switched with |
 | --- | --- | --- | --- |
@@ -121,7 +120,7 @@ Needed once on a new machine, in this order:
 
    A host is offered only the key its entry in `modules/home/mac/ssh.nix`
    names, and a host with no entry is offered none. To add a key, put its
-   public half in `publicKeys` there and name it in the host's entry.
+   public half in `onePasswordPublicKeys` there and name it in the host's entry.
 6. Check, then do the first switch. `darwin-rebuild` does not exist yet, so run
    it through `nix run`, and name the host: the machine's hostname does not match
    a flake name until this first activation has set it.
@@ -276,9 +275,9 @@ The `x86_64-linux` checks build through Determinate Nix's native Linux builder
 on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
 run the check again.
 
-`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, markdownlint
-and file hygiene hooks; `prek install` (set-up step 7) makes it run on each
-commit.
+`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, an ast-grep
+rule that rejects Nix comments, markdownlint and file hygiene hooks;
+`prek install` (set-up step 7) makes it run on each commit.
 
 The GitHub workflow runs on every pull request, on each push to `main` and on
 demand. Pull requests run one Linux job, `check`: the commit hooks,
@@ -290,8 +289,7 @@ before a pull request merges.
 On a push to `main` the `cache` job runs on macOS instead. It builds the Mac
 checks and pushes every path cache.nixos.org lacks to FlakeHub Cache, so the
 Macs download those paths rather than build them. A switch does not wait for
-it; anything not yet cached builds locally. DESIGN.md (Binary cache) says how
-pushes are restricted.
+it; anything not yet cached builds locally.
 
 ## Live configuration
 

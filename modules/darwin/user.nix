@@ -1,15 +1,12 @@
 { config, pkgs, ... }:
 let
   user = config.system.primaryUser;
+  firstMacAccountUid = 501;
 in
 {
-  # nix-darwin writes a user's login shell only for users it knows, which
-  # needs their uid. For an existing account activation also sets
-  # PrimaryGroupID (default 20, staff) and nothing else; a uid that does not
-  # match is skipped with a warning. 501 is the first account on a Mac.
   users.knownUsers = [ user ];
   users.users.${user} = {
-    uid = 501;
+    uid = firstMacAccountUid;
     home = "/Users/${user}";
     shell = pkgs.fish;
   };

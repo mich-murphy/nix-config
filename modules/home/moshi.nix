@@ -34,9 +34,7 @@ let
     "--gateway-listen"
     "127.0.0.1:24543"
   ];
-  # Services get a minimal PATH. Give the daemon a shell's PATH so programs it
-  # runs by name (herdr, git, gh, tmux) resolve the same way.
-  servicePath = lib.concatStringsSep ":" (
+  shellEquivalentPath = lib.concatStringsSep ":" (
     [ "${config.home.profileDirectory}/bin" ]
     ++ lib.optionals isDarwin [
       "/run/current-system/sw/bin"
@@ -89,8 +87,6 @@ in
       assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
       message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
     }
-    # Home Manager's DAG silently ignores missing predecessor names, including
-    # upstream activation entries renamed during an upgrade.
     ++ map (name: {
       assertion = builtins.hasAttr name config.home.activation;
       message = "moshi.nix: required activation predecessor '${name}' is missing from home.activation";
@@ -106,7 +102,7 @@ in
     config = {
       ProgramArguments = [ hookPath ] ++ serveArgs;
       EnvironmentVariables = {
-        PATH = servicePath;
+        PATH = shellEquivalentPath;
         NIX_RESTART_ON_VERSION = pkgs.moshi-hook.version;
       };
       KeepAlive = true;
@@ -124,7 +120,7 @@ in
     };
     Service = {
       ExecStart = lib.escapeShellArgs ([ exe ] ++ serveArgs);
-      Environment = "PATH=${servicePath}";
+      Environment = "PATH=${shellEquivalentPath}";
       Restart = "on-failure";
       RestartSec = 5;
     };

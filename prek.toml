@@ -27,6 +27,13 @@ hooks = [
     types = ["markdown"],
   },
   {
+    id = "no-comments-in-nix",
+    name = "no comments in Nix files",
+    language = "system",
+    entry = """nix shell --inputs-from . nixpkgs#ast-grep --command sh -c 'ast-grep run --lang nix --kind comment "$@"; case $? in 0) exit 1 ;; 1) exit 0 ;; *) exit 2 ;; esac' --""",
+    types = ["nix"],
+  },
+  {
     id = "nix-format",
     name = "nix format",
     language = "system",

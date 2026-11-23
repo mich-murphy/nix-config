@@ -8,12 +8,9 @@
     pkgs.nmap
     pkgs.gnused
     pkgs.moshi-hook.app
-    # The same mas nix-darwin gives `brew bundle` for masApps.
     pkgs.mas
   ];
 
-  # Also installs `op` at /usr/local/bin/op, the only path where the
-  # 1Password app's CLI integration finds it.
   programs._1password.enable = true;
 
   fonts.packages = [
@@ -43,8 +40,6 @@
       "obsidian"
       "zotero"
       "tailscale-app"
-      # Thaw 3 is the only line that supports macOS 27, and it ships only
-      # as a beta; the stable cask is Thaw 2, built for macOS 15 and 26.
       "thaw@beta"
       "firefox"
       "google-chrome"
