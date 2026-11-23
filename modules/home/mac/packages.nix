@@ -3,6 +3,7 @@
   home.packages = [
     pkgs.azure-cli
     pkgs.doctl
+    pkgs.namespace-cli
     pkgs.mole-cleaner
   ];
 
