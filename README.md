@@ -500,6 +500,12 @@ fetch qwen3.6-35b-a3b/mmproj-F16.gguf Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/mmpr
 - The user flake registry pins `nixpkgs` to this flake's input, so
   `nix shell nixpkgs#…` uses the same revision as the system instead of
   Determinate's default `nixpkgs-weekly`.
+- The Mac reads CI's builds from Namespace's Nix cache through nixcache, a
+  launchd agent on `127.0.0.1:18765` that uses your `nsc login` session. The
+  session expires after about a month; renew it with `nsc login` and check it
+  with `nsc auth check-login`. Without it the proxy cannot read the cache and
+  the Mac builds what the cache would serve. The proxy logs to
+  `~/Library/Logs/nixcache.log`.
 - `nix develop` provides `nixfmt`, `nixf-diagnose`, `nvd` and `deploy`. For
   direnv, create a local `.envrc` containing `use flake` (globally ignored).
 - `nvd diff /run/current-system ./result` after `darwin-rebuild build --flake .`
