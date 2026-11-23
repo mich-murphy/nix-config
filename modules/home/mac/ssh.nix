@@ -23,7 +23,7 @@ in
         IdentityFile = "~/.ssh/dev-01.pub";
         ControlMaster = "auto";
         ControlPath = "~/.ssh/cm-%C";
-        ControlPersist = "10m";
+        ControlPersist = "5m";
       };
 
       "docker-host" = {
