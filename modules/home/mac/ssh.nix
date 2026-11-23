@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 let
   onePasswordPublicKeys = {
     dev-01 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPKulgPiyvlyoTEC9rfhFoIofPPxiFvU5UrGndDA85L3 dev-01";
@@ -7,11 +7,16 @@ let
     github_bc = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILeCwvXQKiDs6E4/uJdk8rnT2fbSZTP5bpx/nqyCrIVV GitHub - BusinessCraft";
     truenas = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIETvpceFBvOQy8fC0gIbsPDrZirDHK+KdNjX4mplCw5/ truenas";
   };
+  onePasswordItemName = key: lib.concatStringsSep " " (lib.drop 2 (lib.splitString " " key));
 in
 {
   home.file = lib.mapAttrs' (
     name: key: lib.nameValuePair ".ssh/${name}.pub" { text = "${key}\n"; }
   ) onePasswordPublicKeys;
+
+  xdg.configFile."1Password/ssh/agent.toml".source = (pkgs.formats.toml { }).generate "agent.toml" {
+    ssh-keys = map (key: { item = onePasswordItemName key; }) (lib.attrValues onePasswordPublicKeys);
+  };
 
   programs.ssh = {
     enable = true;
