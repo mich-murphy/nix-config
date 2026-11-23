@@ -1,6 +1,3 @@
-# Moshi's prebuilt hook daemon and CLI (nixpkgs has none; its `moshi` is an
-# unrelated project). URLs and hashes come from the generated formula at
-# https://github.com/rjyo/homebrew-moshi/blob/main/Formula/moshi-hook.rb.
 {
   lib,
   stdenvNoCC,
@@ -27,15 +24,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   inherit version;
 
   src = fetchurl (sources.${system} or (throw "moshi-hook: unsupported system ${system}"));
-  # The archives keep their files at the root; unpack into a directory of our
-  # own so stdenv never has to chmod the build directory itself.
   unpackCmd = ''mkdir source && tar -xzf "$curSrc" -C source'';
   sourceRoot = "source";
 
   dontConfigure = true;
   dontBuild = true;
-  # Keep the notarized macOS bundle and the static Linux binary byte-for-byte
-  # as published; fixup would strip or patch them and break the signature.
   dontFixup = true;
 
   installPhase = ''
@@ -63,9 +56,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   '';
 
   passthru = {
-    # On macOS, running a binary inside the store's app bundle makes the system
-    # tag it with com.apple.macl, and then nix-daemon cannot delete it. Read the
-    # version the bundle declares instead of running it.
     tests.version =
       if stdenvNoCC.hostPlatform.isDarwin then
         runCommand "moshi-hook-${finalAttrs.version}-test-version" { } ''
