@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
+let
+  palette = config.lib.tokyonight.palette;
+in
 {
   home.packages = [
     pkgs.curl
@@ -27,8 +30,8 @@
         theme = "tokyonight_night";
       };
       themes.tokyonight_night = {
-        src = pkgs.vimPlugins.tokyonight-nvim;
-        file = "extras/sublime/tokyonight_night.tmTheme";
+        src = config.lib.tokyonight.extras;
+        file = "sublime/tokyonight_night.tmTheme";
       };
     };
     starship = {
@@ -70,18 +73,18 @@
       tmux.enableShellIntegration = true;
       fileWidget.command = ''rg --files --hidden --glob "!.git"'';
       colors = {
-        "bg+" = "#1a1b26";
-        fg = "#a9b1d6";
-        "fg+" = "#c0caf5";
-        border = "#1a1b26";
-        spinner = "#3b4261";
-        hl = "#7dcfff";
-        header = "#e0af68";
-        info = "#7aa2f7";
-        pointer = "#7aa2f7";
-        marker = "#f7768e";
-        prompt = "#a9b1d6";
-        "hl+" = "#7aa2f7";
+        "bg+" = palette.bg;
+        fg = palette.fg_dark;
+        "fg+" = palette.fg;
+        border = palette.bg;
+        spinner = palette.fg_gutter;
+        hl = palette.cyan;
+        header = palette.yellow;
+        info = palette.blue;
+        pointer = palette.blue;
+        marker = palette.red;
+        prompt = palette.fg_dark;
+        "hl+" = palette.blue;
       };
       defaultOptions = [
         "--height 60%"

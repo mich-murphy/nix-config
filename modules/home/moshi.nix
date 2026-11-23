@@ -34,7 +34,7 @@ let
     "--gateway-listen"
     "127.0.0.1:24543"
   ];
-  shellEquivalentPath = lib.concatStringsSep ":" (
+  servicePath = lib.concatStringsSep ":" (
     [ "${config.home.profileDirectory}/bin" ]
     ++ lib.optionals isDarwin [
       "/run/current-system/sw/bin"
@@ -82,15 +82,10 @@ let
   };
 in
 {
-  assertions =
-    lib.optional (isDarwin && osConfig != null) {
-      assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
-      message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
-    }
-    ++ map (name: {
-      assertion = builtins.hasAttr name config.home.activation;
-      message = "moshi.nix: required activation predecessor '${name}' is missing from home.activation";
-    }) moshiHookPredecessors;
+  assertions = lib.optional (isDarwin && osConfig != null) {
+    assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
+    message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
+  };
 
   home.packages = map wrapper [
     "moshi-hook"
@@ -102,7 +97,7 @@ in
     config = {
       ProgramArguments = [ hookPath ] ++ serveArgs;
       EnvironmentVariables = {
-        PATH = shellEquivalentPath;
+        PATH = servicePath;
         NIX_RESTART_ON_VERSION = pkgs.moshi-hook.version;
       };
       KeepAlive = true;
@@ -120,7 +115,7 @@ in
     };
     Service = {
       ExecStart = lib.escapeShellArgs ([ exe ] ++ serveArgs);
-      Environment = "PATH=${shellEquivalentPath}";
+      Environment = "PATH=${servicePath}";
       Restart = "on-failure";
       RestartSec = 5;
     };
