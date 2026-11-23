@@ -31,7 +31,7 @@ overlays/                applied to every package set, so modules use pkgs.<name
 └── patches/<package>/   patch files the overlays apply
 config/                  raw application files, linked or read by the modules
 prek.toml                commit hooks
-.github/workflows/       CI: pull requests on Linux, the cache filled from macOS
+.github/workflows/       CI: pull requests on Linux; main built and cached on Namespace
 ```
 
 Concern files define existing nix-darwin or Home Manager options. Add a setting
@@ -174,8 +174,7 @@ On dev-01:
    includes (the machines repo's bootstrap is meant to write it), and the
    `~/businesscraft/.scratch` directory that `TMPDIR` points at.
 
-dev-01 is not logged in to FlakeHub Cache, so no cache credential sits on a
-machine agents run on, and it needs nothing from that cache. It does need
+dev-01 holds no Namespace credential and does not read the Namespace cache. It does need
 Numtide's cache for the agent CLIs, in its system Nix configuration, which
 the machines repo owns; `dev` is not a trusted Nix user, so the profile
 cannot add it. Without it, a deploy compiles codex on dev-01.
@@ -251,12 +250,12 @@ flowchart LR
   subgraph FC["nix flake check --all-systems"]
     subgraph MAC["aarch64-darwin: runs natively"]
       M2["laptop: system, home, links"]
-      M3["moshi-hook-version, plannotator-tui-version"]
+      M3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
     end
     subgraph LIN["x86_64-linux: Linux builder"]
       L1["dev-01-home, dev-01-links"]
       L2["deploy-schema, deploy-activate"]
-      L3["moshi-hook-version, plannotator-tui-version"]
+      L3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
     end
   end
   CI["GitHub Actions: Linux for pull requests"] -.->|"evaluates every system, builds Linux"| FC
@@ -271,6 +270,7 @@ flowchart LR
   reads the version from the app bundle's `Info.plist` without running it.
 - `plannotator-tui-version` builds plannotator-tui from source, with its
   tests, and runs `plannotator-tui --version`.
+- `namespace-devbox-version` runs `devbox version`.
 
 The `x86_64-linux` checks build through Determinate Nix's native Linux builder
 on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
@@ -283,14 +283,16 @@ rule that rejects Nix comments, markdownlint and file hygiene hooks;
 The GitHub workflow runs on every pull request, on each push to `main` and on
 demand. Pull requests run one Linux job, `check`: the commit hooks,
 `nix flake check --all-systems --no-build` to evaluate every host, the Macs
-included, and `nix flake check` to build the Linux checks. The Mac checks are
-built only by the local gate. Branch protection requires `check` to pass
+included, and `nix flake check` to build the Linux checks. Before a merge, the
+Mac checks are built only by the local gate. Branch protection requires `check` to pass
 before a pull request merges.
 
-On a push to `main` the `cache` job runs on macOS instead. It builds the Mac
-checks and pushes every path cache.nixos.org lacks to FlakeHub Cache, so the
-Macs download those paths rather than build them. A switch does not wait for
-it; anything not yet cached builds locally.
+On a push to `main` the `build` job runs instead, on Namespace runners: one
+macOS (`aarch64-darwin`) and one Linux (`x86_64-linux`). Each builds every
+check for its system with `.github/push-cache.sh`, signs the closures with
+`nix-config-1` and copies every path cache.nixos.org lacks to Namespace's Nix
+cache, so the hosts download those paths rather than build them. A switch does
+not wait for it; anything not yet cached builds locally.
 
 ## Live configuration
 
