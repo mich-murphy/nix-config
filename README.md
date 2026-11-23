@@ -4,7 +4,6 @@ A personal flake. [nix-darwin](https://github.com/nix-darwin/nix-darwin) (the
 Nix module system for macOS) owns each Mac's settings and applications, and
 [Home Manager](https://nix-community.github.io/home-manager/) owns the user
 environment: embedded in the Mac configuration, and standalone on the Linux VM.
-The reasons behind the choices are in [DESIGN.md](DESIGN.md).
 
 | Host | What it is | Flake output | Switched with |
 | --- | --- | --- | --- |
@@ -290,8 +289,7 @@ before a pull request merges.
 On a push to `main` the `cache` job runs on macOS instead. It builds the Mac
 checks and pushes every path cache.nixos.org lacks to FlakeHub Cache, so the
 Macs download those paths rather than build them. A switch does not wait for
-it; anything not yet cached builds locally. DESIGN.md (Binary cache) says how
-pushes are restricted.
+it; anything not yet cached builds locally.
 
 ## Live configuration
 

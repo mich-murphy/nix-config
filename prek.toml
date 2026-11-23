@@ -28,7 +28,7 @@ hooks = [
   },
   {
     id = "no-comments-in-nix",
-    name = "no comments in Nix files (say it in code, or in DESIGN.md)",
+    name = "no comments in Nix files",
     language = "system",
     entry = """nix shell --inputs-from . nixpkgs#ast-grep --command sh -c 'ast-grep run --lang nix --kind comment "$@"; case $? in 0) exit 1 ;; 1) exit 0 ;; *) exit 2 ;; esac' --""",
     types = ["nix"],

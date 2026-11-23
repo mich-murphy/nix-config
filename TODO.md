@@ -2,7 +2,7 @@
 
 Reviewed: 2026-11-16
 
-Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
+Open work only.
 
 ## dev-01
 
@@ -49,6 +49,8 @@ Open work only. See [DESIGN.md](DESIGN.md) for the decisions behind it.
       GitHub as `github`.
 - [ ] With Tailscale up, test `ssh docker-host true` and `ssh truenas true`;
       neither entry has been tried.
+- [ ] Replace the `thaw@beta` cask with `thaw` once Thaw 3 is stable; Thaw 2
+      does not support macOS 27.
 - [ ] After the first switch on the laptop, check in System Settings that
       Siri is off. It is written as a plain preference, which is proven only
       on a Mac where Siri had already been turned off by hand.
