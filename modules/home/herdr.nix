@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   pkgs,
   ...
@@ -9,9 +8,9 @@ let
   herdr = lib.getExe pkgs.herdr;
   jq = lib.getExe pkgs.jq;
   annotate = pkgs.herdr-plugin-annotate;
-  tokyonight = "${inputs.tokyonight}/extras";
+  tokyonight = config.lib.tokyonight.extras;
+  tokyonightPalette = config.lib.tokyonight.palette;
   piColors = (lib.importJSON "${tokyonight}/pi/tokyonight_night.json").colors;
-  tokyonightPalette = (lib.importJSON "${tokyonight}/opencode/tokyonight_night.json").defs;
   tokyonightBlend =
     fg: alpha: bg:
     let
@@ -54,19 +53,8 @@ let
     "claude"
     "codex"
   ];
-  agentSettingsMergePredecessors = [
-    "linkGeneration"
-    "claudeCodeSettings"
-    "piCodingAgentMutableSettings"
-    "codexMutableSettings"
-  ];
 in
 {
-  assertions = map (name: {
-    assertion = builtins.hasAttr name config.home.activation;
-    message = "herdr.nix: required activation predecessor '${name}' is missing from home.activation";
-  }) agentSettingsMergePredecessors;
-
   home.packages = [ pkgs.herdr ];
 
   xdg.configFile."herdr/config.toml".source = config.lib.nixConfig.file "config/herdr/config.toml";
@@ -74,15 +62,23 @@ in
 
   xdg.dataFile."herdr-plugins/annotate".source = annotate;
 
-  home.activation.herdrIntegrations = lib.hm.dag.entryAfter agentSettingsMergePredecessors ''
-    herdrStatus=$(${herdr} integration status 2>/dev/null || true)
-    for target in ${lib.concatStringsSep " " integrations}; do
-      if ! grep -q "^$target: current " <<<"$herdrStatus"; then
-        run ${herdr} integration install "$target" \
-          || echo "herdr integration install $target failed; rerun it by hand" >&2
-      fi
-    done
-  '';
+  home.activation.herdrIntegrations =
+    lib.hm.dag.entryAfter
+      [
+        "linkGeneration"
+        "claudeCodeSettings"
+        "piCodingAgentMutableSettings"
+        "codexMutableSettings"
+      ]
+      ''
+        herdrStatus=$(${herdr} integration status 2>/dev/null || true)
+        for target in ${lib.concatStringsSep " " integrations}; do
+          if ! grep -q "^$target: current " <<<"$herdrStatus"; then
+            run ${herdr} integration install "$target" \
+              || echo "herdr integration install $target failed; rerun it by hand" >&2
+          fi
+        done
+      '';
 
   home.activation.herdrAnnotatePlugin = lib.hm.dag.entryAfter [ "herdrIntegrations" ] ''
     annotateWant=${annotate}

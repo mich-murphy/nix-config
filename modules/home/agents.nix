@@ -18,7 +18,7 @@ let
   ];
   liveLink = path: config.lib.file.mkOutOfStoreSymlink path;
   piThemeName = "tokyonight-night";
-  upstreamPiTheme = lib.importJSON "${inputs.tokyonight}/extras/pi/tokyonight_night.json";
+  upstreamPiTheme = lib.importJSON "${config.lib.tokyonight.extras}/pi/tokyonight_night.json";
   piTheme = lib.recursiveUpdate upstreamPiTheme {
     name = piThemeName;
     colors = with upstreamPiTheme.colors; {

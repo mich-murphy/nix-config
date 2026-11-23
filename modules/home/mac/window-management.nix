@@ -1,6 +1,7 @@
 { config, lib, ... }:
 let
-  tokyonightNightCyan = "0xff7dcfff";
+  opaque = "0xff";
+  transparent = "0x00000000";
 in
 {
   services = {
@@ -13,8 +14,8 @@ in
         width = 3.0;
         order = "above";
         hidpi = "on";
-        active_color = tokyonightNightCyan;
-        inactive_color = "0x00000000";
+        active_color = opaque + lib.removePrefix "#" config.lib.tokyonight.palette.cyan;
+        inactive_color = transparent;
       };
     };
   };

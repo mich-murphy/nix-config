@@ -1,7 +1,22 @@
+{ config, ... }:
 let
   finderCustomFolderIcon = "Icon[\r]";
+  key = name: "${config.home.homeDirectory}/.ssh/${name}.pub";
+  workConnectionTag = "github-bc";
+  githubHosts = "github.com,ssh.github.com";
 in
 {
+  programs.ssh.settings = {
+    "Match host ${githubHosts} tagged ${workConnectionTag}" = {
+      User = "git";
+      IdentityFile = key "github_bc";
+    };
+    "Match host ${githubHosts} !tagged ${workConnectionTag}" = {
+      User = "git";
+      IdentityFile = key "github";
+    };
+  };
+
   programs.git = {
     includes = [
       {
@@ -11,7 +26,7 @@ in
             name = "michaelmbc";
             email = "michaelmbc@users.noreply.github.com";
           };
-          core.sshCommand = "ssh -P github-bc";
+          core.sshCommand = "ssh -P ${workConnectionTag}";
         };
       }
     ];

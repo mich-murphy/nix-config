@@ -119,8 +119,9 @@ Needed once on a new machine, in this order:
    | `truenas` | `truenas.pub` | `truenas`, reached through `docker-host` |
 
    A host is offered only the key its entry in `modules/home/mac/ssh.nix`
-   names, and a host with no entry is offered none. To add a key, put its
-   public half in `onePasswordPublicKeys` there and name it in the host's entry.
+   names (GitHub's entries are in `git.nix`), and a host with no entry is
+   offered none. To add a key, put its public half in `onePasswordPublicKeys`
+   there and name it in the host's entry.
 6. Check, then do the first switch. `darwin-rebuild` does not exist yet, so run
    it through `nix run`, and name the host: the machine's hostname does not match
    a flake name until this first activation has set it.

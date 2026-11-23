@@ -2,6 +2,7 @@
 let
   user = config.system.primaryUser;
   home = config.users.users.${user}.home;
+  asUser = ''launchctl asuser "$(id -u -- ${user})" sudo --user=${user} --'';
 
   control = 262144;
   option = 524288;
@@ -135,16 +136,12 @@ in
   system = {
     activationScripts = {
       postActivation.text = ''
-        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
-          defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add ${symbolicHotKeyArgs}
+        ${asUser} defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add ${symbolicHotKeyArgs}
 
-        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
-          defaults -currentHost write com.apple.controlcenter AirplayReceiverEnabled -bool false
+        ${asUser} defaults -currentHost write com.apple.controlcenter AirplayReceiverEnabled -bool false
 
-        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
-          defaults -currentHost write com.apple.coreservices.useractivityd ActivityAdvertisingAllowed -bool false
-        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
-          defaults -currentHost write com.apple.coreservices.useractivityd ActivityReceivingAllowed -bool false
+        ${asUser} defaults -currentHost write com.apple.coreservices.useractivityd ActivityAdvertisingAllowed -bool false
+        ${asUser} defaults -currentHost write com.apple.coreservices.useractivityd ActivityReceivingAllowed -bool false
 
         killall Finder || true
         killall SystemUIServer || true
@@ -154,8 +151,7 @@ in
         pmset -c sleep 0 displaysleep 10 disksleep 10
         pmset -b sleep 1 displaysleep 2 disksleep 10 powernap 0
 
-        launchctl asuser "$(id -u -- ${user})" sudo --user=${user} -- \
-          /usr/bin/osascript -l JavaScript -e '
+        ${asUser} /usr/bin/osascript -l JavaScript -e '
             ObjC.import("Foundation");
             $.NSBundle.bundleWithPath("/System/Library/PrivateFrameworks/PowerUI.framework").load;
             const c = $.NSClassFromString("PowerUISmartChargeClient").alloc.initWithClientName("nix-darwin");

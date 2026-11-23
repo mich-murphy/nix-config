@@ -8,6 +8,8 @@ let
   user = config.system.primaryUser;
 
   chatApps = "^(Microsoft Teams|MSTeams|Slack)$";
+  dockRestartDelay = 2;
+  chatPlacementDelay = toString (dockRestartDelay + 3);
 
   placeChat = pkgs.writeShellApplication {
     name = "yabai-place-chat";
@@ -81,12 +83,12 @@ in
       yabai -m rule --apply
 
       yabai -m signal --add label=chat-window-created event=window_created app='${chatApps}' action='${lib.getExe placeChat} "$YABAI_WINDOW_ID"'
-      yabai -m signal --add label=chat-display-added event=display_added action='sleep 5; ${lib.getExe placeChat}'
-      yabai -m signal --add label=chat-display-removed event=display_removed action='sleep 5; ${lib.getExe placeChat}'
+      yabai -m signal --add label=chat-display-added event=display_added action='sleep ${chatPlacementDelay}; ${lib.getExe placeChat}'
+      yabai -m signal --add label=chat-display-removed event=display_removed action='sleep ${chatPlacementDelay}; ${lib.getExe placeChat}'
       ${lib.getExe placeChat} &
 
-      yabai -m signal --add label=dock-restart-display-added event=display_added action="sleep 2; killall Dock"
-      yabai -m signal --add label=dock-restart-display-removed event=display_removed action="sleep 2; killall Dock"
+      yabai -m signal --add label=dock-restart-display-added event=display_added action="sleep ${toString dockRestartDelay}; killall Dock"
+      yabai -m signal --add label=dock-restart-display-removed event=display_removed action="sleep ${toString dockRestartDelay}; killall Dock"
     '';
   };
 

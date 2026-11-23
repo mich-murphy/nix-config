@@ -1,7 +1,13 @@
-{ inputs, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 {
   imports = [
     ./live-files.nix
+    ./theme.nix
     ./shell.nix
     ./cli.nix
     ./git.nix
@@ -26,6 +32,17 @@
   };
 
   nix.registry.nixpkgs.flake = inputs.nixpkgs;
+
+  assertions = lib.mapAttrsToList (
+    name: entry:
+    let
+      missing = lib.filter (other: !(config.home.activation ? ${other})) (entry.after ++ entry.before);
+    in
+    {
+      assertion = missing == [ ];
+      message = "home.activation.${name} is ordered against ${lib.concatStringsSep ", " missing}, which does not exist and which Home Manager silently ignores";
+    }
+  ) config.home.activation;
 
   manual.manpages.enable = false;
 }
