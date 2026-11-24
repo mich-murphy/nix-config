@@ -3,8 +3,7 @@
 # the key in NIX_CACHE_SIGNING_KEY, to a Nix binary cache. The workflow runs
 # the two as separate steps, so no build or evaluation sees the key.
 #
-# Usage: .github/push-cache.sh build <system> <paths-file> [flake]
-#          CHECKS="a b" limits the build to those checks (for local tests).
+# Usage: .github/push-cache.sh build <system> <paths-file>
 #        NIX_CACHE_SIGNING_KEY=<secret> .github/push-cache.sh push <cache-url> <paths-file>
 #
 # The key is written to a 0600 file, read by `nix copy` locally (never sent
@@ -15,16 +14,13 @@ case ${1:-} in
   build)
     system=$2
     paths_file=$3
-    flake=${4:-.}
-    if [ -z "${CHECKS:-}" ]; then
-      CHECKS=$(nix eval --raw "$flake#checks.$system" \
-        --apply 'c: builtins.concatStringsSep " " (builtins.attrNames c)')
-    fi
+    checks=$(nix eval --raw ".#checks.$system" \
+      --apply 'c: builtins.concatStringsSep " " (builtins.attrNames c)')
     installables=()
-    for name in $CHECKS; do
-      installables+=("$flake#checks.$system.$name")
+    for name in $checks; do
+      installables+=(".#checks.$system.$name")
     done
-    echo "Building ${#installables[@]} checks for $system: $CHECKS"
+    echo "Building ${#installables[@]} checks for $system: $checks"
     nix build --no-link --print-out-paths --print-build-logs "${installables[@]}" >"$paths_file"
     if [ ! -s "$paths_file" ]; then
       echo "nix build printed no store paths" >&2
@@ -51,7 +47,7 @@ case ${1:-} in
     nix copy --to "$cache?secret-key=$key_dir/key" "${paths[@]}"
     ;;
   *)
-    echo "usage: $0 build <system> <paths-file> [flake] | push <cache-url> <paths-file>" >&2
+    echo "usage: $0 build <system> <paths-file> | push <cache-url> <paths-file>" >&2
     exit 2
     ;;
 esac
