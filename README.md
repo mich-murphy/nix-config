@@ -27,7 +27,6 @@ pkgs/<name>/             packages nixpkgs lacks (moshi-hook, plannotator-tui), a
 overlays/                applied to every package set, so modules use pkgs.<name>
 ├── additions.nix        packages from pkgs/
 ├── modifications.nix    local fixes to nixpkgs packages (JankyBorders patches, Mole bump)
-├── security.nix         security fixes ahead of nixpkgs; empty between incidents
 └── patches/<package>/   patch files the overlays apply
 config/                  raw application files, linked or read by the modules
 prek.toml                commit hooks

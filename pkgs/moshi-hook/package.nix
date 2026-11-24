@@ -24,8 +24,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   inherit version;
 
   src = fetchurl (sources.${system} or (throw "moshi-hook: unsupported system ${system}"));
-  unpackCmd = ''mkdir source && tar -xzf "$curSrc" -C source'';
-  sourceRoot = "source";
+  sourceRoot = ".";
 
   dontConfigure = true;
   dontBuild = true;
