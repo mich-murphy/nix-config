@@ -221,7 +221,7 @@ Mac already built, then deploy:
 
 ```mermaid
 flowchart TD
-  E["Edit on the Mac"] --> C["nix flake check --all-systems"]
+  E["Edit on the Mac"] --> C["nix flake check"]
   C --> G["git commit"]
   G --> S["sudo darwin-rebuild switch --flake ."]
   G --> PR["pull request, merged to main"]
@@ -235,7 +235,7 @@ flowchart TD
 ```
 
 1. Edit on the Mac.
-2. Verify: `nix flake check --all-systems` (see [Verification](#verification)).
+2. Verify: `nix flake check` (see [Verification](#verification)).
 3. Commit. Both switch commands build the working tree as it is, so an
    uncommitted tree still builds, but the recorded revision then ends in
    `-dirty`.
@@ -268,9 +268,9 @@ flowchart TD
 
 ## Verification
 
-Two commands are the gate: `prek run --all-files` lints, and
-`nix flake check --all-systems` builds. The commit hooks run prek at each
-commit.
+Two commands are the local gate: `prek run --all-files` lints, and
+`nix flake check` builds the Mac's checks. The commit hooks run prek at each
+commit. The Mac never builds Linux; the pull request's `check` job does.
 
 ```mermaid
 flowchart LR
@@ -279,18 +279,15 @@ flowchart LR
     H2["markdownlint"]
     H3["nix format and nix lint"]
   end
-  subgraph FC["nix flake check --all-systems"]
-    subgraph MAC["aarch64-darwin: runs natively"]
-      M2["laptop: system, links, github-accounts"]
-      M3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
-    end
-    subgraph LIN["x86_64-linux: Linux builder"]
-      L1["dev-01-links, dev-01-deploy-profile"]
-      L2["deploy-schema, deploy-activate"]
-      L3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
-    end
+  subgraph MAC["nix flake check on the Mac: aarch64-darwin"]
+    M2["laptop: system, links, github-accounts"]
+    M3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
   end
-  CI["GitHub Actions: Linux for pull requests"] -.->|"evaluates every system, builds Linux"| FC
+  subgraph LIN["check job on each pull request: x86_64-linux"]
+    L1["dev-01-links, dev-01-deploy-profile"]
+    L2["deploy-schema, deploy-activate"]
+    L3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
+  end
 ```
 
 - `<host>-system` builds each Mac, including its Home Manager generation; `<host>-links` and
@@ -307,10 +304,6 @@ flowchart LR
   tests, and runs `plannotator-tui --version`.
 - `namespace-devbox-version` runs `devbox version`.
 
-The `x86_64-linux` checks build through Determinate Nix's native Linux builder
-on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
-run the check again.
-
 `prek run --all-files` is the only lint: nixfmt, nixf-diagnose, an ast-grep
 rule that rejects Nix comments, markdownlint, zizmor for the workflows and
 file hygiene hooks;
@@ -319,9 +312,12 @@ file hygiene hooks;
 The GitHub workflow runs on every pull request, on each push to `main` and on
 demand. Pull requests run one Linux job, `check`: the commit hooks,
 `nix flake check --all-systems --no-build` to evaluate every host, the Macs
-included, and `nix flake check` to build the Linux checks. Before a merge, the
-Mac checks are built only by the local gate. Branch protection requires `check` to pass
-before a pull request merges.
+included, and `nix flake check` to build the Linux checks. Branches of this
+repository run it on a Namespace runner, which reads `main`'s signed builds
+through the `nixcache` proxy, so only what the pull request changes is built.
+Forks run it on GitHub's runner, which holds no Namespace token. Before a
+merge, the Mac checks are built only by the local gate. Branch protection
+requires `check` to pass before a pull request merges.
 
 On a push to `main` the `build` job runs instead, on Namespace runners: one
 macOS (`aarch64-darwin`) and one Linux (`x86_64-linux`). Each builds every
