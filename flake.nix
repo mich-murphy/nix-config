@@ -31,18 +31,20 @@
         "x86_64-linux"
       ];
       forAllSystems = lib.genAttrs systems;
-      nixpkgsConfig = {
-        config.allowUnfree = true;
-        overlays = [ self.overlays.default ];
-      };
-      pkgsFor = forAllSystems (system: import nixpkgs ({ inherit system; } // nixpkgsConfig));
+      pkgsFor = forAllSystems (
+        system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+          overlays = [ self.overlays.default ];
+        }
+      );
 
       revision = self.rev or self.dirtyRev or "unknown";
 
       mkDarwin =
         host:
         darwin.lib.darwinSystem {
-          specialArgs = { inherit inputs; };
           modules = [
             home-manager.darwinModules.home-manager
             inputs.determinate.darwinModules.default
@@ -50,7 +52,7 @@
             (
               { config, ... }:
               {
-                nixpkgs = { inherit (nixpkgsConfig) config overlays; };
+                nixpkgs.pkgs = pkgsFor.${config.nixpkgs.hostPlatform.system};
 
                 system.configurationRevision = revision;
 
@@ -157,7 +159,6 @@
           in
           {
             "${host}-system" = darwin.config.system.build.toplevel;
-            "${host}-home" = home.home.activationPackage;
             "${host}-links" = writableLinksCheck pkgsFor.aarch64-darwin host home;
             "${host}-github-accounts" = githubAccountCheck pkgsFor.aarch64-darwin host home;
           }
@@ -168,7 +169,6 @@
             home = self.homeConfigurations."dev@dev-01".config;
           in
           {
-            dev-01-home = home.home.activationPackage;
             dev-01-links = writableLinksCheck pkgsFor.x86_64-linux "dev-01" home;
             dev-01-deploy-profile = self.deploy.nodes.dev-01.profiles.home.path;
           }
