@@ -6,11 +6,10 @@ Open work only.
 
 ## dev-01
 
-- [ ] Before the next deploy: add Numtide's cache to dev-01's system Nix
-      configuration in the machines repo (`extra-substituters =
-      https://cache.numtide.com`, `extra-trusted-public-keys =
-      niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=`).
-      Without it the deploy compiles codex on dev-01.
+- [ ] Record CI's deploy key in the machines repo, so a rebuilt dev-01
+      keeps it. It was added by hand to `~/.ssh/authorized_keys` on
+      2026-11-24 as `restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEUpYHixc/Ah8dLw67avNjJo+Frnl2an0pK+EiqXmjt3 nix-config-ci-deploy`.
+      Without it, CI's `deploy` job cannot reach dev-01.
 
 - [ ] After the deploy that moves the agent CLIs to Nix: delete the
       installers' `claude`, `codex`, `node` and `npm` in `~/.local/bin` (now
@@ -118,5 +117,7 @@ any that are behind, then move the date on a month.
 
 ## Decisions
 
-- [ ] Decide whether deploying only committed revisions should be enforced, and
-      how. Today a deploy builds the working tree and records `-dirty`.
+- [ ] Decide whether dev-01 should refuse activations that do not come from
+      CI. A copy to dev-01 already needs a profile CI signed on `main`, but
+      anything logged in as `dev` can still build and activate a profile
+      there.
