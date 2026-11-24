@@ -11,6 +11,11 @@
     pkgs.mas
   ];
 
+  system.activationScripts.postActivation.text = ''
+    /usr/libexec/ApplicationFirewall/socketfilterfw --add ${pkgs.mosh}/bin/mosh-server
+    /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp ${pkgs.mosh}/bin/mosh-server
+  '';
+
   programs._1password.enable = true;
 
   fonts.packages = [

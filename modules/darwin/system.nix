@@ -84,8 +84,10 @@ let
     ];
   };
 
-  tailnetIPv4 = "100.64.0.0/10";
-  tailnetIPv6 = "fd7a:115c:a1e0::/48";
+  moshiPhone = {
+    tailnetIPv4 = "100.116.176.77";
+    sshKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM9WH/bCZ+uyjIpd/Z2Dx+fs+/RunKTy9aNEHuQRfYGD moshi-phone";
+  };
 
   hotCornerDisabled = 1;
   clockDateAlways = 1;
@@ -129,9 +131,13 @@ in
     extraConfig = ''
       PasswordAuthentication no
       KbdInteractiveAuthentication no
-      AllowUsers ${user}@${tailnetIPv4} ${user}@${tailnetIPv6}
+      AuthorizedKeysFile none
+      AllowUsers ${user}@${moshiPhone.tailnetIPv4}
+      AllowAgentForwarding no
     '';
   };
+
+  users.users.${user}.openssh.authorizedKeys.keys = [ moshiPhone.sshKey ];
 
   system = {
     activationScripts = {
