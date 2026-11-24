@@ -282,11 +282,11 @@ flowchart LR
   end
   subgraph FC["nix flake check --all-systems"]
     subgraph MAC["aarch64-darwin: runs natively"]
-      M2["laptop: system, home, links, github-accounts"]
+      M2["laptop: system, links, github-accounts"]
       M3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
     end
     subgraph LIN["x86_64-linux: Linux builder"]
-      L1["dev-01-home, dev-01-links, dev-01-deploy-profile"]
+      L1["dev-01-links, dev-01-deploy-profile"]
       L2["deploy-schema, deploy-activate"]
       L3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
     end
@@ -294,7 +294,7 @@ flowchart LR
   CI["GitHub Actions: Linux for pull requests"] -.->|"evaluates every system, builds Linux"| FC
 ```
 
-- `<host>-system` and `<host>-home` build each Mac; `<host>-links` and
+- `<host>-system` builds each Mac, including its Home Manager generation; `<host>-links` and
   `dev-01-links` confirm every live link points at a file that exists in this
   repo (or into the skills clone; dev-01 has no checkout).
 - `<host>-github-accounts` checks with `ssh -G` that each GitHub host and

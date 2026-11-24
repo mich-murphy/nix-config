@@ -13,7 +13,7 @@ in
       substituters = [
         "https://cache.nixos.org/?priority=30"
         "http://127.0.0.1:18765?priority=35"
-        "https://cache.numtide.com?priority=40"
+        "https://cache.numtide.com?priority=45"
       ];
       extra-trusted-public-keys = [
         "nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw="
