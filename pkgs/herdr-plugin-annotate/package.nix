@@ -53,7 +53,7 @@ stdenvNoCC.mkDerivation {
     cp -r herdr-plugin.toml herdr-annotate.version plannotator-tui.version scripts LICENSE $out/
     install -m755 ${lib.getExe runtime} $out/bin/herdr-annotate.exe
     install -m755 ${lib.getExe plannotator-tui} $out/bin/plannotator-tui.exe
-    echo "${runtime.version}" > $out/bin/herdr-annotate.version
+    cp herdr-annotate.version $out/bin/
     printf '%s' "${plannotator-tui.version}" > $out/bin/plannotator-tui.version
 
     runHook postInstall
