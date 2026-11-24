@@ -25,9 +25,6 @@ in
     "rex/init.lua".source = config.lib.nixConfig.file "config/rex/init.lua";
   };
 
-  home.file."Library/Application Support/com.mitchellh.ghostty/config.ghostty".source =
-    config.lib.nixConfig.file "config/ghostty/config";
-
   home.file.".local/bin/rex".source = lib.getExe (
     pkgs.writeShellScriptBin "rex" ''
       exec "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" "$@"
@@ -67,8 +64,6 @@ in
   '';
 
   home.sessionVariables = {
-    TERMINFO_DIRS = "/usr/share/terminfo";
-
     TERMINAL = "/Applications/Ghostty.app/Contents/MacOS/ghostty";
   };
 }

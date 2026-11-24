@@ -1,7 +1,7 @@
 {
   config,
   lib,
-  osConfig ? null,
+  osConfig,
   pkgs,
   ...
 }:
@@ -82,7 +82,7 @@ let
   };
 in
 {
-  assertions = lib.optional (isDarwin && osConfig != null) {
+  assertions = lib.optional isDarwin {
     assertion = builtins.elem pkgs.moshi-hook.app osConfig.environment.systemPackages;
     message = "moshi.nix: hooks name the app bundle that nix-darwin installs from pkgs.moshi-hook.app, which is missing from environment.systemPackages";
   };
@@ -110,8 +110,6 @@ in
   systemd.user.services.moshi-hook = lib.mkIf isLinux {
     Unit = {
       Description = "Moshi agent-hooks daemon";
-      After = [ "network-online.target" ];
-      Wants = [ "network-online.target" ];
     };
     Service = {
       ExecStart = lib.escapeShellArgs ([ exe ] ++ serveArgs);
