@@ -1,0 +1,356 @@
+From 8ec48c81f467e692113ab114e0780fdd84ee2953 Mon Sep 17 00:00:00 2001
+From: Sebastian Stammler <seb@oplabs.co>
+Date: Sun, 22 Nov 2026 03:13:14 +0000
+Subject: [PATCH] test: fix three flakes from tests racing each other in one
+ process (#181)
+
+* test: write fake commands from a child process, so running one never hits text file busy
+
+Tests that fake `rex`, `herdr`, `hc`, `gh` and `herdr-app` wrote the script with
+std::fs::write and then ran it. A fork on another test thread while the file was
+open inherited the write handle until that child exec'd, and exec of the script
+failed with ETXTBSY in the meantime: rex::agent's tests failed this way about 1 in
+80 runs of the module alone. `test_support::write_script` has /bin/sh write the
+file, so this process never holds it open.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+* test(hangup): a finished stdin hangs up even while a forking child holds its writer
+
+The piped-stdin test closed a pipe writer and asserted the reader hung up.
+A child that another test is spawning holds a copy of every descriptor
+between fork and exec, so the writer could outlive the drop and the pipe
+not hang up yet. A socket pair stands in: shutting the writer down hangs
+the reader up however many copies stay open.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+* test(hangup): open the pty controller close-on-exec from the start
+
+pty() opened the controller with openpt and set close-on-exec afterwards.
+A child that another test spawned in between (e.g. the delivery test's
+`sleep 5 &`) kept the controller past its exec, so the tty did not hang
+up within the neighbouring test's 5 s deadline. Opening /dev/ptmx with
+O_CLOEXEC closes that window on Linux and macOS alike.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+* test(pi): a closed port that no parallel bind(0) can be handed
+
+closed_port() bound port 0 and released it, so a test running alongside could be given the same port and find the "closed" session answering. Port 1 lies below every ephemeral range.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+* test: the review crate's and the integration tests' fake commands are written from a child too
+
+The same text file busy race as in the app's unit tests: the review crate's fake gh, and the fake gh, rex, hc and herdr-app of tests/pr_review.rs and tests/rex_hc_review.rs.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+* docs(agents): how tests sharing one process stay out of each other's way
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+---------
+
+Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>
+
+(cherry picked from commit a059de2e74b5ca3d9cbb31a650902a3e6fa00ee6;
+files absent at v0.10.0 dropped: the review crate, herdr/agents.rs, review/,
+rex/agents.rs, ui/, tests/pr_review.rs, tests/rex_hc_review.rs)
+---
+ AGENTS.md                                   | 25 ++++++++++++++++++
+ crates/plannotator-tui/src/hangup.rs        | 29 +++++++++++++--------
+ crates/plannotator-tui/src/hc/agent.rs      |  4 +--
+ crates/plannotator-tui/src/hc/show.rs       |  4 +--
+ crates/plannotator-tui/src/main.rs          |  2 ++
+ crates/plannotator-tui/src/pi/tests.rs      | 11 ++++----
+ crates/plannotator-tui/src/rex/agent.rs     |  7 +++--
+ crates/plannotator-tui/src/test_support.rs  | 22 ++++++++++++++++
+ crates/plannotator-tui/tests/support/mod.rs | 22 ++++++++++++++++
+ 9 files changed, 99 insertions(+), 27 deletions(-)
+ create mode 100644 crates/plannotator-tui/src/test_support.rs
+ create mode 100644 crates/plannotator-tui/tests/support/mod.rs
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 071e412..e562bc7 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -54,6 +54,31 @@ ## Rules that are judgement
+ - **Commits are small and describe intent**, lowercase conventional style:
+   `feat(schema): anchor resolution by rendered quote`.
+ 
++## Tests share one process
++
++`cargo test` runs a test binary's tests at once, as threads of one process. They share
++ports, temp paths and file descriptors, and a child any test spawns holds a copy of every
++open descriptor until it execs, close-on-exec ones included. A test that passes alone can
++then fail once in a hundred runs or so.
++
++- **Write a fake command with `test_support::write_script`** (`tests/support` for
++  integration tests), never `fs::write`:
++  a fork on another thread while the file is open keeps a write handle until it execs, and
++  running the script meanwhile fails with "Text file busy".
++- **A close doesn't reach the other end at once.** A pipe hangs up, and a pty's terminal
++  sees its controller go, only once every copy is closed. Shut a socket down instead where
++  you can; otherwise poll with a deadline. Open raw descriptors (`rustix`) close-on-exec
++  atomically, never with a later `fcntl`: a child forked in between keeps its copy past
++  exec, for as long as it runs.
++- **Don't bind and release a port** to get a free or a closed one: a test running alongside
++  can be handed it. Keep the listener, or use port 1 for one nothing listens on.
++- **Paths are unique per test, not just per process:** the pid, a tag naming the test, and
++  a counter if a helper can run twice with one tag.
++- **A flake is a bug until shown otherwise**, sometimes in production code. Find the race;
++  no retries, sleeps or `#[ignore]` as a fix.
++- **Loop a new test that spawns processes or uses ports, pipes or ptys:** 100 runs of its
++  whole test binary, unfiltered, so the tests that fork beside it run too.
++
+ ## Data contract
+ 
+ Annotations are the Workspaces wire shape. The anchor object is opaque to the server; the
+diff --git a/crates/plannotator-tui/src/hangup.rs b/crates/plannotator-tui/src/hangup.rs
+index c9a724a..4fcdd97 100644
+--- a/crates/plannotator-tui/src/hangup.rs
++++ b/crates/plannotator-tui/src/hangup.rs
+@@ -53,19 +53,23 @@ fn hung_up(fd: BorrowedFd<'_>) -> bool {
+ mod tests {
+     #![allow(clippy::expect_used, reason = "tests assert by panicking")]
+ 
++    use std::net::Shutdown;
+     use std::os::fd::{AsFd as _, OwnedFd};
++    use std::os::unix::net::UnixStream;
+ 
+     use rustix::fs::{Mode, OFlags};
+-    use rustix::pty::{OpenptFlags, grantpt, openpt, ptsname, unlockpt};
++    use rustix::pty::{grantpt, ptsname, unlockpt};
+ 
+     use super::*;
+ 
+     /// A pseudo-terminal: the controller a multiplexer holds, and the terminal an app holds.
+     fn pty() -> (OwnedFd, OwnedFd) {
+-        let controller = openpt(OpenptFlags::RDWR | OpenptFlags::NOCTTY).expect("openpt");
+-        // Close-on-exec, so a child another test spawns meanwhile cannot hold the controller
+-        // open and keep the hang-up from happening.
+-        rustix::io::fcntl_setfd(&controller, rustix::io::FdFlags::CLOEXEC).expect("cloexec");
++        // `/dev/ptmx` rather than `openpt`, which cannot open close-on-exec on macOS. Setting it
++        // afterwards leaves a moment in which a child that another test spawns inherits the
++        // controller and holds off the hang-up for as long as it runs.
++        let controller =
++            rustix::fs::open(c"/dev/ptmx", OFlags::RDWR | OFlags::NOCTTY | OFlags::CLOEXEC, Mode::empty())
++                .expect("open /dev/ptmx");
+         grantpt(&controller).expect("grantpt");
+         unlockpt(&controller).expect("unlockpt");
+         let name = ptsname(&controller, Vec::new()).expect("ptsname");
+@@ -80,22 +84,25 @@ fn a_terminal_reads_as_hung_up_only_after_its_other_end_closes() {
+         let (controller, tty) = pty();
+         assert!(!hung_up(tty.as_fd()));
+         drop(controller);
+-        // A child that another test spawned in the moment before close-on-exec was set can
+-        // still hold the controller; the hang-up follows once it exits.
++        // A child that another test is forking holds the controller until it execs; the
++        // hang-up follows then.
+         let deadline = std::time::Instant::now() + Duration::from_secs(5);
+         while !hung_up(tty.as_fd()) && std::time::Instant::now() < deadline {
+             std::thread::sleep(Duration::from_millis(20));
+         }
+         assert!(hung_up(tty.as_fd()));
+     }
+ 
+     #[test]
+     fn piped_stdin_is_passed_over_for_the_terminal() {
+-        let (reader, writer) = std::io::pipe().expect("pipe");
+-        drop(writer);
++        // A socket stands in for the pipe: a pipe hangs up only once every copy of its writer
++        // is closed, and a child another test is forking holds copies until it execs. A
++        // shutdown hangs the socket up while copies, `writer` among them, stay open.
++        let (stdin, writer) = UnixStream::pair().expect("socketpair");
++        writer.shutdown(Shutdown::Both).expect("shutdown");
+         let (_controller, tty) = pty();
+-        assert!(hung_up(reader.as_fd()), "a finished pipe reports a hang-up");
+-        let watched = terminal([reader.as_fd(), tty.as_fd()]).expect("a terminal");
++        assert!(hung_up(stdin.as_fd()), "a finished stream reports a hang-up");
++        let watched = terminal([stdin.as_fd(), tty.as_fd()]).expect("a terminal");
+         assert!(!hung_up(watched));
+     }
+ }
+diff --git a/crates/plannotator-tui/src/hc/agent.rs b/crates/plannotator-tui/src/hc/agent.rs
+index c9af372..a6461bd 100644
+--- a/crates/plannotator-tui/src/hc/agent.rs
++++ b/crates/plannotator-tui/src/hc/agent.rs
+@@ -134,7 +134,6 @@ fn an_agent_takes_a_message_only_while_it_runs_there_and_reports_its_state() {
+     /// `blocked` there makes `send` refuse the way `hc` does for an agent at a dialog.
+     #[cfg(unix)]
+     fn fake_hc(tag: &str) -> std::path::PathBuf {
+-        use std::os::unix::fs::PermissionsExt as _;
+         let dir = std::env::temp_dir().join(format!("plannotator-tui-hc-{tag}-{}", std::process::id()));
+         std::fs::create_dir_all(&dir).expect("temp dir");
+         let script = format!(
+@@ -150,8 +149,7 @@ fn fake_hc(tag: &str) -> std::path::PathBuf {
+ "#,
+             dir = dir.display()
+         );
+-        std::fs::write(dir.join("hc"), script).expect("write hc");
+-        std::fs::set_permissions(dir.join("hc"), std::fs::Permissions::from_mode(0o755)).expect("chmod");
++        crate::test_support::write_script(&dir.join("hc"), &script);
+         dir
+     }
+ 
+diff --git a/crates/plannotator-tui/src/hc/show.rs b/crates/plannotator-tui/src/hc/show.rs
+index d010bb9..9cb6c10 100644
+--- a/crates/plannotator-tui/src/hc/show.rs
++++ b/crates/plannotator-tui/src/hc/show.rs
+@@ -176,7 +176,6 @@ fn only_an_unknown_terminal_is_asked_about_again_and_every_refusal_keeps_its_rea
+     /// is set. Returns the script.
+     #[cfg(unix)]
+     fn fake_app(tag: &str, not_yet: u32, fail: bool) -> std::path::PathBuf {
+-        use std::os::unix::fs::PermissionsExt as _;
+         let dir =
+             std::env::temp_dir().join(format!("plannotator-tui-herdr-app-{tag}-{}", std::process::id()));
+         std::fs::create_dir_all(&dir).expect("temp dir");
+@@ -191,8 +190,7 @@ fn fake_app(tag: &str, not_yet: u32, fail: bool) -> std::path::PathBuf {
+             fail = u8::from(fail),
+         );
+         let bin = dir.join("herdr-app");
+-        std::fs::write(&bin, script).expect("write herdr-app");
+-        std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).expect("chmod");
++        crate::test_support::write_script(&bin, &script);
+         bin
+     }
+ 
+diff --git a/crates/plannotator-tui/src/main.rs b/crates/plannotator-tui/src/main.rs
+index 8b749f6..d81e9f2 100644
+--- a/crates/plannotator-tui/src/main.rs
++++ b/crates/plannotator-tui/src/main.rs
+@@ -29,6 +29,8 @@
+ mod srcmap;
+ mod store;
+ mod terminal;
++#[cfg(all(test, unix))]
++mod test_support;
+ mod theme;
+ mod tree;
+ mod ui;
+diff --git a/crates/plannotator-tui/src/pi/tests.rs b/crates/plannotator-tui/src/pi/tests.rs
+index 7552eb1..3c90ab1 100644
+--- a/crates/plannotator-tui/src/pi/tests.rs
++++ b/crates/plannotator-tui/src/pi/tests.rs
+@@ -44,10 +44,9 @@ fn entry(root: &Path, port: u16, token: &str) -> PiEntry {
+     pi_entries(root).into_iter().next().expect("parsed")
+ }
+ 
+-/// A port nothing listens on: bound, then released.
+-fn closed_port() -> u16 {
+-    TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).expect("bind").local_addr().expect("addr").port()
+-}
++/// A port nothing listens on. It lies below every ephemeral range, so no `bind(0)` in a test
++/// running alongside is handed it, as it could be a port bound here and released.
++const CLOSED_PORT: u16 = 1;
+ 
+ #[test]
+ fn the_root_is_the_override_or_sessions_in_the_data_dir() {
+@@ -125,7 +124,7 @@ fn a_rewritten_entry_is_read_again_after_a_bad_token() {
+ #[test]
+ fn a_closed_session_is_gone_and_its_entry_removed() {
+     let root = temp_root("gone");
+-    let session = entry(&root, closed_port(), "t");
++    let session = entry(&root, CLOSED_PORT, "t");
+     assert!(matches!(send(&session, "hi"), Err(SendError::Gone)));
+     assert!(!session.path.exists());
+     std::fs::remove_dir_all(root).expect("cleanup");
+@@ -152,7 +151,7 @@ fn live_sessions_keep_answering_ones_with_fresh_state_and_drop_closed_ones() {
+     let dead = root.join("pi").join("s2-43.json");
+     write_entry(
+         &dead,
+-        &json!({"v": 1, "host": "pi", "id": "s2", "pid": 43, "cwd": "/w", "port": closed_port(), "token": "t"}),
++        &json!({"v": 1, "host": "pi", "id": "s2", "pid": 43, "cwd": "/w", "port": CLOSED_PORT, "token": "t"}),
+     )
+     .expect("dead");
+     let live = live_pi_sessions(&root);
+diff --git a/crates/plannotator-tui/src/rex/agent.rs b/crates/plannotator-tui/src/rex/agent.rs
+index a56d79d..74a1f1e 100644
+--- a/crates/plannotator-tui/src/rex/agent.rs
++++ b/crates/plannotator-tui/src/rex/agent.rs
+@@ -213,7 +213,6 @@ fn only_a_record_the_agent_owns_says_it_has_reported_its_state() {
+     /// nothing, and `enter-fails` makes `send-key` fail.
+     #[cfg(unix)]
+     fn fake_rex(tag: &str) -> std::path::PathBuf {
+-        use std::os::unix::fs::PermissionsExt as _;
+         let dir = std::env::temp_dir().join(format!("plannotator-tui-rex-{tag}-{}", std::process::id()));
+         std::fs::create_dir_all(&dir).expect("temp dir");
+         let script = format!(
+@@ -230,8 +229,7 @@ fn fake_rex(tag: &str) -> std::path::PathBuf {
+ "#,
+             dir = dir.display()
+         );
+-        std::fs::write(dir.join("rex"), script).expect("write rex");
+-        std::fs::set_permissions(dir.join("rex"), std::fs::Permissions::from_mode(0o755)).expect("chmod");
++        crate::test_support::write_script(&dir.join("rex"), &script);
+         dir
+     }
+ 
+@@ -283,7 +281,8 @@ fn an_agent_that_has_not_reported_its_state_gets_no_enter_but_can_take_a_paste()
+         let dir = fake_rex("silent");
+         std::fs::write(dir.join("silent"), "").expect("flag");
+         let target = sender(&dir, "42");
+-        assert!(matches!(target.deliver("notes"), Err(DeliveryError::Unavailable(_))));
++        let refused = target.deliver("notes");
++        assert!(matches!(refused, Err(DeliveryError::Unavailable(_))), "{refused:?}");
+         assert_eq!(pastes(&dir), 0);
+         let paste = sender_with(&dir, "42", &[(SUBMIT_VAR, "0")]);
+         paste.deliver("notes").expect("a paste leaves Enter to you");
+diff --git a/crates/plannotator-tui/src/test_support.rs b/crates/plannotator-tui/src/test_support.rs
+new file mode 100644
+index 0000000..544fdb4
+--- /dev/null
++++ b/crates/plannotator-tui/src/test_support.rs
+@@ -0,0 +1,22 @@
++//! Fixtures shared by tests across the crate.
++
++use std::io::Write as _;
++use std::path::Path;
++use std::process::{Command, Stdio};
++
++/// Write `script` to `path` and make it executable, for a test to run as a fake command.
++///
++/// A child process writes the file. Had this process written it, a fork on another test
++/// thread in that moment would inherit the open file, and running the script would fail
++/// with "Text file busy" until that child execs.
++#[allow(clippy::expect_used, reason = "test fixtures assert by panicking")]
++pub(crate) fn write_script(path: &Path, script: &str) {
++    let mut sh = Command::new("/bin/sh")
++        .args(["-c", r#"cat > "$1" && chmod 755 "$1""#, "sh"])
++        .arg(path)
++        .stdin(Stdio::piped())
++        .spawn()
++        .expect("run sh");
++    sh.stdin.take().expect("sh stdin").write_all(script.as_bytes()).expect("write script");
++    assert!(sh.wait().expect("wait for sh").success(), "cannot write {}", path.display());
++}
+diff --git a/crates/plannotator-tui/tests/support/mod.rs b/crates/plannotator-tui/tests/support/mod.rs
+new file mode 100644
+index 0000000..39fcda8
+--- /dev/null
++++ b/crates/plannotator-tui/tests/support/mod.rs
+@@ -0,0 +1,22 @@
++//! Fixtures shared by the integration tests; `mod support;` brings them in.
++
++use std::io::Write as _;
++use std::path::Path;
++use std::process::{Command, Stdio};
++
++/// Write `script` to `path` and make it executable, for a test to run as a fake command.
++///
++/// A child process writes the file. Had this process written it, a fork on another test
++/// thread in that moment would inherit the open file, and running the script would fail
++/// with "Text file busy" until that child execs.
++#[allow(clippy::expect_used, reason = "test fixtures assert by panicking")]
++pub(crate) fn write_script(path: &Path, script: &str) {
++    let mut sh = Command::new("/bin/sh")
++        .args(["-c", r#"cat > "$1" && chmod 755 "$1""#, "sh"])
++        .arg(path)
++        .stdin(Stdio::piped())
++        .spawn()
++        .expect("run sh");
++    sh.stdin.take().expect("sh stdin").write_all(script.as_bytes()).expect("write script");
++    assert!(sh.wait().expect("wait for sh").success(), "cannot write {}", path.display());
++}

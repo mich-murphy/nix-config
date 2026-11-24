@@ -418,7 +418,7 @@ Once upstream has all three fixes, delete the `jankyborders` entry in
 
 `pkgs/plannotator-tui/package.nix` builds plannotator-tui, the review pane of
 Herdr's Annotate plugin, with patches in `overlays/patches/plannotator-tui/`.
-None is submitted upstream. Each patch is one `git format-patch` commit, and
+None of the first four is submitted upstream. Each patch is one `git format-patch` commit, and
 they apply in this order on top of upstream's `v0.10.0` tag:
 
 | Patch | Adds |
@@ -427,8 +427,9 @@ they apply in this order on top of upstream's `v0.10.0` tag:
 | `code-highlighting.patch` | syntax highlighting of fenced code with the TextMate theme `[ui] code_theme` names; unset, nothing is highlighted |
 | `mermaid-diagrams.patch` | fenced `mermaid` blocks drawn as text by [boxmaid](https://crates.io/crates/boxmaid), pinned to `=0.1.1`; `[ui] mermaid = false` turns it off, and a diagram boxmaid cannot draw shows its source |
 | `border-role.patch` | a `[colors] border` role for table borders, unfocused note bubbles and the file-tree divider, which upstream draws in a fixed dark gray |
+| `test-races.patch` | upstream's unreleased a059de2, trimmed to files present at `v0.10.0`: fixes "Text file busy" and other test races; drop it on the next release |
 
-They are `cargoPatches`, not `patches`: the last two change `Cargo.lock`, and
+The first four are `cargoPatches`, not `patches`: two change `Cargo.lock`, and
 the vendored dependencies are fetched after the patches apply. A change to a
 patch's `Cargo.lock` hunk therefore changes `cargoHash` too.
 
