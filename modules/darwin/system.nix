@@ -133,15 +133,7 @@ in
       KbdInteractiveAuthentication no
       AuthorizedKeysFile none
       AllowUsers ${user}@${moshiPhone.tailnetIPv4}
-      PermitRootLogin no
-      PermitUserRC no
-      MaxAuthTries 3
-      LoginGraceTime 30
-      ClientAliveInterval 300
       AllowAgentForwarding no
-      AllowStreamLocalForwarding no
-      AllowTcpForwarding local
-      PermitOpen 127.0.0.1:* localhost:* [::1]:*
     '';
   };
 
