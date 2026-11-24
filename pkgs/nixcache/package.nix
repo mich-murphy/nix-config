@@ -26,8 +26,7 @@ stdenvNoCC.mkDerivation {
   inherit version;
 
   src = fetchurl (sources.${system} or (throw "nixcache: unsupported system ${system}"));
-  unpackCmd = ''mkdir source && tar -xzf "$curSrc" -C source'';
-  sourceRoot = "source";
+  sourceRoot = ".";
 
   dontConfigure = true;
   dontBuild = true;
