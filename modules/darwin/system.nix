@@ -85,7 +85,7 @@ let
   };
 
   moshiPhone = {
-    tailnetIPv4 = "100.116.176.77";
+    tailnetIPv4 = "100.121.191.1";
     sshKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM9WH/bCZ+uyjIpd/Z2Dx+fs+/RunKTy9aNEHuQRfYGD moshi-phone";
   };
 
