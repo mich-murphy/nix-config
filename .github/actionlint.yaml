@@ -1,0 +1,4 @@
+self-hosted-runner:
+  labels:
+    - nscloud-macos-tahoe-arm64-6x14
+    - nscloud-ubuntu-24.04-amd64-16x32

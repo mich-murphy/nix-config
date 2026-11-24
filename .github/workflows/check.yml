@@ -11,15 +11,16 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  # A cancelled run on main would stop pushing to FlakeHub Cache part-way.
+  # A cancelled run on main would stop pushing to the Namespace cache part-way.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # Actions are pinned to full commit SHAs; TODO.md (Updates) has the monthly bump.
 jobs:
-  # Pull requests and manual runs, on Linux only. Every host is evaluated,
-  # the Macs included, but only the Linux checks are built; the Mac builds run
-  # locally with `nix flake check --all-systems`. No id-token, so nothing here
-  # can push to FlakeHub Cache.
+  # Pull requests and manual runs, on GitHub's Linux runner only. Every host is
+  # evaluated, the Macs included, but only the Linux checks are built; the Mac
+  # builds run locally with `nix flake check --all-systems`. No secret, so
+  # nothing here can sign: a branch that moves this job to a Namespace runner
+  # could upload with the runner's token, but hosts refuse unsigned paths.
   check:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
@@ -29,10 +30,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@16f94ba7aae399b9f9077c254b6719ec6de7e3e3 # v3.24.2
+        uses: DeterminateSystems/determinate-nix-action@4b040423529d49b1a19ba918742e0aa9aa95031a # v3.24.3
         with:
           # The agent CLIs from llm-agents.nix, prebuilt; asked after
-          # cache.nixos.org (40), as on the Mac.
+          # cache.nixos.org, as on the Mac.
           extra-conf: |
             extra-substituters = https://cache.numtide.com?priority=45
             extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
@@ -45,31 +46,64 @@ jobs:
       - name: Check flake
         run: nix flake check --print-build-logs --no-write-lock-file
 
-  # Pushes to main only, on macOS only: the Mac checks are built, and every
-  # path cache.nixos.org lacks is pushed to FlakeHub Cache for the Macs to
-  # download. dev-01 does not read FlakeHub Cache, so no Linux job pushes.
-  # The id-token lets FlakeHub verify the push came from this repository's
-  # Actions run; no long-lived secret exists to steal.
-  cache:
+  # Pushes to main only, on Namespace runners: every check for each system is
+  # built, and the closures are signed with nix-config-1 and copied to
+  # Namespace's Nix cache through the nixcache proxy. The signing key lives in
+  # the `cache` environment, which only main may use. The runner's own
+  # Namespace workload token authorises the writes.
+  build:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      id-token: write
-    runs-on: macos-26
+    environment: cache
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: nscloud-macos-tahoe-arm64-6x14
+            system: aarch64-darwin
+          - runner: nscloud-ubuntu-24.04-amd64-16x32
+            system: x86_64-linux
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@16f94ba7aae399b9f9077c254b6719ec6de7e3e3 # v3.24.2
+        uses: DeterminateSystems/determinate-nix-action@4b040423529d49b1a19ba918742e0aa9aa95031a # v3.24.3
         with:
-          # The agent CLIs from llm-agents.nix, prebuilt; asked after
-          # cache.nixos.org (40), as on the Mac.
+          # cache.nixos.org first, then our cache through the local proxy,
+          # then Numtide's agent CLIs; the same order as the hosts.
           extra-conf: |
-            extra-substituters = https://cache.numtide.com?priority=45
-            extra-trusted-public-keys = niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-      - name: Push builds to FlakeHub Cache
-        uses: DeterminateSystems/flakehub-cache-action@f00fba8dc0949d63cbbb7d33da7912417d588d75 # v3.24.2
-      - name: Check flake
-        run: nix flake check --print-build-logs --no-write-lock-file
+            substituters = https://cache.nixos.org?priority=30 http://127.0.0.1:18765?priority=35 https://cache.numtide.com?priority=45
+            extra-trusted-public-keys = nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+      # local-only: public paths are answered from cache.nixos.org (so
+      # `nix copy` skips them) without being mirrored into our cache, while
+      # our own signed uploads are still written.
+      - name: Start Namespace's cache proxy
+        run: |
+          nix build .#nixcache --out-link "$RUNNER_TEMP/nixcache" --option substituters https://cache.nixos.org
+          nohup "$RUNNER_TEMP/nixcache/bin/nixcache" -foreground \
+            -cache-upstream local-only \
+            -cache_dir "$RUNNER_TEMP/nixcache-dir" \
+            >"$RUNNER_TEMP/nixcache.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/nixcache.pid"
+          for _ in $(seq 30); do
+            curl -fsS http://127.0.0.1:18765/nix-cache-info && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/nixcache.log"
+          exit 1
+      - name: Build checks
+        run: .github/push-cache.sh build "${{ matrix.system }}" "$RUNNER_TEMP/paths"
+      - name: Sign and push them to the cache
+        env:
+          NIX_CACHE_SIGNING_KEY: ${{ secrets.NIX_CACHE_SIGNING_KEY }}
+        run: .github/push-cache.sh push http://127.0.0.1:18765 "$RUNNER_TEMP/paths"
+      - name: Stop the cache proxy
+        if: always()
+        run: |
+          rm -rf "$RUNNER_TEMP"/nix-cache-key.*
+          if [ -f "$RUNNER_TEMP/nixcache.pid" ]; then
+            kill -TERM "$(cat "$RUNNER_TEMP/nixcache.pid")" || true
+          fi
+          tail -n 50 "$RUNNER_TEMP/nixcache.log" || true
