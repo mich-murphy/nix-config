@@ -10,8 +10,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   # A cancelled run on main would stop pushing to the Namespace cache part-way.
+  # Manual runs get their own group, so one cannot displace a pending push.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # Actions are pinned to full commit SHAs; TODO.md (Updates) has the monthly bump.
@@ -20,7 +21,8 @@ jobs:
   # evaluated, the Macs included, but only the Linux checks are built; the Mac
   # builds run locally with `nix flake check --all-systems`. No secret, so
   # nothing here can sign: a branch that moves this job to a Namespace runner
-  # could upload with the runner's token, but hosts refuse unsigned paths.
+  # could upload with the runner's token, but hosts refuse paths without a
+  # trusted signature.
   check:
     if: github.event_name != 'push'
     runs-on: ubuntu-24.04
@@ -76,23 +78,8 @@ jobs:
           extra-conf: |
             substituters = https://cache.nixos.org?priority=30 http://127.0.0.1:18765?priority=35 https://cache.numtide.com?priority=45
             extra-trusted-public-keys = nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-      # local-only: public paths are answered from cache.nixos.org (so
-      # `nix copy` skips them) without being mirrored into our cache, while
-      # our own signed uploads are still written.
       - name: Start Namespace's cache proxy
-        run: |
-          nix build .#nixcache --out-link "$RUNNER_TEMP/nixcache" --option substituters https://cache.nixos.org
-          nohup "$RUNNER_TEMP/nixcache/bin/nixcache" -foreground \
-            -cache-upstream local-only \
-            -cache_dir "$RUNNER_TEMP/nixcache-dir" \
-            >"$RUNNER_TEMP/nixcache.log" 2>&1 &
-          echo $! >"$RUNNER_TEMP/nixcache.pid"
-          for _ in $(seq 30); do
-            curl -fsS http://127.0.0.1:18765/nix-cache-info && exit 0
-            sleep 1
-          done
-          cat "$RUNNER_TEMP/nixcache.log"
-          exit 1
+        run: .github/nixcache.sh start
       - name: Build checks
         run: .github/push-cache.sh build "${{ matrix.system }}" "$RUNNER_TEMP/paths"
       - name: Sign and push them to the cache
@@ -103,7 +90,41 @@ jobs:
         if: always()
         run: |
           rm -rf "$RUNNER_TEMP"/nix-cache-key.*
-          if [ -f "$RUNNER_TEMP/nixcache.pid" ]; then
-            kill -TERM "$(cat "$RUNNER_TEMP/nixcache.pid")" || true
-          fi
-          tail -n 50 "$RUNNER_TEMP/nixcache.log" || true
+          .github/nixcache.sh stop
+
+  # After both builds on main: fetch dev-01's profile, signed by the build job,
+  # without building it (--max-jobs 0), then activate it on dev-01 with
+  # deploy-rs, unless main has moved on. The SSH key lives in the `dev-01`
+  # environment, which only main may use, and only the last step sees it.
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    environment: dev-01
+    runs-on: nscloud-ubuntu-24.04-amd64-16x32
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@4b040423529d49b1a19ba918742e0aa9aa95031a # v3.24.3
+        with:
+          # The build job's order and keys. always-allow-substitutes fetches
+          # Home Manager's small files, signed, instead of building them here.
+          extra-conf: |
+            substituters = https://cache.nixos.org?priority=30 http://127.0.0.1:18765?priority=35 https://cache.numtide.com?priority=45
+            extra-trusted-public-keys = nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            always-allow-substitutes = true
+      - name: Start Namespace's cache proxy
+        run: .github/nixcache.sh start
+      - name: Fetch dev-01's profile and check its signatures
+        run: .github/deploy-dev-01.sh fetch
+      - name: Deploy dev-01
+        env:
+          DEV_01_DEPLOY_KEY: ${{ secrets.DEV_01_DEPLOY_KEY }}
+        run: .github/deploy-dev-01.sh activate
+      - name: Stop the cache proxy
+        if: always()
+        run: |
+          rm -rf "$RUNNER_TEMP"/dev-01-ssh.*
+          .github/nixcache.sh stop

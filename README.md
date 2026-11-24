@@ -8,7 +8,7 @@ environment: embedded in the Mac configuration, and standalone on the Linux VM.
 | Host | What it is | Flake output | Switched with |
 | --- | --- | --- | --- |
 | `laptop` | MacBook Pro (M5), user `michael` | `darwinConfigurations.laptop` | `sudo darwin-rebuild switch --flake .` on the laptop |
-| `dev-01` | Ubuntu VM, reached over SSH from the Mac | `homeConfigurations."dev@dev-01"` | `deploy .#dev-01` from the Mac |
+| `dev-01` | Ubuntu VM on Azure | `homeConfigurations."dev@dev-01"` | CI's `deploy` job, after each push to `main` |
 
 dev-01 is Home Manager only: the
 machines repo's bootstrap owns everything outside its home directory.
@@ -158,9 +158,9 @@ Needed once on a new machine, in this order:
 
 ## Set up dev-01
 
-dev-01 has no checkout of this repo. You deploy to it from a set-up Mac (above).
-The deploy path is proven; items marked "assumed" could not be checked from the
-Mac.
+dev-01 has no checkout of this repo. CI deploys it after each push to `main`;
+a set-up Mac (above) can deploy it too. Items marked "assumed" could not be
+checked from the Mac.
 
 On dev-01:
 
@@ -174,14 +174,48 @@ On dev-01:
    includes (the machines repo's bootstrap is meant to write it), and the
    `~/businesscraft/.scratch` directory that `TMPDIR` points at.
 
-dev-01 holds no Namespace credential and does not read the Namespace cache. It does need
-Numtide's cache for the agent CLIs, in its system Nix configuration, which
-the machines repo owns; `dev` is not a trusted Nix user, so the profile
-cannot add it. Without it, a deploy compiles codex on dev-01.
+dev-01 does not read the Namespace cache, and it builds nothing for a deploy:
+it is sent a built profile (`remoteBuild = false`). `dev` is not a trusted Nix
+user, so dev-01 adds a copied path only if a key in its system Nix
+configuration signed it. The machines repo owns that configuration
+(`etc/nix/nix.custom.conf`): Numtide's key, for the agent CLIs, and
+`nix-config-1`, the key CI signs this repo's builds with on `main`. A profile
+the Mac built from a branch or a dirty tree carries no such signature, so the
+copy is refused. This governs what is copied in, not what `dev` may activate:
+anything logged in as `dev` can still build and activate a profile on dev-01
+itself.
 
-Then, from the Mac checkout:
+CI's `deploy` job runs after both `build` jobs on `main`. It fetches the
+profile without building anything (`--max-jobs 0`) and checks that every path
+in it is signed by a trusted key or content-addressed, the rule dev-01 applies
+too (`.github/deploy-dev-01.sh fetch`). Then, if that commit is
+still the tip of `main`, it runs deploy-rs (`activate`), so a rerun of an
+older run cannot roll back a newer deploy. It connects with the
+`DEV_01_DEPLOY_KEY` secret, in the `dev-01` environment that only `main` may
+use, and pins dev-01's host key. dev-01's `~/.ssh/authorized_keys` holds the
+public half with `restrict`, which allows commands but no forwarding; the
+machines repo's bootstrap keeps it there:
 
-1. `deploy .#dev-01`.
+```text
+restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEUpYHixc/Ah8dLw67avNjJo+Frnl2an0pK+EiqXmjt3 nix-config-ci-deploy
+```
+
+To deploy from the Mac instead, for example while CI is down, check out a
+commit whose `build` run on `main` has finished. Home Manager marks its small
+files as not worth downloading, so the Mac builds them itself, and its copies
+carry no CI signature; fetch the profile, add CI's signatures to anything the
+Mac already built, then deploy:
+
+1. Deploy the signed profile:
+
+   ```sh
+   profile=$(nix eval --raw .#deploy.nodes.dev-01.profiles.home.path)
+   nix build --no-link --max-jobs 0 --option always-allow-substitutes true "$profile"
+   nix store copy-sigs --recursive --substituter http://127.0.0.1:18765 \
+     --substituter https://cache.nixos.org --substituter https://cache.numtide.com "$profile"
+   deploy --skip-checks .#dev-01 -- --max-jobs 0
+   ```
+
 2. On dev-01, run the `herdr plugin install` command from step 8 above.
 
 ## Day to day
@@ -191,10 +225,10 @@ flowchart TD
   E["Edit on the Mac"] --> C["nix flake check --all-systems"]
   C --> G["git commit"]
   G --> S["sudo darwin-rebuild switch --flake ."]
-  G --> B["deploy dev-01: Mac evaluates"]
-  B --> CP["send derivations over SSH"]
-  CP --> BD["dev-01 builds its profile"]
-  BD --> A["activate on dev-01"]
+  G --> PR["pull request, merged to main"]
+  PR --> B["CI build: every check, signed into the cache"]
+  B --> D["CI deploy: fetch the signed profile, copy it to dev-01"]
+  D --> A["activate on dev-01"]
   A --> K{"confirmed within 30 s?"}
   K -->|yes| OK["new generation stays"]
   K -->|no| RB["automatic rollback"]
@@ -211,12 +245,13 @@ flowchart TD
    that changes them (`modules/darwin/nix.nix`), restart it with
    `sudo launchctl kickstart -k system/systems.determinate.nix-daemon`;
    until then it builds what the new cache would serve.
-5. Deploy dev-01 with `deploy .#dev-01` (the `deploy` command is in the flake's
-   dev shell: `nix develop`). deploy-rs first runs `nix flake check` for the
-   Mac's own system (skip it with `--skip-checks` once you have run the full
-   gate). `deploy --dry-activate .#dev-01` shows what would change. dev-01
-   builds its own profile because `dev` is not a trusted Nix user there, so the
-   Mac sends derivations, not a built closure.
+5. dev-01 deploys itself: merging to `main` runs the `build` job, then the
+   `deploy` job, which activates the new profile on dev-01. If the deploy
+   fails, rerun the latest run's deploy with `gh run rerun <run-id> --failed`;
+   a rerun of an older run deploys nothing once `main` has moved on. GitHub
+   keeps one pending run per group, so a burst of merges can cancel a pending
+   run; the next run deploys the newer tip. Or deploy from the Mac (see
+   [Set up dev-01](#set-up-dev-01)).
 6. See what each host runs:
 
    | Host | Command |
@@ -227,12 +262,10 @@ flowchart TD
 7. Roll back. On a Mac: `sudo darwin-rebuild switch --rollback`. On dev-01: a
    failed activation, or no confirmation within 30 seconds, rolls back by
    itself (deploy-rs "magic rollback"). To undo a deploy that went through,
-   deploy the previous commit by reference (this form evaluates, but has not
-   been run through a real deploy):
-
-   ```sh
-   deploy "git+file://$PWD?rev=$(git rev-parse HEAD~1)#dev-01"
-   ```
+   revert the commit on `main`, and CI deploys the revert. While CI is down,
+   check out an earlier `main` commit whose `build` run finished and follow
+   the Mac deploy steps in [Set up dev-01](#set-up-dev-01); a commit CI never
+   built is refused by dev-01.
 
 ## Verification
 
@@ -249,11 +282,11 @@ flowchart LR
   end
   subgraph FC["nix flake check --all-systems"]
     subgraph MAC["aarch64-darwin: runs natively"]
-      M2["laptop: system, home, links"]
+      M2["laptop: system, home, links, github-accounts"]
       M3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
     end
     subgraph LIN["x86_64-linux: Linux builder"]
-      L1["dev-01-home, dev-01-links"]
+      L1["dev-01-home, dev-01-links, dev-01-deploy-profile"]
       L2["deploy-schema, deploy-activate"]
       L3["moshi-hook-version, plannotator-tui-version, namespace-devbox-version"]
     end
@@ -264,8 +297,11 @@ flowchart LR
 - `<host>-system` and `<host>-home` build each Mac; `<host>-links` and
   `dev-01-links` confirm every live link points at a file that exists in this
   repo (or into the skills clone; dev-01 has no checkout).
+- `<host>-github-accounts` checks with `ssh -G` that each GitHub host and
+  remote selects the right account's key.
 - `deploy-schema` and `deploy-activate` are deploy-rs's checks of the dev-01
-  node.
+  node. `dev-01-deploy-profile` is the profile deploy-rs copies to dev-01, so
+  the `build` job on `main` builds and signs it.
 - `moshi-hook-version` runs `moshi-hook --version` on Linux and, on the Macs,
   reads the version from the app bundle's `Info.plist` without running it.
 - `plannotator-tui-version` builds plannotator-tui from source, with its
@@ -277,7 +313,8 @@ on the Mac. It sometimes fails to start with "HTTP 400" or "unexpected EOF";
 run the check again.
 
 `prek run --all-files` is the only lint: nixfmt, nixf-diagnose, an ast-grep
-rule that rejects Nix comments, markdownlint and file hygiene hooks;
+rule that rejects Nix comments, markdownlint, zizmor for the workflows and
+file hygiene hooks;
 `prek install` (set-up step 7) makes it run on each commit.
 
 The GitHub workflow runs on every pull request, on each push to `main` and on

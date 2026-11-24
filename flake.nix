@@ -170,6 +170,7 @@
           {
             dev-01-home = home.home.activationPackage;
             dev-01-links = writableLinksCheck pkgsFor.x86_64-linux "dev-01" home;
+            dev-01-deploy-profile = self.deploy.nodes.dev-01.profiles.home.path;
           }
           // deployPkgs.deploy-rs.lib.deployChecks self.deploy;
       };
@@ -219,7 +220,7 @@
       deploy.nodes.dev-01 = {
         hostname = "dev-01";
         sshUser = "dev";
-        remoteBuild = true;
+        remoteBuild = false;
         profiles.home.path =
           deployPkgs.deploy-rs.lib.activate.home-manager
             self.homeConfigurations."dev@dev-01";
