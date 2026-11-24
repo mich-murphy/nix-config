@@ -1,5 +1,7 @@
 { pkgs, ... }:
 {
+  imports = [ ./namespace.nix ];
+
   home = {
     username = "dev";
     homeDirectory = "/home/dev";
