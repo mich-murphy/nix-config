@@ -14,7 +14,7 @@ in
       ProgramArguments = [
         (lib.getExe pkgs.nixcache)
         "-foreground"
-        "-cache-upstream=off"
+        "-cache-upstream=local-only"
         "-endpoint"
         "https://ord.storage.namespaceapis.com"
         "-listen"

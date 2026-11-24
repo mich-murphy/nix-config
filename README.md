@@ -569,7 +569,10 @@ businesscraft setup owns, using a read-only `cache/turborepo` token.
   launchd agent on `127.0.0.1:18765` that uses your `nsc login` session. The
   session expires after about a month; renew it with `nsc login` and check it
   with `nsc auth check-login`. Without it the proxy cannot read the cache and
-  the Mac builds what the cache would serve. The proxy logs to
+  the Mac builds what the cache would serve. The proxy runs with
+  `-cache-upstream=local-only`, like CI's: CI skips uploading a NAR that
+  cache.nixos.org already holds, so the proxy reads such NARs from
+  cache.nixos.org, without copying them into our storage. The proxy logs to
   `~/Library/Logs/nixcache.log`.
 - `nix develop` provides `nixfmt`, `nixf-diagnose`, `nvd` and `deploy`. For
   direnv, create a local `.envrc` containing `use flake` (globally ignored).
