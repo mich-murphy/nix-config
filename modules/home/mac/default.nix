@@ -7,5 +7,6 @@
     ./git.nix
     ./orbstack.nix
     ./packages.nix
+    ./namespace.nix
   ];
 }

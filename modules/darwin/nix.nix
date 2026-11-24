@@ -12,11 +12,14 @@ in
     customSettings = {
       substituters = [
         "https://cache.nixos.org/?priority=30"
+        "http://127.0.0.1:18765?priority=35"
         "https://cache.numtide.com?priority=40"
       ];
       extra-trusted-public-keys = [
+        "nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw="
         "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       ];
+      max-jobs = 4;
     };
   };
 
