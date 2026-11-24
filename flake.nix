@@ -185,6 +185,7 @@
             plannotator-tui
             herdr-plugin-annotate
             namespace-devbox
+            nixcache
             ;
         }
         // lib.optionalAttrs pkgsFor.${system}.stdenv.hostPlatform.isDarwin {
