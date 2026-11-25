@@ -29,8 +29,6 @@ Open work only.
 - [ ] Check Mason in Neovim (`:Mason`, `:checkhealth mason`), since go,
       python3 and nodejs now come only from Neovim's packages. Moshi is
       verified running from the installed bundle.
-- [ ] Uninstall the deprecated `agent-sessions` binary and its launchd agent by
-      hand; Nix never managed them.
 - [ ] After the first switch that moves the agent CLIs to Nix: check that
       `which claude codex pi mo` resolve to `/etc/profiles/per-user/`, that
       Pi's Claude SDK provider and Moshi's hooks still work, that
