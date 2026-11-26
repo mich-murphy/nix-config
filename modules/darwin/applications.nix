@@ -62,7 +62,6 @@
       "linearmouse"
       "wispr-flow"
       "nextcloud"
-      "grok-bot"
     ];
     masApps = {
       "Xcode" = 497799835;
