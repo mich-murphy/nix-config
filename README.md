@@ -40,7 +40,7 @@ machine needs it.
 | Module | What it does |
 | --- | --- |
 | `darwin/system.nix` | DNS, firewall, Touch ID for sudo, tailnet-only sshd, Dock, Finder, keyboard, power settings, battery Charge Limit |
-| `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps |
+| `darwin/applications.nix` | system packages, fonts, Homebrew casks, formulae and App Store apps; selects Xcode as the developer directory and accepts its licence |
 | `darwin/nix.nix` | Determinate Nix owning the Nix installation and garbage collection, a weekly launchd job that expires system generations older than 7 days, no bundled `darwin-uninstaller` |
 | `darwin/user.nix` | the primary user's account and shell (the name itself is set in `hosts/<host>/default.nix`), Home Manager's integration settings |
 | `darwin/window-management.nix` | yabai |

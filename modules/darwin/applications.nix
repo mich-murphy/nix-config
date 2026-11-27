@@ -14,6 +14,19 @@
   system.activationScripts.postActivation.text = ''
     /usr/libexec/ApplicationFirewall/socketfilterfw --add ${pkgs.mosh}/bin/mosh-server
     /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp ${pkgs.mosh}/bin/mosh-server
+
+    xcode=/Applications/Xcode.app/Contents/Developer
+    if [ -d "$xcode" ]; then
+      if [ "$(xcode-select -p 2>/dev/null)" != "$xcode" ]; then
+        xcode-select -s "$xcode"
+      fi
+      DEVELOPER_DIR="$xcode" xcodebuild -license check >/dev/null 2>&1 \
+        || DEVELOPER_DIR="$xcode" xcodebuild -license accept \
+        || echo "warning: could not accept the Xcode license" >&2
+      DEVELOPER_DIR="$xcode" xcodebuild -checkFirstLaunchStatus \
+        || DEVELOPER_DIR="$xcode" xcodebuild -runFirstLaunch \
+        || echo "warning: Xcode first-launch tasks failed" >&2
+    fi
   '';
 
   programs._1password.enable = true;
