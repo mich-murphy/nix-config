@@ -407,8 +407,6 @@ nix eval --raw .#darwinConfigurations.laptop.config.homebrew.brewfile |
 ```
 
 Without `--force` it only lists; no output means nothing would be removed.
-Removing one Office cask also removes the licensing helpers the others share,
-so check the remaining Office apps afterwards.
 
 ### Patched packages
 
