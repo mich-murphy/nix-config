@@ -1,0 +1,7 @@
+id: no-comments-lua
+language: lua
+severity: error
+message: Comments are banned; they go stale and agents copy them.
+note: Make the code say it instead. Rename, extract a local or a function, or delete the comment.
+rule:
+  kind: comment

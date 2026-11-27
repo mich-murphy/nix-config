@@ -1,0 +1,15 @@
+id: no-comments-yaml
+language: yaml
+severity: error
+message: Comments are banned; they go stale and agents copy them.
+note: Make the config say it instead. Name the step or job for what it does, or delete the comment. Allowed - the version comment after a SHA-pinned uses, such as "# v7.0.1".
+rule:
+  kind: comment
+  not:
+    all:
+      - regex: '^# v\d+(\.\d+)*$'
+      - follows:
+          kind: block_mapping_pair
+          has:
+            field: key
+            regex: '^uses$'

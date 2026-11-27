@@ -1,0 +1,12 @@
+id: no-comments-yaml
+valid:
+  - "a: 1"
+  - "steps:\n  - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1\n    with:\n      persist-credentials: false"
+  - "a: '# not a comment'"
+  - "run: |\n  # inside a block scalar\n  echo hi"
+invalid:
+  - "# leading\na: 1"
+  - "a: 1 # trailing"
+  - "steps:\n  - uses: actions/checkout@3d3c # pinned for safety"
+  - "with:\n  version: 1 # v1.0.0"
+  - "steps:\n  - run: echo hi\n    # v2"

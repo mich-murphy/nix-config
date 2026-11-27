@@ -1,0 +1,8 @@
+id: no-comments-lua
+valid:
+  - "local a = 1"
+  - "local s = '-- not a comment'"
+invalid:
+  - "-- leading\nlocal a = 1"
+  - "local a = 1 -- trailing"
+  - "--[[ block ]]\nlocal a = 1"
