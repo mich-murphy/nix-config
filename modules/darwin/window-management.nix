@@ -7,7 +7,7 @@
 let
   user = config.system.primaryUser;
 
-  chatApps = "^(Microsoft Teams|MSTeams|Slack)$";
+  chatApps = "^((Microsoft )?Teams( \\(PWA\\))?|Slack)$";
   dockRestartDelay = 2;
   chatPlacementDelay = toString (dockRestartDelay + 3);
 
