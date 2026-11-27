@@ -304,9 +304,9 @@ flowchart LR
   tests, and runs `plannotator-tui --version`.
 - `namespace-devbox-version` runs `devbox version`.
 
-`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, an ast-grep
-rule that rejects Nix comments, markdownlint, zizmor for the workflows and
-file hygiene hooks;
+`prek run --all-files` is the only lint: nixfmt, nixf-diagnose, ast-grep
+rules that reject comments (`config/ast-grep/`, with their tests),
+markdownlint, zizmor for the workflows and file hygiene hooks;
 `prek install` (set-up step 7) makes it run on each commit.
 
 The GitHub workflow runs on every pull request, on each push to `main` and on

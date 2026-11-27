@@ -1,0 +1,7 @@
+id: no-comments-nix
+language: nix
+severity: error
+message: Comments are banned; they go stale and agents copy them.
+note: Make the code say it instead. Rename, extract a let binding, encode the constraint in an option type, assertion or flake check, or delete the comment.
+rule:
+  kind: comment
