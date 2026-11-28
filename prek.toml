@@ -31,14 +31,14 @@ hooks = [
     name = "no comments (ast-grep)",
     language = "system",
     entry = "nix shell --inputs-from . nixpkgs#ast-grep --command ast-grep scan --config config/ast-grep/sgconfig.yml",
-    types = ["nix"],
+    types_or = ["nix", "shell", "yaml", "lua"],
   },
   {
     id = "no-ast-grep-ignore",
     name = "no ast-grep-ignore suppressions",
     language = "pygrep",
     entry = "ast-grep-ignore",
-    types = ["nix"],
+    types_or = ["nix", "shell", "yaml", "lua"],
   },
   {
     id = "ast-grep-rule-tests",

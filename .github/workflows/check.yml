@@ -11,19 +11,9 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
-  # A cancelled run on main would stop pushing to the Namespace cache part-way.
-  # Manual runs get their own group, so one cannot displace a pending push.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# Actions are pinned to full commit SHAs; TODO.md (Updates) has the monthly bump.
 jobs:
-  # Pull requests and manual runs. Every host is evaluated, the Macs included,
-  # and the Linux checks are built; the Mac checks build locally with
-  # `nix flake check`. Branches of this repository run on Namespace and read
-  # main's signed builds through the nixcache proxy. Forks run on GitHub's
-  # runner, which holds no Namespace token; Nix skips the absent proxy. No
-  # secret, so nothing here can sign: the runner's token could upload, but
-  # hosts refuse paths without a trusted signature.
   check:
     if: github.event_name != 'push'
     runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-24.04' || 'nscloud-ubuntu-24.04-amd64-16x32' }}
@@ -43,18 +33,11 @@ jobs:
         run: .github/nixcache.sh start
       - name: Run commit hooks
         run: nix shell --inputs-from . nixpkgs#prek --command prek run --all-files
-      # Without --no-build, --all-systems would try to build the Mac checks.
-      # Import-from-derivation would need a Mac build during evaluation.
       - name: Evaluate every system
         run: nix flake check --all-systems --no-build --no-write-lock-file --option allow-import-from-derivation false
       - name: Check flake
         run: nix flake check --print-build-logs --no-write-lock-file
 
-  # Pushes to main only, on Namespace runners: every check for each system is
-  # built, and the closures are signed with nix-config-1 and copied to
-  # Namespace's Nix cache through the nixcache proxy. The signing key lives in
-  # the `cache` environment, which only main may use. The runner's own
-  # Namespace workload token authorises the writes.
   build:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: cache
@@ -75,8 +58,6 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@4b040423529d49b1a19ba918742e0aa9aa95031a # v3.24.3
         with:
-          # cache.nixos.org first, then our cache through the local proxy,
-          # then Numtide's agent CLIs; the same order as the hosts.
           extra-conf: |
             substituters = https://cache.nixos.org?priority=30 http://127.0.0.1:18765?priority=35 https://cache.numtide.com?priority=45
             extra-trusted-public-keys = nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
@@ -94,10 +75,6 @@ jobs:
           rm -rf "$RUNNER_TEMP"/nix-cache-key.*
           .github/nixcache.sh stop
 
-  # After both builds on main: fetch dev-01's profile, signed by the build job,
-  # without building it (--max-jobs 0), then activate it on dev-01 with
-  # deploy-rs, unless main has moved on. The SSH key lives in the `dev-01`
-  # environment, which only main may use, and only the last step sees it.
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
@@ -111,8 +88,6 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@4b040423529d49b1a19ba918742e0aa9aa95031a # v3.24.3
         with:
-          # The build job's order and keys. always-allow-substitutes fetches
-          # Home Manager's small files, signed, instead of building them here.
           extra-conf: |
             substituters = https://cache.nixos.org?priority=30 http://127.0.0.1:18765?priority=35 https://cache.numtide.com?priority=45
             extra-trusted-public-keys = nix-config-1:Ep0gTwAfKkQdxskDLpCKv+y5rgtysgE3Z45edow+wVw= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=

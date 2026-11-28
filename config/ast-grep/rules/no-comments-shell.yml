@@ -1,0 +1,13 @@
+id: no-comments-shell
+language: bash
+severity: error
+message: Comments are banned; they go stale and agents copy them.
+note: Make the code say it instead. Rename, extract a function, put usage in the usage error, or delete the comment. Allowed - a shebang on the first line and shellcheck directives.
+rule:
+  kind: comment
+  not:
+    any:
+      - all:
+          - regex: '^#!'
+          - nthChild: 1
+      - regex: '^#\s*shellcheck\s'

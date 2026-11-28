@@ -1,0 +1,12 @@
+id: no-comments-shell
+valid:
+  - "echo hi"
+  - "#!/usr/bin/env bash\nset -euo pipefail"
+  - "# shellcheck disable=SC2086\necho $x"
+  - "echo '# not a comment'"
+  - "echo \"a#b\""
+invalid:
+  - "# leading\necho hi"
+  - "echo hi # trailing"
+  - "echo hi\n#!/bin/sh"
+  - "#!/bin/sh\n# prose after the shebang\necho hi"

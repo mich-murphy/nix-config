@@ -1,25 +1,4 @@
 #!/usr/bin/env bash
-# Deploys dev-01's Home Manager profile from CI in two steps, run in this
-# order from the same checkout:
-#
-#   fetch     Substitutes the profile without building anything
-#             (--max-jobs 0), keeps it as a GC root, and checks that every
-#             path in its closure is content-addressed or carries a signature
-#             from a trusted key, the same rule dev-01 applies on import.
-#   activate  Runs deploy-rs over SSH with the key in DEV_01_DEPLOY_KEY,
-#             against dev-01's pinned host key, and only while this commit is
-#             still the tip of main, so a rerun of an older run cannot roll
-#             back a newer deploy. It runs in a subshell, so its EXIT trap
-#             still sees the key's directory and deletes it.
-#
-# Usage: .github/deploy-dev-01.sh fetch
-#        DEV_01_DEPLOY_KEY=<private key> .github/deploy-dev-01.sh activate
-#
-# dev is not a trusted Nix user on dev-01, so dev-01 adds only paths signed
-# by a key in its nix.custom.conf (nix-config-1, cache.nixos.org, Numtide).
-# Home Manager marks its small files allowSubstitutes = false; the workflow
-# sets always-allow-substitutes so CI's signed copies are downloaded rather
-# than unsigned ones built here.
 set -euo pipefail
 
 root=${RUNNER_TEMP:-${TMPDIR:-/tmp}}

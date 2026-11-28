@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
-# Builds every check for one system, or copies built closures, signed with
-# the key in NIX_CACHE_SIGNING_KEY, to a Nix binary cache. The workflow runs
-# the two as separate steps, so no build or evaluation sees the key.
-#
-# Usage: .github/push-cache.sh build <system> <paths-file>
-#        NIX_CACHE_SIGNING_KEY=<secret> .github/push-cache.sh push <cache-url> <paths-file>
-#
-# The key is written to a 0600 file, read by `nix copy` locally (never sent
-# to the cache), and deleted on exit.
 set -euo pipefail
 
 case ${1:-} in
