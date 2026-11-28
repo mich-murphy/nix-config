@@ -1,0 +1,11 @@
+id: no-comments-nix
+valid:
+  - "{ a = 1; }"
+  - "{ a = \"# not a comment\"; }"
+  - "{ a = ''\n  # inside an indented string\n''; }"
+  - "{ url = \"https://example.com/#anchor\"; }"
+invalid:
+  - "# leading\n{ a = 1; }"
+  - "{ a = 1; # trailing\n}"
+  - "{ a = /* inline */ 1; }"
+  - "/*\n  block\n*/\n{ }"
